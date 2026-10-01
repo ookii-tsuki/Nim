@@ -1,0 +1,14 @@
+using System;
+using Math;
+
+namespace App
+{
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(Calc.Add(2, 3));
+            Console.WriteLine(Calc.Mul(4, 5));
+        }
+    }
+}

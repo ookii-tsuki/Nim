@@ -175,8 +175,15 @@ proc parsePostfix(p: var NsParser): PNode =
                        p.identOf(nameTok.text, p.infoOf(nameTok)))
     elif p.at(nsLParen):
       discard p.advance
-      var call = newNodeI(nkCall, result.info)
-      call.add result
+      var callee = result
+      # Phase 1b: drop a class/namespace qualifier on a static call, so
+      # `Class.Method(args)` and `Console.WriteLine(x)` both become `Method(args)`.
+      # Temporary until classes are real (Phase 2).
+      if callee.kind == nkDotExpr and callee[0].kind == nkIdent and
+         callee[0].ident.s.len > 0 and callee[0].ident.s[0] in {'A'..'Z'}:
+        callee = callee[1]
+      var call = newNodeI(nkCall, callee.info)
+      call.add callee
       while not p.at(nsRParen) and not p.at(nsEof):
         call.add p.parseExpr()
         if p.at(nsComma): discard p.advance else: break
@@ -477,14 +484,31 @@ proc parseForeach(p: var NsParser): PNode =
 
 proc parseTopLevelDecl(p: var NsParser, stmts: var seq[PNode])
 
-proc skipUsing(p: var NsParser) =
-  # `using <qualified> ;` - recognized and ignored in Phase 0.
+proc parseUsing(p: var NsParser, stmts: var seq[PNode]) =
+  # `using X;` / `import X;` -> `import "X"`. `System` is the prelude and is
+  # already auto-imported, so it is a no-op.
+  let info = p.infoOf(p.peek)
+  discard p.advance
+  var name = ""
+  if p.peek.kind == nsIdent:
+    name = p.advance.text
+    while p.at(nsDot) and p.peekAhead(1).kind == nsIdent:
+      discard p.advance
+      name.add "."
+      name.add p.advance.text
   while not p.at(nsSemi) and not p.at(nsEof):
     discard p.advance
   if p.at(nsSemi): discard p.advance
+  if name.len == 0 or name == "System" or name.startsWith("System."):
+    return
+  let imp = newNodeI(nkImportStmt, info)
+  imp.add newAtom(nkStrLit, name, info)
+  stmts.add imp
 
 proc parseMember(p: var NsParser, stmts: var seq[PNode]) =
+  var isPublic = false
   while p.peek.kind == nsIdent and p.peek.text in NsModifierWords:
+    if p.peek.text == "public": isPublic = true
     discard p.advance
   let typeTok = p.peek
   if typeTok.kind != nsIdent:
@@ -496,7 +520,11 @@ proc parseMember(p: var NsParser, stmts: var seq[PNode]) =
     return
   let nameTok = p.advance
   if p.at(nsLParen):
-    stmts.add p.parseMethod(nameTok, retType)
+    var procDef = p.parseMethod(nameTok, retType)
+    if isPublic:
+      procDef[0] = newTree(nkPostfix, p.infoOf(nameTok),
+                           p.identOf("*", p.infoOf(nameTok)), procDef[0])
+    stmts.add procDef
   else:
     p.skipToSemi()   # a field declaration
 
@@ -529,8 +557,8 @@ proc parseNamespace(p: var NsParser, stmts: var seq[PNode]) =
 
 proc parseTopLevelDecl(p: var NsParser, stmts: var seq[PNode]) =
   let t = p.peek
-  if t.kind == nsIdent and t.text == "using":
-    p.skipUsing()
+  if t.kind == nsIdent and t.text in ["using", "import"]:
+    p.parseUsing(stmts)
   elif t.kind == nsIdent and t.text == "namespace":
     p.parseNamespace(stmts)
   elif t.kind == nsIdent and t.text in ["class", "struct", "interface"]:

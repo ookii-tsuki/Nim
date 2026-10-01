@@ -171,6 +171,7 @@ const
   harmlessOptions* = {optForceFullMake, optNoLinking, optRun, optUseColors, optStdout}
   genSubDir* = RelativeDir"nimcache"
   NimExt* = "nim"
+  NsExt* = "ns"
   RodExt* = "rod"
   HtmlExt* = "html"
   JsonExt* = "json"
@@ -1111,9 +1112,8 @@ proc findFile*(conf: ConfigRef; f: string; suppressStdlib = false): AbsoluteFile
           result = rawFindFile2(conf, RelativeFile f.toLowerAscii)
   patchModule(conf)
 
-proc findModule*(conf: ConfigRef; modulename, currentModule: string): AbsoluteFile =
-  # returns path to module
-  var m = addFileExt(modulename, NimExt)
+proc findModuleImpl(conf: ConfigRef; mIn, currentModule: string): AbsoluteFile =
+  let m = mIn
   var hasRelativeDot = false
   if m.startsWith(pkgPrefix):
     result = findFile(conf, m.substr(pkgPrefix.len), suppressStdlib = true)
@@ -1136,6 +1136,26 @@ proc findModule*(conf: ConfigRef; modulename, currentModule: string): AbsoluteFi
     if not fileExists(result) and not hasRelativeDot:
       result = findFile(conf, m)
   patchModule(conf)
+
+proc findModule*(conf: ConfigRef; modulename, currentModule: string): AbsoluteFile =
+  # returns path to module
+  when defined(nsharp):
+    # N#: a `.ns` sibling of the importing module takes precedence, so an import
+    # such as `using Math;` resolves to `Math.ns` and not (via the stdlib's
+    # case-insensitive fallback) to some lowercase `.nim` module.
+    if splitFile(modulename).ext.len == 0:
+      let sib = AbsoluteFile(currentModule.splitFile.dir /
+                             addFileExt(modulename, NsExt))
+      if fileExists(sib):
+        result = sib
+        patchModule(conf)
+        return
+  result = findModuleImpl(conf, addFileExt(modulename, NimExt), currentModule)
+  when defined(nsharp):
+    if not fileExists(result) and splitFile(modulename).ext.len == 0:
+      let r = findModuleImpl(conf, addFileExt(modulename, NsExt), currentModule)
+      if not r.isEmpty and fileExists(r):
+        result = r
 
 proc findProjectNimFile*(conf: ConfigRef; pkg: string): string =
   const extensions = [".nims", ".cfg", ".nimcfg", ".nimble"]

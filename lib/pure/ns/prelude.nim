@@ -7,9 +7,6 @@
 
 import std/[syncio]
 
-type
-  Console* = object
-
-proc WriteLine*[T](c: typedesc[Console], x: T) = echo x
-proc Write*[T](c: typedesc[Console], x: T) = stdout.write x
-proc ReadLine*(c: typedesc[Console]): string = stdin.readLine
+proc WriteLine*[T](x: T) = echo x
+proc Write*[T](x: T) = stdout.write x
+proc ReadLine*(): string = stdin.readLine

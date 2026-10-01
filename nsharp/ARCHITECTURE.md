@@ -41,7 +41,7 @@ Investigated before designing the integration:
 |---|---|---|
 | `compiler/syntaxes.nim` | `when defined(nsharp):` - `.ns` `parseFile` dispatch to `nsharp/frontend` | ✅ Phase 0 |
 | `compiler/pipelines.nim` | guarded branch: one-shot N# module parse → `sem`, then fall through to the shared tail | ✅ Phase 0 |
-| `compiler/options.nim` | `NsExt` + `findModule` also tries `.ns` (imports) | 🔜 Phase 1 |
+| `compiler/options.nim` | `NsExt` + `findModule` prefers a `.ns` sibling, then tries `.ns` (imports) | ✅ Phase 1b |
 | `compiler/idents.nim` | additive `getIdentExact` (case/underscore-sensitive interning); Nim's `getIdent` and hashing untouched (SPEC §3.1) | ✅ Phase 1a |
 
 **Untouched:** `modules.nim`, `nodekinds.nim`, `ast*.nim`, `sem*`, `sigmatch`,
@@ -158,24 +158,33 @@ hello from N#
 this program, dispatched by extension, touching no compiler file beyond those
 listed in §3.
 
-## 8. Phase 1a status - complete
+## 8. Phase 1 status - complete (1a + 1b)
 
-Delivered: case-sensitive identifiers (`getIdentExact`), the N# prelude
+Delivered in 1a: case-sensitive identifiers (`getIdentExact`), the N# prelude
 (`lib/pure/ns/prelude.nim`, auto-imported), a precedence-climbing expression
 parser, and statements (typed/`var` locals, assignment and compound assignment,
 `if`/`else`, `while`, C-style `for` desugared to `while`, `foreach`, `return`,
 `break`, `continue`, blocks).
 
-Test suite: `nsharp/tests/run.sh` compiles each `.ns` and diffs stdout against the
-matching `.out`. Current tests: `hello`, `p1a/case`, `p1a/sum`, `p1a/control` (4/4).
+Delivered in 1b: user-defined functions and recursion (methods lower to top-level
+procs), and imports (`using X;` / `import X;` map to `import "X"`; `.ns` modules
+resolve via a sibling-first rule in `findModule`), plus `public` mapping to an
+exported (`*`) symbol and a temporary class-qualifier drop so that
+`Class.StaticMethod(args)` and `Console.WriteLine(x)` both become `Method(args)`.
 
-Still deferred to Phase 1b/2: user-defined functions and recursion, imports and
-multi-module projects, classes with fields/`new`/instance dispatch, properties,
-generics, interfaces, `switch`, `unsafe`, C++ `extern`.
+Test suite: `nsharp/tests/run.sh` compiles each `.ns` and diffs stdout against the
+matching `.out`. Current tests (6/6): `hello`, `p1a/case`, `p1a/sum`, `p1a/control`,
+`p1b/fib`, `p1b/main` (two modules).
+
+Still deferred to Phase 2: classes with fields/`new`/instance dispatch,
+properties, generics, interfaces, `switch`, `unsafe`, C++ `extern`, and the
+integer `/` -> `div` semantic-trap desugar (needs type info at desugar time).
 
 ---
 
 *Change log*
+- **v3** - recorded Phase 1b: functions/recursion and imports; `options.nim`
+  `.ns` resolution; updated the touched-file table and the Phase 1 status.
 - **v2** - recorded Phase 1a: `getIdentExact` case sensitivity, prelude, and the
   expression/statement core; updated the touched-file table and the risk note.
 - **v1** - initial integration architecture: seam findings, the 3-file plan,
