@@ -54,6 +54,13 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
   fi
 done
 
+# C#<->N# equivalence gate: recompile every test as C# and require the .NET
+# compiler's output to match the same `.out`. Set NS_SKIP_CS=1 to skip.
+if [ -z "${NS_SKIP_CS:-}" ] && [ -x "$here/run_cs.sh" ]; then
+  echo "--- C# cross-check ---"
+  "$here/run_cs.sh" || fail=1
+fi
+
 echo "ran $count test(s)"
 exit $fail
 

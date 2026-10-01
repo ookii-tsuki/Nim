@@ -460,6 +460,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Enum field scope | scoped to the enum type | unqualified globals | `E.A` resolves via Nim qualified access; two enums must not share a field name | front |
 | Exceptions | all derive from `Exception` | `CatchableError`; raised as `ref T` | C# `Exception` → `CatchableError`; `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` (Nim only raises refs) | front |
 | `e.Message` | property on every exception | `CatchableError.msg` field | map `.Message` → `.msg` | front |
+| `WriteLine(bool)` | `True` / `False` | `$bool` gives `true` / `false` | prelude `bool` overloads of `WriteLine`/`Write` print `True`/`False` | lib |
 
 > The overflow / `checked` / `unchecked` rows all ride on **one** mechanism:
 > Nim's `{.push overflowChecks: on|off.}` / `{.pop.}`, handled by `genPragma` at

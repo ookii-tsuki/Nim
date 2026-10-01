@@ -12,6 +12,8 @@ type
   InvalidOperationException* = object of CatchableError
   NullReferenceException* = object of CatchableError
 
+proc WriteLine*(x: bool) = echo (if x: "True" else: "False")
+proc Write*(x: bool) = stdout.write(if x: "True" else: "False")
 proc WriteLine*[T](x: T) = echo x
 proc Write*[T](x: T) = stdout.write x
 proc ReadLine*(): string = stdin.readLine

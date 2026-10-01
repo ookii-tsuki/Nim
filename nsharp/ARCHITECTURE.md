@@ -212,6 +212,15 @@ Test suite (14 total): `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter`,
 `p2b/auto`, `p2b/shapes`, `p2c/protected`, `p2c/private` (expected failure),
 `p2d/nobase` (expected failure), `p3a/data`, `p3a/exceptions`.
 
+`nsharp/tests/run.sh` is the N# runner; it then runs `nsharp/tests/run_cs.sh`,
+the C#<->N# equivalence gate, unless `NS_SKIP_CS=1` is set. Because every `.ns`
+test is kept deliberately valid C#, `run_cs.sh` recompiles each one with the
+.NET SDK (one temp project, `net10.0`, `--no-incremental` per test) and requires
+the C# program's stdout to match the same `<name>.out`. A `.fail` test must be
+rejected by C# too. A sibling `.ns` with no `.out`/`.fail` (e.g. `p1b/Math.ns`)
+is a module and is compiled together with the program. The gate skips cleanly
+when `dotnet` is not on PATH.
+
 Delivered in 3a: data and control. `enum` (ordinal Nim enums; qualified access
 `E.A` works directly), `switch`/`case`/`default` (desugared to Nim `case`; a
 trailing C# `break;` is dropped, and a non-exhaustive switch gets an
@@ -227,20 +236,25 @@ for a declared class, and `raise newException(T, msg)` for a system/prelude
 exception. `checked`/`unchecked` remains deferred (the `{.push.}` statement
 pragma node shape needs more work than it is worth right now).
 
-Every 3a feature was cross-checked against the .NET 10 SDK: the equivalent C# was
-compiled and run with `dotnet run`, and N# output is byte-identical to the .NET
-compiler's output for both `p3a/data` and `p3a/exceptions`.
+The gate is not a formality. It immediately found that C# prints `WriteLine` of a
+`bool` as `True`/`False`, while N# printed `true`/`false`. The prelude now has
+`bool` overloads of `WriteLine`/`Write` that match .NET, and `p1a/sum.out` was
+corrected. Anything that intentionally differs from C# must be written down in
+SPEC section 7.3 rather than silently baked into an expected file.
 
 Still deferred to Phase 3: static properties, generics, interfaces,
-`virtual`/`override` (dynamic dispatch), `switch`, `unsafe`, C++ `extern`,
-records, and the integer `/` -> `div` semantic-trap desugar (needs type info at
-desugar time). Known 2b gaps: within a class a member may only reference a
-property defined earlier (the source-order rule), and static properties are not
-yet supported.
+`virtual`/`override` (dynamic dispatch), `unsafe`, C++ `extern`, records,
+`checked`/`unchecked`, and the integer `/` -> `div` semantic-trap desugar (needs
+type info at desugar time). Known 2b gaps: within a class a member may only
+reference a property defined earlier (the source-order rule), and static
+properties are not yet supported.
 
 ---
 
 *Change log*
+- **v10** - added `nsharp/tests/run_cs.sh`, the permanent C#<->N# equivalence
+  gate, wired into `run.sh` (opt out with `NS_SKIP_CS=1`). It caught the
+  `WriteLine(bool)` formatting difference, now fixed in the prelude.
 - **v9** - Phase 3a output cross-checked against the .NET 10 SDK (`dotnet run`);
   added the `p3a/exceptions` test plus the value-object/`ref`-raise exception
   class model.
