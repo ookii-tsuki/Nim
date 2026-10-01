@@ -176,13 +176,26 @@ Test suite: `nsharp/tests/run.sh` compiles each `.ns` and diffs stdout against t
 matching `.out`. Current tests (6/6): `hello`, `p1a/case`, `p1a/sum`, `p1a/control`,
 `p1b/fib`, `p1b/main` (two modules).
 
-Still deferred to Phase 2: classes with fields/`new`/instance dispatch,
-properties, generics, interfaces, `switch`, `unsafe`, C++ `extern`, and the
-integer `/` -> `div` semantic-trap desugar (needs type info at desugar time).
+Delivered in 2a: real classes. `class C { ... }` becomes `type C = ref object`
+with its fields; a constructor `C(params) { ... }` becomes `proc newC(...): C`
+(allocating `result`); `new C(args)` calls it; instance methods take a leading
+`self: C` parameter; `this` maps to `self` in methods and `result` in
+constructors; bare class field names in method bodies rewrite to
+`self.field`/`result.field`. Static methods are unchanged. `struct` maps to a Nim
+`object` (value type).
+
+Test suite: `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter` (7 total).
+
+Still deferred to 2b/2c and Phase 3: properties (`{ get; set; }`), static
+properties, inheritance (`: B`), generics, interfaces, `virtual`/`override`,
+`switch`, `unsafe`, C++ `extern`, and the integer `/` -> `div` semantic-trap
+desugar (needs type info at desugar time).
 
 ---
 
 *Change log*
+- **v4** - recorded Phase 2a: real classes (type + fields, constructors, `new`,
+  instance methods with `self`, `this`, field qualification).
 - **v3** - recorded Phase 1b: functions/recursion and imports; `options.nim`
   `.ns` resolution; updated the touched-file table and the Phase 1 status.
 - **v2** - recorded Phase 1a: `getIdentExact` case sensitivity, prelude, and the

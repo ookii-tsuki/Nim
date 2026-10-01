@@ -20,11 +20,27 @@ type
     cache: IdentCache
     config: ConfigRef
     fileIdx: FileIndex
+    thisName: string            # "self" in methods, "result" in ctors
+    classFields: seq[string]    # enclosing class fields (for `x` -> self.x)
+
+  NsMemberKind = enum mkField, mkMethod, mkCtor
+
+  NsMember = object
+    kind: NsMemberKind
+    isStatic: bool
+    isPublic: bool
+    name: string
+    info: TLineInfo
+    typ: PNode
+    params: PNode
+    body: PNode
 
 const
   NsModifierWords = ["public", "private", "protected", "internal", "static",
     "virtual", "override", "abstract", "sealed", "readonly", "const", "unsafe",
     "extern", "new"]
+  NsTypeModifiers = ["public", "private", "protected", "internal", "abstract",
+    "sealed", "static"]
 
 proc peek(p: NsParser): NsToken {.inline.} = p.toks[p.pos]
 
@@ -93,6 +109,7 @@ proc parseType(p: var NsParser): PNode =
 
 proc parseExpr(p: var NsParser): PNode
 proc parseStatement(p: var NsParser): PNode
+proc parseNew(p: var NsParser, kw: NsToken): PNode
 
 proc parsePrimary(p: var NsParser): PNode =
   let t = p.peek
@@ -115,6 +132,13 @@ proc parsePrimary(p: var NsParser): PNode =
     discard p.advance
     if t.text == "null":
       result = newNodeI(nkNilLit, p.infoOf(t))
+    elif t.text == "new":
+      result = p.parseNew(t)
+    elif t.text == "this" and p.thisName.len > 0:
+      result = p.identOf(p.thisName, p.infoOf(t))
+    elif p.thisName.len > 0 and t.text in p.classFields:
+      result = newTree(nkDotExpr, p.infoOf(t), p.identOf(p.thisName, p.infoOf(t)),
+                       p.identOf(t.text, p.infoOf(t)))
     else:
       result = p.identOf(t.text, p.infoOf(t))
   of nsLParen:
@@ -243,6 +267,23 @@ proc parseTernary(p: var NsParser): PNode =
 proc parseExpr(p: var NsParser): PNode =
   result = p.parseTernary()
 
+proc parseNew(p: var NsParser, kw: NsToken): PNode =
+  ## `new Type(args)` -> `newType(args)`.
+  let info = p.infoOf(kw)
+  var call = newNodeI(nkCall, info)
+  if p.peek.kind == nsIdent:
+    let typeName = p.advance.text
+    call.add p.identOf("new" & typeName, info)
+  else:
+    call.add p.identOf("new", info)
+  if p.at(nsLParen):
+    discard p.advance
+    while not p.at(nsRParen) and not p.at(nsEof):
+      call.add p.parseExpr()
+      if p.at(nsComma): discard p.advance else: break
+    discard p.expect(nsRParen)
+  result = call
+
 proc parseBlock(p: var NsParser): PNode =
   let info = p.infoOf(p.peek)
   discard p.expect(nsLBrace)
@@ -256,10 +297,10 @@ proc parseBlock(p: var NsParser): PNode =
     if p.at(nsSemi): discard p.advance
   discard p.expect(nsRBrace)
 
-proc parseMethod(p: var NsParser, nameTok: NsToken, retType: PNode): PNode =
-  let info = p.infoOf(nameTok)
-  let params = newNodeI(nkFormalParams, info)
-  params.add retType
+proc parseParams(p: var NsParser, retType: PNode): PNode =
+  let info = p.infoOf(p.peek)
+  result = newNodeI(nkFormalParams, info)
+  result.add retType
   discard p.expect(nsLParen)
   while not p.at(nsRParen) and not p.at(nsEof):
     let ty = p.parseType()
@@ -270,23 +311,20 @@ proc parseMethod(p: var NsParser, nameTok: NsToken, retType: PNode): PNode =
     defs.add p.identOf(pname, info)
     defs.add ty
     defs.add emptyN(info)
-    params.add defs
+    result.add defs
     if p.at(nsComma): discard p.advance else: break
   discard p.expect(nsRParen)
-  var finalParams = params
-  if nameTok.text == "Main":
-    # Phase 0 entry point: parameters are ignored (called as `Main()`).
-    finalParams = newNodeI(nkFormalParams, info)
-    finalParams.add retType
-  let body = p.parseBlock()
-  result = newNodeI(nkProcDef, info, 7)
-  result[0] = p.identOf(nameTok.text, info)   # name
-  result[1] = emptyN(info)                    # pattern
-  result[2] = emptyN(info)                    # generic params
-  result[3] = finalParams                     # formal params
-  result[4] = emptyN(info)                    # pragmas
-  result[5] = emptyN(info)                    # exceptions
-  result[6] = body                            # body
+
+proc parseBodyWith(p: var NsParser, thisName: string, fields: seq[string]): PNode =
+  ## Parses a `{ ... }` body with a `this` mapping, so `this` and bare class
+  ## field names rewrite to `self`/`result`.
+  let saveThis = p.thisName
+  let saveFields = p.classFields
+  p.thisName = thisName
+  p.classFields = fields
+  result = p.parseBlock()
+  p.thisName = saveThis
+  p.classFields = saveFields
 
 proc looksLikeDecl(p: NsParser): bool =
   ## A simple statement is a declaration when it starts with `var`/`let`/`const`
@@ -505,43 +543,259 @@ proc parseUsing(p: var NsParser, stmts: var seq[PNode]) =
   imp.add newAtom(nkStrLit, name, info)
   stmts.add imp
 
-proc parseMember(p: var NsParser, stmts: var seq[PNode]) =
-  var isPublic = false
-  while p.peek.kind == nsIdent and p.peek.text in NsModifierWords:
-    if p.peek.text == "public": isPublic = true
+proc skipParens(p: var NsParser) =
+  var depth = 0
+  while not p.at(nsEof):
+    if p.at(nsLParen):
+      inc depth
+    elif p.at(nsRParen):
+      dec depth
+      if depth == 0:
+        discard p.advance
+        return
     discard p.advance
-  let typeTok = p.peek
-  if typeTok.kind != nsIdent:
-    discard p.advance
-    return
-  let retType = p.parseType()
-  if p.peek.kind != nsIdent:
-    p.skipToSemi()
-    return
-  let nameTok = p.advance
-  if p.at(nsLParen):
-    var procDef = p.parseMethod(nameTok, retType)
-    if isPublic:
-      procDef[0] = newTree(nkPostfix, p.infoOf(nameTok),
-                           p.identOf("*", p.infoOf(nameTok)), procDef[0])
-    stmts.add procDef
-  else:
-    p.skipToSemi()   # a field declaration
 
-proc parseTypeDecl(p: var NsParser, stmts: var seq[PNode]) =
-  ## `class`/`struct`/`interface`: Phase 0 lowers members to top-level procs.
-  discard p.advance
-  if p.peek.kind == nsIdent:
-    discard p.advance   # type name
-  while not p.at(nsLBrace) and not p.at(nsEof):
-    discard p.advance   # base list / generic params, etc.
-  discard p.expect(nsLBrace)
+proc skipBraces(p: var NsParser) =
+  var depth = 0
+  while not p.at(nsEof):
+    if p.at(nsLBrace):
+      inc depth
+    elif p.at(nsRBrace):
+      dec depth
+      if depth == 0:
+        discard p.advance
+        return
+    discard p.advance
+
+proc scanFields(p: var NsParser, clsName: string): seq[string] =
+  ## First pass over a class body: collect field names so that method bodies can
+  ## rewrite bare field references to `self.field`. Does not consume tokens.
+  result = @[]
+  let save = p.pos
+  if p.at(nsLBrace): discard p.advance
   while not p.at(nsRBrace) and not p.at(nsEof):
     if p.at(nsSemi):
       discard p.advance
       continue
-    p.parseMember(stmts)
+    while p.peek.kind == nsIdent and p.peek.text in NsModifierWords:
+      discard p.advance
+    if p.peek.kind == nsIdent and p.peek.text == clsName and
+       p.peekAhead(1).kind == nsLParen:
+      discard p.advance
+      if p.at(nsLParen): p.skipParens()
+      if p.at(nsLBrace): p.skipBraces()
+      continue
+    if p.peek.kind != nsIdent:
+      discard p.advance
+      continue
+    discard p.parseType()
+    if p.peek.kind != nsIdent:
+      while not p.at(nsSemi) and not p.at(nsRBrace) and not p.at(nsEof):
+        discard p.advance
+      if p.at(nsSemi): discard p.advance
+      continue
+    let nameTok = p.advance
+    if p.at(nsLParen):
+      p.skipParens()
+      if p.at(nsLBrace): p.skipBraces()
+    elif p.at(nsLBrace):
+      p.skipBraces()
+    elif p.at(nsArrow):
+      discard p.advance
+      discard p.parseExpr()
+      if p.at(nsSemi): discard p.advance
+    else:
+      result.add nameTok.text
+      while not p.at(nsSemi) and not p.at(nsRBrace) and not p.at(nsEof):
+        discard p.advance
+      if p.at(nsSemi): discard p.advance
+  p.pos = save
+
+proc parseClassMember(p: var NsParser, clsName: string,
+                      fields: seq[string]): NsMember =
+  result.info = p.infoOf(p.peek)
+  while p.peek.kind == nsIdent and p.peek.text in NsModifierWords:
+    if p.peek.text == "public": result.isPublic = true
+    if p.peek.text == "static": result.isStatic = true
+    discard p.advance
+  # constructor: `ClsName(params) { body }`
+  if p.peek.kind == nsIdent and p.peek.text == clsName and
+     p.peekAhead(1).kind == nsLParen:
+    result.kind = mkCtor
+    result.name = clsName
+    result.info = p.infoOf(p.peek)
+    discard p.advance
+    result.params = p.parseParams(emptyN(result.info))
+    result.body = p.parseBodyWith("result", fields)
+    return
+  if p.peek.kind != nsIdent:
+    discard p.advance
+    result.kind = mkField
+    return
+  let ty = p.parseType()
+  if p.peek.kind != nsIdent:
+    p.skipToSemi()
+    result.kind = mkField
+    return
+  let nameTok = p.advance
+  result.name = nameTok.text
+  result.info = p.infoOf(nameTok)
+  result.typ = ty
+  if p.at(nsLParen):
+    result.kind = mkMethod
+    result.params = p.parseParams(ty)
+    result.body = p.parseBodyWith((if result.isStatic: "" else: "self"), fields)
+  elif p.at(nsLBrace) or p.at(nsArrow):
+    # property: implemented in Phase 2b. Skip the accessor block for now.
+    result.kind = mkField
+    if p.at(nsLBrace):
+      p.skipBraces()
+    else:
+      discard p.advance
+      discard p.parseExpr()
+      if p.at(nsSemi): discard p.advance
+  else:
+    result.kind = mkField
+    if p.at(nsAssign):
+      discard p.advance
+      discard p.parseExpr()
+    if p.at(nsSemi): discard p.advance
+
+proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
+               members: seq[NsMember], stmts: var seq[PNode]) =
+  let info = if members.len > 0: members[0].info else: newLineInfo(p.fileIdx, 1, 1)
+  # 1. the type: `type C = ref object` (class) or `object` (struct)
+  let recList = newNodeI(nkRecList, info)
+  for m in members:
+    if m.kind == mkField:
+      let defs = newNodeI(nkIdentDefs, m.info)
+      defs.add p.identOf(m.name, m.info)
+      defs.add m.typ
+      defs.add emptyN(m.info)
+      recList.add defs
+  let objTy = newNodeI(nkObjectTy, info)
+  objTy.add emptyN(info)
+  objTy.add emptyN(info)
+  objTy.add recList
+  var typeValue = objTy
+  if isClass:
+    typeValue = newTree(nkRefTy, info, objTy)
+  let typeDef = newNodeI(nkTypeDef, info)
+  typeDef.add (if isPublic:
+                 newTree(nkPostfix, info, p.identOf("*", info), p.identOf(clsName, info))
+               else:
+                 p.identOf(clsName, info))
+  typeDef.add emptyN(info)
+  typeDef.add typeValue
+  let sec = newNodeI(nkTypeSection, info)
+  sec.add typeDef
+  stmts.add sec
+  # 2. methods
+  for m in members:
+    if m.kind != mkMethod: continue
+    var params = m.params
+    if m.name == "Main" and m.isStatic:
+      # entry point: parameters ignored (called as `Main()`)
+      let np = newNodeI(nkFormalParams, m.info)
+      np.add params[0]
+      params = np
+    elif not m.isStatic:
+      # prepend `self: ClsName`
+      let np = newNodeI(nkFormalParams, m.info)
+      np.add params[0]
+      let selfDefs = newNodeI(nkIdentDefs, m.info)
+      selfDefs.add p.identOf("self", m.info)
+      selfDefs.add p.identOf(clsName, m.info)
+      selfDefs.add emptyN(m.info)
+      np.add selfDefs
+      for i in 1 ..< params.len: np.add params[i]
+      params = np
+    let nameNode =
+      if m.isPublic:
+        newTree(nkPostfix, m.info, p.identOf("*", m.info), p.identOf(m.name, m.info))
+      else:
+        p.identOf(m.name, m.info)
+    let procDef = newNodeI(nkProcDef, m.info)
+    procDef.add nameNode
+    procDef.add emptyN(m.info)
+    procDef.add emptyN(m.info)
+    procDef.add params
+    procDef.add emptyN(m.info)
+    procDef.add emptyN(m.info)
+    procDef.add m.body
+    stmts.add procDef
+  # 3. constructors
+  var hasCtor = false
+  for m in members:
+    if m.kind != mkCtor: continue
+    hasCtor = true
+    var params = m.params
+    params[0] = p.identOf(clsName, m.info)
+    let body = newNodeI(nkStmtList, m.info)
+    let newCall = newNodeI(nkCall, m.info)
+    newCall.add p.identOf("new", m.info)
+    newCall.add p.identOf("result", m.info)
+    body.add newCall
+    for s in m.body: body.add s
+    let routineName = "new" & clsName
+    let nameNode =
+      if m.isPublic:
+        newTree(nkPostfix, m.info, p.identOf("*", m.info), p.identOf(routineName, m.info))
+      else:
+        p.identOf(routineName, m.info)
+    let procDef = newNodeI(nkProcDef, m.info)
+    procDef.add nameNode
+    procDef.add emptyN(m.info)
+    procDef.add emptyN(m.info)
+    procDef.add params
+    procDef.add emptyN(m.info)
+    procDef.add emptyN(m.info)
+    procDef.add body
+    stmts.add procDef
+  # 4. default constructor when none was declared
+  if not hasCtor:
+    let routineName = "new" & clsName
+    let params = newNodeI(nkFormalParams, info)
+    params.add p.identOf(clsName, info)
+    let body = newNodeI(nkStmtList, info)
+    let newCall = newNodeI(nkCall, info)
+    newCall.add p.identOf("new", info)
+    newCall.add p.identOf("result", info)
+    body.add newCall
+    let procDef = newNodeI(nkProcDef, info)
+    procDef.add p.identOf(routineName, info)
+    procDef.add emptyN(info)
+    procDef.add emptyN(info)
+    procDef.add params
+    procDef.add emptyN(info)
+    procDef.add emptyN(info)
+    procDef.add body
+    stmts.add procDef
+
+proc parseTypeDecl(p: var NsParser, stmts: var seq[PNode]) =
+  var isPublic = false
+  while p.peek.kind == nsIdent and p.peek.text in NsTypeModifiers:
+    if p.peek.text == "public": isPublic = true
+    discard p.advance
+  let kw = p.peek.text
+  discard p.advance
+  if p.peek.kind != nsIdent:
+    return
+  let clsName = p.advance.text
+  while not p.at(nsLBrace) and not p.at(nsEof):
+    discard p.advance   # base list / generic params
+  let fields = p.scanFields(clsName)
+  discard p.expect(nsLBrace)
+  var members: seq[NsMember] = @[]
+  while not p.at(nsRBrace) and not p.at(nsEof):
+    if p.at(nsSemi):
+      discard p.advance
+      continue
+    members.add p.parseClassMember(clsName, fields)
   discard p.expect(nsRBrace)
+  if kw == "interface":
+    return
+  p.emitClass(clsName, kw == "class", isPublic, members, stmts)
 
 proc parseNamespace(p: var NsParser, stmts: var seq[PNode]) =
   discard p.advance
@@ -556,13 +810,17 @@ proc parseNamespace(p: var NsParser, stmts: var seq[PNode]) =
   discard p.expect(nsRBrace)
 
 proc parseTopLevelDecl(p: var NsParser, stmts: var seq[PNode]) =
-  let t = p.peek
-  if t.kind == nsIdent and t.text in ["using", "import"]:
-    p.parseUsing(stmts)
-  elif t.kind == nsIdent and t.text == "namespace":
-    p.parseNamespace(stmts)
-  elif t.kind == nsIdent and t.text in ["class", "struct", "interface"]:
+  # a type declaration, possibly after modifiers (`public class C`)
+  var k = 0
+  while p.peekAhead(k).kind == nsIdent and p.peekAhead(k).text in NsTypeModifiers:
+    inc k
+  let head = p.peekAhead(k)
+  if head.kind == nsIdent and head.text in ["class", "struct", "interface"]:
     p.parseTypeDecl(stmts)
+  elif p.peek.kind == nsIdent and p.peek.text in ["using", "import"]:
+    p.parseUsing(stmts)
+  elif p.peek.kind == nsIdent and p.peek.text == "namespace":
+    p.parseNamespace(stmts)
   else:
     let s = p.parseStatement()
     if s != nil: stmts.add s
@@ -596,6 +854,9 @@ proc parseNsModule*(source: string; fileIdx: FileIndex; cache: IdentCache;
   result.add prelude
   for s in stmts: result.add s
   for s in stmts:
-    if s.kind == nkProcDef and s[0].kind == nkIdent and s[0].ident.s == "Main":
+    if s.kind != nkProcDef: continue
+    var nm = s[0]
+    if nm.kind == nkPostfix and nm.len == 2: nm = nm[1]
+    if nm.kind == nkIdent and nm.ident.s == "Main":
       result.add p.makeMainCall(s)
       break

@@ -1,0 +1,35 @@
+using System;
+
+namespace Demo
+{
+    class Counter
+    {
+        int count;
+
+        public void Inc()
+        {
+            this.count = this.count + 1;
+        }
+
+        public int Value()
+        {
+            return count;
+        }
+
+        public Counter(int start)
+        {
+            count = start;
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Counter c = new Counter(10);
+            c.Inc();
+            c.Inc();
+            Console.WriteLine(c.Value());
+        }
+    }
+}
