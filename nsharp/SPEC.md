@@ -447,15 +447,19 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Integer `/` | `7/2 == 3` (int div) | `7/2 == 3.5` (float!) | integer `/` → `div`; `/` only for floats | desugar |
 | `%` | sign of dividend | `mod`: sign of dividend (matches) | map `%` → `mod` | front |
 | Overflow default | unchecked (wraps) | checked (raises) | **unchecked by default** (module-level `{.push overflowChecks: off.}`) | desugar |
-| `checked`/`unchecked` | ovf on/off | `{.push overflowChecks.}` | same mechanism, `push`/`pop` | desugar |
+| `checked`/`unchecked` | ovf on/off | `{.push overflowChecks.}` | same mechanism, `push`/`pop` (deferred in 3a) | desugar |
 | `==` / `Equals` | class = reference, struct = value | whatever is overloaded | class → reference `==`; struct/record → value `==`; `Equals`→`==` | desugar/sem |
 | `ToString()` | virtual method | `$` proc | map `ToString` → `$` | desugar |
 | Numeric conversions | implicit widening, explicit narrowing | stricter | implicit widening; explicit narrowing | desugar/sem |
 | `using` keyword | directive **and** statement | - | disambiguate by context | front |
-| `switch` fallthrough | forbidden (empty cases group) | no fallthrough | maps to Nim `case`; empty-case groups allowed | front |
+| `switch` fallthrough | forbidden (empty cases group) | no fallthrough | maps to Nim `case`; empty-case groups allowed; a trailing `break;` is dropped; a non-exhaustive switch gets `else: discard` | front |
 | `Main` / `args` | `Main(string[])`, exit code | module top-level | support both (D5); `int` return → exit code | front |
 | Interpolation format | `$"{x:F2}"` | `strformat`/`formatFloat` | map format specs to Nim format | desugar |
 | `null` deref | `NullReferenceException` | `NilAccessDefect` | prelude aliases it to `NullReferenceException` | lib |
+| Arrays | `T[]`, `new T[n]` | `seq[T]` | `T[]` → `seq[T]`; `new T[n]` → `newSeq[T](n)`; `new T[]{..}` → `@[..]`; `.Length`/`.Count` → `len` | front |
+| Enum field scope | scoped to the enum type | unqualified globals | `E.A` resolves via Nim qualified access; two enums must not share a field name | front |
+| Exceptions | all derive from `Exception` | `CatchableError`; raised as `ref T` | C# `Exception` → `CatchableError`; `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` (Nim only raises refs) | front |
+| `e.Message` | property on every exception | `CatchableError.msg` field | map `.Message` → `.msg` | front |
 
 > The overflow / `checked` / `unchecked` rows all ride on **one** mechanism:
 > Nim's `{.push overflowChecks: on|off.}` / `{.pop.}`, handled by `genPragma` at

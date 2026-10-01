@@ -1,0 +1,40 @@
+using System;
+
+namespace Demo
+{
+    class AppException : Exception
+    {
+        public AppException(string m) : base(m)
+        {
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            try
+            {
+                throw new AppException("custom");
+            }
+            catch (AppException e)
+            {
+                Console.WriteLine("app");
+                Console.WriteLine(e.Message);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("generic");
+            }
+
+            try
+            {
+                throw new ArgumentException("bad");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+    }
+}

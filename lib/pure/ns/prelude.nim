@@ -7,6 +7,11 @@
 
 import std/[syncio]
 
+type
+  ArgumentException* = object of CatchableError
+  InvalidOperationException* = object of CatchableError
+  NullReferenceException* = object of CatchableError
+
 proc WriteLine*[T](x: T) = echo x
 proc Write*[T](x: T) = stdout.write x
 proc ReadLine*(): string = stdin.readLine

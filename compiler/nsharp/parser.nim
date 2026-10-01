@@ -110,6 +110,34 @@ proc skipToSemi(p: var NsParser) =
     discard p.advance
   if p.at(nsSemi): discard p.advance
 
+proc builtinTypeName(s: string): string =
+  case s
+  of "int": "int32"
+  of "uint": "uint32"
+  of "long": "int64"
+  of "ulong": "uint64"
+  of "short": "int16"
+  of "ushort": "uint16"
+  of "byte": "uint8"
+  of "sbyte": "int8"
+  of "float": "float32"
+  of "double": "float64"
+  of "bool": "bool"
+  of "char": "char"
+  of "string": "string"
+  of "object": "RootRef"
+  of "Exception": "CatchableError"
+  else: s
+
+proc isExceptionBase(s: string): bool =
+  case s
+  of "Exception", "CatchableError", "SystemException", "ArgumentException",
+     "InvalidOperationException", "NullReferenceException", "OverflowException",
+     "IndexOutOfRangeException", "KeyNotFoundException", "NotSupportedException":
+    true
+  else:
+    false
+
 proc parseType(p: var NsParser): PNode =
   ## Parses a type reference. `void` yields `nkEmpty` (caller treats as no
   ## return type). `T[]` maps to `seq[T]`.
@@ -119,23 +147,7 @@ proc parseType(p: var NsParser): PNode =
   discard p.advance
   if t.text == "void":
     return emptyN(p.infoOf(t))
-  var base =
-    case t.text
-    of "int": p.identOf("int32", p.infoOf(t))
-    of "uint": p.identOf("uint32", p.infoOf(t))
-    of "long": p.identOf("int64", p.infoOf(t))
-    of "ulong": p.identOf("uint64", p.infoOf(t))
-    of "short": p.identOf("int16", p.infoOf(t))
-    of "ushort": p.identOf("uint16", p.infoOf(t))
-    of "byte": p.identOf("uint8", p.infoOf(t))
-    of "sbyte": p.identOf("int8", p.infoOf(t))
-    of "float": p.identOf("float32", p.infoOf(t))
-    of "double": p.identOf("float64", p.infoOf(t))
-    of "bool": p.identOf("bool", p.infoOf(t))
-    of "char": p.identOf("char", p.infoOf(t))
-    of "string": p.identOf("string", p.infoOf(t))
-    of "object": p.identOf("RootRef", p.infoOf(t))
-    else: p.identOf(t.text, p.infoOf(t))
+  var base = p.identOf(builtinTypeName(t.text), p.infoOf(t))
   while p.at(nsLBracket) and p.peekAhead(1).kind == nsRBracket:
     discard p.advance
     discard p.advance
@@ -236,8 +248,12 @@ proc parsePostfix(p: var NsParser): PNode =
          result.ident.s == p.thisName and
          not p.accessibleFrom(p.curClass, nameTok.text):
         p.err(nameTok, "'" & nameTok.text & "' is inaccessible due to its protection level")
+      let propName =
+        if nameTok.text in ["Length", "Count"]: "len"
+        elif nameTok.text == "Message": "msg"
+        else: nameTok.text
       result = newTree(nkDotExpr, p.infoOf(nameTok), result,
-                       p.identOf(nameTok.text, p.infoOf(nameTok)))
+                       p.identOf(propName, p.infoOf(nameTok)))
     elif p.at(nsLParen):
       discard p.advance
       var callee = result
@@ -309,14 +325,38 @@ proc parseExpr(p: var NsParser): PNode =
   result = p.parseTernary()
 
 proc parseNew(p: var NsParser, kw: NsToken): PNode =
-  ## `new Type(args)` -> `newType(args)`.
+  ## `new T(args)` -> `newT(args)`; `new T[n]` -> `newSeq[T](n)`;
+  ## `new T[] { a, b }` -> `@[a, b]`.
   let info = p.infoOf(kw)
-  var call = newNodeI(nkCall, info)
-  if p.peek.kind == nsIdent:
-    let typeName = p.advance.text
-    call.add p.identOf("new" & typeName, info)
-  else:
+  if p.peek.kind != nsIdent:
+    var call = newNodeI(nkCall, info)
     call.add p.identOf("new", info)
+    return call
+  let typeTok = p.advance
+  let typeName = builtinTypeName(typeTok.text)
+  if p.at(nsLBracket):
+    discard p.advance
+    if p.at(nsRBracket):
+      discard p.advance
+      var br = newNodeI(nkBracket, info)
+      if p.at(nsLBrace):
+        discard p.advance
+        while not p.at(nsRBrace) and not p.at(nsEof):
+          br.add p.parseExpr()
+          if p.at(nsComma): discard p.advance else: break
+        discard p.expect(nsRBrace)
+      return newTree(nkPrefix, info, p.identOf("@", info), br)
+    else:
+      let n = p.parseExpr()
+      discard p.expect(nsRBracket)
+      let typ = newTree(nkBracketExpr, info, p.identOf("newSeq", info),
+                        p.identOf(typeName, info))
+      var call = newNodeI(nkCall, info)
+      call.add typ
+      call.add n
+      return call
+  var call = newNodeI(nkCall, info)
+  call.add p.identOf("new" & typeName, info)
   if p.at(nsLParen):
     discard p.advance
     while not p.at(nsRParen) and not p.at(nsEof):
@@ -443,6 +483,8 @@ proc parseIf(p: var NsParser): PNode
 proc parseWhile(p: var NsParser): PNode
 proc parseFor(p: var NsParser): PNode
 proc parseForeach(p: var NsParser): PNode
+proc parseSwitch(p: var NsParser): PNode
+proc parseTry(p: var NsParser): PNode
 
 proc parseStatement(p: var NsParser): PNode =
   let t = p.peek
@@ -456,6 +498,26 @@ proc parseStatement(p: var NsParser): PNode =
     of "while": return p.parseWhile()
     of "for": return p.parseFor()
     of "foreach": return p.parseForeach()
+    of "switch": return p.parseSwitch()
+    of "try": return p.parseTry()
+    of "throw":
+      let info = p.infoOf(t)
+      discard p.advance
+      var e = p.parseExpr()
+      if e != nil and e.kind == nkCall and e.len >= 1 and
+         e[0].kind == nkIdent and e[0].ident.s.len > 3 and
+         e[0].ident.s.startsWith("new"):
+        let typName = e[0].ident.s[3 .. ^1]
+        if not p.classes.hasKey(typName):
+          # external/system exception: `newException(T, msg)`
+          let msg = if e.len >= 2: e[1] else: newAtom(nkStrLit, "", info)
+          let ne = newNodeI(nkCall, info)
+          ne.add p.identOf("newException", info)
+          ne.add p.identOf(typName, info)
+          ne.add msg
+          e = ne
+        # else: user-declared exception class, raise its allocator result
+      return newTree(nkRaiseStmt, info, e)
     of "return":
       let info = p.infoOf(t)
       discard p.advance
@@ -563,6 +625,104 @@ proc parseForeach(p: var NsParser): PNode =
   result.add p.identOf(nameTok.text, info)
   result.add iter
   result.add body
+
+proc parseCaseBody(p: var NsParser): PNode =
+  let info = p.infoOf(p.peek)
+  result = newNodeI(nkStmtList, info)
+  while not p.at(nsRBrace) and not p.at(nsEof):
+    if p.at(nsSemi):
+      discard p.advance
+      continue
+    if p.peek.kind == nsIdent and p.peek.text in ["case", "default"]:
+      break
+    result.add p.parseStatement()
+    if p.at(nsSemi): discard p.advance
+  # drop a trailing C# `break;` (Nim `case` has no fallthrough)
+  if result.len > 0 and result[result.len - 1].kind == nkBreakStmt:
+    var trimmed = newNodeI(nkStmtList, info)
+    for i in 0 ..< result.len - 1:
+      trimmed.add result[i]
+    result = trimmed
+
+proc parseSwitch(p: var NsParser): PNode =
+  let info = p.infoOf(p.peek)
+  discard p.advance   # switch
+  discard p.expect(nsLParen)
+  let sel = p.parseExpr()
+  discard p.expect(nsRParen)
+  discard p.expect(nsLBrace)
+  result = newNodeI(nkCaseStmt, info)
+  result.add sel
+  var hasElse = false
+  while not p.at(nsRBrace) and not p.at(nsEof):
+    if p.at(nsSemi):
+      discard p.advance
+      continue
+    if p.peek.kind == nsIdent and p.peek.text == "case":
+      let branch = newNodeI(nkOfBranch, p.infoOf(p.peek))
+      while p.peek.kind == nsIdent and p.peek.text == "case":
+        discard p.advance
+        while true:
+          branch.add p.parseExpr()
+          if p.at(nsComma): discard p.advance else: break
+        discard p.expect(nsColon)
+      branch.add p.parseCaseBody()
+      result.add branch
+    elif p.peek.kind == nsIdent and p.peek.text == "default":
+      discard p.advance
+      discard p.expect(nsColon)
+      let e = newNodeI(nkElse, info)
+      e.add p.parseCaseBody()
+      result.add e
+      hasElse = true
+      break
+    else:
+      discard p.advance
+  discard p.expect(nsRBrace)
+  if not hasElse:
+    # C# `switch` need not be exhaustive; Nim `case` needs an `else`
+    let e = newNodeI(nkElse, info)
+    let sl = newNodeI(nkStmtList, info)
+    sl.add newTree(nkDiscardStmt, info, emptyN(info))
+    e.add sl
+    result.add e
+
+proc parseTry(p: var NsParser): PNode =
+  let info = p.infoOf(p.peek)
+  discard p.advance   # try
+  result = newNodeI(nkTryStmt, info)
+  result.add p.parseBlock()
+  while true:
+    if p.peek.kind == nsIdent and p.peek.text == "catch":
+      let cinfo = p.infoOf(p.peek)
+      discard p.advance
+      var branch: PNode
+      if p.at(nsLParen):
+        discard p.advance
+        let typ = p.parseType()
+        var name = "e"
+        if p.peek.kind == nsIdent:
+          name = p.advance.text
+        discard p.expect(nsRParen)
+        let asNode = newNodeI(nkInfix, cinfo)
+        asNode.add p.identOf("as", cinfo)
+        asNode.add typ
+        asNode.add p.identOf(name, cinfo)
+        branch = newNodeI(nkExceptBranch, cinfo)
+        branch.add asNode
+      else:
+        branch = newNodeI(nkExceptBranch, cinfo)
+      branch.add p.parseBlock()
+      result.add branch
+    elif p.peek.kind == nsIdent and p.peek.text == "finally":
+      let finfo = p.infoOf(p.peek)
+      discard p.advance
+      let f = newNodeI(nkFinally, finfo)
+      f.add p.parseBlock()
+      result.add f
+      break
+    else:
+      break
 
 proc parseTopLevelDecl(p: var NsParser, stmts: var seq[PNode])
 
@@ -960,8 +1120,10 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
   else:
     objTy.add emptyN(info)
   objTy.add recList
+  let baseName0 = if baseType != nil and baseType.kind == nkIdent: baseType.ident.s else: ""
+  let isException = isClass and isExceptionBase(baseName0)
   var typeValue = objTy
-  if isClass:
+  if isClass and not isException:
     typeValue = newTree(nkRefTy, info, objTy)
   let typeDef = newNodeI(nkTypeDef, info)
   typeDef.add (if isPublic:
@@ -991,7 +1153,8 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
         np.add params[0]
         let selfDefs = newNodeI(nkIdentDefs, m.info)
         selfDefs.add p.identOf("self", m.info)
-        selfDefs.add p.identOf(clsName, m.info)
+        selfDefs.add (if isException: newTree(nkRefTy, m.info, p.identOf(clsName, m.info))
+                      else: p.identOf(clsName, m.info))
         selfDefs.add emptyN(m.info)
         np.add selfDefs
         for i in 1 ..< params.len: np.add params[i]
@@ -1018,7 +1181,8 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
       ip.add emptyN(m.info)
       let iself = newNodeI(nkIdentDefs, m.info)
       iself.add p.identOf("self", m.info)
-      iself.add p.identOf(clsName, m.info)
+      iself.add (if isException: newTree(nkRefTy, m.info, p.identOf(clsName, m.info))
+                 else: p.identOf(clsName, m.info))
       iself.add emptyN(m.info)
       ip.add iself
       for i in 1 ..< m.params.len: ip.add copyTree(m.params[i])
@@ -1027,7 +1191,15 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
       if m.initKind == "base": initName = "init" & baseName
       elif m.initKind == "this": initName = "init" & clsName
       elif baseName.len > 0: initName = "init" & baseName
-      if initName.len > 0:
+      let externalExcBase = isException and baseName.len > 0 and
+                            not p.classes.hasKey(baseName) and isExceptionBase(baseName)
+      if externalExcBase:
+        # `: base(msg)` on an external exception base sets the message
+        if m.initArgs.len > 0:
+          ibody.add newTree(nkAsgn, m.info,
+            newTree(nkDotExpr, m.info, p.identOf("self", m.info), p.identOf("msg", m.info)),
+            m.initArgs[0])
+      elif initName.len > 0:
         let icall = newNodeI(nkCall, m.info)
         icall.add p.identOf(initName, m.info)
         icall.add p.identOf("self", m.info)
@@ -1042,7 +1214,8 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
       stmts.add mkProcDef(inode, ip, ibody, m.info)
       # allocator: `proc newC(params): C = new(result); initC(result, params)`
       let ap = newNodeI(nkFormalParams, m.info)
-      ap.add p.identOf(clsName, m.info)
+      ap.add (if isException: newTree(nkRefTy, m.info, p.identOf(clsName, m.info))
+              else: p.identOf(clsName, m.info))
       for i in 1 ..< m.params.len: ap.add copyTree(m.params[i])
       let abody = newNodeI(nkStmtList, m.info)
       let newCall = newNodeI(nkCall, m.info)
@@ -1079,11 +1252,13 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
     ip.add emptyN(info)
     let iself = newNodeI(nkIdentDefs, info)
     iself.add p.identOf("self", info)
-    iself.add p.identOf(clsName, info)
+    iself.add (if isException: newTree(nkRefTy, info, p.identOf(clsName, info))
+               else: p.identOf(clsName, info))
     iself.add emptyN(info)
     ip.add iself
     let ibody = newNodeI(nkStmtList, info)
-    if baseName.len > 0 and baseParamless:
+    if baseName.len > 0 and baseParamless and
+       (p.classes.hasKey(baseName) or not isExceptionBase(baseName)):
       let icall = newNodeI(nkCall, info)
       icall.add p.identOf("init" & baseName, info)
       icall.add p.identOf("self", info)
@@ -1093,7 +1268,8 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
       ip, ibody, info)
     # allocator: `proc newC(): C = new(result); initC(result)`
     let ap = newNodeI(nkFormalParams, info)
-    ap.add p.identOf(clsName, info)
+    ap.add (if isException: newTree(nkRefTy, info, p.identOf(clsName, info))
+            else: p.identOf(clsName, info))
     let abody = newNodeI(nkStmtList, info)
     let newCall = newNodeI(nkCall, info)
     newCall.add p.identOf("new", info)
@@ -1106,6 +1282,48 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
     stmts.add mkProcDef(
       newTree(nkPostfix, info, p.identOf("*", info), p.identOf("new" & clsName, info)),
       ap, abody, info)
+
+proc parseEnumDecl(p: var NsParser, stmts: var seq[PNode]) =
+  let info = p.infoOf(p.peek)
+  var isPublic = false
+  while p.peek.kind == nsIdent and p.peek.text in NsTypeModifiers:
+    if p.peek.text == "public": isPublic = true
+    discard p.advance
+  discard p.advance   # enum
+  if p.peek.kind != nsIdent: return
+  let nameTok = p.advance
+  let enumTy = newNodeI(nkEnumTy, info)
+  enumTy.add emptyN(info)
+  if p.at(nsLBrace):
+    discard p.advance
+    while not p.at(nsRBrace) and not p.at(nsEof):
+      if p.at(nsComma):
+        discard p.advance
+        continue
+      if p.peek.kind != nsIdent:
+        discard p.advance
+        continue
+      let fieldTok = p.advance
+      var field = p.identOf(fieldTok.text, p.infoOf(fieldTok))
+      if p.at(nsAssign):
+        discard p.advance
+        let val = p.parseExpr()
+        let fd = newNodeI(nkEnumFieldDef, p.infoOf(fieldTok))
+        fd.add field
+        fd.add val
+        field = fd
+      enumTy.add field
+    discard p.expect(nsRBrace)
+  let td = newNodeI(nkTypeDef, info)
+  td.add (if isPublic:
+            newTree(nkPostfix, info, p.identOf("*", info), p.identOf(nameTok.text, info))
+          else:
+            p.identOf(nameTok.text, info))
+  td.add emptyN(info)
+  td.add enumTy
+  let sec = newNodeI(nkTypeSection, info)
+  sec.add td
+  stmts.add sec
 
 proc parseTypeDecl(p: var NsParser, stmts: var seq[PNode]) =
   var isPublic = false
@@ -1178,6 +1396,8 @@ proc parseTopLevelDecl(p: var NsParser, stmts: var seq[PNode]) =
   let head = p.peekAhead(k)
   if head.kind == nsIdent and head.text in ["class", "struct", "interface"]:
     p.parseTypeDecl(stmts)
+  elif head.kind == nsIdent and head.text == "enum":
+    p.parseEnumDecl(stmts)
   elif p.peek.kind == nsIdent and p.peek.text in ["using", "import"]:
     p.parseUsing(stmts)
   elif p.peek.kind == nsIdent and p.peek.text == "namespace":

@@ -208,9 +208,28 @@ parameterless constructor must name a base constructor, else it is an error
 (matching C# CS7036); this is validated using the constructor arities recorded in
 the class table.
 
-Test suite (12 total): `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter`,
+Test suite (14 total): `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter`,
 `p2b/auto`, `p2b/shapes`, `p2c/protected`, `p2c/private` (expected failure),
-`p2d/nobase` (expected failure).
+`p2d/nobase` (expected failure), `p3a/data`, `p3a/exceptions`.
+
+Delivered in 3a: data and control. `enum` (ordinal Nim enums; qualified access
+`E.A` works directly), `switch`/`case`/`default` (desugared to Nim `case`; a
+trailing C# `break;` is dropped, and a non-exhaustive switch gets an
+`else: discard` whose body must carry an `nkEmpty` child), arrays (`T[]` ->
+`seq[T]`, `new T[n]` -> `newSeq[T](n)`, `new T[] { .. }` -> `@[..]`,
+`.Length`/`.Count` -> `len`), and exceptions (`throw` -> `raise`,
+`try`/`catch`/`finally` -> Nim `try`/`except`/`finally`, `e.Message` -> `msg`).
+C# `Exception` maps to Nim `CatchableError`. A class deriving from an exception
+base is emitted as a value `object` (so `except` can match it) but its `self`
+parameters are `ref T` and its allocator returns `ref T`, because Nim can only
+`raise` a ref. `throw new T(args)` calls the user allocator (`raise newT(args)`)
+for a declared class, and `raise newException(T, msg)` for a system/prelude
+exception. `checked`/`unchecked` remains deferred (the `{.push.}` statement
+pragma node shape needs more work than it is worth right now).
+
+Every 3a feature was cross-checked against the .NET 10 SDK: the equivalent C# was
+compiled and run with `dotnet run`, and N# output is byte-identical to the .NET
+compiler's output for both `p3a/data` and `p3a/exceptions`.
 
 Still deferred to Phase 3: static properties, generics, interfaces,
 `virtual`/`override` (dynamic dispatch), `switch`, `unsafe`, C++ `extern`,
@@ -222,6 +241,11 @@ yet supported.
 ---
 
 *Change log*
+- **v9** - Phase 3a output cross-checked against the .NET 10 SDK (`dotnet run`);
+  added the `p3a/exceptions` test plus the value-object/`ref`-raise exception
+  class model.
+- **v8** - recorded Phase 3a: enums, switch/case, arrays (seq mapping), and
+  exceptions; C# `Exception` -> Nim `CatchableError`.
 - **v7** - recorded Phase 2d: constructor initializers (`: base(...)` /
   `: this(...)`), the allocator/initializer split so base constructors run
   first, and the CS7036-style validation (verified against the .NET compiler).

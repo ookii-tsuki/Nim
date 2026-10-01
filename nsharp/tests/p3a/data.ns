@@ -1,0 +1,96 @@
+using System;
+
+namespace Demo
+{
+    enum Color { Red, Green, Blue }
+
+    class Program
+    {
+        static string Name(Color c)
+        {
+            switch (c)
+            {
+                case Color.Red:
+                    return "red";
+                case Color.Green:
+                    return "green";
+                case Color.Blue:
+                    return "blue";
+                default:
+                    return "?";
+            }
+        }
+
+        static string Digit(int d)
+        {
+            switch (d)
+            {
+                case 0:
+                    return "zero";
+                case 1:
+                case 2:
+                case 3:
+                    return "small";
+                case 4:
+                case 5:
+                    return "mid";
+                default:
+                    return "big";
+            }
+        }
+
+        static int Bonus(int k)
+        {
+            switch (k)
+            {
+                case 1:
+                    return 100;
+                case 2:
+                    return 200;
+            }
+            return 0;
+        }
+
+        static void Main()
+        {
+            int[] xs = new int[3];
+            xs[0] = 10;
+            xs[1] = 20;
+            xs[2] = 30;
+
+            int sum = 0;
+            foreach (int x in xs)
+            {
+                sum = sum + x;
+            }
+            Console.WriteLine(sum);
+            Console.WriteLine(xs.Length);
+
+            Console.WriteLine(Name(Color.Green));
+            Console.WriteLine(Digit(0));
+            Console.WriteLine(Digit(2));
+            Console.WriteLine(Digit(5));
+            Console.WriteLine(Digit(9));
+
+            int[] ys = new int[] { 1, 2, 3 };
+            Console.WriteLine(ys.Length);
+
+            Console.WriteLine(Bonus(2));
+            Console.WriteLine(Bonus(7));
+
+            try
+            {
+                throw new Exception("boom");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("caught");
+                Console.WriteLine(e.Message);
+            }
+            finally
+            {
+                Console.WriteLine("done");
+            }
+        }
+    }
+}
