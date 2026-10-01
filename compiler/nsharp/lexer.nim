@@ -1,10 +1,10 @@
 #
-#           N# frontend — lexer
+#           N# frontend - lexer
 #
 # A brace + semicolon, whitespace-insensitive lexer (SPEC §3). Phase 0 keeps
 # this dependency-light (std only) so it can be unit-tested in isolation.
 #
-# The whole source is tokenised up front (`tokenize`) — simple and adequate for
+# The whole source is tokenised up front (`tokenize`) - simple and adequate for
 # the Phase-0 scaffold; a streaming lexer can replace it later behind the same
 # token type.
 
@@ -18,6 +18,9 @@ type
     nsPlus, nsMinus, nsStar, nsSlash, nsPercent
     nsLt, nsGt, nsLe, nsGe
     nsAmp, nsAmpAmp, nsPipe, nsPipePipe, nsCaret, nsTilde, nsBang, nsAt
+    nsPlusPlus, nsMinusMinus
+    nsPlusEq, nsMinusEq, nsStarEq, nsSlashEq, nsPercentEq, nsAmpEq, nsPipeEq, nsCaretEq
+    nsShl, nsShr, nsShlEq, nsShrEq
 
   NsToken* = object
     kind*: NsTokenKind
@@ -66,6 +69,20 @@ proc `$`*(k: NsTokenKind): string =
   of nsTilde: "'~'"
   of nsBang: "'!'"
   of nsAt: "'@'"
+  of nsPlusPlus: "'++'"
+  of nsMinusMinus: "'--'"
+  of nsPlusEq: "'+='"
+  of nsMinusEq: "'-='"
+  of nsStarEq: "'*='"
+  of nsSlashEq: "'/='"
+  of nsPercentEq: "'%='"
+  of nsAmpEq: "'&='"
+  of nsPipeEq: "'|='"
+  of nsCaretEq: "'^='"
+  of nsShl: "'<<'"
+  of nsShr: "'>>'"
+  of nsShlEq: "'<<='"
+  of nsShrEq: "'>>='"
 
 proc tokenize*(source: string): seq[NsToken] =
   ## Tokenises `.ns` source. Always ends with an `nsEof` token.
@@ -174,6 +191,18 @@ proc tokenize*(source: string): seq[NsToken] =
                          text: s, line: startLine, col: startCol)
       continue
 
+    # three-character operators
+    if i + 2 < n:
+      let three = source[i] & source[i + 1] & source[i + 2]
+      let kind3 = case three
+        of "<<=": nsShlEq
+        of ">>=": nsShrEq
+        else: nsEof
+      if kind3 != nsEof:
+        result.add NsToken(kind: kind3, text: three, line: startLine, col: startCol)
+        i += 3; col += 3
+        continue
+
     # two-character operators
     if i + 1 < n:
       let two = source[i] & source[i + 1]
@@ -186,6 +215,18 @@ proc tokenize*(source: string): seq[NsToken] =
         of "||": nsPipePipe
         of "=>": nsArrow
         of "::": nsColonColon
+        of "++": nsPlusPlus
+        of "--": nsMinusMinus
+        of "+=": nsPlusEq
+        of "-=": nsMinusEq
+        of "*=": nsStarEq
+        of "/=": nsSlashEq
+        of "%=": nsPercentEq
+        of "&=": nsAmpEq
+        of "|=": nsPipeEq
+        of "^=": nsCaretEq
+        of "<<": nsShl
+        of ">>": nsShr
         else: nsEof
       if kind2 != nsEof:
         result.add NsToken(kind: kind2, text: two, line: startLine, col: startCol)

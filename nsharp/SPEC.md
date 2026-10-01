@@ -1,4 +1,4 @@
-# N# — Language Specification (v1 draft)
+# N# - Language Specification (v1 draft)
 
 > **Status:** DRAFT for discussion. Nothing here is frozen. Every row carries a
 > *proposed* disposition that you are expected to accept, downgrade, or reject.
@@ -10,7 +10,7 @@ Nim compiler** to native code (C/C++), fully interoperable with Nim and C++.
 - **File extension:** `.ns`
 - **Compiler:** a second frontend inside the Nim compiler (new lexer + parser
   producing Nim's `PNode` AST, dispatched by file extension)
-- **Runtime model:** no VM, no .NET, no BCL — Nim's memory model (ORC/ARC) and
+- **Runtime model:** no VM, no .NET, no BCL - Nim's memory model (ORC/ARC) and
   Nim's standard library
 - **Tagline:** *C# you already know, compiled by a Nim backend you can trust.*
 
@@ -34,7 +34,7 @@ Each feature is a row with:
 | ✅ **v1** | In scope for the first usable release |
 | 🔜 **later** | Wanted, but deliberately after v1 |
 | 🚫 **out** | Not part of N# (please argue if you disagree) |
-| ❓ **decide** | Genuinely unresolved — needs a call (default proposed) |
+| ❓ **decide** | Genuinely unresolved - needs a call (default proposed) |
 | ➕ **ext** | An N# feature that goes *beyond* C# |
 
 **Mechanism legend**
@@ -102,13 +102,13 @@ Status of the blocking decisions (full log in §18). ✅ = resolved, 🟡 = stil
 
 ## 3. Lexical structure
 
-> N# is **brace + semicolon** based and **whitespace-insensitive** — no
+> N# is **brace + semicolon** based and **whitespace-insensitive** - no
 > significant indentation. This makes the N# lexer *simpler* than Nim's (no
 > IND/DED tokens), but it must be written from scratch.
 
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
-| `.ns` source files, UTF-8, optional BOM | — | ✅ v1 | front |
+| `.ns` source files, UTF-8, optional BOM | - | ✅ v1 | front |
 | Line comment `//` | ignore to EOL | ✅ v1 | front |
 | Block comment `/* ... */` | ignore | ✅ v1 | front |
 | XML doc comment `///` | structured docs | ✅ v1 (→ Nim `##`) | front/desugar |
@@ -130,7 +130,7 @@ Status of the blocking decisions (full log in §18). ✅ = resolved, 🟡 = stil
 | `#region/#endregion` | folding only | 🚫 out (ignored) | front |
 | `#error`, `#warning` | diagnostics | ✅ v1 | front |
 | `#pragma`, `#line` | compiler hints | 🔜 later | front |
-| `goto` + labels | jump | 🚫 out | — |
+| `goto` + labels | jump | 🚫 out | - |
 | `;` terminators, `{ }` blocks | structure | ✅ v1 | front |
 
 **Notes**
@@ -140,7 +140,7 @@ Status of the blocking decisions (full log in §18). ✅ = resolved, 🟡 = stil
   parser a normal parser and the semantics analyzable. (See §16 ➕ `when`.)
 - Because N# is whitespace-insensitive, porting C# snippets "just works".
 
-### 3.1 Case sensitivity — implementation note (D1)
+### 3.1 Case sensitivity - implementation note (D1)
 
 Nim bakes *style-insensitivity* into identifier **identity**, not just lookup:
 
@@ -183,7 +183,7 @@ differ only by case is a **hard error**.
 | `void` | ✅ v1 | return type omitted/`void` |
 | `null` | ✅ v1 | `nil` (see §4.4/§7.3) |
 | `var` (local inference) | ✅ v1 | `var x = expr` |
-| `dynamic` | 🚫 out | — |
+| `dynamic` | 🚫 out | - |
 
 ### 4.2 Composite & reference types
 
@@ -216,7 +216,7 @@ differ only by case is a **hard error**.
 | `[Flags] enum` | bit flags | 🔜 later | `set` |
 | `delegate` declaration | named function type | ✅ v1 | `proc` type alias |
 | Generic types | `List<T>` | ✅ v1 | Nim generics |
-| Nested types | inner class | 🔜 later | — |
+| Nested types | inner class | 🔜 later | - |
 
 ### 4.4 Strings, `char`, and `object`
 
@@ -234,13 +234,13 @@ Nim-compatible with *no* conversion hacks, N# uses Nim's model directly:
 **Accepted divergences:** `s.Length` and `s[i]` are byte-oriented, so they differ
 from C# for non-ASCII text. The prelude adds `s.RuneCount` (and `.Runes`) for
 character semantics, while `.Length` stays the fast byte count. Strings are
-mutable like Nim's — we do **not** fake C# immutability.
+mutable like Nim's - we do **not** fake C# immutability.
 
 **`object` (universal base).** C#'s `object` is the root of all types and value
 types are *boxed* into it. Nim has no universal value boxing and we will not add
 a managed one, so v1 scopes `object` as a **reference base** (a `RootObj`-rooted
 hierarchy) with `ToString()`/`Equals()`/`GetHashCode()` mapped to `$`/`==`/`hash`.
-Storing value types (`int`, `struct`) in an `object` — real boxing — is deferred.
+Storing value types (`int`, `struct`) in an `object` - real boxing - is deferred.
 
 ---
 
@@ -258,7 +258,7 @@ Storing value types (`int`, `struct`) in an `object` — real boxing — is defe
 | `using static T;` | import members | 🔜 later | front |
 | Global `using` | project-wide imports | 🔜 later | front |
 | Nested namespaces | dotted | ✅ v1 | front |
-| **File ↔ module mapping** | — | ✅ **D4** (§5.1) | front |
+| **File ↔ module mapping** | - | ✅ **D4** (§5.1) | front |
 
 **Proposed mapping (D4):** one `.ns` file = one module; `namespace` is a logical
 scope that maps to the module's name. Imports resolve across `.ns` and `.nim`.
@@ -273,8 +273,8 @@ scope that maps to the module's name. Imports resolve across `.ns` and `.nim`.
 | `enum E { A, B }` | enum | ✅ v1 | front |
 | `delegate R D(args);` | func type | ✅ v1 | front |
 | `record`, `record struct` | data classes | 🔜 later | desugar |
-| `partial class` | split decl | 🚫 out (argue) | — |
-| Nested types | inner | 🔜 later | — |
+| `partial class` | split decl | 🚫 out (argue) | - |
+| Nested types | inner | 🔜 later | - |
 | `abstract class` | non-instantiable | ✅ v1 | front |
 | `sealed class` | non-inheritable | ✅ v1 | front |
 | `static class` | no instances | 🔜 later (→ module) | front |
@@ -307,7 +307,7 @@ scope that maps to the module's name. Imports resolve across `.ns` and `.nim`.
 | **Operators** `operator +` | overload | ✅ v1 | front (→ `proc \`+\``) |
 | Conversion ops `implicit`/`explicit` | casts | ✅ v1 | front (→ converter/`)` proc) |
 | `++`/`--` overloads | C# 11 | 🔜 later | front |
-| Nested/partial members | — | 🚫 / 🔜 | — |
+| Nested/partial members | - | 🚫 / 🔜 | - |
 
 ### 5.4 Properties (flagship C# feature)
 
@@ -337,13 +337,13 @@ scope that maps to the module's name. Imports resolve across `.ns` and `.nim`.
 | `private` | type/unit | ✅ v1 | module-private (default) |
 | `protected` | type + derived | ✅ v1 (approx) | module-scoped in v1 (see note) |
 | `internal` | assembly | ✅ v1 | module-private |
-| `protected internal` | union | 🔜 later | — |
-| `private protected` | intersection | 🔜 later | — |
+| `protected internal` | union | 🔜 later | - |
+| `private protected` | intersection | 🔜 later | - |
 | `file` | file-only | ➕ ext | Nim module-private |
 
 **Note on `protected` (resolved):** Nim's visibility is module-based, not
 inheritance-based. **v1 approximates `protected` as module-scoped** (visible
-within the declaring `.ns` module) — a documented divergence from C#'s
+within the declaring `.ns` module) - a documented divergence from C#'s
 inheritance-scoped rule. Inheritance-scoped checking is a `sem` change staged to
 v2.
 
@@ -363,7 +363,7 @@ v2.
 | `foreach (var x in xs)` | iterate | ✅ v1 | desugar (→ `for`) |
 | `break` / `continue` | loop control | ✅ v1 | front |
 | `return` | return | ✅ v1 | front |
-| `goto` / labels | jump | 🚫 out | — |
+| `goto` / labels | jump | 🚫 out | - |
 | `throw e;` | raise | ✅ v1 | front (→ `raise`) |
 | `try { } catch (E e) { } finally { }` | EH | ✅ v1 | front (→ `try/except/finally`) |
 | `catch when (cond)` | filter | 🔜 later | desugar |
@@ -376,7 +376,7 @@ v2.
 | `unsafe { }` blocks (pointers, `&`, `*`) | unsafe | ✅ v1 | front |
 | `fixed`, `stackalloc` | stack-only | 🚫 out | front |
 | Local functions | nested funcs | ✅ v1 | desugar (→ nested proc) |
-| `defer { }` | — | ➕ ext | front |
+| `defer { }` | - | ➕ ext | front |
 | Statements as expressions (`if`/`switch` value) | C# 8 | 🔜 later | desugar |
 
 **Notes**
@@ -425,13 +425,13 @@ v2.
 | Anonymous types `new { A = 1 }` | inferred type | 🔜 later | desugar |
 | `typeof(T)` | type object | ✅ v1 | desugar/`lib` |
 | `nameof(x)` | name string | ✅ v1 | desugar |
-| `sizeof`, `default(T)` | — | ✅ v1 | desugar/`lib` |
+| `sizeof`, `default(T)` | - | ✅ v1 | desugar/`lib` |
 | String interpolation `$"{x}"` | format | ✅ v1 | desugar |
 | `with` expression (records) | copy-update | 🔜 later | desugar |
 | Target-typed `new()` (C# 9) | infer type | 🔜 later | front |
 | LINQ *method* syntax `.Where().Select()` | query | 🔜 later | lib |
 | LINQ *query* syntax `from..select` | query | 🚫 out (argue) | front |
-| Expression trees | `Expression<T>` | 🚫 out | — |
+| Expression trees | `Expression<T>` | 🚫 out | - |
 | `await` expression | async | 🔜 later | sem |
 
 **Notes**
@@ -440,7 +440,7 @@ v2.
 
 ### 7.3 Semantic traps (must-pin C#↔Nim mismatches)
 
-These look like trivial desugars but are not — each needs an explicit rule.
+These look like trivial desugars but are not - each needs an explicit rule.
 
 | Trap | C# | Nim | N# rule | Mechanism |
 |---|---|---|---|---|
@@ -451,7 +451,7 @@ These look like trivial desugars but are not — each needs an explicit rule.
 | `==` / `Equals` | class = reference, struct = value | whatever is overloaded | class → reference `==`; struct/record → value `==`; `Equals`→`==` | desugar/sem |
 | `ToString()` | virtual method | `$` proc | map `ToString` → `$` | desugar |
 | Numeric conversions | implicit widening, explicit narrowing | stricter | implicit widening; explicit narrowing | desugar/sem |
-| `using` keyword | directive **and** statement | — | disambiguate by context | front |
+| `using` keyword | directive **and** statement | - | disambiguate by context | front |
 | `switch` fallthrough | forbidden (empty cases group) | no fallthrough | maps to Nim `case`; empty-case groups allowed | front |
 | `Main` / `args` | `Main(string[])`, exit code | module top-level | support both (D5); `int` return → exit code | front |
 | Interpolation format | `$"{x:F2}"` | `strformat`/`formatFloat` | map format specs to Nim format | desugar |
@@ -525,9 +525,9 @@ abstract-base + vtable scheme).
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
 | Generic classes `Box<T>` | parameterised type | ✅ v1 | free (Nim generics) |
-| Generic methods `T F<T>(T x)` | — | ✅ v1 | free |
-| Multiple type params `Map<K,V>` | — | ✅ v1 | free |
-| Type inference at call site | — | ✅ v1 | free |
+| Generic methods `T F<T>(T x)` | - | ✅ v1 | free |
+| Multiple type params `Map<K,V>` | - | ✅ v1 | free |
+| Type inference at call site | - | ✅ v1 | free |
 | `where T : class` / `struct` | constraint | ✅ v1 | sem (typeclass) |
 | `where T : new()` | ctor constraint | ✅ v1 | sem |
 | `where T : Base` | base constraint | ✅ v1 | sem (typeclass) |
@@ -538,8 +538,8 @@ abstract-base + vtable scheme).
 | Generic interfaces | `IEnumerable<T>` | ✅ v1 (static) | sem |
 | `default(T)` | default value | ✅ v1 | lib |
 | Static members of generics | per-instantiation | 🔜 later | sem |
-| Variance `in`/`out` | — | 🔜 later | sem |
-| Generic nested types | — | 🔜 later | sem |
+| Variance `in`/`out` | - | 🔜 later | sem |
+| Generic nested types | - | 🔜 later | sem |
 
 **Note:** Nim generics are string/interning-based and powerful; most C# generics
 map directly. The cost is in **constraints**, which map to Nim
@@ -554,14 +554,14 @@ map directly. The cost is in **constraints**, which map to Nim
 | `delegate R D(args);` | named type | ✅ v1 | front (→ `proc` type) |
 | `Func<...>` / `Action<...>` | built-in delegates | ✅ v1 | lib |
 | Lambda expressions | `x => e` | ✅ v1 | front |
-| Closures (capture) | — | ✅ v1 | free (Nim closures) |
+| Closures (capture) | - | ✅ v1 | free (Nim closures) |
 | Method group → delegate | `D d = M;` | ✅ v1 | desugar |
 | Multicas (combine) `+=` / `-=` | invocation list | 🔜 later | lib |
 | `event D E;` | pub/sub member | 🔜 later | lib |
 | `event` add/remove accessors | custom | 🔜 later | lib |
-| Anonymous methods `delegate { }` | — | 🔜 later | front |
+| Anonymous methods `delegate { }` | - | 🔜 later | front |
 | Delegate variance | `Action<Base> = Action<Derived>` | 🔜 later | sem |
-| Expression trees | `Expression<Func<>>` | 🚫 out | — |
+| Expression trees | `Expression<Func<>>` | 🚫 out | - |
 
 **Note:** Nim closures (`{.closure.}` procs) cover the 95% case (single-target
 delegates). Multicast delegates and `event` become a small `lib` library type.
@@ -575,14 +575,14 @@ delegates). Multicast delegates and `event` become a small `lib` library type.
 | `throw e;` | raise | ✅ v1 | front (→ `raise`) |
 | `try` / `catch` / `finally` | EH | ✅ v1 | front |
 | `catch (T e)` typed | filter by type | ✅ v1 | front (→ `except T as e`) |
-| `catch { }` catch-all | — | ✅ v1 | front |
+| `catch { }` catch-all | - | ✅ v1 | front |
 | Custom exceptions `class E : Exception` | user types | ✅ v1 | front |
 | `when` catch filters | conditional | 🔜 later | desugar |
 | `InnerException`, `Message` | std props | 🔜 later | lib |
-| Stack traces | — | ✅ v1 | free (Nim) |
-| `try`/`finally` only | — | ✅ v1 | front |
+| Stack traces | - | ✅ v1 | free (Nim) |
+| `try`/`finally` only | - | ✅ v1 | front |
 | Re-throw `throw;` | rethrow | ✅ v1 | front |
-| No checked exceptions | — | ✅ v1 | free |
+| No checked exceptions | - | ✅ v1 | free |
 
 **Note:** Nim exceptions are object hierarchies with a base type, so C#'s
 `Exception`-derived hierarchy maps directly. Nim's exception handling is already
@@ -600,9 +600,9 @@ refined (the `cnif`/cgen machinery is exception-aware), so this is cheap.
 | `lock` statement | mutex | 🔜 later | lib |
 | `[ThreadStatic]` | TLS | 🔜 later | lib |
 | `Interlocked` | atomics | 🔜 later | lib |
-| Channels / actors | — | ➕ ext (later) | lib |
+| Channels / actors | - | ➕ ext (later) | lib |
 | Parallel `for` | `Parallel.For` | 🔜 later | lib |
-| `async` methods returning `ValueTask` | — | 🔜 later | sem |
+| `async` methods returning `ValueTask` | - | 🔜 later | sem |
 
 **Note:** Nim's concurrency model (`asyncdispatch`, threads, channels) differs
 from C#'s `Task`-based model. Rather than fake it, N# v1 keeps **generators
@@ -620,11 +620,11 @@ deliberate scope cut.
 | `[DllImport("lib")]` | P/Invoke | ✅ v1 | desugar (→ `{.importc,dynlib.}`) |
 | `[StructLayout(LayoutKind.Sequential)]` | ABI layout | 🔜 later | desugar (→ `{.packed.}`) |
 | `[Conditional("X")]` | call-site strip | 🔜 later | desugar |
-| `[Serializable]`, `[JsonProperty]` etc. | framework | 🚫 out | — |
-| Attribute *reflection* at runtime | `GetCustomAttributes` | 🚫 out | — |
-| Built-in `[Flags]` on enums | — | 🔜 later | desugar |
+| `[Serializable]`, `[JsonProperty]` etc. | framework | 🚫 out | - |
+| Attribute *reflection* at runtime | `GetCustomAttributes` | 🚫 out | - |
+| Built-in `[Flags]` on enums | - | 🔜 later | desugar |
 
-**Note:** Attributes map to Nim **pragmas** — a natural fit. The key restriction:
+**Note:** Attributes map to Nim **pragmas** - a natural fit. The key restriction:
 N# attributes are *compile-time* metadata only; no runtime reflection.
 
 ---
@@ -648,18 +648,18 @@ N# attributes are *compile-time* metadata only; no runtime reflection.
 |---|---|---|---|
 | `extern "C"` declaration | `[DllImport]`/`extern` | ✅ v1 | desugar (→ `{.importc.}`) |
 | `extern "C" fn` body | `[UnmanagedCallersOnly]` | ✅ v1 | desugar (→ `{.exportc.}`) |
-| C++ class binding (`extern "C++"`) | — | ✅ v1 | desugar (→ `{.importcpp.}`) |
-| Export to C++ | — | ✅ v1 | desugar (→ `{.exportcpp.}`) |
-| C++ member / constructor | — | ✅ v1 | desugar (→ `ccMember`/`constructor`) |
-| `[StructLayout]` ABI match | — | 🔜 later | desugar |
-| N# implementing a C++ abstract interface | — | ✅ v1 | desugar (`vtables`) |
+| C++ class binding (`extern "C++"`) | - | ✅ v1 | desugar (→ `{.importcpp.}`) |
+| Export to C++ | - | ✅ v1 | desugar (→ `{.exportcpp.}`) |
+| C++ member / constructor | - | ✅ v1 | desugar (→ `ccMember`/`constructor`) |
+| `[StructLayout]` ABI match | - | 🔜 later | desugar |
+| N# implementing a C++ abstract interface | - | ✅ v1 | desugar (`vtables`) |
 | `cstring` conversions | `Marshal` | ✅ v1 | lib |
 | Raw pointers `T*` | `unsafe` | ✅ v1 | front (→ `ptr`) |
-| `IntPtr` | — | 🔜 later | lib |
-| Function pointers | — | ✅ v1 | front/lib (→ `proc`) |
+| `IntPtr` | - | 🔜 later | lib |
+| Function pointers | - | ✅ v1 | front/lib (→ `proc`) |
 
 **Goal (from your brief): C++ bindings should be writable in N# itself.** §14.2
-is therefore a **v1 priority**, not an afterthought — `extern "C"`/`extern "C++"`
+is therefore a **v1 priority**, not an afterthought - `extern "C"`/`extern "C++"`
 blocks are the mechanism, desugaring to Nim's mature `importc`/`importcpp`.
 
 ---
@@ -697,7 +697,7 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | `GC.*` | 🚫 out | Nim manages memory |
 | `Task`, `Thread`, `Interlocked` | 🔜 later | `std/*` |
 | `Marshal`, `IntPtr` | 🔜 later | `lib` |
-| `object` boxing helpers | 🔜 later | — |
+| `object` boxing helpers | 🔜 later | - |
 
 **Naming:** do we keep C# names (`List`, `Count`, `Length`) or Nim names
 (`seq`, `len`)? **Proposed:** keep **C# names at the source level** for
@@ -750,7 +750,7 @@ that C# lacks, exposed deliberately.
 | Error codes | `NSxxxx` bands: 0=lex/parse, 1=name, 2=type, 3=stmt, 4=interop | ✅ v1 | frontend owns its codes; Nim `sem` messages remapped at the boundary |
 | Formatter | `nph`/custom | 🔜 later | Nim tooling is Nim-syntax |
 | Debugger | native DWARF/PDB | ✅ v1 | Nim emits standard debug info |
-| Package manager (Nimble) | `.ns` sources in packages | 🔜 later | — |
+| Package manager (Nimble) | `.ns` sources in packages | 🔜 later | - |
 | REPL / scripting mode | interactive | 🔜 later | ties to execution model |
 | Build system integration (CMake/engine) | generate libs/objects | 🔜 later | ties to execution model |
 
@@ -782,7 +782,7 @@ remapping (D8).
 
 ## 19. Proposed v1 scope summary
 
-### ✅ In v1 — "N# you can ship a game script in"
+### ✅ In v1 - "N# you can ship a game script in"
 - Lexer/parser: braces, semicolons, full C# operator set, comments, literals,
   verbatim + interpolated strings, `#if` → `when`, **case-sensitive identifiers**.
 - Types: built-ins, `char` (1 byte), `string` (Nim UTF-8), `class`/`struct`,
@@ -825,28 +825,28 @@ finalizers, `Span<T>`, `StringBuilder`-adjacent IO, `Result<T,E>`, formatter, RE
 ## 20. Next steps
 
 1. **Decisions frozen:** D1–D8 resolved (see §18).
-2. **Glossary frozen:** see [`GLOSSARY.md`](GLOSSARY.md) — the lexer target.
-3. **Architecture frozen:** see [`ARCHITECTURE.md`](ARCHITECTURE.md) — the
+2. **Glossary frozen:** see [`GLOSSARY.md`](GLOSSARY.md) - the lexer target.
+3. **Architecture frozen:** see [`ARCHITECTURE.md`](ARCHITECTURE.md) - the
    minimal-diff plan for trivially backporting upstream changes.
-4. Phase 0 — extension plumbing in `compiler/{syntaxes,options,idents}.nim` +
+4. Phase 0 - extension plumbing in `compiler/{syntaxes,options,idents}.nim` +
    `compiler/nsharp/` scaffolds, so `nim c hello.ns` compiles a trivial `Main`.
 5. Then grow the grammar in the order the phases were costed.
 
 ---
 
 *Change log*
-- **v1.2** — resolved D6 (null model), D8 (error codes), `protected`
+- **v1.2** - resolved D6 (null model), D8 (error codes), `protected`
   (module-scoped approximation), and `.Length` = bytes + `RuneCount`; added
   [`GLOSSARY.md`](GLOSSARY.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md); updated
   §2/§4/§5.5/§7.3/§17/§18/§20. All D1–D8 now resolved.
-- **v1.1** — applied review decisions: case-sensitive identifiers (§3.1);
+- **v1.1** - applied review decisions: case-sensitive identifiers (§3.1);
   1-byte `char` + Nim UTF-8 mutable strings (§4.4); `object` = reference base,
   boxing deferred (§4.4); interfaces = static concepts + anonymous concepts
   (§8); all generic constraints in v1 (§9); `checked`/`unchecked` promoted to v1
   via `{.push overflowChecks.}` (§6, §7.3); `unsafe` pointers in v1 (§14.2);
   `Nullable<T>` in v1; `Result<T,E>`/`#region`/`stackalloc`/`fixed`/`ref struct`
   out or later; ASCII-only identifiers; new §7.3 semantic-traps table.
-- **v1 (first draft)** — initial catalog: lexical, types, declarations, statements,
+- **v1 (first draft)** - initial catalog: lexical, types, declarations, statements,
   expressions, object model, generics, delegates, exceptions, async, attributes,
   interop, stdlib, extensions, tooling, open decisions, v1 scope.
 

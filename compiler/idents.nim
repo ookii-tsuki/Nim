@@ -66,7 +66,8 @@ proc cmpExact(a, b: cstring, blen: int): int =
   if result == 0:
     if a[i] != '\0': result = 1
 
-proc getIdent*(ic: IdentCache; identifier: cstring, length: int, h: Hash): PIdent =
+proc getIdent*(ic: IdentCache; identifier: cstring, length: int, h: Hash;
+               exact = false): PIdent =
   var idx = h and high(ic.buckets)
   result = ic.buckets[idx]
   var last: PIdent = nil
@@ -79,7 +80,7 @@ proc getIdent*(ic: IdentCache; identifier: cstring, length: int, h: Hash): PIden
         result.next = ic.buckets[idx]
         ic.buckets[idx] = result
       return
-    elif cmpIgnoreStyle(cstring(result.s), identifier, length) == 0:
+    elif not exact and cmpIgnoreStyle(cstring(result.s), identifier, length) == 0:
       assert((id == 0) or (id == result.id))
       id = result.id
     last = result
@@ -102,6 +103,15 @@ proc getIdent*(ic: IdentCache; identifier: string): PIdent =
 
 proc getIdent*(ic: IdentCache; identifier: string, h: Hash): PIdent =
   result = getIdent(ic, cstring(identifier), identifier.len, h)
+
+proc getIdentExact*(ic: IdentCache; identifier: string): PIdent =
+  ## Like `getIdent` but never merges Nim-style-equivalent spellings (`Foo`,
+  ## `foo`, `f_o_o` stay distinct). Used by the N# frontend so identifiers are
+  ## case- and underscore-sensitive (SPEC §3.1). The style-insensitive hash is
+  ## kept deliberately so this ident still shares a bucket with Nim's view of
+  ## the same name, so cross-language interop keeps resolving.
+  result = getIdent(ic, cstring(identifier), identifier.len,
+                    hashIgnoreStyle(identifier), exact = true)
 
 proc newIdentCache*(): IdentCache =
   result = IdentCache()

@@ -1,0 +1,23 @@
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Foo()
+        {
+            Console.WriteLine("upper");
+        }
+
+        static void foo()
+        {
+            Console.WriteLine("lower");
+        }
+
+        static void Main()
+        {
+            Foo();
+            foo();
+        }
+    }
+}

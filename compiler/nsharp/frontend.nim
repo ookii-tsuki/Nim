@@ -1,5 +1,5 @@
 #
-#           N# frontend — entry point called by the compiler core
+#           N# frontend - entry point called by the compiler core
 #
 # The compiler core reaches the N# frontend through exactly two call sites,
 # both guarded by `when defined(nsharp)`:

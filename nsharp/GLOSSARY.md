@@ -1,4 +1,4 @@
-# N# — v1 Keyword Glossary
+# N# - v1 Keyword Glossary
 
 > Companion to [`SPEC.md`](SPEC.md). This is the **exact target for the lexer**:
 > the reserved-word list, contextual keywords, literals, operators, and the
@@ -31,7 +31,7 @@
 | `void` `bool` `byte` `sbyte` `short` `ushort` `int` `uint` `long` `ulong` `char` `float` `double` `string` `object` | built-in types | (SPEC §4) |
 | `true` `false` `null` | literals | `true` / `false` / `nil` |
 
-## 2. Contextual keywords (v1) — usable as identifiers elsewhere
+## 2. Contextual keywords (v1) - usable as identifiers elsewhere
 
 | Keyword | Context |
 |---|---|
@@ -41,7 +41,7 @@
 | `get` `set` `value` | property accessor bodies |
 | `file` | access modifier (N# ext) |
 
-## 3. N# extension keywords (beyond C#) — v1
+## 3. N# extension keywords (beyond C#) - v1
 
 | Keyword | Meaning | Maps to (Nim) |
 |---|---|---|
@@ -67,7 +67,7 @@ and or not
 goto stackalloc fixed
 ```
 
-(`select`/`from`/… are only reserved-for-future, not v1 — LINQ is 🚫 out of v1.
+(`select`/`from`/… are only reserved-for-future, not v1 - LINQ is 🚫 out of v1.
 `unsafe` *is* a v1 keyword, so it is not listed here.)
 
 ## 6. Operators & punctuators (v1)
@@ -96,5 +96,5 @@ goto stackalloc fixed
 ---
 
 *Change log*
-- **v1** — initial glossary derived from the C# reserved set, pruned to the N#
+- **v1** - initial glossary derived from the C# reserved set, pruned to the N#
   v1 scope (see SPEC §19), plus N# extensions and the reserved-for-future set.

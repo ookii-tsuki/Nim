@@ -1,4 +1,4 @@
-# N# — Compiler Integration Architecture (minimal-diff plan)
+# N# - Compiler Integration Architecture (minimal-diff plan)
 
 > **Goal:** add the N# frontend to the Nim compiler while keeping the diff against
 > upstream `nim-lang/Nim` as small and isolated as possible, so upstream fixes can
@@ -17,10 +17,10 @@ Investigated before designing the integration:
   extension itself.
 - **`addFileExt` does *not* append an extension if one already exists**
   (`lib/std/private/ospaths2.nim:733`). So `nim c app.ns` already resolves to
-  `app.ns` for the *main* module — **`modules.nim` needs no change.**
+  `app.ns` for the *main* module - **`modules.nim` needs no change.**
 - **There is no "override a compiler file" hook.** `patchFile` is a nimscript
   stdlib API (`lib/system/nimscript.nim:82`); `-d:nimCustomAst` only swaps the
-  AST *type* inside `parser.nim`. So a few core files must be edited — but very
+  AST *type* inside `parser.nim`. So a few core files must be edited - but very
   few.
 - **`--nilchecks` / `--refchecks` are deprecated no-ops** (`commands.nim:383`,
   `:889`). We therefore do **not** build the null model on them (see SPEC §7.3).
@@ -39,10 +39,10 @@ Investigated before designing the integration:
 
 | File | Hunk | Status |
 |---|---|---|
-| `compiler/syntaxes.nim` | `when defined(nsharp):` — `.ns` `parseFile` dispatch to `nsharp/frontend` | ✅ Phase 0 |
+| `compiler/syntaxes.nim` | `when defined(nsharp):` - `.ns` `parseFile` dispatch to `nsharp/frontend` | ✅ Phase 0 |
 | `compiler/pipelines.nim` | guarded branch: one-shot N# module parse → `sem`, then fall through to the shared tail | ✅ Phase 0 |
 | `compiler/options.nim` | `NsExt` + `findModule` also tries `.ns` (imports) | 🔜 Phase 1 |
-| `compiler/idents.nim` | optional `caseSensitive` mode on `IdentCache` (SPEC §3.1) | 🔜 Phase 1 |
+| `compiler/idents.nim` | additive `getIdentExact` (case/underscore-sensitive interning); Nim's `getIdent` and hashing untouched (SPEC §3.1) | ✅ Phase 1a |
 
 **Untouched:** `modules.nim`, `nodekinds.nim`, `ast*.nim`, `sem*`, `sigmatch`,
 `cgen`, `msgs`. `koch` / packaging need nothing: the build imports
@@ -69,7 +69,7 @@ proc parseFile*(fileIdx: FileIndex; cache: IdentCache; config: ConfigRef): PNode
   # ... existing Nim code, unchanged ...
 ```
 
-## 3.1 Phase 0 status — ✅ complete
+## 3.1 Phase 0 status - ✅ complete
 
 `nim c -r nsharp/tests/hello.ns` prints `hello from N#`, and ordinary `.nim`
 compilation is unaffected. Enable with `-d:nsharp`.
@@ -85,7 +85,7 @@ bin/nim c --skipUserCfg --skipParentCfg -d:nimKochBootstrap -d:nsharp -o:bin/nim
 bin/nim1 c --skipUserCfg --skipParentCfg -d:nsharp -o:bin/nim compiler/nim.nim
 ```
 
-(`dist/checksums` and `dist/nimony` must be present — `koch installdeps` caches them.)
+(`dist/checksums` and `dist/nimony` must be present - `koch installdeps` caches them.)
 
 ## 4. Directory layout
 
@@ -94,7 +94,7 @@ compiler/nsharp/          # ALL compiler-integrated code (new → merge-safe)
   frontend.nim            # entry points the core edits call
   lexer.nim  parser.nim  keywords.nim
   # future: desugar.nim  diag.nim
-lib/ns/                   # N# prelude (future; new files under lib/)
+lib/pure/ns/prelude.nim   # N# prelude: Console, ... (auto-imported as ns/prelude)
 nsharp/                   # language assets (repo root)
   SPEC.md  GLOSSARY.md  ARCHITECTURE.md  tests/    # future: vscode/
 ```
@@ -111,7 +111,7 @@ compiler's normal relative-import resolution, so `config/*.cfg` and
    New files auto-apply; at most 3 small hunks to resolve.
 4. Optionally ship as a patch series:
    `git format-patch upstream/devel..nsharp` and re-apply per upstream release.
-5. **Upstream the generic seams** when convenient — (a) extension-based parser
+5. **Upstream the generic seams** when convenient - (a) extension-based parser
    dispatch in `syntaxes.nim`, (b) `IdentCache` case-sensitivity mode. Both are
    small and generally useful; if accepted, the fork diff shrinks to *just*
    `compiler/nsharp/`.
@@ -121,9 +121,13 @@ compiler's normal relative-import resolution, so `config/*.cfg` and
 ## 6. The one risk, stated plainly
 
 `compiler/idents.nim` is the only place we reach into behavior Nim relies on
-(case-insensitive identifier identity — SPEC §3.1). It is ~8 lines, guarded by
-a flag that defaults **off**, and changes nothing unless the N# lexer toggles it.
-This is the single hunk to re-check on every upstream rebase.
+(case-insensitive identifier identity - SPEC §3.1). The change is **additive**: a
+new `getIdentExact` proc used only by the N# frontend, plus an `exact = false`
+default parameter on `getIdent`. Nim's `getIdent` and its style-insensitive hash
+are unchanged, so Nim behavior is identical when the new path is not taken. The
+only subtlety is that N# can create two idents for spellings Nim considers equal;
+a cross-language case-only collision is detected and reported. This is the single
+hunk to re-check on every upstream rebase.
 
 ## 7. Phase 0 acceptance criterion
 
@@ -151,11 +155,28 @@ hello from N#
 ```
 
 …with `compiler/nsharp/` containing only a lexer/parser scaffold sufficient for
-this program, dispatched by extension, with no other compiler file touched
-beyond the three listed in §3.
+this program, dispatched by extension, touching no compiler file beyond those
+listed in §3.
+
+## 8. Phase 1a status - complete
+
+Delivered: case-sensitive identifiers (`getIdentExact`), the N# prelude
+(`lib/pure/ns/prelude.nim`, auto-imported), a precedence-climbing expression
+parser, and statements (typed/`var` locals, assignment and compound assignment,
+`if`/`else`, `while`, C-style `for` desugared to `while`, `foreach`, `return`,
+`break`, `continue`, blocks).
+
+Test suite: `nsharp/tests/run.sh` compiles each `.ns` and diffs stdout against the
+matching `.out`. Current tests: `hello`, `p1a/case`, `p1a/sum`, `p1a/control` (4/4).
+
+Still deferred to Phase 1b/2: user-defined functions and recursion, imports and
+multi-module projects, classes with fields/`new`/instance dispatch, properties,
+generics, interfaces, `switch`, `unsafe`, C++ `extern`.
 
 ---
 
 *Change log*
-- **v1** — initial integration architecture: seam findings, the 3-file plan,
+- **v2** - recorded Phase 1a: `getIdentExact` case sensitivity, prelude, and the
+  expression/statement core; updated the touched-file table and the risk note.
+- **v1** - initial integration architecture: seam findings, the 3-file plan,
   directory layout, rebase/backport workflow, and the Phase 0 acceptance test.

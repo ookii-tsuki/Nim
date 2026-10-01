@@ -1,5 +1,5 @@
 #
-#           N# frontend — keyword table
+#           N# frontend - keyword table
 #
 # See ../nsharp/GLOSSARY.md (repo root) for the authoritative list.
 # Phase 0: keywords are lexed as identifiers and compared by text; this module
