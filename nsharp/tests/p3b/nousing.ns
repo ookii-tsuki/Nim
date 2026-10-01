@@ -1,0 +1,18 @@
+using System;
+
+namespace Demo
+{
+    // Must NOT compile: `List<T>` lives in System.Collections.Generic, and this
+    // file never has `using System.Collections.Generic;`. The frontend maps that
+    // `using` onto the ns/collections shim, so without it `List` is not in scope
+    // (C# rejects this with CS0246, N# rejects it for the same reason).
+    class Program
+    {
+        static void Main()
+        {
+            List<int> nums = new List<int>();
+            nums.Add(1);
+            Console.WriteLine(nums.Count);
+        }
+    }
+}

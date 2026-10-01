@@ -1,0 +1,57 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            List<int> nums = new List<int>();
+            nums.Add(3);
+            nums.Add(1);
+            nums.Add(2);
+            Console.WriteLine(nums.Count);
+            Console.WriteLine(nums[0]);
+
+            int total = 0;
+            foreach (int x in nums)
+            {
+                total = total + x;
+            }
+            Console.WriteLine(total);
+
+            Console.WriteLine(nums.Contains(2));
+            nums.Remove(1);
+            Console.WriteLine(nums.Count);
+
+            nums.Sort();
+            Console.WriteLine(nums[0]);
+
+            Dictionary<string, int> ages = new Dictionary<string, int>();
+            ages.Add("ann", 30);
+            ages["bob"] = 25;
+            Console.WriteLine(ages.Count);
+            Console.WriteLine(ages["bob"]);
+            Console.WriteLine(ages.ContainsKey("ann"));
+
+            HashSet<int> seen = new HashSet<int>();
+            seen.Add(5);
+            seen.Add(5);
+            seen.Add(6);
+            Console.WriteLine(seen.Count);
+
+            Queue<int> q = new Queue<int>();
+            q.Enqueue(1);
+            q.Enqueue(2);
+            Console.WriteLine(q.Dequeue());
+            Console.WriteLine(q.Count);
+
+            Stack<int> s = new Stack<int>();
+            s.Push(7);
+            s.Push(8);
+            Console.WriteLine(s.Pop());
+            Console.WriteLine(s.Count);
+        }
+    }
+}

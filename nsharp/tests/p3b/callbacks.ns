@@ -1,0 +1,47 @@
+using System;
+
+namespace Demo
+{
+    delegate int BinOp(int a, int b);
+    delegate int IntFn(int v);
+    delegate void StrAction(string s);
+
+    class Program
+    {
+        static int Apply(BinOp f, int x, int y)
+        {
+            return f(x, y);
+        }
+
+        static int Twice(int v)
+        {
+            return v * 2;
+        }
+
+        static void Main()
+        {
+            BinOp plus = (a, b) => a + b;
+            Console.WriteLine(Apply(plus, 2, 3));
+
+            IntFn dbl = x => x * 2;
+            Console.WriteLine(dbl(21));
+
+            IntFn viaMethod = Twice;
+            Console.WriteLine(viaMethod(5));
+
+            StrAction shout = s => Console.WriteLine(s);
+            shout("hi");
+
+            BinOp blocky = (a, b) =>
+            {
+                int t = a - b;
+                return t * t;
+            };
+            Console.WriteLine(blocky(9, 4));
+
+            int base2 = 10;
+            IntFn addBase = x => x + base2;
+            Console.WriteLine(addBase(5));
+        }
+    }
+}

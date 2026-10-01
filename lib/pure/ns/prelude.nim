@@ -1,19 +1,20 @@
 #
-#           N# prelude (Phase 1a)
+#           N# prelude
 #
-# Auto-imported into every `.ns` module by the frontend as `import ns/prelude`.
-# This is where the C#-facing surface is mapped onto Nim stdlib. Phase 1a covers
-# Console output; collections and string helpers come later.
+# `lib/pure/ns/` is the home of the N# standard library ("N# BCL-lite", SPEC
+# section 15). These modules are NOT auto-imported: the C# BCL surface is gated
+# by `using` directives, which the frontend maps onto them (see parseUsing in
+# compiler/nsharp/parser.nim). So `Console` needs `using System;`, and `List<T>`
+# needs `using System.Collections.Generic;`, exactly as in C#.
+#
+#   ns/system.nim      ->  System                       (Console, exceptions)
+#   ns/collections.nim ->  System.Collections.Generic   (List, Dictionary, ...)
+#
+# This module is the umbrella over the whole surface, for tooling and tests.
 
-import std/[syncio]
+import ns/system
+import ns/collections
 
-type
-  ArgumentException* = object of CatchableError
-  InvalidOperationException* = object of CatchableError
-  NullReferenceException* = object of CatchableError
+export system
+export collections
 
-proc WriteLine*(x: bool) = echo (if x: "True" else: "False")
-proc Write*(x: bool) = stdout.write(if x: "True" else: "False")
-proc WriteLine*[T](x: T) = echo x
-proc Write*[T](x: T) = stdout.write x
-proc ReadLine*(): string = stdin.readLine

@@ -25,6 +25,8 @@ type
     classFields: seq[string]    # enclosing class members (for `x` -> self.x)
     curClass: string            # enclosing class name (for access checks)
     classes: TableRef[string, NsClassInfo]   # module class table (pre-scanned)
+    delegates: TableRef[string, PNode]       # named delegate -> nkProcTy
+    tmp: int                                 # fresh-parameter-name counter
 
   NsAccess = enum aPrivate, aProtected, aInternal, aPublic
 
@@ -84,13 +86,21 @@ proc identOf(p: NsParser, s: string, info: TLineInfo): PNode =
 
 proc emptyN(info: TLineInfo): PNode {.inline.} = newNodeI(nkEmpty, info)
 
-proc mkProcDef(nameNode, params, body: PNode, info: TLineInfo): PNode =
+proc mkProcDef(p: var NsParser, nameNode, params, body: PNode, info: TLineInfo): PNode =
+  ## Generated procs are `{.discardable.}`: in C# any expression statement may
+  ## drop a method's return value, while Nim rejects an unused result. Void procs
+  ## have nothing to discard, so they get no pragma.
   result = newNodeI(nkProcDef, info, 7)
   result[0] = nameNode
   result[1] = emptyN(info)
   result[2] = emptyN(info)
   result[3] = params
-  result[4] = emptyN(info)
+  if params.len > 0 and params[0].kind == nkEmpty:
+    result[4] = emptyN(info)
+  else:
+    let pragma = newNodeI(nkPragma, info)
+    pragma.add p.identOf("discardable", info)
+    result[4] = pragma
   result[5] = emptyN(info)
   result[6] = body
 
@@ -138,9 +148,23 @@ proc isExceptionBase(s: string): bool =
   else:
     false
 
+proc expectGt(p: var NsParser) =
+  ## Consumes the `>` that closes a generic argument list. The `>>` token (from
+  ## nested generics such as `List<List<int>>`) is split into two `>` in place.
+  if p.at(nsGt):
+    discard p.advance
+  elif p.at(nsShr):
+    let t = p.peek
+    p.toks[p.pos] = NsToken(kind: nsGt, text: ">", line: t.line, col: t.col + 1)
+  else:
+    discard p.expect(nsGt)
+
+proc atGtClose(p: NsParser): bool {.inline.} = p.at(nsGt) or p.at(nsShr)
+
 proc parseType(p: var NsParser): PNode =
   ## Parses a type reference. `void` yields `nkEmpty` (caller treats as no
-  ## return type). `T[]` maps to `seq[T]`.
+  ## return type). `T[]` maps to `seq[T]`; `Name<...>` becomes `Name[...]` so a
+  ## C# generic type application reaches Nim's own generics unchanged.
   let t = p.peek
   if t.kind != nsIdent:
     return emptyN(p.infoOf(t))
@@ -148,6 +172,15 @@ proc parseType(p: var NsParser): PNode =
   if t.text == "void":
     return emptyN(p.infoOf(t))
   var base = p.identOf(builtinTypeName(t.text), p.infoOf(t))
+  if p.at(nsLt):
+    discard p.advance
+    let be = newNodeI(nkBracketExpr, p.infoOf(t))
+    be.add base
+    while not atGtClose(p) and not p.at(nsEof):
+      be.add p.parseType()
+      if p.at(nsComma): discard p.advance else: break
+    p.expectGt()
+    base = be
   while p.at(nsLBracket) and p.peekAhead(1).kind == nsRBracket:
     discard p.advance
     discard p.advance
@@ -156,9 +189,31 @@ proc parseType(p: var NsParser): PNode =
 
 proc parseExpr(p: var NsParser): PNode
 proc parseStatement(p: var NsParser): PNode
+proc parseBlock(p: var NsParser): PNode
 proc parseNew(p: var NsParser, kw: NsToken): PNode
 
+proc looksLikeLambda(p: NsParser): bool =
+  ## `x =>` or `( ... ) =>` (a parenthesised group immediately followed by `=>`).
+  if p.peek.kind == nsIdent and p.peekAhead(1).kind == nsArrow:
+    return true
+  if p.peek.kind == nsLParen:
+    var depth = 0
+    var k = 0
+    while k < 500:
+      let t = p.peekAhead(k)
+      if t.kind == nsEof: return false
+      if t.kind == nsLParen: inc depth
+      elif t.kind == nsRParen:
+        dec depth
+        if depth == 0: return p.peekAhead(k + 1).kind == nsArrow
+      inc k
+  false
+
+proc parseLambda(p: var NsParser): PNode
+
 proc parsePrimary(p: var NsParser): PNode =
+  if looksLikeLambda(p):
+    return p.parseLambda()
   let t = p.peek
   case t.kind
   of nsStrLit:
@@ -198,6 +253,66 @@ proc parsePrimary(p: var NsParser): PNode =
     p.err(t, "unexpected token '" & t.text & "'")
     discard p.advance
     result = nil
+
+proc parseLambda(p: var NsParser): PNode =
+  ## `x => e`, `(a, b) => e`, `(a, b) => { ... }`. Parameter types are left
+  ## empty and filled in later from the declared delegate type (annotateLambda).
+  let info = p.infoOf(p.peek)
+  var names: seq[string] = @[]
+  var preTypes: seq[PNode] = @[]
+  if p.peek.kind == nsIdent:
+    names.add p.advance.text
+    preTypes.add nil
+  else:
+    discard p.advance   # '('
+    while not p.at(nsRParen) and not p.at(nsEof):
+      if p.at(nsComma):
+        discard p.advance
+        continue
+      if p.peek.kind != nsIdent: break
+      let a = p.advance.text
+      if p.peek.kind == nsIdent:
+        # C# form `(int x) => ...`
+        names.add p.advance.text
+        preTypes.add p.identOf(builtinTypeName(a), info)
+      else:
+        names.add a
+        preTypes.add nil
+    discard p.expect(nsRParen)
+  discard p.expect(nsArrow)
+  var body: PNode
+  if p.at(nsLBrace):
+    body = p.parseBlock()
+  else:
+    body = newNodeI(nkStmtList, info)
+    body.add p.parseExpr()
+  let fp = newNodeI(nkFormalParams, info)
+  fp.add emptyN(info)
+  for i in 0 ..< names.len:
+    let d = newNodeI(nkIdentDefs, info)
+    d.add p.identOf(names[i], info)
+    if preTypes[i] != nil: d.add preTypes[i] else: d.add emptyN(info)
+    d.add emptyN(info)
+    fp.add d
+  result = newNodeI(nkLambda, info, 7)
+  for i in 0 .. 6: result[i] = emptyN(info)
+  result[3] = fp
+  result[6] = body
+
+proc annotateLambda(n, ty: PNode) =
+  ## Copies the parameter and return types of a delegate's `proc` type into a
+  ## lambda literal, so `IntFn f = x => ...;` types `x` without an annotation.
+  if n == nil or ty == nil or ty.kind != nkProcTy or n.kind != nkLambda: return
+  let target = ty[0]
+  let fp = n[3]
+  if fp.len == 0 or target.len == 0: return
+  if fp[0].kind == nkEmpty:
+    fp[0] = copyTree(target[0])
+  for i in 1 ..< fp.len:
+    if i < target.len and fp[i].kind == nkIdentDefs and fp[i].len >= 2 and
+       fp[i][1].kind == nkEmpty and target[i].kind == nkIdentDefs and
+       target[i].len >= 2:
+      fp[i][1] = copyTree(target[i][1])
 
 proc binPrec(k: NsTokenKind): int =
   case k
@@ -334,7 +449,18 @@ proc parseNew(p: var NsParser, kw: NsToken): PNode =
     return call
   let typeTok = p.advance
   let typeName = builtinTypeName(typeTok.text)
-  if p.at(nsLBracket):
+  var callee = p.identOf("new" & typeName, info)
+  if p.at(nsLt):
+    # `new List<int>()` -> `newList[int32]()`
+    let be = newNodeI(nkBracketExpr, info)
+    be.add callee
+    discard p.advance
+    while not atGtClose(p) and not p.at(nsEof):
+      be.add p.parseType()
+      if p.at(nsComma): discard p.advance else: break
+    p.expectGt()
+    callee = be
+  elif p.at(nsLBracket):
     discard p.advance
     if p.at(nsRBracket):
       discard p.advance
@@ -356,7 +482,7 @@ proc parseNew(p: var NsParser, kw: NsToken): PNode =
       call.add n
       return call
   var call = newNodeI(nkCall, info)
-  call.add p.identOf("new" & typeName, info)
+  call.add callee
   if p.at(nsLParen):
     discard p.advance
     while not p.at(nsRParen) and not p.at(nsEof):
@@ -412,13 +538,32 @@ proc parseBodyWith(p: var NsParser, thisName, clsName: string): PNode =
 
 proc looksLikeDecl(p: NsParser): bool =
   ## A simple statement is a declaration when it starts with `var`/`let`/`const`
-  ## or with `Type name` / `Type[] name`.
+  ## or with a `Type name` shape, where the type may be `Type[]` or `Type<...>`.
   if p.peek.kind == nsIdent and p.peek.text in ["var", "let", "const"]:
     return true
   if p.peek.kind == nsIdent:
     var k = 1
     if p.peekAhead(1).kind == nsLBracket and p.peekAhead(2).kind == nsRBracket:
       k = 3
+    elif p.peekAhead(1).kind == nsLt:
+      # skip a balanced generic argument list (`Dictionary<string, int>`)
+      var depth = 0
+      while k < 200:
+        let t = p.peekAhead(k)
+        if t.kind == nsEof: return false
+        if t.kind == nsLt:
+          inc depth
+        elif t.kind == nsGt:
+          dec depth
+          if depth <= 0:
+            inc k
+            break
+        elif t.kind == nsShr:
+          depth -= 2
+          if depth <= 0:
+            inc k
+            break
+        inc k
     if p.peekAhead(k).kind == nsIdent:
       return true
   false
@@ -443,6 +588,11 @@ proc parseVarDecl(p: var NsParser): PNode =
   if p.at(nsAssign):
     discard p.advance
     init = p.parseExpr()
+    if ty != nil:
+      var annoTy = ty
+      if annoTy.kind == nkIdent and p.delegates.hasKey(annoTy.ident.s):
+        annoTy = p.delegates[annoTy.ident.s]
+      annotateLambda(init, annoTy)
   let defs = newNodeI(nkIdentDefs, info)
   defs.add p.identOf(nameTok.text, info)
   if ty != nil: defs.add ty
@@ -741,6 +891,23 @@ proc parseUsing(p: var NsParser, stmts: var seq[PNode]) =
   while not p.at(nsSemi) and not p.at(nsEof):
     discard p.advance
   if p.at(nsSemi): discard p.advance
+  # C# BCL namespaces are gated: a type is only in scope once its namespace was
+  # `using`-ed, so `List<int>` without `using System.Collections.Generic;` fails
+  # to compile, exactly as in C#. This is the single namespace -> N# module
+  # table (SPEC section 15); the module file names are ours to choose, the C#
+  # namespace is only the name we present.
+  let target =
+    case name
+    of "System": "ns/system"
+    of "System.Collections.Generic": "ns/collections"
+    else: ""
+  if target.len > 0:
+    let imp = newNodeI(nkImportStmt, info)
+    imp.add newAtom(nkStrLit, target, info)
+    stmts.add imp
+    return
+  # Remaining `System.*` namespaces are not implemented yet, so they are ignored
+  # rather than reported (using their types still fails, which is the point).
   if name.len == 0 or name == "System" or name.startsWith("System."):
     return
   let imp = newNodeI(nkImportStmt, info)
@@ -1211,7 +1378,7 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
           newTree(nkPostfix, m.info, p.identOf("*", m.info), p.identOf("init" & clsName, m.info))
         else:
           p.identOf("init" & clsName, m.info)
-      stmts.add mkProcDef(inode, ip, ibody, m.info)
+      stmts.add mkProcDef(p, inode, ip, ibody, m.info)
       # allocator: `proc newC(params): C = new(result); initC(result, params)`
       let ap = newNodeI(nkFormalParams, m.info)
       ap.add (if isException: newTree(nkRefTy, m.info, p.identOf(clsName, m.info))
@@ -1235,7 +1402,7 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
           newTree(nkPostfix, m.info, p.identOf("*", m.info), p.identOf("new" & clsName, m.info))
         else:
           p.identOf("new" & clsName, m.info)
-      stmts.add mkProcDef(anode, ap, abody, m.info)
+      stmts.add mkProcDef(p, anode, ap, abody, m.info)
     of mkProperty:
       p.emitProperty(clsName, m, stmts)
     of mkField:
@@ -1263,7 +1430,7 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
       icall.add p.identOf("init" & baseName, info)
       icall.add p.identOf("self", info)
       ibody.add icall
-    stmts.add mkProcDef(
+    stmts.add mkProcDef(p,
       newTree(nkPostfix, info, p.identOf("*", info), p.identOf("init" & clsName, info)),
       ip, ibody, info)
     # allocator: `proc newC(): C = new(result); initC(result)`
@@ -1279,7 +1446,7 @@ proc emitClass(p: var NsParser, clsName: string, isClass, isPublic: bool,
     fwd.add p.identOf("init" & clsName, info)
     fwd.add p.identOf("result", info)
     abody.add fwd
-    stmts.add mkProcDef(
+    stmts.add mkProcDef(p,
       newTree(nkPostfix, info, p.identOf("*", info), p.identOf("new" & clsName, info)),
       ap, abody, info)
 
@@ -1321,6 +1488,35 @@ proc parseEnumDecl(p: var NsParser, stmts: var seq[PNode]) =
             p.identOf(nameTok.text, info))
   td.add emptyN(info)
   td.add enumTy
+  let sec = newNodeI(nkTypeSection, info)
+  sec.add td
+  stmts.add sec
+
+proc parseDelegateDecl(p: var NsParser, stmts: var seq[PNode]) =
+  ## `delegate R Name(params);` -> `type Name = proc (params): R {.closure.}`.
+  ## `{.closure.}` so both plain methods and capturing lambdas fit, as in C#.
+  let info = p.infoOf(p.peek)
+  var isPublic = false
+  while p.peek.kind == nsIdent and p.peek.text in NsTypeModifiers:
+    if p.peek.text == "public": isPublic = true
+    discard p.advance
+  discard p.advance   # delegate
+  let ret = p.parseType()
+  if p.peek.kind != nsIdent: return
+  let nameTok = p.advance
+  let params = p.parseParams(ret)
+  if p.at(nsSemi): discard p.advance
+  let pragma = newNodeI(nkPragma, info)
+  pragma.add p.identOf("closure", info)
+  let procTy = newTree(nkProcTy, info, params, pragma)
+  p.delegates[nameTok.text] = procTy
+  let td = newNodeI(nkTypeDef, info)
+  td.add (if isPublic:
+            newTree(nkPostfix, info, p.identOf("*", info), p.identOf(nameTok.text, info))
+          else:
+            p.identOf(nameTok.text, info))
+  td.add emptyN(info)
+  td.add copyTree(procTy)
   let sec = newNodeI(nkTypeSection, info)
   sec.add td
   stmts.add sec
@@ -1398,6 +1594,8 @@ proc parseTopLevelDecl(p: var NsParser, stmts: var seq[PNode]) =
     p.parseTypeDecl(stmts)
   elif head.kind == nsIdent and head.text == "enum":
     p.parseEnumDecl(stmts)
+  elif head.kind == nsIdent and head.text == "delegate":
+    p.parseDelegateDecl(stmts)
   elif p.peek.kind == nsIdent and p.peek.text in ["using", "import"]:
     p.parseUsing(stmts)
   elif p.peek.kind == nsIdent and p.peek.text == "namespace":
@@ -1421,7 +1619,8 @@ proc parseNsModule*(source: string; fileIdx: FileIndex; cache: IdentCache;
                    config: ConfigRef): PNode =
   var p = NsParser(toks: tokenize(source), pos: 0, cache: cache,
                    config: config, fileIdx: fileIdx,
-                   classes: newTable[string, NsClassInfo]())
+                   classes: newTable[string, NsClassInfo](),
+                   delegates: newTable[string, PNode]())
   p.prescanClasses()
   var stmts: seq[PNode] = @[]
   while not p.at(nsEof):
@@ -1430,11 +1629,9 @@ proc parseNsModule*(source: string; fileIdx: FileIndex; cache: IdentCache;
       continue
     p.parseTopLevelDecl(stmts)
   result = newNodeI(nkStmtList, newLineInfo(fileIdx, 1, 1))
-  # Auto-import the N# prelude (lib/pure/ns/prelude.nim), which provides the
-  # C#-facing surface (Console, ...).
-  let prelude = newNodeI(nkImportStmt, newLineInfo(fileIdx, 1, 1))
-  prelude.add newAtom(nkStrLit, "ns/prelude", newLineInfo(fileIdx, 1, 1))
-  result.add prelude
+  # No implicit imports: the C# BCL surface is gated by `using` (see parseUsing),
+  # so `Console` needs `using System;` and `List<T>` needs
+  # `using System.Collections.Generic;`, as in C#.
   for s in stmts: result.add s
   for s in stmts:
     if s.kind != nkProcDef: continue

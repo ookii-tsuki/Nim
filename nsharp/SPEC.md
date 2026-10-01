@@ -263,6 +263,20 @@ Storing value types (`int`, `struct`) in an `object` - real boxing - is deferred
 **Proposed mapping (D4):** one `.ns` file = one module; `namespace` is a logical
 scope that maps to the module's name. Imports resolve across `.ns` and `.nim`.
 
+**BCL namespaces are gated (3b).** A C# BCL namespace is only in scope once its
+`using` appears, exactly as in C#. The frontend owns one namespace -> N# module
+table (`parseUsing` in `compiler/nsharp/parser.nim`):
+
+| C# namespace | N# module | Provides |
+|---|---|---|
+| `System` | `lib/pure/ns/system.nim` | `Console`, exception hierarchy |
+| `System.Collections.Generic` | `lib/pure/ns/collections.nim` | collection types (SS15.1) |
+
+The module file names are ours to choose; the C# namespace is only the name we
+present. There is **no implicit import**: `Console.WriteLine` without
+`using System;`, or `List<T>` without `using System.Collections.Generic;`, must
+fail to compile. `nsharp/tests/p3b/nousing.ns` pins that negative case.
+
 ### 5.2 Type declarations
 
 | Feature | C# meaning | Disposition | Mechanism |
@@ -461,6 +475,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Exceptions | all derive from `Exception` | `CatchableError`; raised as `ref T` | C# `Exception` → `CatchableError`; `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` (Nim only raises refs) | front |
 | `e.Message` | property on every exception | `CatchableError.msg` field | map `.Message` → `.msg` | front |
 | `WriteLine(bool)` | `True` / `False` | `$bool` gives `true` / `false` | prelude `bool` overloads of `WriteLine`/`Write` print `True`/`False` | lib |
+| Discarding a result | any expression statement may drop a result | unused result is an error | every generated proc is `{.discardable.}` (and the collection shims `{.push discardable.}`) | front/lib |
 
 > The overflow / `checked` / `unchecked` rows all ride on **one** mechanism:
 > Nim's `{.push overflowChecks: on|off.}` / `{.pop.}`, handled by `genPragma` at
@@ -556,11 +571,11 @@ map directly. The cost is in **constraints**, which map to Nim
 
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
-| `delegate R D(args);` | named type | ✅ v1 | front (→ `proc` type) |
-| `Func<...>` / `Action<...>` | built-in delegates | ✅ v1 | lib |
-| Lambda expressions | `x => e` | ✅ v1 | front |
-| Closures (capture) | - | ✅ v1 | free (Nim closures) |
-| Method group → delegate | `D d = M;` | ✅ v1 | desugar |
+| `delegate R D(args);` | named type | ✅ v1 (3b) | front (→ `proc` type, `{.closure.}`) |
+| `Func<...>` / `Action<...>` | built-in delegates | 🔜 3d (needs generics) | lib |
+| Lambda expressions | `x => e` | ✅ v1 (3b) | front |
+| Closures (capture) | - | ✅ v1 (3b) | free (Nim closures) |
+| Method group → delegate | `D d = M;` | ✅ v1 (3b) | free |
 | Multicas (combine) `+=` / `-=` | invocation list | 🔜 later | lib |
 | `event D E;` | pub/sub member | 🔜 later | lib |
 | `event` add/remove accessors | custom | 🔜 later | lib |
@@ -682,10 +697,10 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | `string.RuneCount` / `.Runes` (char count) | ✅ v1 | `lib` (N# helper; `.Length` is bytes, §4.4) |
 | `int`/`double` `.ToString`, `.Parse`, `.TryParse` | ✅ v1 | `lib` (`parseInt`, `parseFloat`) |
 | `Math.*` | ✅ v1 | `lib` (Nim `math`) |
-| `List<T>` | ✅ v1 | `seq[T]` + wrapper |
-| `Dictionary<K,V>` | ✅ v1 | `Table[K,V]` + wrapper |
-| `HashSet<T>` | ✅ v1 | `HashSet[T]` |
-| `Queue<T>`, `Stack<T>` | ✅ v1 | `Deque`/wrappers |
+| `List<T>` | ✅ v1 | `seq[T]` + N# procs (SS15.1) |
+| `Dictionary<K,V>` | ✅ v1 | `Table[K,V]` + N# procs (SS15.1) |
+| `HashSet<T>` | ✅ v1 | `HashSet[T]` + N# procs (SS15.1) |
+| `Queue<T>`, `Stack<T>` | ✅ v1 | wrappers over `Deque[T]` (SS15.1) |
 | `LinkedList<T>` | 🔜 later | `lib` |
 | `Array` / `Sort` / `Reverse` | ✅ v1 | `lib` (`algorithm`) |
 | `StringBuilder` | ✅ v1 | `lib` (`strutils`) |
@@ -708,6 +723,34 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 (`seq`, `len`)? **Proposed:** keep **C# names at the source level** for
 familiarity, implemented as `lib` wrappers. (Raise if you'd rather expose Nim
 names.)
+
+### 15.1 Collections - pinned member surface (3b)
+
+`List<T>` is `seq[T]`, `Dictionary<K,V>` is `Table[K,V]`, `HashSet<T>` is
+`HashSet[T]`; `Queue<T>`/`Stack<T>` are small wrappers over `Deque[T]`. `.Count`
+is lowered to `.len` by the frontend. The shim re-exports `tables`/`sets`, since
+Nim's `import` is not transitive and `Dictionary`/`HashSet` users need indexing,
+`in`, `keys`, `values`, ... Only these members exist:
+
+| Type | Members (3b) |
+|---|---|
+| `List<T>` | `Add` `AddRange` `Clear` `Contains` `IndexOf` `Insert` `Remove` `RemoveAt` `Reverse` `Sort` `ToArray`, `[]`, `[]=` |
+| `Dictionary<K,V>` | `Add` `Clear` `ContainsKey` `ContainsValue` `Remove` `Keys` `Values`, `[]`, `[]=` |
+| `HashSet<T>` | `Add` `Clear` `Contains` `Remove` `ToArray` `UnionWith` `IntersectWith` `ExceptWith` |
+| `Queue<T>` | `Enqueue` `Dequeue` `Peek` `Contains` `Clear` `ToArray` |
+| `Stack<T>` | `Push` `Pop` `Peek` `Contains` `Clear` `ToArray` |
+
+Deliberately deferred, with the reason recorded:
+
+* **Predicate members** (`Find`, `FindAll`, `Exists`, `RemoveAll`, `ForEach`,
+  `Sort(comparison)`) need a lambda typed from a **method parameter**. 3b types
+  lambdas only from a declared local of delegate type (`annotateLambda`), so this
+  first needs method-signature plumbing.
+* **`TryGetValue(k, out v)`** needs `out` parameters, which the parser does not
+  parse yet.
+* **LINQ**, `Capacity`, `TrimExcess`, `CopyTo`, `GetRange`, `LastIndexOf`,
+  `InsertRange`, `RemoveRange`, `Keys`/`Values` as live views, `IComparer`
+  overloads: see the deferred list in SS19.
 
 ---
 

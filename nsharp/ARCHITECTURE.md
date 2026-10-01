@@ -208,9 +208,10 @@ parameterless constructor must name a base constructor, else it is an error
 (matching C# CS7036); this is validated using the constructor arities recorded in
 the class table.
 
-Test suite (14 total): `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter`,
+Test suite (17 total): `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter`,
 `p2b/auto`, `p2b/shapes`, `p2c/protected`, `p2c/private` (expected failure),
-`p2d/nobase` (expected failure), `p3a/data`, `p3a/exceptions`.
+`p2d/nobase` (expected failure), `p3a/data`, `p3a/exceptions`, `p3b/callbacks`,
+`p3b/collections`, `p3b/nousing` (expected failure).
 
 `nsharp/tests/run.sh` is the N# runner; it then runs `nsharp/tests/run_cs.sh`,
 the C#<->N# equivalence gate, unless `NS_SKIP_CS=1` is set. Because every `.ns`
@@ -242,16 +243,52 @@ The gate is not a formality. It immediately found that C# prints `WriteLine` of 
 corrected. Anything that intentionally differs from C# must be written down in
 SPEC section 7.3 rather than silently baked into an expected file.
 
-Still deferred to Phase 3: static properties, generics, interfaces,
-`virtual`/`override` (dynamic dispatch), `unsafe`, C++ `extern`, records,
-`checked`/`unchecked`, and the integer `/` -> `div` semantic-trap desugar (needs
-type info at desugar time). Known 2b gaps: within a class a member may only
-reference a property defined earlier (the source-order rule), and static
-properties are not yet supported.
+Delivered in 3b: callbacks and collections.
+
+* `delegate R D(params);` becomes a Nim `proc` type with `{.closure.}`, so both
+  plain methods and capturing lambdas fit, as C# delegates do. There is no
+  `Func`/`Action` yet: those are BCL *generic* types, and Nim cannot overload a
+  type name by generic arity (`redefinition of 'Func'`) nor expand a macro in
+  type position (`type expected`), so they wait for the generics work in 3d.
+* Lambdas (`x => e`, `(a, b) => e`, `(a, b) => { ... }`) parse to `nkLambda` with
+  untyped parameters; `annotateLambda` copies the parameter and return types in
+  from the declared delegate type, so `IntFn f = x => ...;` types `x`.
+* C# generic syntax is lowered onto Nim's generics: `Name<...>` -> `Name[...]` in
+  type position, and `new Name<...>(...)` -> `newName[...](...)`. A `>>` token
+  from nested generics is split in place into two `>`; `looksLikeDecl` skips a
+  balanced `<>` so `Dictionary<string, int> d = ...` reads as a declaration.
+* Collections live in `lib/pure/ns/collections.nim` (surface pinned in SPEC
+  section 15.1): `List<T>` = `seq[T]`, `Dictionary<K,V>` = `Table[K,V]`,
+  `HashSet<T>` = `HashSet[T]`, and `Queue<T>`/`Stack<T>` wrap `Deque[T]`. The shim
+  re-exports `tables`/`sets`, because Nim's `import` is not transitive and users
+  need indexing, `in`, `keys`, `values`. `Add`/`Contains`/... are capitalized
+  C#-named procs reached through Nim dot-calls; `.Count` lowers to `.len`.
+* Every generated proc is `{.discardable.}` (and the collection shims use
+  `{.push discardable.}`): C# lets any expression statement drop a method's
+  result, while Nim rejects an unused result, so `nums.Remove(1);` needed it.
+* The C# BCL is gated by `using`, not implicitly imported. `System` ->
+  `ns/system` (Console, exceptions) and `System.Collections.Generic` ->
+  `ns/collections`, through the single namespace table in `parseUsing`. Nothing
+  is visible without its `using`; `nsharp/tests/p3b/nousing.ns` pins that, and
+  the C# compiler rejects it for the same reason (CS0246).
+
+Still deferred to Phase 3: generics (3d, including `Func`/`Action`), interfaces,
+`virtual`/`override` (dynamic dispatch), collection predicates and
+`TryGetValue(k, out v)` (SPEC section 15.1), static properties, `unsafe`, C++
+`extern`, records, `checked`/`unchecked`, and the integer `/` -> `div`
+semantic-trap desugar (needs type info at desugar time). Known 2b gaps: within a
+class a member may only reference a property defined earlier (the source-order
+rule), and static properties are not yet supported.
 
 ---
 
 *Change log*
+- **v11** - Phase 3b: `delegate` types (`{.closure.}` proc types), lambdas with
+  delegate-typed parameters, C# generic syntax (`Name<...>` -> `Name[...]`) and
+  the collection shim `ns/collections.nim`. The C# BCL is now gated by `using`
+  instead of being implicitly imported (`ns/system.nim` + `ns/collections.nim`,
+  driven by a namespace table in `parseUsing`), and generated procs are
+  `{.discardable.}`.
 - **v10** - added `nsharp/tests/run_cs.sh`, the permanent C#<->N# equivalence
   gate, wired into `run.sh` (opt out with `NS_SKIP_CS=1`). It caught the
   `WriteLine(bool)` formatting difference, now fixed in the prelude.
