@@ -1,0 +1,2 @@
+This test must fail to compile: a derived constructor omits `: base(...)` while
+the base class has no parameterless constructor (C# error CS7036).

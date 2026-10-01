@@ -1,0 +1,30 @@
+using System;
+
+namespace Demo
+{
+    class Base
+    {
+        protected int secret;
+
+        public Base(int s) { secret = s; }
+
+        public int GetSecret() { return secret; }
+    }
+
+    class Derived : Base
+    {
+        public Derived(int s) : base(s) { }
+
+        public int Twice() { return secret * 2; }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Derived d = new Derived(5);
+            Console.WriteLine(d.GetSecret());
+            Console.WriteLine(d.Twice());
+        }
+    }
+}

@@ -1,0 +1,28 @@
+using System;
+
+namespace Demo
+{
+    class Base
+    {
+        int secret;
+
+        public Base(int s) { secret = s; }
+
+        public int GetSecret() { return secret; }
+    }
+
+    class Derived : Base
+    {
+        // Must NOT compile: Base has no parameterless constructor, so this ctor
+        // needs `: base(...)` (C# error CS7036).
+        public Derived(int s) { }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("should not compile");
+        }
+    }
+}

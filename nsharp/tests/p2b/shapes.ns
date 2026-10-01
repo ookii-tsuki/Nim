@@ -1,0 +1,41 @@
+using System;
+
+namespace Demo
+{
+    class Shape
+    {
+        protected int sides;
+
+        public int Sides
+        {
+            get { return sides; }
+            set { sides = value; }
+        }
+
+        public int Doubled()
+        {
+            return Sides * 2;
+        }
+
+        public Shape(int s) { sides = s; }
+    }
+
+    class Square : Shape
+    {
+        public Square(int s) : base(s) { }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Shape sh = new Shape(3);
+            sh.Sides = 7;
+            Console.WriteLine(sh.Sides);
+            Console.WriteLine(sh.Doubled());
+
+            Square sq = new Square(5);
+            Console.WriteLine(sq.Sides);
+        }
+    }
+}

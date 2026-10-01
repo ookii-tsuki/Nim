@@ -184,16 +184,52 @@ constructors; bare class field names in method bodies rewrite to
 `self.field`/`result.field`. Static methods are unchanged. `struct` maps to a Nim
 `object` (value type).
 
-Test suite: `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter` (7 total).
+Delivered in 2b: properties and inheritance. `R P { get; set; }` (auto),
+`{ get { } set { } }` (computed), and `R P => expr` (expression-bodied) become a
+backing field (for auto) plus getter/setter procs; the write path uses Nim's
+`propertyWriteAccess` and needs no `sem` change. `class D : B` emits
+`ref object of B` (classes default to `of RootObj`). Instance members are emitted
+in source order, because Nim resolves `self.Prop` (a dot-call to a getter) only
+when the getter is already defined.
 
-Still deferred to 2b/2c and Phase 3: properties (`{ get; set; }`), static
-properties, inheritance (`: B`), generics, interfaces, `virtual`/`override`,
-`switch`, `unsafe`, C++ `extern`, and the integer `/` -> `div` semantic-trap
-desugar (needs type info at desugar time).
+Delivered in 2c: C# access modifiers. A module-level pre-scan builds a class
+table (name, base, member accesses) before any body is parsed; the frontend then
+enforces type-scoped access for implicit-`this` and bare member references
+(private is not accessible from a derived class, protected is, public/internal
+are). Default member access is private, as in C#. `nsharp/tests/run.sh` also
+supports expected-compile-failure tests via a `<name>.fail` marker.
+
+Delivered in 2d: constructor initializers. `: base(args)` and `: this(args)` are
+parsed; a constructor now emits an initializer `initC(self: C, params)` (which
+runs the base initializer, then the body) plus an allocator
+`newC(params): C = new(result); initC(result, params)`. The base constructor
+therefore runs first, as in C#. A derived class whose base has no accessible
+parameterless constructor must name a base constructor, else it is an error
+(matching C# CS7036); this is validated using the constructor arities recorded in
+the class table.
+
+Test suite (12 total): `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter`,
+`p2b/auto`, `p2b/shapes`, `p2c/protected`, `p2c/private` (expected failure),
+`p2d/nobase` (expected failure).
+
+Still deferred to Phase 3: static properties, generics, interfaces,
+`virtual`/`override` (dynamic dispatch), `switch`, `unsafe`, C++ `extern`,
+records, and the integer `/` -> `div` semantic-trap desugar (needs type info at
+desugar time). Known 2b gaps: within a class a member may only reference a
+property defined earlier (the source-order rule), and static properties are not
+yet supported.
 
 ---
 
 *Change log*
+- **v7** - recorded Phase 2d: constructor initializers (`: base(...)` /
+  `: this(...)`), the allocator/initializer split so base constructors run
+  first, and the CS7036-style validation (verified against the .NET compiler).
+- **v6** - recorded Phase 2c: C# access modifiers (class-table pre-scan,
+  type-scoped enforcement for implicit-this and bare member references,
+  default private), and expected-failure test support.
+- **v5** - recorded Phase 2b: properties (auto/computed/expression-bodied) and
+  basic inheritance; the source-order emission rule.
 - **v4** - recorded Phase 2a: real classes (type + fields, constructors, `new`,
   instance methods with `self`, `this`, field qualification).
 - **v3** - recorded Phase 1b: functions/recursion and imports; `options.nim`
