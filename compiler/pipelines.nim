@@ -3,6 +3,9 @@ import sem, cgen, modulegraphs, ast, llstream, parser, msgs,
        packages, syntaxes, depends, vm, pragmas, idents, lookups, wordrecg,
        liftdestructors, nifgen
 
+when defined(nsharp):
+  import nsharp / frontend
+
 when not defined(nimKochBootstrap):
   import vmdef
   import ast2nif
@@ -175,6 +178,21 @@ proc processPipelineModuleImpl(graph: ModuleGraph; module: PSym; idgen: IdGenera
     else:
       nil
   while true:
+    when defined(nsharp):
+      if frontend.isNsharpFile(graph.config, fileIdx):
+        # N# modules are parsed in one shot (no streaming) and handed to the
+        # normal `sem` as an `nkStmtList`, then fall through to the shared tail.
+        if not graph.stopCompile():
+          let nsl = frontend.parseModule(fileIdx, graph.cache, graph.config)
+          prePass(ctx, nsl)
+          if graph.pipelinePass != EvalPass:
+            message(graph.config, nsl.info, hintProcessingStmt, $idgen[])
+          let nsSem = semWithPContext(ctx, nsl)
+          let nsTop = processPipeline(graph, nsSem, bModule)
+          if nsTop != nil and topLevelStmts != nil:
+            topLevelStmts.add nsTop
+        if s != nil and s.kind != llsStdIn: llStreamClose(s)
+        break
     syntaxes.openParser(p, fileIdx, s, graph.cache, graph.config)
 
     if not belongsToStdlib(graph, module) or (belongsToStdlib(graph, module) and module.name.s == "distros"):

@@ -17,6 +17,9 @@ import std/strutils
 when defined(nimPreviewSlimSystem):
   import std/[syncio, assertions]
 
+when defined(nsharp):
+  import nsharp / frontend
+
 export Parser, parseAll, parseTopLevelStmt, checkFirstLineIndentation, closeParser
 
 type
@@ -137,6 +140,9 @@ proc setupParser*(p: var Parser; fileIdx: FileIndex; cache: IdentCache;
   result = true
 
 proc parseFile*(fileIdx: FileIndex; cache: IdentCache; config: ConfigRef): PNode =
+  when defined(nsharp):
+    if frontend.isNsharpFile(config, fileIdx):
+      return frontend.parseModule(fileIdx, cache, config)
   var p: Parser = default(Parser)
   if setupParser(p, fileIdx, cache, config):
     result = parseAll(p)
