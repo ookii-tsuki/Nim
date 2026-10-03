@@ -1,2 +1,3 @@
 N# rejects this: `using A = List<int>;` aliases a type, which N# does not support
-(SPEC.md 5.1). The marker makes run.sh require the rejection.
+yet. The marker makes run.sh require the rejection.
+code: NS9999

@@ -4,6 +4,9 @@
 #   * `<name>.ns` with a sibling `<name>.out`  -> stdout must match the `.out`
 #   * `<name>.ns` with a sibling `<name>.fail` -> compilation must FAIL
 #
+# A `.fail` or `.unsupported` marker may name the diagnostic it expects with a
+# `code: NSxxxx` line, which the output must then carry.
+#
 # Usage:  NIM=/path/to/nim ./nsharp/tests/run.sh
 # Build an N#-capable compiler first (see nsharp/ARCHITECTURE.md section 3.1).
 
@@ -24,9 +27,16 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
 
   if [ -f "$failmark" ] || [ -f "$unsupmark" ]; then
     count=$((count + 1))
+    marker="$failmark"
+    [ -f "$unsupmark" ] && marker="$unsupmark"
     if "$NIM" c --hints:off --warnings:off --lib:"$lib" -o:"$bin" "$ns" \
           > /tmp/ns_test_compile.log 2>&1; then
       echo "FAIL (compiled but should not): ${ns#$root/}"
+      fail=1
+    elif want="$(sed -n 's/^code: *//p' "$marker" | head -1)"; [ -n "$want" ] &&
+         ! grep -q "$want" /tmp/ns_test_compile.log; then
+      echo "FAIL (marker names $want): ${ns#$root/}"
+      sed -n '1,5p' /tmp/ns_test_compile.log
       fail=1
     elif [ -f "$unsupmark" ]; then
       echo "ok (rejected; valid C# that N# does not support yet): ${ns#$root/}"

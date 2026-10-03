@@ -1,7 +1,7 @@
 # N# frontend - keyword table
 #
 # Keywords are lexed as identifiers and compared by text; this is the reserved
-# word set the parser checks against. See ../nsharp/GLOSSARY.md for the list.
+# word set the parser checks against.
 
 import std/strutils
 

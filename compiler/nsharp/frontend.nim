@@ -2,8 +2,7 @@
 #
 # The compiler core reaches the frontend through two call sites, both guarded by
 # `when defined(nsharp)`: `compiler/syntaxes.nim` (parseFile dispatch) and
-# `compiler/pipelines.nim` (module pipeline dispatch). See
-# ../nsharp/ARCHITECTURE.md for the minimal-diff rationale.
+# `compiler/pipelines.nim` (module pipeline dispatch).
 #
 # The pipeline, one module per phase:
 #
@@ -14,7 +13,7 @@
 
 import std/[os, syncio]
 import ../ast, ../idents, ../lineinfos, ../options, ../msgs, ../pathutils
-import parser, sema, desugar, nsgen
+import parser, sema, desugar, diagnostics, nsgen
 
 proc isNsharpFile*(config: ConfigRef; fileIdx: FileIndex): bool =
   ## True when `fileIdx` names a `.ns` source file.
@@ -41,8 +40,8 @@ proc parseModule*(fileIdx: FileIndex; cache: IdentCache;
   try:
     source = readFile(path.string)
   except CatchableError:
-    localError(config, newLineInfo(fileIdx, 1, 1),
-               "N#: cannot read " & path.string)
+    nsError(config, newLineInfo(fileIdx, 1, 1), ndSourceFileNotFound,
+            path.string)
     return newNodeI(nkStmtList, newLineInfo(fileIdx, 1, 1))
   result = compileNsSource(source, fileIdx, cache, config)
 

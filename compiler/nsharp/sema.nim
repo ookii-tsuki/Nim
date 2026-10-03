@@ -11,8 +11,8 @@
 # overload resolution, no generics.
 
 import std/tables
-import ../msgs, ../options
-import ast, bcl, symbols
+import ../options
+import ast, bcl, diagnostics, symbols
 
 type
   NsTypeInfo* = object
@@ -109,8 +109,7 @@ proc memberKind(ctx: NsCheckContext; clsName, member: string): NsTypeKind =
 # --- expressions ------------------------------------------------------------
 
 proc inaccessible(ctx: NsCheckContext; n: NsNode) =
-  localError(ctx.config, n.info,
-             "'" & n.name & "' is inaccessible due to its protection level")
+  nsError(ctx.config, n.info, ndNotAccessible, n.name)
 
 proc checkMemberAccess(ctx: NsCheckContext; n: NsNode) =
   ## `this.member`, or the `this.member` a bare name was rewritten into.
@@ -375,13 +374,10 @@ proc checkBaseCtors(ctx: NsCheckContext; cls: NsNode) =
     if m.kind == nsnCtorDecl:
       anyCtor = true
       if m.initKind.len == 0:
-        localError(ctx.config, m.info,
-          "'" & cls.name & "' must call a base constructor: '" & baseName &
-          "' has no accessible parameterless constructor")
+        nsError(ctx.config, m.info, ndBaseConstructorRequired,
+                cls.name, baseName)
   if not anyCtor:
-    localError(ctx.config, cls.info,
-      "'" & cls.name & "' must define a constructor: '" & baseName &
-      "' has no accessible parameterless constructor")
+    nsError(ctx.config, cls.info, ndConstructorRequired, cls.name, baseName)
 
 proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
   case m.kind
@@ -423,15 +419,15 @@ proc checkSupported(ctx: NsCheckContext; cls: NsNode) =
   ## rather than dropped silently; ignoring `interface` or `override` produced
   ## programs that looked like they worked.
   if cls.classKind == ckInterface:
-    localError(ctx.config, cls.info, "N# does not support 'interface' yet")
+    nsError(ctx.config, cls.info, ndUnsupported, "'interface'")
   for m in cls.sons:
     case m.kind
     of nsnPropertyDecl:
       if m.attrs.isStatic:
-        localError(ctx.config, m.info, "N# does not support static properties yet")
+        nsError(ctx.config, m.info, ndUnsupported, "a static property")
     of nsnFieldDecl:
       if m.body != nil:
-        localError(ctx.config, m.info, "N# does not support field initialisers yet")
+        nsError(ctx.config, m.info, ndUnsupported, "a field initialiser")
     else: discard
 
 proc walkClass(ctx: var NsCheckContext; cls: NsNode) =

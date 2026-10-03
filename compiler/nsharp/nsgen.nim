@@ -14,13 +14,17 @@
 import std/[os, syncio, algorithm, sets, tables]
 import ../ast, ../idents, ../lineinfos, ../msgs, ../options, ../pathutils,
        ../renderer
-import ast, bcl, parser, lexer, symbols, sema, desugar
+import ast, bcl, diagnostics, parser, lexer, symbols, sema, desugar
 
 const
   NsGenDirName = ".nsgen"
   NsExt = ".ns"
   ## Root of the N# namespace tree, where a file's path is its C# namespace.
   NsLibRoot = "pure/ns"
+
+type
+  NsUsingSite* = tuple[ns: string, info: TLineInfo, path: string]
+    ## One `using` found by the token scan, with the file it appears in.
 
 var namespacesGenerated = false
   ## `parseModule` runs for every module; the first call drives discovery.
@@ -79,8 +83,8 @@ proc dottedName(toks: seq[NsToken]; start: int): string =
       result.add toks[j+1].text
       j += 2
 
-proc scanFile(source: string; namespaces: var seq[string];
-              usings: var HashSet[string]) =
+proc scanFile(source: string; path: string; fileIdx: FileIndex;
+              namespaces: var seq[string]; sites: var seq[NsUsingSite]) =
   ## Collects the `namespace` and `using` names in a file by scanning its tokens.
   ## Scanning avoids diagnosing a file that may not belong to this compilation.
   ## Brace depth marks the end of a namespace block, so a method body's braces do
@@ -117,12 +121,57 @@ proc scanFile(source: string; namespaces: var seq[string];
            toks[start + 1].kind == nsAssign:
           start += 2
         let name = dottedName(toks, start)
-        if name.len > 0: usings.incl name
+        ## A generic target aliases a type rather than a namespace, and the parser
+        ## reports that.
+        var generic = false
+        var k = start
+        while k < toks.len and toks[k].kind notin {nsSemi, nsEof}:
+          if toks[k].kind == nsLt: generic = true
+          inc k
+        if name.len > 0 and not generic:
+          sites.add (ns: name, info: newLineInfo(fileIdx, t.line, t.col),
+                     path: path)
     else: discard
     inc i
 
 proc baseName(nsPath: string): string =
   splitFile(nsPath).name
+
+proc collectUsings(n: NsNode;
+                   into: var seq[tuple[ns: string, info: TLineInfo]]) =
+  ## Every `using` in a module or namespace body, with the directive's location.
+  for d in (if n.body != nil: n.body.sons else: n.sons):
+    if d.kind == nsnUsing:
+      if d.name.len > 0: into.add (d.name, d.info)
+    elif d.kind == nsnNamespace:
+      collectUsings(d, into)
+
+proc reportNamespaceCycle(config: ConfigRef;
+                          modules: Table[string, seq[NsNode]]) =
+  ## Reports the first cycle among the namespaces being generated. A generated
+  ## declaration half imports the other namespace's barrel, so a cycle between two
+  ## of them cannot be compiled.
+  var uses = initTable[string, seq[tuple[ns: string, info: TLineInfo]]]()
+  for ns in modules.keys:
+    var u: seq[tuple[ns: string, info: TLineInfo]] = @[]
+    for m in modules[ns]: collectUsings(m, u)
+    uses[ns] = u
+  var state = initTable[string, int]()
+  proc visit(ns: string): bool =
+    state[ns] = 1
+    for u in uses.getOrDefault(ns):
+      if not modules.hasKey(u.ns): continue
+      case state.getOrDefault(u.ns)
+      of 1:
+        nsError(config, u.info, ndNamespaceCycle, ns, u.ns)
+        return true
+      of 0:
+        if visit(u.ns): return true
+      else: discard
+    state[ns] = 2
+    false
+  for ns in modules.keys:
+    if state.getOrDefault(ns) == 0 and visit(ns): return
 
 proc writeBarrel(genDir, nsPath: string) =
   ## Writes the namespace's public module. The two halves are named by their bare
@@ -244,31 +293,37 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
   ## Discovery scans tokens, so a file in the tree that does not parse cannot stop
   ## the compilation. A namespace only has to be found, not checked.
   var declared = initTable[string, seq[string]]()
-  var used = initHashSet[string]()
+  var sites: seq[NsUsingSite] = @[]
+  var nsFiles = initHashSet[string]()
   for path in paths:
+    nsFiles.incl splitFile(path).name
     var source = ""
     try:
       source = readFile(path)
     except CatchableError:
       continue
     var names: seq[string] = @[]
-    scanFile(source, names, used)
+    scanFile(source, path, config.fileInfoIdx(AbsoluteFile(path)), names, sites)
     for ns in names:
       declared.mgetOrPut(ns, @[]).add path
-
-  var toGenerate: seq[string] = @[]
-  for ns in declared.keys:
-    if ns in used: toGenerate.add ns
-  if toGenerate.len == 0: return
-  toGenerate.sort()
 
   let genDir = getNimcacheDir(config).string / NsGenDirName
   createDir(AbsoluteDir(genDir))
   ## Added ahead of the search path so a generated barrel is found.
   config.searchPaths.insert(AbsoluteDir(genDir), 0)
 
-  for ns in toGenerate:
-    ## Parsing happens here so diagnostics come only from namespaces being compiled.
+  ## Only the namespaces this compilation pulls in are parsed and generated,
+  ## starting from the main module's own `using`s. The tree may hold `.ns` files
+  ## that belong to other compilations, and those are neither reported on nor
+  ## generated.
+  var pending: seq[string] = @[]
+  for s in sites:
+    if s.path == mainPath.string and s.ns in declared: pending.add s.ns
+  while pending.len > 0:
+    let ns = pending.pop()
+    if namespaceModules.hasKey(ns): continue
+    ## Parsing happens here, so diagnostics come only from namespaces this
+    ## compilation pulls in.
     var mods: seq[NsNode] = @[]
     for path in declared[ns]:
       var source = ""
@@ -279,11 +334,33 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
       let fid = config.fileInfoIdx(AbsoluteFile(path))
       let m = parseNsModule(source, fid, config)
       if namespaceOf(m) == ns: mods.add m
-    if mods.len > 0: namespaceModules[ns] = mods
+    namespaceModules[ns] = mods
+    var uses: seq[tuple[ns: string, info: TLineInfo]] = @[]
+    for m in mods: collectUsings(m, uses)
+    for u in uses:
+      if u.ns in declared and not namespaceModules.hasKey(u.ns):
+        pending.add u.ns
+
+  ## A `using` this compilation owns must name a namespace declared in the tree or
+  ## a module, which is what C# reports as CS0246.
+  var owned = initHashSet[string]()
+  owned.incl mainPath.string
+  for ns in namespaceModules.keys:
+    for p in declared[ns]: owned.incl p
+  for s in sites:
+    if s.path notin owned: continue
+    if s.ns in declared or s.ns in nsFiles: continue
+    if findModule(config, namespaceModulePath(s.ns), mainPath.string).isEmpty:
+      nsError(config, s.info, ndNamespaceNotFound, s.ns)
+
+  reportNamespaceCycle(config, namespaceModules)
 
   ## Every namespace is parsed before any is generated, so classifying one does not
   ## depend on generation order.
+  var toGenerate: seq[string] = @[]
+  for ns in namespaceModules.keys:
+    if namespaceModules[ns].len > 0: toGenerate.add ns
+  toGenerate.sort()
   for ns in toGenerate:
-    if namespaceModules.hasKey(ns):
-      generateNamespace(config, cache, namespaceModulePath(ns), genDir,
-                        namespaceModules[ns])
+    generateNamespace(config, cache, namespaceModulePath(ns), genDir,
+                      namespaceModules[ns])

@@ -852,13 +852,53 @@ that C# lacks, exposed deliberately.
 | Mixed projects | `.nim` importing `.ns` and vice-versa | ✅ v1 | shared module graph |
 | **LSP** (completion, hover, goto-def, refs, outline, rename) | full support for `.ns` | ✅ v1 | via `nimsuggest`/`nimlangserver`; requires extension-aware parse |
 | Syntax highlighting | `.ns` grammar for VS Code et al. | ✅ v1 | TextMate/Tree-sitter (client side) |
-| Error style | mirror C# compiler message *text* | ✅ v1 | own codes; C#-style phrasing (`file(line,col): error NS0103: …`) |
-| Error codes | `NSxxxx` bands: 0=lex/parse, 1=name, 2=type, 3=stmt, 4=interop | ✅ v1 | frontend owns its codes; Nim `sem` messages remapped at the boundary |
+| Error style | mirror C# compiler message *text* | ✅ v1 | code leads the message: `app.ns(15, 13) Error: NS0246: The type or namespace name 'X' could not be found` |
+| Error codes | mirror C# | ✅ v1 | the digits are C#'s code for the same condition (`NS0246` is `CS0246`); `NS9999` is the single code for a construct N# does not support yet, and the rest of the 9xxx band is reserved for conditions C# accepts, which have nothing to mirror. `compiler/nsharp/diagnostics.nim` owns the table, and `run_cs.sh` checks each `.fail` marker against the code Roslyn reports |
 | Formatter | `nph`/custom | 🔜 later | Nim tooling is Nim-syntax |
 | Debugger | native DWARF/PDB | ✅ v1 | Nim emits standard debug info |
 | Package manager (Nimble) | `.ns` sources in packages | 🔜 later | - |
 | REPL / scripting mode | interactive | 🔜 later | ties to execution model |
 | Build system integration (CMake/engine) | generate libs/objects | 🔜 later | ties to execution model |
+
+A diagnostic's digits are the C# code for the same condition. `NS9999` is the one
+code for every construct N# does not support yet, so closing a gap retires no code,
+and the rest of the 9xxx band covers the conditions C# accepts.
+`compiler/nsharp/diagnostics.nim` is the source of truth for the text as well as the
+code:
+
+| N# | C# | Condition |
+|---|---|---|
+| `NS0122` | CS0122 | a member is inaccessible |
+| `NS0246` | CS0246 | a `using` names no namespace or module |
+| `NS1001` | CS1001 | identifier expected |
+| `NS1002` | CS1002 | `;` expected |
+| `NS1003` | CS1003 | syntax error, a token expected |
+| `NS1026` | CS1026 | `)` expected |
+| `NS1513` | CS1513 | `}` expected |
+| `NS1514` | CS1514 | `{` expected |
+| `NS1515` | CS1515 | `in` expected |
+| `NS1519` | CS1519 | invalid token in a member declaration list |
+| `NS1525` | CS1525 | invalid expression term |
+| `NS2001` | CS2001 | source file could not be found |
+| `NS7036` | CS7036 | a constructor requires base arguments |
+| `NS9006` | - | the parser made no progress |
+| `NS9007` | - | two namespaces use each other |
+| `NS9999` | - | a construct N# does not support yet |
+
+An error Nim raises on the lowered code (an undeclared name, a type mismatch, or a
+bad arity) still prints Nim's own text and carries no `NS` code. Giving those codes
+needs name resolution in the frontend, which is not in v1.
+
+A `.fail` or `.unsupported` marker may name the code it expects:
+
+```
+This test must fail to compile: it accesses a private base-class member.
+code: NS0122
+```
+
+`run.sh` then requires that code in the compiler output, and `run_cs.sh` requires
+the digits to appear among the codes Roslyn reports for the same file, skipping the
+reserved band.
 
 ---
 
@@ -873,7 +913,7 @@ that C# lacks, exposed deliberately.
 | **D5** | Entry point | ✅ both top-level statements and `Main` | parser |
 | **D6** | Null model | ✅ `nil`-able refs, `?` annotation; `Option[T]` for `T?`; `null` deref → `NullReferenceException` (§4.4) | lib |
 | **D7** | `decimal` | ✅ later (lib), not core | lib |
-| **D8** | Error codes/style | ✅ own `NSxxxx` bands + C#-phrased text (§17) | tooling |
+| **D8** | Error codes/style | ✅ codes mirror C#'s digits, `NS9xxx` for the rest (§17) | tooling |
 
 **Resolved this round:** `char` = 1 byte; `string` = Nim UTF-8 mutable (§4.4);
 overflow default unchecked + `checked`/`unchecked` via `push`/`pop` (§7.3);

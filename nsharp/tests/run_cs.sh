@@ -69,7 +69,22 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
   if ! dotnet build "$work/check.csproj" -c Release --nologo -v q --no-incremental \
         > "$work/build.log" 2>&1; then
     if [ -f "$failmark" ]; then
-      echo "ok (C# rejects, as expected): ${ns#$root/}"
+      ## A `code: NSxxxx` marker is checked against the code C# reports, so the
+      ## mirror holds unless the marker is in the N#-only band.
+      want="$(sed -n 's/^code: *//p' "$failmark" | head -1)"
+      case "$want" in
+        NS[0-89]*)
+          cs="$(grep -o 'error CS[0-9]*' "$work/build.log" |
+                sed 's/error CS//' | sort -u | tr '\n' ' ')"
+          if echo " $cs " | grep -q " ${want#NS} "; then
+            echo "ok (C# rejects with the same code, ${want#NS}): ${ns#$root/}"
+          else
+            echo "FAIL ($want, but C# reports: ${cs:-none}): ${ns#$root/}"
+            fail=1
+          fi ;;
+        *)
+          echo "ok (C# rejects, as expected): ${ns#$root/}" ;;
+      esac
     elif [ -f "$unsupmark" ]; then
       echo "FAIL (N# rejects it as unsupported, but it is not valid C# either): ${ns#$root/}"
       sed -n '1,10p' "$work/build.log"

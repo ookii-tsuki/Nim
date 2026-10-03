@@ -10,7 +10,7 @@
 
 import std/strutils
 import ../lineinfos, ../msgs, ../options
-import ast, lexer
+import ast, diagnostics, lexer
 
 type
   NsParser = object
@@ -49,12 +49,22 @@ proc infoOf(p: NsParser, t: NsToken): TLineInfo {.inline.} =
 
 proc here(p: NsParser): TLineInfo {.inline.} = p.infoOf(p.peek)
 
-proc err(p: NsParser, t: NsToken, msg: string) =
-  localError(p.config, p.infoOf(t), "N# parse error: " & msg)
+proc err(p: NsParser, t: NsToken, d: NsDiag; args: varargs[string]) =
+  nsError(p.config, p.infoOf(t), d, args)
+
+proc diagForExpected(k: NsTokenKind): NsDiag =
+  ## The code C# reports for a missing token of this kind.
+  case k
+  of nsSemi: ndSemicolonExpected
+  of nsRParen: ndCloseParenExpected
+  of nsRBrace: ndCloseBraceExpected
+  of nsLBrace: ndOpenBraceExpected
+  of nsIdent: ndIdentifierExpected
+  else: ndSyntaxErrorExpected
 
 proc expect(p: var NsParser, k: NsTokenKind): NsToken =
   if p.peek.kind == k: return p.advance
-  p.err(p.peek, "expected " & $k & " but got '" & p.peek.text & "'")
+  p.err(p.peek, diagForExpected(k), $k)
   return p.peek
 
 proc expectGt(p: var NsParser) =
@@ -216,7 +226,7 @@ proc parsePrimary(p: var NsParser): NsNode =
     result = p.parseExpr()
     discard p.expect(nsRParen)
   else:
-    p.err(t, "unexpected token '" & t.text & "'")
+    p.err(t, ndInvalidExpressionTerm, t.text)
     discard p.advance
     result = nil
 
@@ -402,7 +412,7 @@ proc parseParams(p: var NsParser): seq[NsNode] =
     let info = p.here()
     let ty = p.parseType()
     if p.peek.kind != nsIdent:
-      p.err(p.peek, "expected a parameter name")
+      p.err(p.peek, ndIdentifierExpected)
     var pname = ""
     if p.peek.kind == nsIdent:
       pname = p.advance.text
@@ -606,7 +616,7 @@ proc parseForeach(p: var NsParser): NsNode =
   if p.at(nsIdent) and p.peek.text == "in":
     discard p.advance
   else:
-    p.err(p.peek, "expected 'in' in foreach")
+    p.err(p.peek, ndForeachInExpected)
   result.body = p.parseExpr()
   discard p.expect(nsRParen)
   result.sons = p.parseBlock().sons
@@ -729,7 +739,7 @@ proc parseModifierList(p: var NsParser; words, allowed: openArray[string]): seq[
   while p.at(nsIdent) and p.peek.text in words:
     let tok = p.advance
     if tok.text notin allowed:
-      p.err(tok, "N# does not support the '" & tok.text & "' modifier yet")
+      p.err(tok, ndUnsupported, "the '" & tok.text & "' modifier")
     result.add tok.text
 
 proc recoverToSemi(p: var NsParser) =
@@ -738,7 +748,8 @@ proc recoverToSemi(p: var NsParser) =
   while not p.at(nsSemi) and not p.at(nsEof) and not p.at(nsRBrace):
     discard p.advance
 
-proc parseClassMember(p: var NsParser; clsName: string): NsNode =
+proc parseClassMember(p: var NsParser; clsName: string;
+                      isInterface = false): NsNode =
   let modInfo = p.here()
   let mods = p.parseModifierList(NsModifierWords, NsMemberModifiers)
   let isStatic = "static" in mods
@@ -765,13 +776,13 @@ proc parseClassMember(p: var NsParser; clsName: string): NsNode =
     return
 
   if p.peek.kind != nsIdent:
-    p.err(p.peek, "expected a member declaration")
+    p.err(p.peek, ndMemberDeclarationExpected, p.peek.text)
     discard p.advance
     return nsn(nsnEmpty, modInfo)
 
   let ty = p.parseType()
   if p.peek.kind != nsIdent:
-    p.err(p.peek, "expected a member name")
+    p.err(p.peek, ndIdentifierExpected)
     p.recoverToSemi()
     if p.at(nsSemi): discard p.advance
     return nsn(nsnEmpty, modInfo)
@@ -785,7 +796,12 @@ proc parseClassMember(p: var NsParser; clsName: string): NsNode =
     result.typ = ty
     result.attrs = attrs
     result.params = p.parseParams()
-    result.body = p.parseBlock()
+    if isInterface and p.at(nsSemi):
+      ## An interface member has no body. Accepting it here lets the check that
+      ## reports interfaces as unsupported run, which says more than a syntax error.
+      discard p.advance
+    else:
+      result.body = p.parseBlock()
   elif p.at(nsLBrace) or p.at(nsArrow):
     result = nsn(nsnPropertyDecl, info)
     result.name = nameTok.text
@@ -821,7 +837,7 @@ proc parseClassMember(p: var NsParser; clsName: string): NsNode =
             setter = nsn(nsnEmpty, info)
             if p.at(nsSemi): discard p.advance
         else:
-          p.err(p.peek, "unsupported property accessor syntax")
+          p.err(p.peek, ndUnsupported, "this property accessor")
           discard p.advance
       discard p.expect(nsRBrace)
     result.params = @[getter, setter]
@@ -854,12 +870,12 @@ proc parseTypeDecl(p: var NsParser): NsNode =
     result.typ = p.parseType()
     if p.at(nsComma):
       ## A second base can only be an interface, which N# does not implement.
-      p.err(p.peek, "N# supports a single base type; interfaces are not supported yet")
+      p.err(p.peek, ndUnsupported, "a second base type")
       while p.at(nsComma):
         discard p.advance
         discard p.parseType()
   if not p.at(nsLBrace):
-    p.err(p.peek, "expected '{' to open the body of '" & nameTok.text & "'")
+    p.err(p.peek, ndOpenBraceExpectedBody, nameTok.text)
     ## Error recovery, after the diagnostic above: skip to the body or the end.
     while not p.at(nsLBrace) and not p.at(nsSemi) and not p.at(nsRBrace) and
           not p.at(nsEof):
@@ -872,7 +888,7 @@ proc parseTypeDecl(p: var NsParser): NsNode =
     if p.at(nsSemi):
       discard p.advance
       continue
-    let m = p.parseClassMember(nameTok.text)
+    let m = p.parseClassMember(nameTok.text, ckind == ckInterface)
     if m != nil: result.add m
   discard p.expect(nsRBrace)
 
@@ -930,7 +946,7 @@ proc parseUsing(p: var NsParser): NsNode =
     discard p.advance
     let target = p.parseDottedName()
     if p.at(nsLt):
-      p.err(p.peek, "an alias of a type is not supported")
+      p.err(p.peek, ndUnsupported, "an alias of a type")
     else:
       result.name = target
   else:
@@ -998,7 +1014,7 @@ proc parseNsModule*(source: string; fileIdx: FileIndex;
     if p.pos == before:
       ## Progress guarantee: without it a grammar bug would spin forever rather
       ## than report anything.
-      p.err(p.peek, "parser made no progress; skipping token")
+      p.err(p.peek, ndParserStalled)
       discard p.advance
 
 

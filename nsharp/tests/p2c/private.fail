@@ -1,2 +1,3 @@
 This test must fail to compile: it accesses a private base-class member from a
 derived class (C# error CS0122).
+code: NS0122

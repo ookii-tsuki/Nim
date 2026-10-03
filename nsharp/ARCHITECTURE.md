@@ -94,6 +94,7 @@ compiler/nsharp/          # ALL compiler-integrated code (new → merge-safe)
   frontend.nim            # entry points the core edits call
   lexer.nim  parser.nim  keywords.nim
   ast.nim  symbols.nim  sema.nim  desugar.nim
+  diagnostics.nim         # the NSxxxx codes and their text (SPEC 17)
   nsgen.nim               # namespaces spanning files (§5.1.1 of SPEC.md)
   tools/dumpast.nim       # parser golden-AST test seam
 lib/pure/ns/              # N# namespace root: a file's path is its C# namespace
@@ -257,6 +258,7 @@ single-purpose modules rather than one parse-and-lower script, and
 | `compiler/nsharp/symbols.nim` | `NsNode` -> module scope (declaration collection) |
 | `compiler/nsharp/sema.nim` | checks and name resolution over the tree |
 | `compiler/nsharp/bcl.nim` | the one C#-to-Nim name and namespace table |
+| `compiler/nsharp/diagnostics.nim` | the `NSxxxx` codes and their text |
 | `compiler/nsharp/desugar.nim` | `NsNode` -> Nim `PNode` (all lowering) |
 
 `dumpast --ns <file>` prints the parser's own output, which is the N# syntax tree
@@ -325,6 +327,18 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v18** - Diagnostics. Every frontend diagnostic moved into a table in
+  `compiler/nsharp/diagnostics.nim` and reports an `NSxxxx` code whose digits are
+  the code C# gives for the same condition: `NS0246` for a `using` that names no
+  namespace or module, `NS0122` for an inaccessible member, `NS7036` for a missing
+  base constructor, `NS1002` for a missing `;`. `NS9999` is the single code for a
+  construct N# does not support yet, so closing a gap retires no code, and the rest
+  of the 9xxx band holds the conditions C# accepts. Two checks are new: a `using` that
+  resolves to nothing, and two namespaces that use each other, which now replaces
+  Nim's recursive-module-dependency report. A `.fail` or `.unsupported` marker may
+  name the code it expects; `run.sh` requires it and `run_cs.sh` requires the digits
+  to appear among the codes Roslyn reports. Interface members without a body reach
+  the "interfaces are not supported" check instead of failing as a syntax error.
 - **v17** - Type classification across files. A built-in type is accepted under its
   BCL class name (`Int32`, `String`, `Boolean`, `IntPtr` for `nint`, ...) through one
   table that both lowering and classification consult, and `nint`/`nuint` map to
