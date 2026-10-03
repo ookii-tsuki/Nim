@@ -35,10 +35,10 @@ const
 
   ## Member renames applied by the desugar pass. Which receiver kinds may be
   ## renamed is decided by `sema.nim`; `desugar.nim` applies the table.
-  NsMemberRenames*: array[3, NsRename] = [
-    ("Length", "len"), ("Count", "len"), ("Message", "msg"),
+  NsMemberRenames*: array[2, NsRename] = [
+    ("Count", "len"), ("Message", "msg"),
   ]
-  NsLengthMembers*: array[2, string] = ["Length", "Count"]
+  NsLengthMembers*: array[1, string] = ["Count"]
   NsMessageMembers*: array[1, string] = ["Message"]
 
   ## Type names N# knows the shape of, for `sema.nim`'s type classification.

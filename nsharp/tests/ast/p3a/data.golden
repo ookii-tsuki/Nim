@@ -185,7 +185,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkIdent 'xs'
-          nkIdent 'len'
+          nkIdent 'Length'
       nkCall
         nkIdent 'WriteLine'
         nkCall
@@ -229,7 +229,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkIdent 'ys'
-          nkIdent 'len'
+          nkIdent 'Length'
       nkCall
         nkIdent 'WriteLine'
         nkCall

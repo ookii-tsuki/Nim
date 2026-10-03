@@ -123,7 +123,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkIdent 'xs'
-          nkIdent 'len'
+          nkIdent 'Length'
       nkVarSection
         nkIdentDefs
           nkIdent 't'
