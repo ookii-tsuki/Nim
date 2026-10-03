@@ -91,17 +91,27 @@ proc skipBalancedGt(p: NsParser; start: int): int =
 
 # --- types ------------------------------------------------------------------
 
+proc parseDottedName(p: var NsParser): string =
+  ## `A.B.C` as written, or "" when no identifier is next.
+  result = ""
+  if p.peek.kind == nsIdent:
+    result = p.advance.text
+    while p.at(nsDot) and p.peekAhead(1).kind == nsIdent:
+      discard p.advance
+      result.add "."
+      result.add p.advance.text
+
 proc parseType(p: var NsParser): NsNode =
-  ## `void` -> `nsnVoidType`, `T[]` -> `nsnArrayType`, `Name<...>` -> a type name
-  ## with generic arguments. Names are kept exactly as written; mapping them to
-  ## Nim spellings is `desugar`'s job.
+  ## A type as written: `void` becomes an `nsnVoidType`, `T[]` an `nsnArrayType`,
+  ## and a name an `nsnTypeName` carrying its generic arguments and qualifier.
+  ## Names are kept as written; mapping them to Nim spellings is `desugar`'s job.
   let t = p.peek
   if t.kind != nsIdent:
     return nsn(nsnEmpty, p.infoOf(t))
-  discard p.advance
   if t.text == "void":
+    discard p.advance
     return nsnVoidType(p.infoOf(t))
-  result = nsnTypeName(t.text, p.infoOf(t))
+  result = nsnTypeName(p.parseDottedName(), p.infoOf(t))
   if p.at(nsLt):
     discard p.advance
     while not atGtClose(p) and not p.at(nsEof):
@@ -331,6 +341,10 @@ proc parseNew(p: var NsParser, kw: NsToken): NsNode =
     return
   let typeTok = p.advance
   var typ = nsnTypeName(typeTok.text, info)
+  while p.at(nsDot) and p.peekAhead(1).kind == nsIdent:
+    discard p.advance
+    typ.name.add "."
+    typ.name.add p.advance.text
   if p.at(nsLt):
     discard p.advance
     while not atGtClose(p) and not p.at(nsEof):
@@ -399,13 +413,16 @@ proc parseParams(p: var NsParser): seq[NsNode] =
 proc looksLikeDecl(p: NsParser): bool =
   ## C# decides between a local declaration and an expression statement
   ## syntactically: a local declaration is `Type identifier declarator`. So
-  ## recognise the *shape* of a type (a name, an optional generic argument list,
-  ## and any number of `[]` suffixes) and then require an identifier followed by
-  ## a declarator token. Without that last requirement `Foo<int>(x);` would be
-  ## read as a declaration; with it, it is correctly an expression statement.
+  ## recognise the *shape* of a type (a qualified name, an optional generic
+  ## argument list, and any number of `[]` suffixes) and then require an
+  ## identifier followed by a declarator token. Without that last requirement
+  ## `Foo<int>(x);` would be read as a declaration; with it, it is correctly an
+  ## expression statement.
   if p.peek.kind != nsIdent: return false
   if p.peek.text in ["var", "let", "const"]: return true
   var i = 1
+  while p.peekAhead(i).kind == nsDot and p.peekAhead(i + 1).kind == nsIdent:
+    i += 2
   if p.peekAhead(i).kind == nsLt:
     i = skipBalancedGt(p, i)
     if i < 0: return false
@@ -903,16 +920,21 @@ proc parseDelegateDecl(p: var NsParser): NsNode =
   if p.at(nsSemi): discard p.advance
 
 proc parseUsing(p: var NsParser): NsNode =
-  ## The namespace name is kept as written; turning it into an import decision
-  ## is `desugar`'s job (it owns the namespace table).
+  ## `using X.Y;` names a namespace. `using Alias = X.Y;` names the same namespace
+  ## through an alias, which works because lowering drops the qualifier, so the
+  ## target is what gets imported.
   result = nsn(nsnUsing, p.here())
   discard p.advance
-  if p.peek.kind == nsIdent:
-    result.name = p.advance.text
-    while p.at(nsDot) and p.peekAhead(1).kind == nsIdent:
-      discard p.advance
-      result.name.add "."
-      result.name.add p.advance.text
+  let first = p.parseDottedName()
+  if p.at(nsAssign):
+    discard p.advance
+    let target = p.parseDottedName()
+    if p.at(nsLt):
+      p.err(p.peek, "an alias of a type is not supported")
+    else:
+      result.name = target
+  else:
+    result.name = first
   while not p.at(nsSemi) and not p.at(nsEof):
     discard p.advance
   if p.at(nsSemi): discard p.advance

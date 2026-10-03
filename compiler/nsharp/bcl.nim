@@ -2,6 +2,8 @@
 #
 # The tables that map a C# name to its Nim spelling, in one place.
 
+import std/strutils
+
 type
   NsRename* = tuple[cs: string, nim: string]
 
@@ -43,11 +45,18 @@ const
     "List", "Dictionary", "HashSet", "Queue", "Stack",
   ]
 
+proc unqualified*(s: string): string =
+  ## Drops the namespace qualifier from a type name: `A.B.C` becomes `C`. Imported
+  ## symbols are flat, so the qualifier is decorative.
+  let dot = s.rfind('.')
+  if dot >= 0: s[dot + 1 .. ^1] else: s
+
 proc nimTypeName*(s: string): string =
-  ## Nim spelling of a C# type name, or `s` unchanged.
+  ## Nim spelling of a C# type name, or its unqualified form unchanged.
+  let name = unqualified(s)
   for r in NsPrimitiveTypes:
-    if r.cs == s: return r.nim
-  s
+    if r.cs == name: return r.nim
+  name
 
 proc isExceptionBase*(s: string): bool =
   for b in NsExceptionBases:

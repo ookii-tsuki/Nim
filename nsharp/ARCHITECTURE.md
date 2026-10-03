@@ -325,6 +325,13 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v16** - `using Alias = X.Y;` and qualified names. A namespace alias imports its
+  target, since a qualifier is dropped when lowering. `parseType`, `parseNew` and
+  `looksLikeDecl` accept `A.B`, `bcl.unqualified` strips the qualifier, and a
+  member of a namespace qualifier stays a qualifier in `sema`, so
+  `System.Console.WriteLine` and `P.Gadget.Count()` resolve. An alias of a type
+  (`using A = List<int>;`) is reported. New `p4d` (alias) and `p4e` (type alias
+  rejected) tests; suite now 28 tests, 36 golden ASTs, 28 C# cross-checks.
 - **v15** - Namespaces. A C# namespace spans files, which Nim cannot express, so
   each used namespace is emitted as `<P>_decl` / `<P>_impl` / `<P>` (barrel) under
   `<nimcache>/.nsgen` (`compiler/nsharp/nsgen.nim`). A namespace name is a module

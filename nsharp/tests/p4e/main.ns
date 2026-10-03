@@ -1,0 +1,16 @@
+// Valid C# that N# rejects: an alias for a type rather than a namespace.
+using System;
+using IntList = System.Collections.Generic.List<int>;
+
+namespace App
+{
+    class Program
+    {
+        static void Main()
+        {
+            IntList nums = new IntList();
+            nums.Add(1);
+            Console.WriteLine(nums.Count);
+        }
+    }
+}

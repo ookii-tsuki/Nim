@@ -1,0 +1,76 @@
+nkStmtList
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Gadget'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Gadget'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkStrLit "gadget"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Count'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkIntLit 7
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initGadget'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Gadget'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newGadget'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Gadget'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initGadget'
+        nkIdent 'result'

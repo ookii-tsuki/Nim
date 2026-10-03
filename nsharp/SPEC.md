@@ -252,9 +252,10 @@ Storing value types (`int`, `struct`) in an `object` - real boxing - is deferred
 |---|---|---|---|
 | Compilation unit = file | one file = one unit | ✅ v1 | front |
 | `namespace X { ... }` | declaration space | ✅ v1 (→ module/scope) | front |
-| File-scoped namespace `namespace X;` | C# 10 | ✅ v1 | front |
-| `using System;` | import namespace | ✅ v1 (→ `import`) | front |
-| `using Alias = X.Y;` | alias | 🔜 later | front |
+| File-scoped namespace `namespace X;` | C# 10 | 🔜 later | front |
+| `using System;` | import namespace | ✅ v1 (becomes an `import`) | front |
+| `using Alias = X.Y;` | namespace alias | ✅ v1 (imports the target) | front |
+| `using Alias = SomeType;` | alias of a type | 🔜 later | front |
 | `using static T;` | import members | 🔜 later | front |
 | Global `using` | project-wide imports | 🔜 later | front |
 | Nested namespaces | dotted or nested blocks | ✅ v1 (both give one path) | front |
@@ -265,6 +266,12 @@ Storing value types (`int`, `struct`) in an `object` - real boxing - is deferred
 same place: a `using` and a `namespace` always name one thing. Nested blocks
 compose, because `namespace A { namespace B { } }` is that same declaration in C#.
 One `.ns` file is one compilation unit; imports resolve across `.ns` and `.nim`.
+
+**Qualifiers are dropped.** A namespace or type qualifier is decorative once the
+name is lowered, because imported symbols are flat: `System.Console.WriteLine`,
+`Company.Products.Gadget` and `P.Gadget` all lower to the bare name. That is why a
+namespace alias is only an import of its target, and why `using A = List<int>;` is
+reported rather than lowered: a type alias has no qualifier to drop.
 
 **The frontend keeps no namespace to module table.** The N# standard library is the
 root of the same tree, at `lib/pure/ns/`, which the frontend puts on the module

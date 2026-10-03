@@ -107,7 +107,12 @@ proc scanFile(source: string; namespaces: var seq[string];
             i = j
             continue
       elif t.text in ["using", "import"]:
-        let name = dottedName(toks, i + 1)
+        ## `using A = X.Y;` imports `X.Y`, so the target is what counts as used.
+        var start = i + 1
+        if start + 1 < toks.len and toks[start].kind == nsIdent and
+           toks[start + 1].kind == nsAssign:
+          start += 2
+        let name = dottedName(toks, start)
         if name.len > 0: usings.incl name
     else: discard
     inc i

@@ -66,6 +66,7 @@ proc classifyName(ctx: NsCheckContext; name: string): NsTypeKind =
   ## Kind of a type written by name, purely from `bcl.nim`'s tables plus the
   ## module scope. This is where "List is a sequence" and "Exception is an
   ## exception" come from; it is a lookup, not a guess.
+  let name = unqualified(name)
   for s in NsIntTypeNames:
     if s == name: return tkInt
   for s in NsFloatTypeNames:
@@ -160,6 +161,9 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ctx.checkMemberAccess(n)
     kind = ctx.memberKind(n.body.typeName, n.name)
     if n.body.typeName.len == 0: tname = ""
+  of tkType:
+    ## A longer qualifier, as in `Alias.Console` or `System.Console`.
+    kind = tkType
   else: discard
   n.setType(kind, tname)
   result = kind

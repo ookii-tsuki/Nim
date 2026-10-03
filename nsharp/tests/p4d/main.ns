@@ -1,0 +1,16 @@
+// A namespace alias: `P` and the full name reach the same types and statics.
+using System;
+using P = Company.Products;
+
+namespace App
+{
+    class Program
+    {
+        static void Main()
+        {
+            P.Gadget g = new P.Gadget();
+            System.Console.WriteLine(g.Name());
+            System.Console.WriteLine(P.Gadget.Count());
+        }
+    }
+}
