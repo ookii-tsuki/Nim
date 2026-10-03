@@ -56,6 +56,7 @@ proc declare(ctx: var NsCheckContext; name: string; kind: NsTypeKind;
 proc isExceptionDerived(ctx: NsCheckContext; name: string): bool =
   ## A user class is an exception type when anything in its base chain is an
   ## exception base, directly or transitively.
+  result = false
   if not ctx.scope.classes.hasKey(name): return false
   for c in ctx.scope.chain(name):
     let b = ctx.scope.classes[c].base

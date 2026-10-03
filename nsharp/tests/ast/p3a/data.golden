@@ -3,7 +3,9 @@ nkStmtList
     nkStrLit "ns/system"
   nkTypeSection
     nkTypeDef
-      nkIdent 'Color'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Color'
       nkEmpty
       nkEnumTy
         nkEmpty
@@ -12,7 +14,9 @@ nkStmtList
         nkIdent 'Blue'
   nkTypeSection
     nkTypeDef
-      nkIdent 'Program'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
       nkEmpty
       nkRefTy
         nkObjectTy

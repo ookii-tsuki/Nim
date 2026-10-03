@@ -1,11 +1,11 @@
 nkStmtList
   nkImportStmt
-    nkStrLit "ns/system"
+    nkStrLit "Alpha"
   nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'Program'
+        nkIdent 'B'
       nkEmpty
       nkRefTy
         nkObjectTy
@@ -13,29 +13,23 @@ nkStmtList
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
-  nkProcDef
-    nkIdent 'Main'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkIdent 'WriteLine'
-        nkStrLit "hello from N#"
+            nkIdentDefs
+              nkPostfix
+                nkIdent '*'
+                nkIdent 'peer'
+              nkIdent 'A'
+              nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initProgram'
+      nkIdent 'initB'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'B'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -43,11 +37,11 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newProgram'
+      nkIdent 'newB'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Program'
+      nkIdent 'B'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -56,11 +50,5 @@ nkStmtList
         nkIdent 'new'
         nkIdent 'result'
       nkCall
-        nkIdent 'initProgram'
+        nkIdent 'initB'
         nkIdent 'result'
-  nkWhenStmt
-    nkElifBranch
-      nkIdent 'isMainModule'
-      nkStmtList
-        nkCall
-          nkIdent 'Main'

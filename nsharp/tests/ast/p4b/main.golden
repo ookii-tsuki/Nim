@@ -1,6 +1,8 @@
 nkStmtList
   nkImportStmt
     nkStrLit "ns/system"
+  nkImportStmt
+    nkStrLit "Alpha"
   nkTypeSection
     nkTypeDef
       nkPostfix
@@ -24,24 +26,15 @@ nkStmtList
     nkStmtList
       nkVarSection
         nkIdentDefs
-          nkIdent 'nums'
-          nkBracketExpr
-            nkIdent 'List'
-            nkIdent 'int32'
+          nkIdent 'a'
+          nkIdent 'A'
           nkCall
-            nkBracketExpr
-              nkIdent 'newList'
-              nkIdent 'int32'
-      nkCall
-        nkDotExpr
-          nkIdent 'nums'
-          nkIdent 'Add'
-        nkIntLit 1
+            nkIdent 'newA'
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkIdent 'nums'
-          nkIdent 'len'
+          nkIdent 'a'
+          nkIdent 'peer'
   nkProcDef
     nkPostfix
       nkIdent '*'

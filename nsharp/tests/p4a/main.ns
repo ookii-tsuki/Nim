@@ -1,0 +1,15 @@
+using System;
+using UI;
+
+namespace App
+{
+    class Program
+    {
+        static void Main()
+        {
+            Widget w = new Widget();
+            Console.WriteLine(w.IsEven(10));
+            Console.WriteLine(w.IsEven(7));
+        }
+    }
+}

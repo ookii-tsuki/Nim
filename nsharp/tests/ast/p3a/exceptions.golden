@@ -3,7 +3,9 @@ nkStmtList
     nkStrLit "ns/system"
   nkTypeSection
     nkTypeDef
-      nkIdent 'AppException'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'AppException'
       nkEmpty
       nkObjectTy
         nkEmpty
@@ -61,7 +63,9 @@ nkStmtList
         nkIdent 'm'
   nkTypeSection
     nkTypeDef
-      nkIdent 'Program'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
       nkEmpty
       nkRefTy
         nkObjectTy

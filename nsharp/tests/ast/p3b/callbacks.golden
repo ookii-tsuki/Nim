@@ -3,7 +3,9 @@ nkStmtList
     nkStrLit "ns/system"
   nkTypeSection
     nkTypeDef
-      nkIdent 'BinOp'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'BinOp'
       nkEmpty
       nkProcTy
         nkFormalParams
@@ -20,7 +22,9 @@ nkStmtList
           nkIdent 'closure'
   nkTypeSection
     nkTypeDef
-      nkIdent 'IntFn'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'IntFn'
       nkEmpty
       nkProcTy
         nkFormalParams
@@ -33,7 +37,9 @@ nkStmtList
           nkIdent 'closure'
   nkTypeSection
     nkTypeDef
-      nkIdent 'StrAction'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'StrAction'
       nkEmpty
       nkProcTy
         nkFormalParams
@@ -46,7 +52,9 @@ nkStmtList
           nkIdent 'closure'
   nkTypeSection
     nkTypeDef
-      nkIdent 'Program'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
       nkEmpty
       nkRefTy
         nkObjectTy

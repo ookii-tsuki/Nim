@@ -73,6 +73,7 @@ proc atGtClose(p: NsParser): bool {.inline.} =
 proc skipBalancedGt(p: NsParser; start: int): int =
   ## Index just past the generic argument list starting at `start` (a `<`), or
   ## -1 when it is unterminated. A `>>` closes two levels.
+  result = -1
   var i = start
   var depth = 0
   while true:
@@ -693,6 +694,15 @@ proc accessOf(mods: seq[string]): NsAccess =
     of "private": result = aPrivate
     else: discard
 
+proc accessOfTopLevel(mods: seq[string]): NsAccess =
+  ## A top-level type is `internal` by default, not `private`: in C# it is
+  ## visible to every file of the same program without any modifier. An explicit
+  ## modifier still wins, so `private class X` stays private.
+  for w in mods:
+    if w in ["public", "private", "protected", "internal"]:
+      return accessOf(mods)
+  aInternal
+
 proc parseModifierList(p: var NsParser; words, allowed: openArray[string]): seq[string] =
   ## Consumes the leading modifier words of a declaration. A modifier N# does not
   ## implement yet is reported rather than silently ignored: accepting `override`
@@ -811,7 +821,6 @@ proc parseClassMember(p: var NsParser; clsName: string): NsNode =
 proc parseTypeDecl(p: var NsParser): NsNode =
   let startInfo = p.here()
   let mods = p.parseModifierList(NsTypeModifiers, NsClassModifiers)
-  let isPublic = "public" in mods
   let kwTok = p.advance
   var ckind = ckClass
   if kwTok.text == "struct": ckind = ckStruct
@@ -822,7 +831,7 @@ proc parseTypeDecl(p: var NsParser): NsNode =
   result = nsn(nsnClassDecl, p.infoOf(nameTok))
   result.name = nameTok.text
   result.classKind = ckind
-  result.attrs = NsAttrs(access: (if isPublic: aPublic else: aPrivate))
+  result.attrs = NsAttrs(access: accessOfTopLevel(mods))
   if p.at(nsColon):
     discard p.advance
     result.typ = p.parseType()
@@ -853,14 +862,13 @@ proc parseTypeDecl(p: var NsParser): NsNode =
 proc parseEnumDecl(p: var NsParser): NsNode =
   let info = p.here()
   let mods = p.parseModifierList(NsTypeModifiers, NsClassModifiers)
-  let isPublic = "public" in mods
   discard p.advance   # enum
   if p.peek.kind != nsIdent:
     return nsn(nsnEmpty, info)
   let nameTok = p.advance
   result = nsn(nsnEnumDecl, p.infoOf(nameTok))
   result.name = nameTok.text
-  result.attrs = NsAttrs(access: (if isPublic: aPublic else: aPrivate))
+  result.attrs = NsAttrs(access: accessOfTopLevel(mods))
   if p.at(nsLBrace):
     discard p.advance
     while not p.at(nsRBrace) and not p.at(nsEof):
@@ -882,7 +890,6 @@ proc parseEnumDecl(p: var NsParser): NsNode =
 proc parseDelegateDecl(p: var NsParser): NsNode =
   let info = p.here()
   let mods = p.parseModifierList(NsTypeModifiers, NsClassModifiers)
-  let isPublic = "public" in mods
   discard p.advance   # delegate
   let ret = p.parseType()
   if p.peek.kind != nsIdent:
@@ -891,7 +898,7 @@ proc parseDelegateDecl(p: var NsParser): NsNode =
   result = nsn(nsnDelegateDecl, p.infoOf(nameTok))
   result.name = nameTok.text
   result.typ = ret
-  result.attrs = NsAttrs(access: (if isPublic: aPublic else: aPrivate))
+  result.attrs = NsAttrs(access: accessOfTopLevel(mods))
   result.params = p.parseParams()
   if p.at(nsSemi): discard p.advance
 

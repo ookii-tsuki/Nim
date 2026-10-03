@@ -1,0 +1,13 @@
+// Valid C# that N# rejects: two namespaces whose *types* name each other. Each
+// namespace's declarations must import the other's, which is a module cycle Nim
+// cannot express. (Methods that only *use* each other's types are fine - that is
+// what the decl/impl split is for; see SPEC.md 5.1.1.)
+using Beta;
+
+namespace Alpha
+{
+    class A
+    {
+        public B peer;
+    }
+}

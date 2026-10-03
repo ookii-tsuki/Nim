@@ -14,7 +14,7 @@
 
 import std/[os, syncio]
 import ../ast, ../idents, ../lineinfos, ../options, ../msgs, ../pathutils
-import parser, symbols, sema, desugar
+import parser, symbols, sema, desugar, nsgen
 
 proc isNsharpFile*(config: ConfigRef; fileIdx: FileIndex): bool =
   ## True when `fileIdx` names a `.ns` source file.
@@ -34,6 +34,10 @@ proc parseModule*(fileIdx: FileIndex; cache: IdentCache;
                   config: ConfigRef): PNode =
   ## Parses an `.ns` file into an `nkStmtList` of ordinary Nim `PNode`s.
   let path = toFullPath(config, fileIdx)
+  ## Namespaces are resolved across files, so they must be discovered and
+  ## generated before this module's imports are resolved. `parseModule` for the
+  ## main module runs first, which is when the scan happens (it is idempotent).
+  ensureNamespaces(config, cache, AbsoluteFile(path.string))
   var source = ""
   try:
     source = readFile(path.string)

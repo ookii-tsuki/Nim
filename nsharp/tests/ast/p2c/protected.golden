@@ -3,7 +3,9 @@ nkStmtList
     nkStrLit "ns/system"
   nkTypeSection
     nkTypeDef
-      nkIdent 'Base'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Base'
       nkEmpty
       nkRefTy
         nkObjectTy
@@ -85,7 +87,9 @@ nkStmtList
           nkIdent 'secret'
   nkTypeSection
     nkTypeDef
-      nkIdent 'Derived'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Derived'
       nkEmpty
       nkRefTy
         nkObjectTy
@@ -163,7 +167,9 @@ nkStmtList
           nkIntLit 2
   nkTypeSection
     nkTypeDef
-      nkIdent 'Program'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
       nkEmpty
       nkRefTy
         nkObjectTy

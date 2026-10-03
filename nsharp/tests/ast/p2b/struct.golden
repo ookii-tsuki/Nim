@@ -3,7 +3,9 @@ nkStmtList
     nkStrLit "ns/system"
   nkTypeSection
     nkTypeDef
-      nkIdent 'Vec'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Vec'
       nkEmpty
       nkObjectTy
         nkEmpty
@@ -54,7 +56,9 @@ nkStmtList
         nkIdent 'result'
   nkTypeSection
     nkTypeDef
-      nkIdent 'Program'
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
       nkEmpty
       nkRefTy
         nkObjectTy

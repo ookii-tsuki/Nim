@@ -1,9 +1,11 @@
 nkStmtList
+  nkImportStmt
+    nkStrLit "ns/system"
   nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'Calc'
+        nkIdent 'Widget'
       nkEmpty
       nkRefTy
         nkObjectTy
@@ -14,62 +16,57 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Add'
+      nkIdent 'IsEven'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'int32'
+      nkIdent 'bool'
       nkIdentDefs
-        nkIdent 'a'
-        nkIdent 'int32'
+        nkIdent 'self'
+        nkIdent 'Widget'
         nkEmpty
       nkIdentDefs
-        nkIdent 'b'
+        nkIdent 'n'
         nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
-      nkReturnStmt
-        nkInfix
-          nkIdent '+'
-          nkIdent 'a'
+      nkIfStmt
+        nkElifBranch
+          nkInfix
+            nkIdent '=='
+            nkIdent 'n'
+            nkIntLit 0
+          nkStmtList
+            nkReturnStmt
+              nkIdent 'true'
+      nkVarSection
+        nkIdentDefs
           nkIdent 'b'
+          nkIdent 'Button'
+          nkCall
+            nkIdent 'newButton'
+      nkReturnStmt
+        nkCall
+          nkDotExpr
+            nkIdent 'b'
+            nkIdent 'IsOdd'
+          nkInfix
+            nkIdent '-'
+            nkIdent 'n'
+            nkIntLit 1
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Mul'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'int32'
-      nkIdentDefs
-        nkIdent 'a'
-        nkIdent 'int32'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'b'
-        nkIdent 'int32'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkReturnStmt
-        nkInfix
-          nkIdent '*'
-          nkIdent 'a'
-          nkIdent 'b'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'initCalc'
+      nkIdent 'initWidget'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Calc'
+        nkIdent 'Widget'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -77,11 +74,11 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newCalc'
+      nkIdent 'newWidget'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Calc'
+      nkIdent 'Widget'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -90,5 +87,5 @@ nkStmtList
         nkIdent 'new'
         nkIdent 'result'
       nkCall
-        nkIdent 'initCalc'
+        nkIdent 'initWidget'
         nkIdent 'result'

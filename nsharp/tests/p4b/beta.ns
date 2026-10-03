@@ -1,0 +1,10 @@
+// The mirror of alpha.ns; see the note there.
+using Alpha;
+
+namespace Beta
+{
+    class B
+    {
+        public A peer;
+    }
+}

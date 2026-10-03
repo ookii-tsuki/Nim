@@ -702,9 +702,23 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   if l.entryPoint != nil:
     result.add makeMainCall(l, l.entryPoint)
 
-
-
-
-
-
-
+proc splitModuleOutput*(stmts: PNode): tuple[decls, impls: PNode] =
+  ## Partitions a lowered module into its type declarations and everything else.
+  ## A whole namespace is emitted as `<N>_decl` (the types) plus `<N>_impl` (the
+  ## procs), so a method in one of the namespace's files can call one in another
+  ## without the two files' modules importing each other in a cycle - the cycle
+  ## Nim rejects. Imports go into both halves: the declarations may name imported
+  ## types and the implementations may name imported procs.
+  var decls = newNodeI(nkStmtList, stmts.info)
+  var impls = newNodeI(nkStmtList, stmts.info)
+  for i in 0 ..< stmts.len:
+    let s = stmts[i]
+    case s.kind
+    of nkTypeSection:
+      decls.add s
+    of nkImportStmt, nkImportExceptStmt, nkFromStmt:
+      decls.add s
+      impls.add s
+    else:
+      impls.add s
+  result = (decls: decls, impls: impls)

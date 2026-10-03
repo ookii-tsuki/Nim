@@ -93,7 +93,9 @@ bin/nim1 c --skipUserCfg --skipParentCfg -d:nsharp -o:bin/nim compiler/nim.nim
 compiler/nsharp/          # ALL compiler-integrated code (new → merge-safe)
   frontend.nim            # entry points the core edits call
   lexer.nim  parser.nim  keywords.nim
-  # future: desugar.nim  diag.nim
+  ast.nim  symbols.nim  sema.nim  desugar.nim
+  nsgen.nim               # namespaces spanning files (§5.1.1 of SPEC.md)
+  tools/dumpast.nim       # parser golden-AST test seam
 lib/pure/ns/prelude.nim   # N# prelude: Console, ... (auto-imported as ns/prelude)
 nsharp/                   # language assets (repo root)
   SPEC.md  GLOSSARY.md  ARCHITECTURE.md  tests/    # future: vscode/

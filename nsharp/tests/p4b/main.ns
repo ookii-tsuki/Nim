@@ -1,0 +1,14 @@
+using System;
+using Alpha;
+
+namespace App
+{
+    class Program
+    {
+        static void Main()
+        {
+            A a = new A();
+            Console.WriteLine(a.peer);
+        }
+    }
+}

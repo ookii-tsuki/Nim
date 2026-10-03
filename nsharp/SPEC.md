@@ -92,7 +92,7 @@ Status of the blocking decisions (full log in §18). ✅ = resolved, 🟡 = stil
 | D1 | **Case sensitivity** | ✅ **Case-sensitive**, C#-faithful (§3.1) | `front` + `idents` mode |
 | D2 | **Interface model** | ✅ **Static interfaces = concepts** (v1); dynamic interface values → v2 (§8) | `sem` |
 | D3 | **Method resolution** | ✅ member-first, then UFCS fallback | `sem` |
-| D4 | **Namespace ↔ module** | ✅ 1 file = 1 module; namespace = module scope | `front` |
+| D4 | **Namespace ↔ module** | ✅ namespace = generated decl/impl/barrel (§5.1.1) | `front` |
 | D5 | **Entry point** | ✅ both top-level statements and `Main` | `front` |
 | D6 | **Null model** | ✅ `nil`-able refs, `?` annotation; `Option[T]` for `T?` (§4.4/§7.3) | `lib` |
 | D7 | **Numeric model** | ✅ drop `decimal` from core (later via lib) | `lib` |
@@ -276,6 +276,43 @@ The module file names are ours to choose; the C# namespace is only the name we
 present. There is **no implicit import**: `Console.WriteLine` without
 `using System;`, or `List<T>` without `using System.Collections.Generic;`, must
 fail to compile. `nsharp/tests/p3b/nousing.ns` pins that negative case.
+
+#### 5.1.1 User namespaces span files (D4, revised)
+
+A C# namespace is **not** a file. Any number of `.ns` files may declare
+`namespace UI`, and code in one of them may freely name another's types and
+members. Nim has one module per file, so compiling each file as its own module
+cannot express that: a method in `Widget.ns` calling one in `Button.ns` makes the
+two modules import each other, which Nim rejects.
+
+The frontend therefore emits each *used* namespace as three generated Nim
+modules (`compiler/nsharp/nsgen.nim`):
+
+| Generated | Contents | Why |
+|---|---|---|
+| `<N>_decl.nim` | every type of the namespace, in **one** type section | Nim resolves mutually recursive types inside a single section |
+| `<N>_impl.nim` | every proc, forward declared then defined | all implementations in one module, so a method in one file can call one in another |
+| `<N>.nim` | barrel: `import`/`export` both | this is what `using N;` resolves to; a plain `.nim` consumer may import it too |
+
+The decl/impl split additionally breaks a common cross-namespace cycle: if A's
+methods use B's types and B's methods use A's types, `A_impl` imports only
+`B_decl` and `B_impl` imports only `A_decl` - acyclic.
+
+Resolution: a token-level scan (no parsing, so an unrelated malformed `.ns` in the
+tree cannot break a build) finds `namespace X` / `using X` under the main file's
+directory; the generated modules go in `<nimcache>/.nsgen`, which is placed in
+front of the module search path. Generation happens once, when the main module is
+parsed, before its imports resolve.
+
+**Limits, stated plainly.** A namespace whose name is dotted is not grouped (a
+dotted name is not a filename). A same-named sibling `<N>.ns` file still wins
+over the generated barrel, so a namespace that is also a file keeps its old
+behaviour. And **mutual references across two namespaces still cycle** - A's
+methods calling B's while B's call A's, or A's types naming B's while B's name
+A's - because Nim has no cross-module forward declaration for procs and resolves
+mutually recursive *types* only within one section. That is inherent to Nim's
+module model, not to this design; such a cycle is reported as a recursive module
+dependency and the namespaces must be merged or layered.
 
 ### 5.2 Type declarations
 
@@ -811,7 +848,7 @@ that C# lacks, exposed deliberately.
 | **D1** | Case sensitivity | ✅ **Case-sensitive**; `IdentCache` mode + case-preserving hash (§3.1) | lexer, `idents` |
 | **D2** | Interface model | ✅ **Static interfaces = concepts** (v1); dynamic values → v2 (§8) | sem |
 | **D3** | Method resolution | ✅ member-first, then UFCS fallback | sem |
-| **D4** | Namespace ↔ module | ✅ 1 file = 1 module; namespace = module scope | front |
+| **D4** | Namespace ↔ module | ✅ namespace = generated decl/impl/barrel (§5.1.1) | front |
 | **D5** | Entry point | ✅ both top-level statements and `Main` | parser |
 | **D6** | Null model | ✅ `nil`-able refs, `?` annotation; `Option[T]` for `T?`; `null` deref → `NullReferenceException` (§4.4) | lib |
 | **D7** | `decimal` | ✅ later (lib), not core | lib |

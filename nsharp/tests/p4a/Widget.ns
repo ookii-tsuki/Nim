@@ -1,0 +1,14 @@
+using System;
+
+namespace UI
+{
+    class Widget
+    {
+        public bool IsEven(int n)
+        {
+            if (n == 0) { return true; }
+            Button b = new Button();
+            return b.IsOdd(n - 1);
+        }
+    }
+}
