@@ -1,0 +1,19 @@
+using System;
+
+namespace Demo
+{
+    class Counter
+    {
+        // Valid C# that N# rejects: field initialisers are not lowered yet, and
+        // dropping one silently would leave the field at its default value.
+        int count = 7;
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("field init");
+        }
+    }
+}

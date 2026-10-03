@@ -1,20 +1,37 @@
 #
 #           N# frontend - entry point called by the compiler core
 #
-# The compiler core reaches the N# frontend through exactly two call sites,
-# both guarded by `when defined(nsharp)`:
+# The compiler core reaches the N# frontend through exactly two call sites, both
+# guarded by `when defined(nsharp)`:
 #   * `compiler/syntaxes.nim`  (parseFile dispatch)
 #   * `compiler/pipelines.nim` (module pipeline dispatch)
 # See ../nsharp/ARCHITECTURE.md for the minimal-diff rationale.
+#
+# This module is the pipeline. Since Stage 1 of PARSER-CLEANUP.md the stages are
+# separate modules, each with one job:
+#
+#   parser.nim   tokens -> ast.NsNode          (grammar only)
+#   symbols.nim  ast.NsNode -> module scope    (declaration collection)
+#   sema.nim     checks + name resolution      (over the tree, diagnosing)
+#   desugar.nim  ast.NsNode -> Nim PNode       (the C#-to-Nim translation)
 
 import std/[os, syncio]
 import ../ast, ../idents, ../lineinfos, ../options, ../msgs, ../pathutils
-import keywords, lexer, parser
+import parser, symbols, sema, desugar
 
 proc isNsharpFile*(config: ConfigRef; fileIdx: FileIndex): bool =
   ## True when `fileIdx` names a `.ns` source file.
   let path = toFullPath(config, fileIdx)
   result = splitFile(path.string).ext == ".ns"
+
+proc compileNsSource*(source: string; fileIdx: FileIndex; cache: IdentCache;
+                      config: ConfigRef): PNode =
+  ## The whole frontend: parse, collect declarations, check, lower. Exposed
+  ## separately from `parseModule` so tools can drive it from a string.
+  let module = parseNsModule(source, fileIdx, config)
+  let scope = collectSymbols(module, config)
+  checkModule(module, scope, config)
+  result = lowerModule(module, scope, cache)
 
 proc parseModule*(fileIdx: FileIndex; cache: IdentCache;
                   config: ConfigRef): PNode =
@@ -27,4 +44,5 @@ proc parseModule*(fileIdx: FileIndex; cache: IdentCache;
     localError(config, newLineInfo(fileIdx, 1, 1),
                "N#: cannot read " & path.string)
     return newNodeI(nkStmtList, newLineInfo(fileIdx, 1, 1))
-  result = parseNsModule(source, fileIdx, cache, config)
+  result = compileNsSource(source, fileIdx, cache, config)
+

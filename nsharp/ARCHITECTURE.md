@@ -208,10 +208,19 @@ parameterless constructor must name a base constructor, else it is an error
 (matching C# CS7036); this is validated using the constructor arities recorded in
 the class table.
 
-Test suite (17 total): `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter`,
+Test suite (21 total): `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter`,
 `p2b/auto`, `p2b/shapes`, `p2c/protected`, `p2c/private` (expected failure),
 `p2d/nobase` (expected failure), `p3a/data`, `p3a/exceptions`, `p3b/callbacks`,
-`p3b/collections`, `p3b/nousing` (expected failure).
+`p3b/collections`, `p3b/nousing` (expected failure), `p3c/typed`,
+`p3c/virtual`, `p3c/interface`, `p3c/fieldinit`.
+
+A `<name>.fail` marker means both N# and C# must reject the program (an access
+violation, a missing base constructor). A `<name>.unsupported` marker means the
+program is **valid C# that N# deliberately refuses**: `run.sh` requires the N#
+compile to fail and `run_cs.sh` requires the C# compiler to accept it, so the
+marker cannot be used to hide a broken test. `p3c/virtual`, `p3c/interface` and
+`p3c/fieldinit` cover the modifiers and constructs that Stage 3 of the parser
+cleanup stopped ignoring silently.
 
 `nsharp/tests/run.sh` is the N# runner; it then runs `nsharp/tests/run_cs.sh`,
 the C#<->N# equivalence gate, unless `NS_SKIP_CS=1` is set. Because every `.ns`
@@ -221,6 +230,34 @@ the C# program's stdout to match the same `<name>.out`. A `.fail` test must be
 rejected by C# too. A sibling `.ns` with no `.out`/`.fail` (e.g. `p1b/Math.ns`)
 is a module and is compiled together with the program. The gate skips cleanly
 when `dotnet` is not on PATH.
+
+`nsharp/tests/run_ast.sh` is the parser golden-AST check (Stage 0a of the parser
+cleanup, see PARSER-CLEANUP.md), run by `run.sh` unless `NS_SKIP_AST=1`. It
+builds `compiler/nsharp/tools/dumpast.nim`, a standalone tool that drives
+`parseNsModule` directly so the compiler tree stays untouched, and diffs its
+output against `nsharp/tests/ast/<name>.golden` for all 18 `.ns` files (including
+the module-only `p1b/Math.ns` and the expected-failure tests). The dump is
+deliberately the *parse output*, not post-`sem`: the lowering fused into the
+parser is exactly what the refactor must preserve, and a program's stdout cannot
+show that. Regenerate with `run_ast.sh --update`; the output is verified
+deterministic (two runs produce identical goldens).
+
+**Frontend layout.** As of Stage 1 of the parser cleanup the frontend is six
+single-purpose modules rather than one parse-and-lower script, and
+`frontend.nim` is the pipeline (parse, collect declarations, check, lower):
+
+| module | job |
+|---|---|
+| `compiler/nsharp/ast.nim` | the N# syntax tree (`NsNode`), which mirrors C# syntax |
+| `compiler/nsharp/parser.nim` | tokens -> `NsNode`; grammar only, no name mapping |
+| `compiler/nsharp/symbols.nim` | `NsNode` -> module scope (declaration collection) |
+| `compiler/nsharp/sema.nim` | checks and name resolution over the tree |
+| `compiler/nsharp/bcl.nim` | the one C#-to-Nim name and namespace table |
+| `compiler/nsharp/desugar.nim` | `NsNode` -> Nim `PNode` (all lowering) |
+
+`dumpast --ns <file>` prints the parser's own output, which is the N# syntax tree
+before any C#-to-Nim mapping; the default mode prints the lowered Nim tree that
+the golden tests pin.
 
 Delivered in 3a: data and control. `enum` (ordinal Nim enums; qualified access
 `E.A` works directly), `switch`/`case`/`default` (desugared to Nim `case`; a
@@ -283,6 +320,25 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v14** - Stages 2 and 3 of the parser cleanup. Stage 2: `sema.nim` attaches
+  coarse type information and lowering uses it, so `.Length`/`.Count`/`.Message`
+  renaming is type-directed and integer `/` is `div` (the old name-only rule
+  rewrote a user property called `Length` and broke legal C#). Stage 3: no more
+  silent semantics (unimplemented modifiers, `interface`, static properties and
+  field initialisers are reported), `looksLikeDecl` applies the real C#
+  declaration rule, `>>` splitting moved into the lexer, and a parser progress
+  guard was added. New `.unsupported` test marker and `p3c/*` tests; suite now
+  21 tests, 22 golden ASTs, 21 C# cross-checks.
+- **v13** - Stage 1 of the parser cleanup: the frontend is now `ast.nim` +
+  `parser.nim` (grammar only) + `symbols.nim` + `sema.nim` + `bcl.nim` +
+  `desugar.nim`, with `frontend.nim` as the pipeline. `prescanClasses`/the
+  token-level member scanner are gone; declarations are collected from the tree;
+  access control and the base-constructor rule moved into `sema`. All 18 golden
+  trees are byte-identical and the whole suite is green. See PARSER-CLEANUP.md.
+- **v12** - Stage 0a of the parser cleanup: added `nsharp/tests/run_ast.sh` and
+  `compiler/nsharp/tools/dumpast.nim`, a golden-AST net over the parse output of
+  all 18 `.ns` files, wired into `run.sh` (`NS_SKIP_AST=1` to skip). The plan
+  lives in `nsharp/PARSER-CLEANUP.md`. No compiler source changed.
 - **v11** - Phase 3b: `delegate` types (`{.closure.}` proc types), lambdas with
   delegate-typed parameters, C# generic syntax (`Name<...>` -> `Name[...]`) and
   the collection shim `ns/collections.nim`. The C# BCL is now gated by `using`

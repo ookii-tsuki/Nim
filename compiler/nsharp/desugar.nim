@@ -1,0 +1,713 @@
+#
+#           N# frontend - lowering to Nim
+#
+# Stage 1 of PARSER-CLEANUP.md. This is where the whole C#-to-Nim translation
+# lives: `NsNode` in, ordinary Nim `PNode`s out. The parser no longer performs
+# any of it, and the C#-to-Nim *name* mapping is centralised in `bcl.nim`.
+#
+# One deliberate asymmetry is reproduced from the pre-refactor emitter: methods
+# get no `discardable` pragma while the generated `init`/`new` procs do. C# would
+# allow discarding a method's result, so this is a fidelity bug rather than a
+# design choice; it is isolated in `procPragmas` and flagged for a later fix.
+
+import std/[strutils, tables]
+import ../ast, ../idents, ../lineinfos
+import ast, bcl, symbols
+
+type
+  Lowerer = object
+    scope: NsModuleScope
+    cache: IdentCache
+    thisName: string        ## "self" in instance members, "" in static ones
+    entryPoint: PNode       ## the emitted `Main` proc, if there was one
+
+proc id(l: Lowerer; s: string; info: TLineInfo): PNode =
+  newAtom(l.cache.getIdentExact(s), info)
+
+proc empty(info: TLineInfo): PNode {.inline.} = newNodeI(nkEmpty, info)
+
+proc emptyList(info: TLineInfo): PNode {.inline.} = newNodeI(nkStmtList, info)
+
+proc memberToNim(l: Lowerer; n: NsNode): string =
+  ## `.Length`/`.Count` -> `len` and `.Message` -> `msg`, but only where the
+  ## *receiver's* resolved type says it is an array, string, collection or
+  ## exception. A user member that happens to share one of those names is left
+  ## alone, which the name-only rule got wrong (SPEC section 15). The names
+  ## themselves come from `bcl.nim`, so there is still one list of renames.
+  var renamed = ""
+  if n.body != nil:
+    case n.body.typeKind
+    of tkSequence, tkString:
+      if n.name in NsLengthMembers and renamedMember(n.name, renamed):
+        return renamed
+    of tkException:
+      if n.name in NsMessageMembers and renamedMember(n.name, renamed):
+        return renamed
+    else: discard
+  n.name
+
+# --- types ------------------------------------------------------------------
+
+proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
+  ## C# type reference to Nim type expression. `nsnEmpty`/`nsnVoidType` become
+  ## `nkEmpty`, which is how "no type" is spelled in a Nim parameter list.
+  if t == nil: return empty(info)
+  case t.kind
+  of nsnEmpty, nsnVoidType:
+    result = empty(info)
+  of nsnArrayType:
+    result = newTree(nkBracketExpr, info, l.id("seq", info),
+                     l.typeToNim(t.typ, info))
+  of nsnTypeName:
+    result = l.id(nimTypeName(t.name), info)
+    if t.sons.len > 0:
+      let be = newNodeI(nkBracketExpr, info)
+      be.add result
+      for a in t.sons: be.add l.typeToNim(a, info)
+      result = be
+  else:
+    result = empty(info)
+
+proc formalParams(l: Lowerer; ret: NsNode; params: seq[NsNode];
+                  info: TLineInfo): PNode =
+  result = newNodeI(nkFormalParams, info)
+  result.add l.typeToNim(ret, info)
+  for p in params:
+    let defs = newNodeI(nkIdentDefs, p.info)
+    defs.add l.id(p.name, p.info)
+    defs.add l.typeToNim(p.typ, p.info)
+    defs.add empty(p.info)
+    result.add defs
+
+# --- expressions ------------------------------------------------------------
+
+proc annotateLambda(l: Lowerer; lam, declared: NsNode) =
+  ## Fills a lambda's parameter and return types from the declared delegate type,
+  ## so `IntFn f = x => ...;` gives `x` a type. This is the only place the
+  ## "declared local of delegate type" information is used.
+  if lam == nil or lam.kind != nsnLambda: return
+  if declared == nil or declared.kind != nsnTypeName: return
+  if not l.scope.delegates.hasKey(declared.name): return
+  let d = l.scope.delegates[declared.name]
+  lam.typ = d.typ
+  for i in 0 ..< lam.params.len:
+    if lam.params[i].typ == nil and i < d.params.len:
+      lam.params[i].typ = d.params[i].typ
+
+proc expr(l: Lowerer; n: NsNode): PNode
+proc stmtSeq(l: Lowerer; blk: NsNode): PNode
+
+proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
+  let fp = newNodeI(nkFormalParams, n.info)
+  fp.add l.typeToNim(n.typ, n.info)
+  for p in n.params:
+    let defs = newNodeI(nkIdentDefs, p.info)
+    defs.add l.id(p.name, p.info)
+    defs.add l.typeToNim(p.typ, p.info)
+    defs.add empty(p.info)
+    fp.add defs
+  result = newNodeI(nkLambda, n.info, 7)
+  for i in 0 .. 6: result[i] = empty(n.info)
+  result[3] = fp
+  result[6] = if n.body != nil: l.stmtSeq(n.body) else: emptyList(n.info)
+
+proc newToNim(l: Lowerer; n: NsNode): PNode =
+  ## `new T(args)` becomes `newT(args)`, carrying generic arguments over.
+  var callee =
+    if n.typ != nil and n.typ.kind == nsnTypeName:
+      l.id("new" & nimTypeName(n.typ.name), n.info)
+    else:
+      l.id("new", n.info)
+  if n.typ != nil and n.typ.kind == nsnTypeName and n.typ.sons.len > 0:
+    let be = newNodeI(nkBracketExpr, n.info)
+    be.add callee
+    for a in n.typ.sons: be.add l.typeToNim(a, n.info)
+    callee = be
+  result = newNodeI(nkCall, n.info)
+  result.add callee
+  for a in n.sons: result.add l.expr(a)
+
+proc callToNim(l: Lowerer; n: NsNode): PNode =
+  var callee = n.body
+  ## `Class.Method(...)` / `Console.WriteLine(...)`: the qualifier is dropped,
+  ## because it is a namespace or a static class (SPEC section 15). Whether the
+  ## receiver is one of those was decided by `sema.nim` and recorded as `tkType`;
+  ## the previous version guessed it from the receiver's capitalisation.
+  if callee != nil and callee.kind == nsnMember and callee.body != nil and
+     callee.body.typeKind == tkType:
+    callee = nsnIdent(callee.name, callee.info)
+  result = newNodeI(nkCall, n.info)
+  result.add l.expr(callee)
+  for a in n.sons: result.add l.expr(a)
+
+proc expr(l: Lowerer; n: NsNode): PNode =
+  if n == nil: return newNodeI(nkEmpty, unknownLineInfo)
+  case n.kind
+  of nsnEmpty: result = empty(n.info)
+  of nsnIdent: result = l.id(n.name, n.info)
+  of nsnThis:
+    result = l.id(if l.thisName.len > 0: l.thisName else: "this", n.info)
+  of nsnNull: result = newNodeI(nkNilLit, n.info)
+  of nsnIntLit: result = newAtom(nkIntLit, n.intVal, n.info)
+  of nsnFloatLit: result = newAtom(nkFloatLit, n.floatVal, n.info)
+  of nsnStrLit: result = newAtom(nkStrLit, n.strVal, n.info)
+  of nsnCharLit: result = newAtom(nkCharLit, n.intVal, n.info)
+  of nsnBoolLit: result = l.id(if n.intVal != 0: "true" else: "false", n.info)
+  of nsnMember:
+    result = newTree(nkDotExpr, n.info, l.expr(n.body),
+                     l.id(l.memberToNim(n), n.info))
+  of nsnCall: result = l.callToNim(n)
+  of nsnIndex:
+    result = newTree(nkBracketExpr, n.info, l.expr(n.body), l.expr(n.sons[0]))
+  of nsnNew: result = l.newToNim(n)
+  of nsnNewArray:
+    let typ = newTree(nkBracketExpr, n.info, l.id("newSeq", n.info),
+                      l.typeToNim(n.typ, n.info))
+    result = newNodeI(nkCall, n.info)
+    result.add typ
+    result.add l.expr(n.sons[0])
+  of nsnArrayLit:
+    let br = newNodeI(nkBracket, n.info)
+    for e in n.sons: br.add l.expr(e)
+    result = newTree(nkPrefix, n.info, l.id("@", n.info), br)
+  of nsnUnary:
+    result = newTree(nkPrefix, n.info, l.id(n.name, n.info), l.expr(n.body))
+  of nsnIncDec:
+    result = newTree(nkCommand, n.info, l.id(n.name, n.info), l.expr(n.body))
+  of nsnBinary:
+    result = newTree(nkInfix, n.info, l.id(n.name, n.info),
+                     l.expr(n.sons[0]), l.expr(n.sons[1]))
+  of nsnTernary:
+    result = newNodeI(nkIfExpr, n.info)
+    result.add newTree(nkElifExpr, n.info, l.expr(n.sons[0]), l.expr(n.sons[1]))
+    result.add newTree(nkElseExpr, n.info, l.expr(n.sons[2]))
+  of nsnLambda: result = l.lambdaToNim(n)
+  else: result = empty(n.info)
+
+# --- statements -------------------------------------------------------------
+
+proc stmt(l: Lowerer; n: NsNode): PNode
+proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode
+
+proc stmtSeq(l: Lowerer; blk: NsNode): PNode =
+  ## Lowers a `nsnBlock` to an `nkStmtList`.
+  result = newNodeI(nkStmtList, if blk == nil: unknownLineInfo else: blk.info)
+  if blk != nil:
+    for s in blk.sons: result.add l.stmt(s)
+
+proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode =
+  result = newNodeI(nkStmtList, info)
+  for s in stmts: result.add l.stmt(s)
+
+proc throwToNim(l: Lowerer; n: NsNode): PNode =
+  ## `throw new T(msg)`:
+  ##   * external exception (system or a prelude exception) -> `newException(T, msg)`
+  ##   * user-declared exception class -> raise the allocator result, which is
+  ##     already a `ref T` because such a class is lowered as a value object.
+  var e = l.expr(n.body)
+  if n.body != nil and n.body.kind == nsnNew and n.body.typ != nil and
+     n.body.typ.kind == nsnTypeName and
+     not l.scope.classes.hasKey(n.body.typ.name):
+    let msg =
+      if n.body.sons.len > 0: l.expr(n.body.sons[0])
+      else: newAtom(nkStrLit, "", n.info)
+    let ne = newNodeI(nkCall, n.info)
+    ne.add l.id("newException", n.info)
+    ne.add l.id(nimTypeName(n.body.typ.name), n.info)
+    ne.add msg
+    e = ne
+  result = newTree(nkRaiseStmt, n.info, e)
+
+proc switchSectionBody(l: Lowerer; blk: NsNode): PNode =
+  ## A section body with a trailing `break` dropped: in C# `break` exits the
+  ## switch, but Nim `case` never falls through, so keeping it would break out of
+  ## an enclosing loop instead.
+  var stmts = if blk == nil: newSeq[NsNode]() else: blk.sons
+  if stmts.len > 0 and stmts[^1].kind == nsnBreak:
+    stmts = stmts[0 ..< stmts.len - 1]
+  result = newNodeI(nkStmtList, if blk == nil: unknownLineInfo else: blk.info)
+  for s in stmts: result.add l.stmt(s)
+
+proc switchToNim(l: Lowerer; n: NsNode): PNode =
+  result = newNodeI(nkCaseStmt, n.info)
+  result.add l.expr(n.body)
+  var hasDefault = false
+  for sec in n.sons:
+    if sec.name == "default":
+      let e = newNodeI(nkElse, sec.info)
+      e.add l.switchSectionBody(sec.body)
+      result.add e
+      hasDefault = true
+    else:
+      let br = newNodeI(nkOfBranch, sec.info)
+      for lab in sec.sons: br.add l.expr(lab)
+      br.add l.switchSectionBody(sec.body)
+      result.add br
+  if not hasDefault:
+    ## C# does not require a `default`; Nim `case` needs an `else`.
+    let e = newNodeI(nkElse, n.info)
+    let sl = newNodeI(nkStmtList, n.info)
+    sl.add newTree(nkDiscardStmt, n.info, empty(n.info))
+    e.add sl
+    result.add e
+
+proc forToNim(l: Lowerer; n: NsNode): PNode =
+  ## `for (init; cond; step) body` -> `block: (init; while cond: (body; step))`,
+  ## since Nim has no C-style `for`.
+  let header = n.body
+  let blk = newNodeI(nkBlockStmt, n.info)
+  blk.add empty(n.info)
+  let sl = newNodeI(nkStmtList, n.info)
+  if header != nil and header.sons.len > 0 and header.sons[0] != nil:
+    sl.add l.stmt(header.sons[0])
+  let w = newNodeI(nkWhileStmt, n.info)
+  if header != nil and header.sons.len > 1 and header.sons[1] != nil:
+    w.add l.expr(header.sons[1])
+  else:
+    w.add l.id("true", n.info)
+  let wbody = newNodeI(nkStmtList, n.info)
+  for s in n.sons: wbody.add l.stmt(s)
+  if header != nil and header.sons.len > 2 and header.sons[2] != nil:
+    wbody.add l.stmt(header.sons[2])
+  w.add wbody
+  sl.add w
+  blk.add sl
+  result = blk
+
+proc tryToNim(l: Lowerer; n: NsNode): PNode =
+  result = newNodeI(nkTryStmt, n.info)
+  result.add l.stmtSeq(n.body)
+  for c in n.sons:
+    if c.kind == nsnCatch:
+      let br = newNodeI(nkExceptBranch, c.info)
+      if c.typ != nil and c.typ.kind notin {nsnEmpty, nsnVoidType}:
+        ## `except T as e`
+        let asNode = newNodeI(nkInfix, c.info)
+        asNode.add l.id("as", c.info)
+        asNode.add l.typeToNim(c.typ, c.info)
+        asNode.add l.id(c.name, c.info)
+        br.add asNode
+      br.add l.stmtSeq(c.body)
+      result.add br
+    elif c.kind == nsnFinally:
+      let f = newNodeI(nkFinally, c.info)
+      f.add l.stmtSeq(c.body)
+      result.add f
+
+proc localDeclToNim(l: Lowerer; n: NsNode): PNode =
+  l.annotateLambda(n.body, n.typ)
+  let defs = newNodeI(nkIdentDefs, n.info)
+  defs.add l.id(n.name, n.info)
+  defs.add l.typeToNim(n.typ, n.info)
+  defs.add (if n.body == nil: empty(n.info) else: l.expr(n.body))
+  let kind = case n.declKind
+    of dkVar: nkVarSection
+    of dkLet: nkLetSection
+    of dkConst: nkConstSection
+  result = newNodeI(kind, n.info)
+  result.add defs
+
+proc assignToNim(l: Lowerer; n: NsNode): PNode =
+  let lhs = l.expr(n.sons[0])
+  if n.name.len == 0:
+    result = newTree(nkAsgn, n.info, lhs, l.expr(n.sons[1]))
+  else:
+    ## Compound assignment: `x += e` becomes `x = x + e`.
+    let combined = newTree(nkInfix, n.info, l.id(n.name, n.info),
+                           copyTree(lhs), l.expr(n.sons[1]))
+    result = newTree(nkAsgn, n.info, lhs, combined)
+
+proc stmt(l: Lowerer; n: NsNode): PNode =
+  if n == nil: return empty(unknownLineInfo)
+  case n.kind
+  of nsnBlock: result = l.stmtSeq(n)
+  of nsnBlockStmt:
+    let blk = newNodeI(nkBlockStmt, n.info)
+    blk.add empty(n.info)
+    blk.add l.stmtsToNode(n.sons, n.info)
+    result = blk
+  of nsnLocalDecl: result = l.localDeclToNim(n)
+  of nsnExprStmt: result = l.expr(n.body)
+  of nsnAssign: result = l.assignToNim(n)
+  of nsnIf:
+    result = newNodeI(nkIfStmt, n.info)
+    for b in n.sons:
+      if b.kind == nsnIfBranch:
+        let br = newNodeI(nkElifBranch, b.info)
+        br.add l.expr(b.body)
+        br.add l.stmtsToNode(b.sons, b.info)
+        result.add br
+      elif b.kind == nsnElseBranch:
+        let e = newNodeI(nkElse, b.info)
+        e.add l.stmtsToNode(b.sons, b.info)
+        result.add e
+  of nsnWhile:
+    let w = newNodeI(nkWhileStmt, n.info)
+    w.add l.expr(n.body)
+    w.add l.stmtsToNode(n.sons, n.info)
+    result = w
+  of nsnFor: result = l.forToNim(n)
+  of nsnForeach:
+    result = newNodeI(nkForStmt, n.info)
+    result.add l.id(n.name, n.info)
+    result.add l.expr(n.body)
+    result.add l.stmtsToNode(n.sons, n.info)
+  of nsnSwitch: result = l.switchToNim(n)
+  of nsnTry: result = l.tryToNim(n)
+  of nsnReturn:
+    result = newNodeI(nkReturnStmt, n.info)
+    result.add (if n.body == nil: empty(n.info) else: l.expr(n.body))
+  of nsnBreak: result = newNodeI(nkBreakStmt, n.info)
+  of nsnContinue: result = newNodeI(nkContinueStmt, n.info)
+  of nsnThrow: result = l.throwToNim(n)
+  else: result = l.expr(n)
+
+# --- declaration helpers ----------------------------------------------------
+
+proc exportedName(l: Lowerer; attrs: NsAttrs; name: string; info: TLineInfo): PNode =
+  ## A C# member is exported to Nim unless it is private.
+  if attrs.isExported:
+    result = newTree(nkPostfix, info, l.id("*", info), l.id(name, info))
+  else:
+    result = l.id(name, info)
+
+proc procPragmas(l: Lowerer; params: PNode; info: TLineInfo): PNode =
+  ## `discardable` for value-returning *generated* procs (`init`/`new`). Methods
+  ## and property accessors pass `withPragmas = false`, reproducing the previous
+  ## emitter; see the module note.
+  if params.len > 0 and params[0].kind == nkEmpty:
+    result = empty(info)
+  else:
+    let pragma = newNodeI(nkPragma, info)
+    pragma.add l.id("discardable", info)
+    result = pragma
+
+proc mkProc(l: Lowerer; nameNode, params, body: PNode; info: TLineInfo;
+            withPragmas = false): PNode =
+  result = newNodeI(nkProcDef, info, 7)
+  result[0] = nameNode
+  result[1] = empty(info)
+  result[2] = empty(info)
+  result[3] = params
+  result[4] = if withPragmas: l.procPragmas(params, info) else: empty(info)
+  result[5] = empty(info)
+  result[6] = body
+
+proc paramDef(l: Lowerer; p: NsNode): PNode =
+  result = newNodeI(nkIdentDefs, p.info)
+  result.add l.id(p.name, p.info)
+  result.add l.typeToNim(p.typ, p.info)
+  result.add empty(p.info)
+
+proc selfDefs(l: Lowerer; clsName: string; isException: bool; info: TLineInfo): PNode =
+  ## `self: ClsName`, as a `ref` for exception classes because those are lowered
+  ## as value objects.
+  result = newNodeI(nkIdentDefs, info)
+  result.add l.id("self", info)
+  result.add (if isException: newTree(nkRefTy, info, l.id(clsName, info))
+              else: l.id(clsName, info))
+  result.add empty(info)
+
+proc isAutoProperty(m: NsNode): bool =
+  ## True when either accessor is written `get;` / `set;`, which means the class
+  ## needs a generated backing field.
+  result = false
+  for i in 0 ..< min(m.params.len, 2):
+    if m.params[i] != nil and m.params[i].kind == nsnEmpty: return true
+
+# --- enum and delegate declarations -----------------------------------------
+
+proc lowerEnum(l: Lowerer; n: NsNode): PNode =
+  let enumTy = newNodeI(nkEnumTy, n.info)
+  enumTy.add empty(n.info)
+  for f in n.sons:
+    var field: PNode = l.id(f.name, f.info)
+    if f.body != nil:
+      let fd = newNodeI(nkEnumFieldDef, f.info)
+      fd.add field
+      fd.add l.expr(f.body)
+      field = fd
+    enumTy.add field
+  let td = newNodeI(nkTypeDef, n.info)
+  td.add l.exportedName(n.attrs, n.name, n.info)
+  td.add empty(n.info)
+  td.add enumTy
+  result = newNodeI(nkTypeSection, n.info)
+  result.add td
+
+proc lowerDelegate(l: Lowerer; n: NsNode): PNode =
+  ## `delegate R D(args)` becomes a `{.closure.}` proc type, so both plain
+  ## methods and capturing lambdas fit, as C# delegates do.
+  let pragma = newNodeI(nkPragma, n.info)
+  pragma.add l.id("closure", n.info)
+  let procTy = newTree(nkProcTy, n.info,
+                       l.formalParams(n.typ, n.params, n.info), pragma)
+  let td = newNodeI(nkTypeDef, n.info)
+  td.add l.exportedName(n.attrs, n.name, n.info)
+  td.add empty(n.info)
+  td.add procTy
+  result = newNodeI(nkTypeSection, n.info)
+  result.add td
+
+# --- properties -------------------------------------------------------------
+
+proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[PNode] =
+  ## A C# property becomes a getter named `P` and a setter named `P=`. An
+  ## accessor written `get;`/`set;` reads and writes a generated `PBacking` field.
+  result = @[]
+  if m.attrs.isStatic: return   # static properties are not supported
+  let getter = if m.params.len > 0: m.params[0] else: nil
+  let setter = if m.params.len > 1: m.params[1] else: nil
+  if getter != nil:
+    let gbody =
+      if getter.kind == nsnEmpty:
+        newTree(nkDotExpr, m.info, l.id("self", m.info),
+                l.id(m.name & "Backing", m.info))
+      else:
+        l.stmtSeq(getter)
+    let gp = newNodeI(nkFormalParams, m.info)
+    gp.add l.typeToNim(m.typ, m.info)
+    gp.add l.selfDefs(cls.name, isException, m.info)
+    result.add l.mkProc(l.exportedName(m.attrs, m.name, m.info), gp, gbody, m.info)
+  if setter != nil:
+    let sbody =
+      if setter.kind == nsnEmpty:
+        newTree(nkAsgn, m.info,
+                newTree(nkDotExpr, m.info, l.id("self", m.info),
+                        l.id(m.name & "Backing", m.info)),
+                l.id("value", m.info))
+      else:
+        l.stmtSeq(setter)
+    let sp = newNodeI(nkFormalParams, m.info)
+    sp.add empty(m.info)
+    sp.add l.selfDefs(cls.name, isException, m.info)
+    sp.add l.paramDef(nsnParam("value", m.typ, m.info))
+    result.add l.mkProc(l.exportedName(m.attrs, m.name & "=", m.info), sp, sbody, m.info)
+
+# --- constructors -----------------------------------------------------------
+
+proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
+               baseName: string): PNode =
+  ## `proc initC(self: C, params) = <base init>; <body>`
+  let ip = newNodeI(nkFormalParams, m.info)
+  ip.add empty(m.info)
+  ip.add l.selfDefs(cls.name, isException, m.info)
+  for p in m.params: ip.add l.paramDef(p)
+  let ibody = newNodeI(nkStmtList, m.info)
+  var initName = ""
+  if m.initKind == "base": initName = "init" & baseName
+  elif m.initKind == "this": initName = "init" & cls.name
+  elif baseName.len > 0: initName = "init" & baseName
+  ## `: base(msg)` on an exception base that N# itself does not define sets the
+  ## message directly, because there is no `initCatchableError` to call.
+  let externalExcBase = isException and baseName.len > 0 and
+                        not l.scope.classes.hasKey(baseName) and
+                        isExceptionBase(baseName)
+  if externalExcBase:
+    if m.initArgs.len > 0:
+      ibody.add newTree(nkAsgn, m.info,
+                        newTree(nkDotExpr, m.info, l.id("self", m.info),
+                                l.id("msg", m.info)),
+                        l.expr(m.initArgs[0]))
+  elif initName.len > 0:
+    let icall = newNodeI(nkCall, m.info)
+    icall.add l.id(initName, m.info)
+    icall.add l.id("self", m.info)
+    for a in m.initArgs: icall.add l.expr(a)
+    ibody.add icall
+  if m.body != nil:
+    for s in m.body.sons: ibody.add l.stmt(s)
+  result = l.mkProc(l.exportedName(m.attrs, "init" & cls.name, m.info), ip, ibody,
+                    m.info, withPragmas = true)
+
+proc lowerAllocator(l: Lowerer; cls, m: NsNode; isException: bool): PNode =
+  ## `proc newC(params): C = new(result); initC(result, params)`
+  let ap = newNodeI(nkFormalParams, m.info)
+  ap.add (if isException: newTree(nkRefTy, m.info, l.id(cls.name, m.info))
+          else: l.id(cls.name, m.info))
+  for p in m.params: ap.add l.paramDef(p)
+  let abody = newNodeI(nkStmtList, m.info)
+  let newCall = newNodeI(nkCall, m.info)
+  newCall.add l.id("new", m.info)
+  newCall.add l.id("result", m.info)
+  abody.add newCall
+  let fwd = newNodeI(nkCall, m.info)
+  fwd.add l.id("init" & cls.name, m.info)
+  fwd.add l.id("result", m.info)
+  for p in m.params: fwd.add l.id(p.name, m.info)
+  abody.add fwd
+  result = l.mkProc(l.exportedName(m.attrs, "new" & cls.name, m.info), ap, abody,
+                    m.info, withPragmas = true)
+
+# --- classes ----------------------------------------------------------------
+
+proc alwaysExported(l: Lowerer; name: string; info: TLineInfo): PNode =
+  ## The implicit constructor pair is always exported, as in the previous
+  ## emitter, regardless of the class's own accessibility.
+  result = newTree(nkPostfix, info, l.id("*", info), l.id(name, info))
+
+proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
+  let isClass = n.classKind == ckClass
+  let mappedBase =
+    if n.typ != nil and n.typ.kind == nsnTypeName: nimTypeName(n.typ.name)
+    else: ""
+  let isException = isClass and isExceptionBase(mappedBase)
+
+  # 1. the type: `C = ref object` for a class, a plain `object` for a struct and
+  #    for an exception class (which is raised as `ref C`).
+  let recList = newNodeI(nkRecList, n.info)
+  for m in n.sons:
+    if m.kind == nsnFieldDecl:
+      let defs = newNodeI(nkIdentDefs, m.info)
+      defs.add l.exportedName(m.attrs, m.name, m.info)
+      defs.add l.typeToNim(m.typ, m.info)
+      defs.add empty(m.info)
+      recList.add defs
+    elif m.kind == nsnPropertyDecl and isAutoProperty(m):
+      let defs = newNodeI(nkIdentDefs, m.info)
+      defs.add l.id(m.name & "Backing", m.info)
+      defs.add l.typeToNim(m.typ, m.info)
+      defs.add empty(m.info)
+      recList.add defs
+  let objTy = newNodeI(nkObjectTy, n.info)
+  objTy.add empty(n.info)
+  if n.typ != nil:
+    objTy.add newTree(nkOfInherit, n.info, l.typeToNim(n.typ, n.info))
+  elif isClass:
+    objTy.add newTree(nkOfInherit, n.info, l.id("RootObj", n.info))
+  else:
+    objTy.add empty(n.info)
+  objTy.add recList
+  let typeValue =
+    if isClass and not isException: newTree(nkRefTy, n.info, objTy)
+    else: objTy
+  let td = newNodeI(nkTypeDef, n.info)
+  td.add l.exportedName(n.attrs, n.name, n.info)
+  td.add empty(n.info)
+  td.add typeValue
+  let sec = newNodeI(nkTypeSection, n.info)
+  sec.add td
+  into.add sec
+
+  # 2. members, in source order (Nim resolves `self.Prop` dot-calls against
+  #    declarations seen so far, so a property must precede its users)
+  var hasCtor = false
+  for m in n.sons:
+    var inner = l
+    case m.kind
+    of nsnMethodDecl:
+      inner.thisName = if m.attrs.isStatic: "" else: "self"
+      var params = l.formalParams(m.typ, m.params, m.info)
+      if m.name == "Main" and m.attrs.isStatic:
+        # entry point: parameters are ignored, it is called as `Main()`
+        params = newNodeI(nkFormalParams, m.info)
+        params.add l.typeToNim(m.typ, m.info)
+      elif not m.attrs.isStatic:
+        let np = newNodeI(nkFormalParams, m.info)
+        np.add params[0]
+        np.add l.selfDefs(n.name, isException, m.info)
+        for i in 1 ..< params.len: np.add params[i]
+        params = np
+      let pd = inner.mkProc(l.exportedName(m.attrs, m.name, m.info), params,
+                            inner.stmtSeq(m.body), m.info)
+      into.add pd
+      if m.name == "Main" and l.entryPoint == nil: l.entryPoint = pd
+    of nsnPropertyDecl:
+      inner.thisName = "self"
+      for p in inner.lowerProperty(n, m, isException): into.add p
+    of nsnCtorDecl:
+      hasCtor = true
+      inner.thisName = "self"
+      into.add inner.lowerInit(n, m, isException, mappedBase)
+      into.add inner.lowerAllocator(n, m, isException)
+    of nsnFieldDecl: discard
+    else: discard
+
+  # 3. the implicit constructor pair when none was declared
+  if not hasCtor:
+    let info = n.info
+    let baseParamless =
+      mappedBase.len == 0 or not l.scope.classes.hasKey(mappedBase) or
+      l.scope.classes[mappedBase].ctorArities.len == 0 or
+      0 in l.scope.classes[mappedBase].ctorArities
+    let ip = newNodeI(nkFormalParams, info)
+    ip.add empty(info)
+    ip.add l.selfDefs(n.name, isException, info)
+    let ibody = newNodeI(nkStmtList, info)
+    if mappedBase.len > 0 and baseParamless and
+       (l.scope.classes.hasKey(mappedBase) or not isExceptionBase(mappedBase)):
+      let icall = newNodeI(nkCall, info)
+      icall.add l.id("init" & mappedBase, info)
+      icall.add l.id("self", info)
+      ibody.add icall
+    into.add l.mkProc(l.alwaysExported("init" & n.name, info), ip, ibody, info,
+                      withPragmas = true)
+    let ap = newNodeI(nkFormalParams, info)
+    ap.add (if isException: newTree(nkRefTy, info, l.id(n.name, info))
+            else: l.id(n.name, info))
+    let abody = newNodeI(nkStmtList, info)
+    let nc = newNodeI(nkCall, info)
+    nc.add l.id("new", info)
+    nc.add l.id("result", info)
+    abody.add nc
+    let fw = newNodeI(nkCall, info)
+    fw.add l.id("init" & n.name, info)
+    fw.add l.id("result", info)
+    abody.add fw
+    into.add l.mkProc(l.alwaysExported("new" & n.name, info), ap, abody, info,
+                      withPragmas = true)
+
+# --- module -----------------------------------------------------------------
+
+proc lowerDecl(l: var Lowerer; d: NsNode; into: var seq[PNode]) =
+  case d.kind
+  of nsnUsing:
+    ## A BCL namespace becomes an import of its N# shim, so the types are only in
+    ## scope when the `using` is present, exactly as in C# (SPEC section 5.1).
+    let target = moduleForNamespace(d.name)
+    if target.len > 0:
+      into.add newTree(nkImportStmt, d.info, newAtom(nkStrLit, target, d.info))
+    elif d.name.len == 0 or d.name == "System" or d.name.startsWith("System."):
+      discard   # a BCL namespace N# has no shim for yet
+    else:
+      into.add newTree(nkImportStmt, d.info, newAtom(nkStrLit, d.name, d.info))
+  of nsnNamespace:
+    ## Namespaces are flattened; they carry no scope of their own yet.
+    if d.body != nil:
+      for x in d.body.sons: lowerDecl(l, x, into)
+  of nsnClassDecl:
+    if d.classKind == ckInterface: return   # interfaces are not supported yet
+    lowerClass(l, d, into)
+  of nsnEnumDecl: into.add l.lowerEnum(d)
+  of nsnDelegateDecl: into.add l.lowerDelegate(d)
+  else: into.add l.stmt(d)
+
+proc makeMainCall(l: Lowerer; procDef: PNode): PNode =
+  ## `when isMainModule: Main()`
+  let info = procDef.info
+  let call = newNodeI(nkCall, info)
+  call.add l.id("Main", info)
+  let body = newNodeI(nkStmtList, info)
+  body.add call
+  result = newTree(nkWhenStmt, info,
+                   newTree(nkElifBranch, info, l.id("isMainModule", info), body))
+
+proc lowerModule*(module: NsNode; scope: NsModuleScope;
+                  cache: IdentCache): PNode =
+  ## Lowers a whole `.ns` module to the Nim statements the rest of the compiler
+  ## consumes.
+  var l = Lowerer(scope: scope, cache: cache)
+  var stmts: seq[PNode] = @[]
+  for d in module.sons:
+    l.lowerDecl(d, stmts)
+  result = newNodeI(nkStmtList, module.info)
+  for s in stmts: result.add s
+  if l.entryPoint != nil:
+    result.add makeMainCall(l, l.entryPoint)
+
+
+
+
+
+
+

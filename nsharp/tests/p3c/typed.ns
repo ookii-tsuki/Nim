@@ -1,0 +1,26 @@
+using System;
+
+namespace Demo
+{
+    class Thing
+    {
+        // A user property named Length must NOT be treated as an array length.
+        public int Length { get; set; }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            int[] xs = new int[] { 10, 20, 30 };
+            Console.WriteLine(xs.Length);
+
+            Thing t = new Thing();
+            t.Length = 7;
+            Console.WriteLine(t.Length);
+
+            Console.WriteLine(7 / 2);
+            Console.WriteLine(7.0 / 2);
+        }
+    }
+}

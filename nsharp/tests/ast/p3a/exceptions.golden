@@ -1,0 +1,166 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "ns/system"
+  nkTypeSection
+    nkTypeDef
+      nkIdent 'AppException'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkIdent 'CatchableError'
+        nkRecList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initAppException'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkRefTy
+          nkIdent 'AppException'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'm'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'msg'
+        nkIdent 'm'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newAppException'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkRefTy
+        nkIdent 'AppException'
+      nkIdentDefs
+        nkIdent 'm'
+        nkIdent 'string'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initAppException'
+        nkIdent 'result'
+        nkIdent 'm'
+  nkTypeSection
+    nkTypeDef
+      nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkRaiseStmt
+            nkCall
+              nkIdent 'newAppException'
+              nkStrLit "custom"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'AppException'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkStrLit "app"
+            nkCall
+              nkIdent 'WriteLine'
+              nkDotExpr
+                nkIdent 'e'
+                nkIdent 'msg'
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'CatchableError'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkStrLit "generic"
+      nkTryStmt
+        nkStmtList
+          nkRaiseStmt
+            nkCall
+              nkIdent 'newException'
+              nkIdent 'ArgumentException'
+              nkStrLit "bad"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'CatchableError'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkDotExpr
+                nkIdent 'e'
+                nkIdent 'msg'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

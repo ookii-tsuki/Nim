@@ -1,0 +1,18 @@
+using System;
+
+namespace Demo
+{
+    // Valid C# that N# rejects: interfaces are parsed but not implemented.
+    interface IShape
+    {
+        int Sides();
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("interfaces");
+        }
+    }
+}

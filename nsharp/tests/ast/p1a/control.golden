@@ -1,0 +1,127 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "ns/system"
+  nkTypeSection
+    nkTypeDef
+      nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'n'
+          nkIdent 'int32'
+          nkIntLit 3
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'fact'
+          nkIdent 'int32'
+          nkIntLit 1
+      nkWhileStmt
+        nkInfix
+          nkIdent '>'
+          nkIdent 'n'
+          nkIntLit 0
+        nkStmtList
+          nkAsgn
+            nkIdent 'fact'
+            nkInfix
+              nkIdent '*'
+              nkIdent 'fact'
+              nkIdent 'n'
+          nkAsgn
+            nkIdent 'n'
+            nkInfix
+              nkIdent '-'
+              nkIdent 'n'
+              nkIntLit 1
+      nkCall
+        nkIdent 'WriteLine'
+        nkIdent 'fact'
+      nkIfStmt
+        nkElifBranch
+          nkInfix
+            nkIdent '=='
+            nkIdent 'fact'
+            nkIntLit 6
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkStrLit "six"
+        nkElse
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkStrLit "other"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'total'
+          nkIdent 'int32'
+          nkIntLit 0
+      nkAsgn
+        nkIdent 'total'
+        nkInfix
+          nkIdent '+'
+          nkIdent 'total'
+          nkIntLit 5
+      nkAsgn
+        nkIdent 'total'
+        nkInfix
+          nkIdent '+'
+          nkIdent 'total'
+          nkIntLit 10
+      nkCall
+        nkIdent 'WriteLine'
+        nkIdent 'total'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

@@ -49,11 +49,12 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
   [ -f "$ns" ] || continue
   out="${ns%.ns}.out"
   failmark="${ns%.ns}.fail"
-  [ -f "$out" ] || [ -f "$failmark" ] || continue
+  unsupmark="${ns%.ns}.unsupported"
+  [ -f "$out" ] || [ -f "$failmark" ] || [ -f "$unsupmark" ] || continue
   count=$((count + 1))
   dir="$(dirname "$ns")"
 
-  # program plus any sibling modules (no .out and no .fail)
+  # program plus any sibling modules (no .out, .fail or .unsupported)
   rm -f "$work"/*.cs
   cp "$ns" "$work/Program.cs"
   for sib in "$dir"/*.ns; do
@@ -61,6 +62,7 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
     [ "$sib" = "$ns" ] && continue
     [ -f "${sib%.ns}.out" ] && continue
     [ -f "${sib%.ns}.fail" ] && continue
+    [ -f "${sib%.ns}.unsupported" ] && continue
     cp "$sib" "$work/$(basename "${sib%.ns}").cs"
   done
 
@@ -68,6 +70,10 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
         > "$work/build.log" 2>&1; then
     if [ -f "$failmark" ]; then
       echo "ok (C# rejects, as expected): ${ns#$root/}"
+    elif [ -f "$unsupmark" ]; then
+      echo "FAIL (N# rejects it as unsupported, but it is not valid C# either): ${ns#$root/}"
+      sed -n '1,10p' "$work/build.log"
+      fail=1
     else
       echo "CS FAIL (C# would not compile): ${ns#$root/}"
       sed -n '1,20p' "$work/build.log"
@@ -79,6 +85,12 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
   if [ -f "$failmark" ]; then
     echo "FAIL (C# compiled but N# rejects): ${ns#$root/}"
     fail=1
+    continue
+  fi
+
+  if [ -f "$unsupmark" ]; then
+    ## N# refuses it, and it really is valid C#: that is the point of the marker.
+    echo "ok (C# accepts, N# does not support it yet): ${ns#$root/}"
     continue
   fi
 

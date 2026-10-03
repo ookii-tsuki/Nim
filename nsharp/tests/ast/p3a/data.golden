@@ -1,0 +1,307 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "ns/system"
+  nkTypeSection
+    nkTypeDef
+      nkIdent 'Color'
+      nkEmpty
+      nkEnumTy
+        nkEmpty
+        nkIdent 'Red'
+        nkIdent 'Green'
+        nkIdent 'Blue'
+  nkTypeSection
+    nkTypeDef
+      nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'Color'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCaseStmt
+        nkIdent 'c'
+        nkOfBranch
+          nkDotExpr
+            nkIdent 'Color'
+            nkIdent 'Red'
+          nkStmtList
+            nkReturnStmt
+              nkStrLit "red"
+        nkOfBranch
+          nkDotExpr
+            nkIdent 'Color'
+            nkIdent 'Green'
+          nkStmtList
+            nkReturnStmt
+              nkStrLit "green"
+        nkOfBranch
+          nkDotExpr
+            nkIdent 'Color'
+            nkIdent 'Blue'
+          nkStmtList
+            nkReturnStmt
+              nkStrLit "blue"
+        nkElse
+          nkStmtList
+            nkReturnStmt
+              nkStrLit "?"
+  nkProcDef
+    nkIdent 'Digit'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'd'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCaseStmt
+        nkIdent 'd'
+        nkOfBranch
+          nkIntLit 0
+          nkStmtList
+            nkReturnStmt
+              nkStrLit "zero"
+        nkOfBranch
+          nkIntLit 1
+          nkIntLit 2
+          nkIntLit 3
+          nkStmtList
+            nkReturnStmt
+              nkStrLit "small"
+        nkOfBranch
+          nkIntLit 4
+          nkIntLit 5
+          nkStmtList
+            nkReturnStmt
+              nkStrLit "mid"
+        nkElse
+          nkStmtList
+            nkReturnStmt
+              nkStrLit "big"
+  nkProcDef
+    nkIdent 'Bonus'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'k'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCaseStmt
+        nkIdent 'k'
+        nkOfBranch
+          nkIntLit 1
+          nkStmtList
+            nkReturnStmt
+              nkIntLit 100
+        nkOfBranch
+          nkIntLit 2
+          nkStmtList
+            nkReturnStmt
+              nkIntLit 200
+        nkElse
+          nkStmtList
+            nkDiscardStmt
+              nkEmpty
+      nkReturnStmt
+        nkIntLit 0
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'xs'
+          nkBracketExpr
+            nkIdent 'seq'
+            nkIdent 'int32'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newSeq'
+              nkIdent 'int32'
+            nkIntLit 3
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'xs'
+          nkIntLit 0
+        nkIntLit 10
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'xs'
+          nkIntLit 1
+        nkIntLit 20
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'xs'
+          nkIntLit 2
+        nkIntLit 30
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'sum'
+          nkIdent 'int32'
+          nkIntLit 0
+      nkForStmt
+        nkIdent 'x'
+        nkIdent 'xs'
+        nkStmtList
+          nkAsgn
+            nkIdent 'sum'
+            nkInfix
+              nkIdent '+'
+              nkIdent 'sum'
+              nkIdent 'x'
+      nkCall
+        nkIdent 'WriteLine'
+        nkIdent 'sum'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'len'
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Name'
+          nkDotExpr
+            nkIdent 'Color'
+            nkIdent 'Green'
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Digit'
+          nkIntLit 0
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Digit'
+          nkIntLit 2
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Digit'
+          nkIntLit 5
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Digit'
+          nkIntLit 9
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'ys'
+          nkBracketExpr
+            nkIdent 'seq'
+            nkIdent 'int32'
+          nkPrefix
+            nkIdent '@'
+            nkBracket
+              nkIntLit 1
+              nkIntLit 2
+              nkIntLit 3
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'ys'
+          nkIdent 'len'
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Bonus'
+          nkIntLit 2
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Bonus'
+          nkIntLit 7
+      nkTryStmt
+        nkStmtList
+          nkRaiseStmt
+            nkCall
+              nkIdent 'newException'
+              nkIdent 'CatchableError'
+              nkStrLit "boom"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'CatchableError'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkStrLit "caught"
+            nkCall
+              nkIdent 'WriteLine'
+              nkDotExpr
+                nkIdent 'e'
+                nkIdent 'msg'
+        nkFinally
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkStrLit "done"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

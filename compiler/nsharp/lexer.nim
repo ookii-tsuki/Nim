@@ -84,6 +84,20 @@ proc `$`*(k: NsTokenKind): string =
   of nsShlEq: "'<<='"
   of nsShrEq: "'>>='"
 
+proc splitShr*(toks: var seq[NsToken]; i: int): bool =
+  ## Splits the `>>` token at `i` into two `>` tokens, in place. `>>` is lexed
+  ## greedily (it is also Nim's and C#'s shift operator), so closing two nested
+  ## type argument lists, as in `List<List<int>>`, needs it split. Doing it here
+  ## rather than in the parser keeps all token surgery in one module. C# has the
+  ## same problem and resolves it the same way.
+  ##
+  ## Returns false when the token at `i` is not a `>>`.
+  if i < 0 or i >= toks.len or toks[i].kind != nsShr: return false
+  let t = toks[i]
+  toks[i] = NsToken(kind: nsGt, text: ">", line: t.line, col: t.col)
+  toks.insert(NsToken(kind: nsGt, text: ">", line: t.line, col: t.col + 1), i + 1)
+  true
+
 proc tokenize*(source: string): seq[NsToken] =
   ## Tokenises `.ns` source. Always ends with an `nsEof` token.
   result = @[]

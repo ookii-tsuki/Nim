@@ -1,0 +1,23 @@
+using System;
+
+namespace Demo
+{
+    class Base
+    {
+        // Valid C#: `virtual` on a non-sealed instance method. N# rejects the
+        // modifier rather than silently emitting a plain (non-virtual) method.
+        public virtual void Speak()
+        {
+            Console.WriteLine("base");
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Base b = new Base();
+            b.Speak();
+        }
+    }
+}

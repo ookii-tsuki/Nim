@@ -19,14 +19,17 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
   [ -f "$ns" ] || continue
   exp="${ns%.ns}.out"
   failmark="${ns%.ns}.fail"
+  unsupmark="${ns%.ns}.unsupported"
   bin="/tmp/ns_test_$$"
 
-  if [ -f "$failmark" ]; then
+  if [ -f "$failmark" ] || [ -f "$unsupmark" ]; then
     count=$((count + 1))
     if "$NIM" c --hints:off --warnings:off --lib:"$lib" -o:"$bin" "$ns" \
           > /tmp/ns_test_compile.log 2>&1; then
       echo "FAIL (compiled but should not): ${ns#$root/}"
       fail=1
+    elif [ -f "$unsupmark" ]; then
+      echo "ok (rejected; valid C# that N# does not support yet): ${ns#$root/}"
     else
       echo "ok (expected compile error): ${ns#$root/}"
     fi
@@ -53,6 +56,13 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
     fail=1
   fi
 done
+
+# Parser golden-AST check: pins the parse output so the parser refactor is
+# verifiable. Set NS_SKIP_AST=1 to skip.
+if [ -z "${NS_SKIP_AST:-}" ] && [ -x "$here/run_ast.sh" ]; then
+  echo "--- AST golden check ---"
+  "$here/run_ast.sh" || fail=1
+fi
 
 # C#<->N# equivalence gate: recompile every test as C# and require the .NET
 # compiler's output to match the same `.out`. Set NS_SKIP_CS=1 to skip.
