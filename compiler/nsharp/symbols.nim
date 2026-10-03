@@ -1,13 +1,7 @@
+# N# frontend - declaration collection
 #
-#           N# frontend - declaration collection
-#
-# Stage 1 of PARSER-CLEANUP.md. This replaces `prescanClasses`, which used to
-# re-implement a member scanner over the *token stream* (skipParens, skipBraces,
-# countParenArgs) before the real parse. Declarations are now collected from the
-# parsed tree, so the class grammar exists exactly once.
-#
-# Scope of the collected information is deliberately small: only what the checks
-# and the lowering actually need.
+# Collects declarations from the parsed tree, so the class grammar exists exactly
+# once. Deliberately small: only what the checks and the lowering need.
 
 import std/[tables, sets]
 import ../options

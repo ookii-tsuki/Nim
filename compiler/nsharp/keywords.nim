@@ -1,9 +1,7 @@
+# N# frontend - keyword table
 #
-#           N# frontend - keyword table
-#
-# See ../nsharp/GLOSSARY.md (repo root) for the authoritative list.
-# Phase 0: keywords are lexed as identifiers and compared by text; this module
-# centralises the reserved-word set the parser cares about.
+# Keywords are lexed as identifiers and compared by text; this is the reserved
+# word set the parser checks against. See ../nsharp/GLOSSARY.md for the list.
 
 import std/strutils
 

@@ -1,12 +1,8 @@
+# N# frontend - lexer
 #
-#           N# frontend - lexer
-#
-# A brace + semicolon, whitespace-insensitive lexer (SPEC §3). Phase 0 keeps
-# this dependency-light (std only) so it can be unit-tested in isolation.
-#
-# The whole source is tokenised up front (`tokenize`) - simple and adequate for
-# the Phase-0 scaffold; a streaming lexer can replace it later behind the same
-# token type.
+# A brace-and-semicolon, whitespace-insensitive lexer, std-only so it can be
+# unit-tested in isolation. The whole source is tokenised up front; a streaming
+# lexer can replace it later behind the same token type.
 
 type
   NsTokenKind* = enum
@@ -276,7 +272,7 @@ proc tokenize*(source: string): seq[NsToken] =
       of '@': nsAt
       else: nsEof
     if kind1 == nsEof:
-      inc i; inc col   # unknown char: skip (Phase 0 is tolerant)
+      inc i; inc col   # unknown char: skip
       continue
     result.add NsToken(kind: kind1, text: $c, line: startLine, col: startCol)
     inc i; inc col

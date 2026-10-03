@@ -1,14 +1,11 @@
+# N# frontend - lowering to Nim
 #
-#           N# frontend - lowering to Nim
+# The C#-to-Nim translation: NsNode in, ordinary Nim PNodes out. The name mapping
+# itself lives in bcl.nim.
 #
-# Stage 1 of PARSER-CLEANUP.md. This is where the whole C#-to-Nim translation
-# lives: `NsNode` in, ordinary Nim `PNode`s out. The parser no longer performs
-# any of it, and the C#-to-Nim *name* mapping is centralised in `bcl.nim`.
-#
-# One deliberate asymmetry is reproduced from the pre-refactor emitter: methods
-# get no `discardable` pragma while the generated `init`/`new` procs do. C# would
-# allow discarding a method's result, so this is a fidelity bug rather than a
-# design choice; it is isolated in `procPragmas` and flagged for a later fix.
+# Methods get no `discardable` pragma while generated `init`/`new` procs do (see
+# procPragmas). C# would allow discarding a method's result, so this asymmetry is
+# a fidelity bug, not a design choice.
 
 import std/[strutils, tables]
 import ../ast, ../idents, ../lineinfos
@@ -30,10 +27,8 @@ proc emptyList(info: TLineInfo): PNode {.inline.} = newNodeI(nkStmtList, info)
 
 proc memberToNim(l: Lowerer; n: NsNode): string =
   ## `.Length`/`.Count` -> `len` and `.Message` -> `msg`, but only where the
-  ## *receiver's* resolved type says it is an array, string, collection or
-  ## exception. A user member that happens to share one of those names is left
-  ## alone, which the name-only rule got wrong (SPEC section 15). The names
-  ## themselves come from `bcl.nim`, so there is still one list of renames.
+  ## receiver's resolved type says it is an array, string, collection or
+  ## exception. A user member that shares one of those names is left alone.
   var renamed = ""
   if n.body != nil:
     case n.body.typeKind
@@ -130,9 +125,8 @@ proc newToNim(l: Lowerer; n: NsNode): PNode =
 proc callToNim(l: Lowerer; n: NsNode): PNode =
   var callee = n.body
   ## `Class.Method(...)` / `Console.WriteLine(...)`: the qualifier is dropped,
-  ## because it is a namespace or a static class (SPEC section 15). Whether the
-  ## receiver is one of those was decided by `sema.nim` and recorded as `tkType`;
-  ## the previous version guessed it from the receiver's capitalisation.
+  ## because it is a namespace or a static class. `sema.nim` decides this and
+  ## records it as `tkType`.
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
      callee.body.typeKind == tkType:
     callee = nsnIdent(callee.name, callee.info)
@@ -521,16 +515,18 @@ proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
                     m.info, withPragmas = true)
 
 proc lowerAllocator(l: Lowerer; cls, m: NsNode; isException: bool): PNode =
-  ## `proc newC(params): C = new(result); initC(result, params)`
+  ## `proc newC(params): C = new(result); initC(result, params)`. A struct is a
+  ## value, already zero-initialised, so it needs no `new`.
   let ap = newNodeI(nkFormalParams, m.info)
   ap.add (if isException: newTree(nkRefTy, m.info, l.id(cls.name, m.info))
           else: l.id(cls.name, m.info))
   for p in m.params: ap.add l.paramDef(p)
   let abody = newNodeI(nkStmtList, m.info)
-  let newCall = newNodeI(nkCall, m.info)
-  newCall.add l.id("new", m.info)
-  newCall.add l.id("result", m.info)
-  abody.add newCall
+  if cls.classKind == ckClass:
+    let newCall = newNodeI(nkCall, m.info)
+    newCall.add l.id("new", m.info)
+    newCall.add l.id("result", m.info)
+    abody.add newCall
   let fwd = newNodeI(nkCall, m.info)
   fwd.add l.id("init" & cls.name, m.info)
   fwd.add l.id("result", m.info)
@@ -573,10 +569,10 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   objTy.add empty(n.info)
   if n.typ != nil:
     objTy.add newTree(nkOfInherit, n.info, l.typeToNim(n.typ, n.info))
-  elif isClass:
-    objTy.add newTree(nkOfInherit, n.info, l.id("RootObj", n.info))
   else:
-    objTy.add empty(n.info)
+    # A base-less class is a `ref object`, a base-less struct a value `object`,
+    # but both are a System.Object in C#, so both derive from the root.
+    objTy.add newTree(nkOfInherit, n.info, l.id("RootObj", n.info))
   objTy.add recList
   let typeValue =
     if isClass and not isException: newTree(nkRefTy, n.info, objTy)
@@ -646,10 +642,11 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     ap.add (if isException: newTree(nkRefTy, info, l.id(n.name, info))
             else: l.id(n.name, info))
     let abody = newNodeI(nkStmtList, info)
-    let nc = newNodeI(nkCall, info)
-    nc.add l.id("new", info)
-    nc.add l.id("result", info)
-    abody.add nc
+    if isClass:
+      let nc = newNodeI(nkCall, info)
+      nc.add l.id("new", info)
+      nc.add l.id("result", info)
+      abody.add nc
     let fw = newNodeI(nkCall, info)
     fw.add l.id("init" & n.name, info)
     fw.add l.id("result", info)
@@ -662,8 +659,8 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
 proc lowerDecl(l: var Lowerer; d: NsNode; into: var seq[PNode]) =
   case d.kind
   of nsnUsing:
-    ## A BCL namespace becomes an import of its N# shim, so the types are only in
-    ## scope when the `using` is present, exactly as in C# (SPEC section 5.1).
+    ## A BCL namespace becomes an import of its N# shim, so the types are in
+    ## scope only when the `using` is present, as in C#.
     let target = moduleForNamespace(d.name)
     if target.len > 0:
       into.add newTree(nkImportStmt, d.info, newAtom(nkStrLit, target, d.info))

@@ -1,27 +1,16 @@
+# N# frontend - the N# syntax tree
 #
-#           N# frontend - the N# syntax tree
+# The parser's output and the input to sema and desugar. The tree mirrors C#
+# syntax, not Nim's: a class is `nsnClassDecl`, `Console.WriteLine` stays a member
+# access, `Length` stays `Length`, `int` stays `int`. The C#-to-Nim mapping
+# happens later, in `bcl.nim` and `desugar.nim`.
 #
-# The parser's output and the input to `sema` and `desugar`. Introducing it is
-# Stage 1 of PARSER-CLEANUP.md: the frontend previously emitted Nim `PNode`s
-# straight from the parser, which left no seam for name resolution (Stage 2) and
-# forced every semantic rule to be a name rewrite performed while parsing.
+# `NsNodeObj` is a flat record rather than Nim's tagged-variant `TNode`: reading
+# the wrong branch of a variant raises `FieldDefect` at runtime, and these trees
+# are small and short-lived, so safety of traversal is worth more than the bytes.
 #
-# Design notes
-# ------------
-# * The tree mirrors **C# syntax**, not Nim's. A class is `nsnClassDecl`, not a
-#   `nkTypeSection`; `Console.WriteLine` stays a member access on an identifier
-#   named `Console`; `Length` stays `Length`; `int` stays `int`. All of the
-#   C#-to-Nim mapping happens later, in one place (`bcl.nim` + `desugar.nim`).
-# * `NsNodeObj` is a **flat record** rather than Nim's tagged-variant `TNode`.
-#   Variants make illegal states unrepresentable, but reading the wrong branch
-#   raises `FieldDefect` at runtime (that exact footgun bit the Stage 0a dump
-#   tool through `PNode.sons`). These trees are small and short-lived, so
-#   safety of traversal is worth more here than the bytes. The constructor procs
-#   below are what keep construction honest.
-# * Every node carries a `TLineInfo` so diagnostics from `sema` can point at the
-#   source, which the old parse-time checks could not do properly.
-# * Names are stored as plain `string`. Interning/lookup is `sema`'s job, not the
-#   parser's.
+# Every node carries a `TLineInfo` so diagnostics from `sema` can point at the
+# source. Names are stored as plain `string`; interning is `sema`'s job.
 
 import std/strutils
 
@@ -44,18 +33,17 @@ type
     ckClass, ckStruct, ckInterface
 
   NsTypeKind* = enum
-    ## Coarse type information attached to expressions by `sema.nim`. Lowering
-    ## consults it instead of guessing from names, which is what Stage 2 of
-    ## PARSER-CLEANUP.md is about. It is deliberately coarse: only the
-    ## distinctions the lowering actually needs.
+    ## Coarse type information attached to expressions by `sema.nim`; lowering
+    ## consults it instead of guessing from names. Only the distinctions the
+    ## lowering actually needs.
     tkUnknown      ## not resolved; lowering must stay conservative
     tkInt          ## an integer type, so `/` means `div`
     tkFloat        ## a floating point type
     tkBool
     tkChar
-    tkString       ## `.Length` is `len`
-    tkSequence     ## array or collection: `.Length`/`.Count` are `len`
-    tkException    ## `.Message` is `msg`
+    tkString       ## a string; `.Length` lowers to `len`
+    tkSequence     ## array or collection; `.Length`/`.Count` lower to `len`
+    tkException    ## an exception; `.Message` lowers to `msg`
     tkClass        ## a value of a user class
     tkType         ## a type or namespace name used as a receiver (`Console`)
     tkDelegate

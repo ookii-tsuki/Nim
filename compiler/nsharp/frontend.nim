@@ -1,14 +1,11 @@
+# N# frontend - entry point called by the compiler core
 #
-#           N# frontend - entry point called by the compiler core
+# The compiler core reaches the frontend through two call sites, both guarded by
+# `when defined(nsharp)`: `compiler/syntaxes.nim` (parseFile dispatch) and
+# `compiler/pipelines.nim` (module pipeline dispatch). See
+# ../nsharp/ARCHITECTURE.md for the minimal-diff rationale.
 #
-# The compiler core reaches the N# frontend through exactly two call sites, both
-# guarded by `when defined(nsharp)`:
-#   * `compiler/syntaxes.nim`  (parseFile dispatch)
-#   * `compiler/pipelines.nim` (module pipeline dispatch)
-# See ../nsharp/ARCHITECTURE.md for the minimal-diff rationale.
-#
-# This module is the pipeline. Since Stage 1 of PARSER-CLEANUP.md the stages are
-# separate modules, each with one job:
+# The pipeline, one module per phase:
 #
 #   parser.nim   tokens -> ast.NsNode          (grammar only)
 #   symbols.nim  ast.NsNode -> module scope    (declaration collection)

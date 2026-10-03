@@ -1,18 +1,10 @@
+# N# frontend - semantic analysis and name resolution
 #
-#           N# frontend - semantic analysis and name resolution
-#
-# Stage 2 of PARSER-CLEANUP.md. This pass
-#
-#   * resolves names (a bare member name becomes `this.Member`) and enforces
-#     access control,
-#   * attaches coarse type information to expressions (`NsNode.typeKind`),
-#   * applies the base-constructor rule,
-#
-# so that lowering can make *type-directed* decisions instead of guessing from
-# names. The decisions that need it are `.Length`/`.Count`/`.Message` renaming
-# (correct only for sequences, strings and exceptions) and `/` meaning integer
-# division (correct only when both operands are integers). Deciding from the
-# member name alone broke legal C#, for example a user property named `Length`.
+# Resolves names (a bare member name becomes `this.Member`), enforces access
+# control, attaches coarse type information to expressions (`NsNode.typeKind`)
+# and applies the base-constructor rule, so lowering can make type-directed
+# decisions instead of guessing from names (`.Length`/`.Count`/`.Message`
+# renames, integer `/`).
 #
 # The information gathered is deliberately coarse (`ast.NsTypeKind`) and only as
 # precise as lowering needs. This is not a type system: no conversions, no
@@ -142,7 +134,7 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   elif n.name.len > 0 and n.name[0] in {'A'..'Z'}:
     ## A type or namespace used as a receiver (`Console.WriteLine`), or a static
     ## call qualifier. Distinguishing these from a value needs real resolution;
-    ## the capitalisation convention is what Stage 1 already relied on.
+    ## the capitalisation convention is a stand-in for it.
     n.setType(tkType, n.name)
     result = tkType
   else:
@@ -150,9 +142,9 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     result = tkUnknown
 
 proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
-  ## Member access. The receiver's kind decides what the member means, which is
-  ## the whole point of Stage 2: `.Length` is `len` only on a sequence or string,
-  ## and `.Message` is `msg` only on an exception.
+  ## Member access. The receiver's kind decides what the member means: `.Length`
+  ## is `len` only on a sequence or string, `.Message` is `msg` only on an
+  ## exception.
   let rk = ctx.walkExpr(n.body)
   var kind = tkUnknown
   var tname = ""
@@ -418,9 +410,8 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
 
 proc checkSupported(ctx: NsCheckContext; cls: NsNode) =
   ## Features the frontend can parse but does not lower are rejected loudly
-  ## instead of being dropped silently, which is what Stage 3 of the cleanup is
-  ## for. Silently ignoring `interface` or `override` produced programs that
-  ## looked like they worked.
+  ## rather than dropped silently; ignoring `interface` or `override` produced
+  ## programs that looked like they worked.
   if cls.classKind == ckInterface:
     localError(ctx.config, cls.info, "N# does not support 'interface' yet")
   for m in cls.sons:

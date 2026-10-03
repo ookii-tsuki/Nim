@@ -1,0 +1,21 @@
+using System;
+
+namespace Demo
+{
+    struct Vec
+    {
+        public int X;
+        public int Y;
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Vec v = new Vec();
+            v.X = 3;
+            v.Y = 4;
+            Console.WriteLine(v.X + v.Y);
+        }
+    }
+}

@@ -1,18 +1,12 @@
+# N# frontend - parser
 #
-#           N# frontend - parser
+# Tokens to `ast.NsNode`. Pure grammar: no C#-to-Nim name mapping, no lowering and
+# no access-control checking; those live in `desugar.nim`/`bcl.nim` and `sema.nim`.
+# The only external dependency is the config, for diagnostics.
 #
-# Tokens to `ast.NsNode`. Since Stage 1 of PARSER-CLEANUP.md this module is a
-# pure grammar: it performs no C#-to-Nim name mapping, no lowering and no
-# access-control checking. Those live in `desugar.nim`/`bcl.nim` and `sema.nim`.
-# The parser's only external dependency is the config, and only for diagnostics.
-#
-# Stage 3 of the cleanup removed the grammar debt this file used to carry:
-#   * `looksLikeDecl` now applies the real C# rule (a type followed by an
-#     identifier and a declarator) instead of guessing from token shapes.
-#   * `>>` splitting lives in `lexer.splitShr`; all token surgery is there.
-#   * unrecognised or unimplemented constructs are reported. Skipping only
-#     happens as documented error recovery, after a diagnostic.
-#   * modifiers N# does not implement are reported rather than ignored.
+# `>>` splitting lives in `lexer.splitShr`. Unrecognised or unimplemented
+# constructs, and modifiers N# does not implement, are reported rather than
+# ignored; skipping happens only as error recovery, after a diagnostic.
 
 import std/strutils
 import ../lineinfos, ../msgs, ../options

@@ -1,27 +1,14 @@
+# N# frontend - AST dump tool
 #
-#           N# frontend - AST dump tool (Stage 0a: the golden-AST test net)
-#
-# Parses an `.ns` file and prints its parse output as a deterministic text tree.
-#
-# The frontend has no parser-level test seam: the only feedback today is the
-# stdout of a compiled program, which cannot show whether a parser change was
-# behaviour preserving. This tool is that seam. It drives `parseNsModule`
-# directly rather than adding a hook to the compiler, so the compiler tree stays
-# untouched (the minimal-diff constraint).
-#
-# It dumps the *parse output* on purpose, not post-`sem` output. Almost all the
-# lowering happens during the parse (class members become top-level procs,
-# `switch` becomes `case`, `new T[n]` becomes `newSeq[T](n)`, a lambda gets its
-# parameter types from the declared delegate type, ...). Pinning exactly that
-# fused behaviour is what makes the stage 1-3 refactor verifiable.
+# Parses an `.ns` file and prints its output as a deterministic text tree. This
+# is the frontend's only parser-level test seam: the stdout of a compiled program
+# cannot show whether a parser change was behaviour preserving. It drives
+# `parseNsModule` directly rather than adding a hook to the compiler.
 #
 # Usage:
 #   bin/nim1 c -o:/tmp/dumpast compiler/nsharp/tools/dumpast.nim
 #   /tmp/dumpast path/to/file.ns          # the lowered Nim tree (golden tests)
 #   /tmp/dumpast --ns path/to/file.ns     # the N# syntax tree, before lowering
-#
-# The `--ns` mode prints the parser's own output, which is what stage 2/3 work
-# needs to look at; the default mode is what run_ast.sh pins.
 #
 # Normally exercised through nsharp/tests/run_ast.sh.
 
