@@ -26,13 +26,6 @@ const
     "IndexOutOfRangeException", "NotSupportedException",
   ]
 
-  ## C# BCL namespace to N# shim module. A namespace is only
-  ## in scope once its `using` appears, exactly as in C#.
-  NsNamespaceModules*: array[2, NsRename] = [
-    ("System", "ns/system"),
-    ("System.Collections.Generic", "ns/collections"),
-  ]
-
   ## Member renames applied by the desugar pass. Which receiver kinds may be
   ## renamed is decided by `sema.nim`; `desugar.nim` applies the table.
   NsMemberRenames*: array[2, NsRename] = [
@@ -61,11 +54,12 @@ proc isExceptionBase*(s: string): bool =
     if b == s: return true
   false
 
-proc moduleForNamespace*(ns: string): string =
-  ## The shim module for a C# BCL namespace, or "" when N# has no shim for it.
-  for r in NsNamespaceModules:
-    if r.cs == ns: return r.nim
-  ""
+proc namespaceModulePath*(ns: string): string =
+  ## `A.B` as the module path `A/B`. `addFileExt` reads a trailing `.B` as a file
+  ## extension, so the dots cannot be kept.
+  result = newStringOfCap(ns.len)
+  for c in ns:
+    result.add(if c == '.': '/' else: c)
 
 proc renamedMember*(s: string; nimName: var string): bool =
   ## True (with `nimName` set) when `s` has a rename.

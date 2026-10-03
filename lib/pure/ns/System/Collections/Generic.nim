@@ -1,9 +1,7 @@
+# N# standard library: the System.Collections.Generic namespace.
 #
-#           N# prelude - the `System.Collections.Generic` namespace
-#
-# C# collection types on top of Nim's stdlib. This module is NOT auto-imported;
-# the frontend maps `using System.Collections.Generic;` onto it (see parseUsing
-# in compiler/nsharp/parser.nim), so `List<T>` only resolves with that `using`.
+# C# collection types on top of Nim's stdlib, imported by
+# `using System.Collections.Generic;`.
 #
 # C# names are kept at the source level (SPEC section 15, "Naming"), so `List<T>`
 # is a `seq[T]` and `Add`, `Contains`, ... are ordinary procs reached through

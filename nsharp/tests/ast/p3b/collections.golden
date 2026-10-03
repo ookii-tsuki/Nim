@@ -1,8 +1,8 @@
 nkStmtList
   nkImportStmt
-    nkStrLit "ns/system"
+    nkStrLit "System"
   nkImportStmt
-    nkStrLit "ns/collections"
+    nkStrLit "System/Collections/Generic"
   nkTypeSection
     nkTypeDef
       nkPostfix

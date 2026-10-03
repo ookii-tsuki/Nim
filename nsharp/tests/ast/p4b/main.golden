@@ -1,6 +1,6 @@
 nkStmtList
   nkImportStmt
-    nkStrLit "ns/system"
+    nkStrLit "System"
   nkImportStmt
     nkStrLit "Alpha"
   nkTypeSection

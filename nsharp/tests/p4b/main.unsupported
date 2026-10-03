@@ -1,2 +1,2 @@
-N# cannot compile this: two namespaces whose types name each other form a module
-cycle (SPEC.md 5.1.1). The marker makes run.sh require the rejection.
+N# rejects this: two namespaces whose types name each other form a module cycle
+(SPEC.md 5.1.1). The marker makes run.sh require the rejection.

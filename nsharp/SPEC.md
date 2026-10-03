@@ -254,28 +254,31 @@ Storing value types (`int`, `struct`) in an `object` - real boxing - is deferred
 | `namespace X { ... }` | declaration space | ✅ v1 (→ module/scope) | front |
 | File-scoped namespace `namespace X;` | C# 10 | ✅ v1 | front |
 | `using System;` | import namespace | ✅ v1 (→ `import`) | front |
-| `using Alias = X.Y;` | alias | ✅ v1 | front |
+| `using Alias = X.Y;` | alias | 🔜 later | front |
 | `using static T;` | import members | 🔜 later | front |
 | Global `using` | project-wide imports | 🔜 later | front |
-| Nested namespaces | dotted | ✅ v1 | front |
+| Nested namespaces | dotted or nested blocks | ✅ v1 (both give one path) | front |
 | **File ↔ module mapping** | - | ✅ **D4** (§5.1) | front |
 
-**Proposed mapping (D4):** one `.ns` file = one module; `namespace` is a logical
-scope that maps to the module's name. Imports resolve across `.ns` and `.nim`.
+**A namespace name is a module path (D4).** The dots become slashes, so
+`using X.Y;` lowers to `import "X/Y"` and `namespace X.Y { ... }` declares into the
+same place: a `using` and a `namespace` always name one thing. Nested blocks
+compose, because `namespace A { namespace B { } }` is that same declaration in C#.
+One `.ns` file is one compilation unit; imports resolve across `.ns` and `.nim`.
 
-**BCL namespaces are gated (3b).** A C# BCL namespace is only in scope once its
-`using` appears, exactly as in C#. The frontend owns one namespace -> N# module
-table (`parseUsing` in `compiler/nsharp/parser.nim`):
+**The frontend keeps no namespace to module table.** The N# standard library is the
+root of the same tree, at `lib/pure/ns/`, which the frontend puts on the module
+search path (`nsgen.nim`), so a BCL namespace is an ordinary module:
 
-| C# namespace | N# module | Provides |
+| C# namespace | file under `lib/pure/ns/` | Provides |
 |---|---|---|
-| `System` | `lib/pure/ns/system.nim` | `Console`, exception hierarchy |
-| `System.Collections.Generic` | `lib/pure/ns/collections.nim` | collection types (SS15.1) |
+| `System` | `System.nim` | `Console`, exception hierarchy |
+| `System.Collections.Generic` | `System/Collections/Generic.nim` | collection types (SS15.1) |
 
-The module file names are ours to choose; the C# namespace is only the name we
-present. There is **no implicit import**: `Console.WriteLine` without
-`using System;`, or `List<T>` without `using System.Collections.Generic;`, must
-fail to compile. `nsharp/tests/p3b/nousing.ns` pins that negative case.
+Nothing is implicit: `Console.WriteLine` without `using System;`, or `List<T>`
+without `using System.Collections.Generic;`, fails to compile, which
+`nsharp/tests/p3b/nousing.ns` pins. A namespace with no module is a "cannot open
+file" error.
 
 #### 5.1.1 User namespaces span files (D4, revised)
 
@@ -286,13 +289,14 @@ cannot express that: a method in `Widget.ns` calling one in `Button.ns` makes th
 two modules import each other, which Nim rejects.
 
 The frontend therefore emits each *used* namespace as three generated Nim
-modules (`compiler/nsharp/nsgen.nim`):
+modules (`compiler/nsharp/nsgen.nim`). `<P>` is the namespace's path, so
+`namespace UI` gives `UI` and `namespace A.B` gives `A/B`:
 
 | Generated | Contents | Why |
 |---|---|---|
-| `<N>_decl.nim` | every type of the namespace, in **one** type section | Nim resolves mutually recursive types inside a single section |
-| `<N>_impl.nim` | every proc, forward declared then defined | all implementations in one module, so a method in one file can call one in another |
-| `<N>.nim` | barrel: `import`/`export` both | this is what `using N;` resolves to; a plain `.nim` consumer may import it too |
+| `<P>_decl.nim` | every type of the namespace, in **one** type section | Nim resolves mutually recursive types inside a single section |
+| `<P>_impl.nim` | every proc, forward declared then defined | all implementations in one module, so a method in one file can call one in another |
+| `<P>.nim` | barrel: `import`/`export` both | this is what `using P;` resolves to (`using A.B` -> `A/B`); a plain `.nim` consumer may import it too |
 
 The decl/impl split additionally breaks a common cross-namespace cycle: if A's
 methods use B's types and B's methods use A's types, `A_impl` imports only
@@ -304,15 +308,16 @@ directory; the generated modules go in `<nimcache>/.nsgen`, which is placed in
 front of the module search path. Generation happens once, when the main module is
 parsed, before its imports resolve.
 
-**Limits, stated plainly.** A namespace whose name is dotted is not grouped (a
-dotted name is not a filename). A same-named sibling `<N>.ns` file still wins
-over the generated barrel, so a namespace that is also a file keeps its old
-behaviour. And **mutual references across two namespaces still cycle** - A's
-methods calling B's while B's call A's, or A's types naming B's while B's name
-A's - because Nim has no cross-module forward declaration for procs and resolves
-mutually recursive *types* only within one section. That is inherent to Nim's
-module model, not to this design; such a cycle is reported as a recursive module
-dependency and the namespaces must be merged or layered.
+**Limits.** A file is merged with a namespace's other files only when all of its
+declarations land in that one namespace; a file that also declares outside one, or
+spans two, is compiled on its own. A `using` is emitted as written rather than
+resolved relative to the enclosing namespace, so `using Company.Shared;` inside
+`namespace Company` works and `using Shared;` does not. A sibling `<N>.ns` file
+takes precedence over the generated barrel. Mutual references across two
+namespaces still cycle, because Nim has no cross-module forward declaration for
+procs and resolves mutually recursive types only within one section; such a cycle
+is reported as a recursive module dependency and the namespaces must be merged or
+layered.
 
 ### 5.2 Type declarations
 

@@ -1,0 +1,7 @@
+namespace Company.Products
+{
+    class Gadget
+    {
+        public string Name() { return "gadget"; }
+    }
+}

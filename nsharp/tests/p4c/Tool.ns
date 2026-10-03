@@ -1,0 +1,13 @@
+using System;
+
+namespace Company
+{
+    namespace Products
+    {
+        class Tool
+        {
+            // `Gadget` is declared by the other file of this namespace.
+            public bool IsNamed(Gadget g, string name) { return g.Name() == name; }
+        }
+    }
+}

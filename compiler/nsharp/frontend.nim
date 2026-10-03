@@ -34,9 +34,8 @@ proc parseModule*(fileIdx: FileIndex; cache: IdentCache;
                   config: ConfigRef): PNode =
   ## Parses an `.ns` file into an `nkStmtList` of ordinary Nim `PNode`s.
   let path = toFullPath(config, fileIdx)
-  ## Namespaces are resolved across files, so they must be discovered and
-  ## generated before this module's imports are resolved. `parseModule` for the
-  ## main module runs first, which is when the scan happens (it is idempotent).
+  ## Namespaces resolve across files, so generate them before this module's imports
+  ## are resolved. The main module is parsed first, which is when the scan runs.
   ensureNamespaces(config, cache, AbsoluteFile(path.string))
   var source = ""
   try:

@@ -2,10 +2,9 @@ using System;
 
 namespace Demo
 {
-    // Must NOT compile: `List<T>` lives in System.Collections.Generic, and this
-    // file never has `using System.Collections.Generic;`. The frontend maps that
-    // `using` onto the ns/collections shim, so without it `List` is not in scope
-    // (C# rejects this with CS0246, N# rejects it for the same reason).
+    // Negative case: `List<T>` needs `using System.Collections.Generic;`, which this
+    // file lacks. The directive lowers to `import "System/Collections/Generic"`. The
+    // C# compiler rejects this too, with CS0246.
     class Program
     {
         static void Main()

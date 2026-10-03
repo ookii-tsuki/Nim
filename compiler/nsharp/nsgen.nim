@@ -1,63 +1,56 @@
 # N# frontend - namespace modules
 #
-# A C# namespace is not a file: any number of files may declare `namespace UI`,
-# and code in one of them may freely name the others' types and members. Nim has
-# one module per file and rejects mutually importing modules, so a namespace
-# spanning files cannot be compiled as those files directly.
+# Nim has one module per file and rejects mutual imports, so a C# namespace, which
+# spans files, is emitted as three generated modules:
 #
-# Instead each used namespace is emitted as three generated Nim modules:
+#   <N>_decl.nim   its types, in one type section
+#   <N>_impl.nim   its procs, forward declared first
+#   <N>.nim        barrel importing and re-exporting both, which `using N;` resolves
 #
-#   <N>_decl.nim   every type declared by <N>'s files, in one type section
-#   <N>_impl.nim   every proc declared by <N>'s files   (imports <N>_decl)
-#   <N>.nim        the barrel: imports and re-exports both   <- what `using N` gets
-#
-# Concatenating all of a namespace's implementations into the single <N>_impl
-# module is what makes a method in one file able to call one in another: they are
-# plain procs in the same module, so Nim's within-module forward references apply.
-# The same holds for types in <N>_decl, where Nim resolves mutually recursive
-# types inside one type section.
-#
-# The decl/impl split also breaks a common cross-namespace cycle: if A's methods
-# use B's types and B's methods use A's types, then A_impl imports only B_decl and
-# B_impl imports only A_decl, which is acyclic. (Mutual *type* references across
-# namespaces still cycle; that is a documented limitation.)
-#
-# The split is not expressible in N# itself (there is no re-export and no way to
-# separate a type from its procs in source), which is why the generated files are
-# Nim, rendered from the lowered `PNode`s.
-#
-# Resolution: the generated directory goes in front of the module search path, so
-# `using N;` - which lowers to `import "N"` - finds `<N>.nim` there.
+# One module per namespace lets a method in one file call one in another; one type
+# section lets the files' types reference each other. Written to <nimcache>/.nsgen,
+# which is added to the module search path.
 
 import std/[os, syncio, algorithm, sets, tables]
 import ../ast, ../idents, ../lineinfos, ../msgs, ../options, ../pathutils,
        ../renderer
-import ast, parser, lexer, symbols, sema, desugar
+import ast, bcl, parser, lexer, symbols, sema, desugar
 
 const
   NsGenDirName = ".nsgen"
   NsExt = ".ns"
+  ## Root of the N# namespace tree, where a file's path is its C# namespace.
+  NsLibRoot = "pure/ns"
 
 var namespacesGenerated = false
-  ## Generation runs once per compiler process; `parseModule` is called for every
-  ## module, and only the first call (the main module) drives discovery.
+  ## `parseModule` runs for every module; the first call drives discovery.
+
+proc declaringNamespaces(ns: NsNode; name: string; names: var seq[string]) =
+  ## Appends `name` if the namespace declares anything itself, then recurses into
+  ## nested blocks. `namespace A { namespace B { } }` declares into `A.B`.
+  var nested: seq[NsNode] = @[]
+  var declares = false
+  if ns.body != nil:
+    for d in ns.body.sons:
+      case d.kind
+      of nsnNamespace: nested.add d
+      of nsnUsing, nsnEmpty: discard
+      else: declares = true
+  if declares: names.add name
+  for d in nested: declaringNamespaces(d, d.name, names)
 
 proc namespaceOf(module: NsNode): string =
-  ## The one namespace a file declares, or "" when the file declares none, more
-  ## than one, or anything outside a namespace. Only the plain case - a file that
-  ## holds exactly one `namespace X { ... }` block plus `using`s - is grouped.
-  ## Dotted names never reach the filesystem, so they are not grouped either.
-  result = ""
-  var count = 0
+  ## The single namespace the file declares into, or "". A file that spans several
+  ## namespaces, or declares outside one, is compiled on its own.
+  var names: seq[string] = @[]
   for d in module.sons:
     case d.kind
-    of nsnNamespace:
-      inc count
-      result = d.name
+    of nsnNamespace: declaringNamespaces(d, d.name, names)
     of nsnUsing, nsnEmpty: discard
     else:
       return ""   # declarations outside any namespace: not a namespace file
-  if count != 1 or '.' in result: return ""
+  if names.len != 1: return ""
+  names[0]
 
 proc collectNsFiles(root: string): seq[string] =
   ## Every `.ns` file under `root`, recursively, skipping the generated dir.
@@ -69,53 +62,74 @@ proc collectNsFiles(root: string): seq[string] =
     elif kind == pcFile and splitFile(path).ext == NsExt:
       result.add path
 
+proc dottedName(toks: seq[NsToken]; start: int): string =
+  ## `A.B.C` from `start`, or "" when there is no identifier there.
+  result = ""
+  var j = start
+  if j < toks.len and toks[j].kind == nsIdent:
+    result.add toks[j].text
+    inc j
+    while j + 1 < toks.len and toks[j].kind == nsDot and
+          toks[j+1].kind == nsIdent:
+      result.add "."
+      result.add toks[j+1].text
+      j += 2
+
 proc scanFile(source: string; namespaces: var seq[string];
               usings: var HashSet[string]) =
-  ## Token-level discovery of `namespace X` and `using X` at any nesting depth.
-  ## Deliberately not a parse: discovery must not diagnose, because a file that is
-  ## not part of this compilation may be malformed, and a namespace only has to be
-  ## *found* before we know whether it is used. Strings and comments are already
-  ## gone by the time tokens exist, so `"namespace"` in a literal cannot match.
+  ## Collects the `namespace` and `using` names in a file by scanning its tokens.
+  ## Scanning avoids diagnosing a file that may not belong to this compilation.
+  ## Brace depth marks the end of a namespace block, so a method body's braces do
+  ## not close it, and nested blocks compose into one dotted name.
   let toks = tokenize(source)
+  var open: seq[tuple[name: string, depth: int]] = @[]
+  var depth = 0
   var i = 0
   while i < toks.len:
     let t = toks[i]
-    if t.kind == nsIdent and (t.text == "namespace" or
-                              t.text in ["using", "import"]):
-      var name = ""
-      var j = i + 1
-      if j < toks.len and toks[j].kind == nsIdent:
-        name.add toks[j].text
-        inc j
-        while j + 1 < toks.len and toks[j].kind == nsDot and
-              toks[j+1].kind == nsIdent:
-          name.add "."
-          name.add toks[j+1].text
-          j += 2
-      if name.len > 0:
-        if t.text == "namespace": namespaces.add name
-        else: usings.incl name
-      i = j
-    else:
-      inc i
+    case t.kind
+    of nsLBrace:
+      inc depth
+    of nsRBrace:
+      if open.len > 0 and open[^1].depth == depth: open.setLen(open.len - 1)
+      dec depth
+    of nsIdent:
+      if t.text == "namespace":
+        var name = dottedName(toks, i + 1)
+        if name.len > 0:
+          if open.len > 0: name = open[^1].name & "." & name
+          namespaces.add name
+          var j = i + 1
+          while j < toks.len and toks[j].kind notin {nsLBrace, nsSemi, nsEof}:
+            inc j
+          if j < toks.len and toks[j].kind == nsLBrace:
+            open.add (name, depth + 1)
+            i = j
+            continue
+      elif t.text in ["using", "import"]:
+        let name = dottedName(toks, i + 1)
+        if name.len > 0: usings.incl name
+    else: discard
+    inc i
 
-proc writeBarrel(genDir, ns: string) =
-  ## The public entry point of a namespace: a real Nim module that a `.nim`
-  ## consumer could import too. Built by concatenation rather than `add` calls,
-  ## which would be ambiguous with `ast.add`.
-  let content = "import " & ns & "_decl\n" &
-                "export " & ns & "_decl\n" &
-                "import " & ns & "_impl\n" &
-                "export " & ns & "_impl\n"
-  writeFile(AbsoluteFile(genDir & "/" & ns & ".nim"), content)
+proc baseName(nsPath: string): string =
+  splitFile(nsPath).name
 
-proc generateNamespace(config: ConfigRef; cache: IdentCache; ns, genDir: string;
+proc writeBarrel(genDir, nsPath: string) =
+  ## Writes the namespace's public module. The two halves are named by their bare
+  ## file name, which the barrel resolves in its own directory.
+  let base = baseName(nsPath)
+  let content = "import " & base & "_decl\n" &
+                "export " & base & "_decl\n" &
+                "import " & base & "_impl\n" &
+                "export " & base & "_impl\n"
+  writeFile(AbsoluteFile(genDir / nsPath & ".nim"), content)
+
+proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: string;
                        files: seq[NsNode]) =
-  ## Lowers all of `ns`'s files as one module, then splits the result.
+  ## Lowers all of the namespace's files as one module, then splits the result.
   let info = files[0].info
-  ## The merged module is the concatenation of the files' top-level declarations:
-  ## each is `using`s plus a `namespace N { ... }` block, and lowering flattens
-  ## the block, so the namespace ends up with one combined scope.
+  ## Merging the files' declarations gives the namespace one scope.
   var merged = nsn(nsnModule, info)
   for m in files:
     for d in m.sons: merged.add d
@@ -124,9 +138,8 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; ns, genDir: string;
   checkModule(merged, scope, config)
   let parts = splitModuleOutput(lowerModule(merged, scope, cache))
 
-  ## The declaration half: the imports, then every type in ONE type section. One
-  ## section matters because Nim only resolves mutually recursive types inside a
-  ## single section, and two of the namespace's files may name each other's types.
+  ## All types in one type section: Nim resolves mutually recursive types only
+  ## within a single section, and the files' types may reference each other.
   var decls = newNodeI(nkStmtList, info)
   var typeSec = newNodeI(nkTypeSection, info)
   for i in 0 ..< parts.decls.len:
@@ -140,11 +153,11 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; ns, genDir: string;
   ## The implementation half names the types, so it imports the declaration half.
   var impls = newNodeI(nkStmtList, info)
   let declImport = newNodeI(nkImportStmt, info)
-  declImport.add newAtom(nkStrLit, ns & "_decl", info)
+  declImport.add newAtom(nkStrLit, baseName(nsPath) & "_decl", info)
   impls.add declImport
 
-  ## An empty body renders as nothing, which is not valid Nim; a member with no
-  ## statements (`{}`, or a generated `init`) gets an explicit `discard`.
+  ## Gives a member with no statements an explicit `discard`, since an empty body
+  ## renders as invalid Nim.
   for i in 0 ..< parts.impls.len:
     let s = parts.impls[i]
     if s.kind == nkProcDef and s[6] != nil and s[6].kind == nkStmtList and
@@ -153,10 +166,8 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; ns, genDir: string;
       sl.add newTree(nkDiscardStmt, s.info, newNodeI(nkEmpty, s.info))
       s[6] = sl
 
-  ## Every proc is forward declared first. Inside one module a call to a proc
-  ## defined further down needs a witness, and that is exactly the cross-file case
-  ## this module exists for: a method in one of the namespace's files calling one
-  ## defined in another. The declarations are copies with the body emptied.
+  ## Forward declares every proc, which lets a method in one file of the namespace
+  ## call one defined in another. Bodies are emptied copies.
   for i in 0 ..< parts.impls.len:
     let s = parts.impls[i]
     if s.kind == nkProcDef:
@@ -166,9 +177,12 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; ns, genDir: string;
   for i in 0 ..< parts.impls.len: impls.add parts.impls[i]
 
   let fid = files[0].info.fileIndex
-  renderModule(decls, genDir / (ns & "_decl.nim"), {}, fid, config)
-  renderModule(impls, genDir / (ns & "_impl.nim"), {}, fid, config)
-  writeBarrel(genDir, ns)
+  ## A dotted namespace maps to subdirectories.
+  let nsSub = splitFile(nsPath).dir
+  if nsSub.len > 0: createDir(AbsoluteDir(genDir / nsSub))
+  renderModule(decls, genDir / (nsPath & "_decl.nim"), {}, fid, config)
+  renderModule(impls, genDir / (nsPath & "_impl.nim"), {}, fid, config)
+  writeBarrel(genDir, nsPath)
 
 proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
                        mainPath: AbsoluteFile) =
@@ -178,15 +192,21 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
   if namespacesGenerated: return
   namespacesGenerated = true
 
+  ## `using System;` becomes `import "System"`, so the namespace root goes on the
+  ## search path ahead of `conf.libpath`, whose `system.nim` a case-insensitive
+  ## filesystem could otherwise match.
+  let nsLibRoot = AbsoluteDir(config.libpath.string / NsLibRoot)
+  if not config.searchPaths.contains(nsLibRoot):
+    config.searchPaths.insert(nsLibRoot, 0)
+
   let root = splitFile(mainPath.string).dir
   if root.len == 0: return
   var paths = collectNsFiles(root)
   paths.sort()   # deterministic output regardless of directory order
   if paths.len == 0: return
 
-  ## Discovery is a token scan, not a parse: an unrelated `.ns` file in the tree
-  ## that does not parse must not break this compilation, and a namespace only
-  ## has to be found, not checked, before we know whether it is used at all.
+  ## Discovery scans tokens, so a file in the tree that does not parse cannot stop
+  ## the compilation. A namespace only has to be found, not checked.
   var declared = initTable[string, seq[string]]()
   var used = initHashSet[string]()
   for path in paths:
@@ -208,13 +228,11 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
 
   let genDir = getNimcacheDir(config).string / NsGenDirName
   createDir(AbsoluteDir(genDir))
-  ## In front of the search path, so a generated barrel is found; a same-named
-  ## sibling `.ns` file still wins (see the note in `findModule`).
+  ## Added ahead of the search path so a generated barrel is found.
   config.searchPaths.insert(AbsoluteDir(genDir), 0)
 
   for ns in toGenerate:
-    ## Only now are the declaring files parsed for real, so a diagnostic can only
-    ## come from a file that is actually part of a namespace being compiled.
+    ## Parsing happens here so diagnostics come only from namespaces being compiled.
     var mods: seq[NsNode] = @[]
     for path in declared[ns]:
       var source = ""
@@ -226,4 +244,4 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
       let m = parseNsModule(source, fid, config)
       if namespaceOf(m) == ns: mods.add m
     if mods.len > 0:
-      generateNamespace(config, cache, ns, genDir, mods)
+      generateNamespace(config, cache, namespaceModulePath(ns), genDir, mods)

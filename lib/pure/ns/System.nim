@@ -1,11 +1,10 @@
-# N# standard library - the System namespace
+# N# standard library: the System namespace.
 #
-# The C# surface that lives in System: Object, String, Array and Console. These
-# are ordinary Nim procs: an instance member is reached through Nim's dot-call,
-# a static one (`String.IsNullOrEmpty`) through the qualifier the frontend drops.
+# Covers Object, String, Array and Console. Members are ordinary Nim procs: an
+# instance member is reached through Nim's dot-call, a static one such as
+# `String.IsNullOrEmpty` through the qualifier the frontend drops.
 #
-# Not auto-imported. `using System;` maps onto this module, so these members
-# resolve only when the program has that using, as in C#.
+# Imported by `using System;`.
 
 import std/[syncio, strutils]
 

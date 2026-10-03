@@ -1,6 +1,6 @@
 nkStmtList
   nkImportStmt
-    nkStrLit "ns/system"
+    nkStrLit "System"
   nkTypeSection
     nkTypeDef
       nkPostfix

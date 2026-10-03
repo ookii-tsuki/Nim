@@ -1,0 +1,18 @@
+// `Company.Products` spans two files; Tool.ns spells the same namespace with nested
+// blocks.
+using System;
+using Company.Products;
+
+namespace App
+{
+    class Program
+    {
+        static void Main()
+        {
+            Gadget g = new Gadget();
+            Tool t = new Tool();
+            Console.WriteLine(g.Name());
+            Console.WriteLine(t.IsNamed(g, "gadget"));
+        }
+    }
+}

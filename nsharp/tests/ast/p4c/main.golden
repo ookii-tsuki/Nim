@@ -1,6 +1,8 @@
 nkStmtList
   nkImportStmt
     nkStrLit "System"
+  nkImportStmt
+    nkStrLit "Company/Products"
   nkTypeSection
     nkTypeDef
       nkPostfix
@@ -24,41 +26,30 @@ nkStmtList
     nkStmtList
       nkVarSection
         nkIdentDefs
-          nkIdent 'sum'
-          nkIdent 'int32'
-          nkIntLit 0
-      nkBlockStmt
-        nkEmpty
-        nkStmtList
-          nkVarSection
-            nkIdentDefs
-              nkIdent 'i'
-              nkIdent 'int32'
-              nkIntLit 1
-          nkWhileStmt
-            nkInfix
-              nkIdent '<='
-              nkIdent 'i'
-              nkIntLit 10
-            nkStmtList
-              nkAsgn
-                nkIdent 'sum'
-                nkInfix
-                  nkIdent '+'
-                  nkIdent 'sum'
-                  nkIdent 'i'
-              nkCommand
-                nkIdent 'inc'
-                nkIdent 'i'
+          nkIdent 'g'
+          nkIdent 'Gadget'
+          nkCall
+            nkIdent 'newGadget'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 't'
+          nkIdent 'Tool'
+          nkCall
+            nkIdent 'newTool'
       nkCall
         nkIdent 'WriteLine'
-        nkIdent 'sum'
+        nkCall
+          nkDotExpr
+            nkIdent 'g'
+            nkIdent 'Name'
       nkCall
         nkIdent 'WriteLine'
-        nkInfix
-          nkIdent '>'
-          nkIdent 'sum'
-          nkIntLit 50
+        nkCall
+          nkDotExpr
+            nkIdent 't'
+            nkIdent 'IsNamed'
+          nkIdent 'g'
+          nkStrLit "gadget"
   nkProcDef
     nkPostfix
       nkIdent '*'

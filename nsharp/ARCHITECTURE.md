@@ -96,7 +96,9 @@ compiler/nsharp/          # ALL compiler-integrated code (new → merge-safe)
   ast.nim  symbols.nim  sema.nim  desugar.nim
   nsgen.nim               # namespaces spanning files (§5.1.1 of SPEC.md)
   tools/dumpast.nim       # parser golden-AST test seam
-lib/pure/ns/prelude.nim   # N# prelude: Console, ... (auto-imported as ns/prelude)
+lib/pure/ns/              # N# namespace root: a file's path is its C# namespace
+  System.nim              #   the System namespace
+  System/Collections/Generic.nim   #   the System.Collections.Generic namespace
 nsharp/                   # language assets (repo root)
   SPEC.md  GLOSSARY.md  ARCHITECTURE.md  tests/    # future: vscode/
 ```
@@ -296,8 +298,8 @@ Delivered in 3b: callbacks and collections.
   type position, and `new Name<...>(...)` -> `newName[...](...)`. A `>>` token
   from nested generics is split in place into two `>`; `looksLikeDecl` skips a
   balanced `<>` so `Dictionary<string, int> d = ...` reads as a declaration.
-* Collections live in `lib/pure/ns/collections.nim` (surface pinned in SPEC
-  section 15.1): `List<T>` = `seq[T]`, `Dictionary<K,V>` = `Table[K,V]`,
+* Collections live in `lib/pure/ns/System/Collections/Generic.nim` (surface pinned
+  in SPEC section 15.1): `List<T>` = `seq[T]`, `Dictionary<K,V>` = `Table[K,V]`,
   `HashSet<T>` = `HashSet[T]`, and `Queue<T>`/`Stack<T>` wrap `Deque[T]`. The shim
   re-exports `tables`/`sets`, because Nim's `import` is not transitive and users
   need indexing, `in`, `keys`, `values`. `Add`/`Contains`/... are capitalized
@@ -305,11 +307,12 @@ Delivered in 3b: callbacks and collections.
 * Every generated proc is `{.discardable.}` (and the collection shims use
   `{.push discardable.}`): C# lets any expression statement drop a method's
   result, while Nim rejects an unused result, so `nums.Remove(1);` needed it.
-* The C# BCL is gated by `using`, not implicitly imported. `System` ->
-  `ns/system` (Console, exceptions) and `System.Collections.Generic` ->
-  `ns/collections`, through the single namespace table in `parseUsing`. Nothing
-  is visible without its `using`; `nsharp/tests/p3b/nousing.ns` pins that, and
-  the C# compiler rejects it for the same reason (CS0246).
+* The C# BCL is gated by `using`. A namespace name is a module path, so
+  `using System;` is `import "System"` and `using System.Collections.Generic;` is
+  `import "System/Collections/Generic"`, resolved under `lib/pure/ns/`, the
+  namespace root the frontend puts on the search path. There is no rename table.
+  Nothing is visible without its `using`; `nsharp/tests/p3b/nousing.ns` pins that,
+  and the C# compiler rejects it for the same reason (CS0246).
 
 Still deferred to Phase 3: generics (3d, including `Func`/`Action`), interfaces,
 `virtual`/`override` (dynamic dispatch), collection predicates and
@@ -322,6 +325,16 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v15** - Namespaces. A C# namespace spans files, which Nim cannot express, so
+  each used namespace is emitted as `<P>_decl` / `<P>_impl` / `<P>` (barrel) under
+  `<nimcache>/.nsgen` (`compiler/nsharp/nsgen.nim`). A namespace name is a module
+  path, so `namespace A.B` is the path `A/B`, nested blocks compose, and
+  `using X.Y;` is `import "X/Y"` with no namespace table anywhere. The N# library
+  is the namespace root `lib/pure/ns/`, which the frontend puts on the search
+  path: `System` is `System.nim`, `System.Collections.Generic` is
+  `System/Collections/Generic.nim`. New `p4a` (namespace spanning files) and `p4c`
+  (dotted + nested, also merged across files) tests, both C# cross-checked; suite
+  now 26 tests, 33 golden ASTs, 26 C# cross-checks.
 - **v14** - Stages 2 and 3 of the parser cleanup. Stage 2: `sema.nim` attaches
   coarse type information and lowering uses it, so `.Length`/`.Count`/`.Message`
   renaming is type-directed and integer `/` is `div` (the old name-only rule

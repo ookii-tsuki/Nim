@@ -1,3 +1,3 @@
 nkStmtList
   nkImportStmt
-    nkStrLit "ns/system"
+    nkStrLit "System"

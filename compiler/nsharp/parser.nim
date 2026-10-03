@@ -681,7 +681,7 @@ proc parseTry(p: var NsParser): NsNode =
 
 # --- declarations -----------------------------------------------------------
 
-proc parseTopLevelDecl(p: var NsParser): NsNode
+proc parseTopLevelDecl(p: var NsParser; nsPrefix = ""): NsNode
 
 proc accessOf(mods: seq[string]): NsAccess =
   ## The last recognised access modifier wins, as in C#.
@@ -917,23 +917,28 @@ proc parseUsing(p: var NsParser): NsNode =
     discard p.advance
   if p.at(nsSemi): discard p.advance
 
-proc parseNamespace(p: var NsParser): NsNode =
+proc parseNamespace(p: var NsParser; nsPrefix = ""): NsNode =
+  ## `namespace A.B { }` and `namespace A { namespace B { } }` both give `A.B`.
   let info = p.here()
   discard p.advance
   result = nsn(nsnNamespace, info)
+  var local = ""
   while p.peek.kind in {nsIdent, nsDot}:
-    result.name.add p.advance.text
+    local.add p.advance.text
+  result.name = if nsPrefix.len > 0 and local.len > 0: nsPrefix & "." & local
+                else: nsPrefix & local
   discard p.expect(nsLBrace)
   result.body = nsn(nsnBlock, info)
   while not p.at(nsRBrace) and not p.at(nsEof):
     if p.at(nsSemi):
       discard p.advance
       continue
-    let d = p.parseTopLevelDecl()
+    let d = p.parseTopLevelDecl(result.name)
     if d != nil: result.body.add d
   discard p.expect(nsRBrace)
 
-proc parseTopLevelDecl(p: var NsParser): NsNode =
+proc parseTopLevelDecl(p: var NsParser; nsPrefix: string): NsNode =
+  ## `nsPrefix` is the enclosing namespace, for a nested `namespace` statement.
   var k = 0
   while p.peekAhead(k).kind == nsIdent and p.peekAhead(k).text in NsTypeModifiers:
     inc k
@@ -947,7 +952,7 @@ proc parseTopLevelDecl(p: var NsParser): NsNode =
   elif p.at(nsIdent) and p.peek.text in ["using", "import"]:
     return p.parseUsing()
   elif p.at(nsIdent) and p.peek.text == "namespace":
-    return p.parseNamespace()
+    return p.parseNamespace(nsPrefix)
   else:
     result = p.parseStatement()
     if p.at(nsSemi): discard p.advance

@@ -659,15 +659,11 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
 proc lowerDecl(l: var Lowerer; d: NsNode; into: var seq[PNode]) =
   case d.kind
   of nsnUsing:
-    ## A BCL namespace becomes an import of its N# shim, so the types are in
-    ## scope only when the `using` is present, as in C#.
-    let target = moduleForNamespace(d.name)
-    if target.len > 0:
-      into.add newTree(nkImportStmt, d.info, newAtom(nkStrLit, target, d.info))
-    elif d.name.len == 0 or d.name == "System" or d.name.startsWith("System."):
-      discard   # a BCL namespace N# has no shim for yet
-    else:
-      into.add newTree(nkImportStmt, d.info, newAtom(nkStrLit, d.name, d.info))
+    ## Lowers `using A.B;` to `import "A/B"`, so the namespace is in scope only
+    ## where the directive appears.
+    if d.name.len > 0:
+      into.add newTree(nkImportStmt, d.info,
+                       newAtom(nkStrLit, namespaceModulePath(d.name), d.info))
   of nsnNamespace:
     ## Namespaces are flattened; they carry no scope of their own yet.
     if d.body != nil:
@@ -703,12 +699,9 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
     result.add makeMainCall(l, l.entryPoint)
 
 proc splitModuleOutput*(stmts: PNode): tuple[decls, impls: PNode] =
-  ## Partitions a lowered module into its type declarations and everything else.
-  ## A whole namespace is emitted as `<N>_decl` (the types) plus `<N>_impl` (the
-  ## procs), so a method in one of the namespace's files can call one in another
-  ## without the two files' modules importing each other in a cycle - the cycle
-  ## Nim rejects. Imports go into both halves: the declarations may name imported
-  ## types and the implementations may name imported procs.
+  ## Splits a lowered module into type declarations and implementations, which
+  ## `nsgen` emits as `<N>_decl` and `<N>_impl`. Imports go to both halves: the
+  ## declarations may name imported types, the implementations imported procs.
   var decls = newNodeI(nkStmtList, stmts.info)
   var impls = newNodeI(nkStmtList, stmts.info)
   for i in 0 ..< stmts.len:

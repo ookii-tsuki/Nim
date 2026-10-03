@@ -5,7 +5,7 @@ nkStmtList
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'Program'
+        nkIdent 'Tool'
       nkEmpty
       nkRefTy
         nkObjectTy
@@ -14,45 +14,47 @@ nkStmtList
             nkIdent 'RootObj'
           nkRecList
   nkProcDef
-    nkIdent 'Main'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'IsNamed'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkEmpty
+      nkIdent 'bool'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Tool'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'g'
+        nkIdent 'Gadget'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'name'
+        nkIdent 'string'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'nums'
-          nkBracketExpr
-            nkIdent 'List'
-            nkIdent 'int32'
+      nkReturnStmt
+        nkInfix
+          nkIdent '=='
           nkCall
-            nkBracketExpr
-              nkIdent 'newList'
-              nkIdent 'int32'
-      nkCall
-        nkDotExpr
-          nkIdent 'nums'
-          nkIdent 'Add'
-        nkIntLit 1
-      nkCall
-        nkIdent 'WriteLine'
-        nkDotExpr
-          nkIdent 'nums'
-          nkIdent 'len'
+            nkDotExpr
+              nkIdent 'g'
+              nkIdent 'Name'
+          nkIdent 'name'
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initProgram'
+      nkIdent 'initTool'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Tool'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -60,11 +62,11 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newProgram'
+      nkIdent 'newTool'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Program'
+      nkIdent 'Tool'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -73,11 +75,5 @@ nkStmtList
         nkIdent 'new'
         nkIdent 'result'
       nkCall
-        nkIdent 'initProgram'
+        nkIdent 'initTool'
         nkIdent 'result'
-  nkWhenStmt
-    nkElifBranch
-      nkIdent 'isMainModule'
-      nkStmtList
-        nkCall
-          nkIdent 'Main'
