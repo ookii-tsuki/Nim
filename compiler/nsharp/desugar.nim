@@ -698,18 +698,21 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   if l.entryPoint != nil:
     result.add makeMainCall(l, l.entryPoint)
 
+proc isImportStmt*(n: PNode): bool =
+  ## An import, which both halves of a namespace module need: the declarations may
+  ## name imported types and the implementations imported procs.
+  n.kind in {nkImportStmt, nkImportExceptStmt, nkFromStmt}
+
 proc splitModuleOutput*(stmts: PNode): tuple[decls, impls: PNode] =
   ## Splits a lowered module into type declarations and implementations, which
-  ## `nsgen` emits as `<N>_decl` and `<N>_impl`. Imports go to both halves: the
-  ## declarations may name imported types, the implementations imported procs.
+  ## `nsgen` emits as `<N>_decl` and `<N>_impl`.
   var decls = newNodeI(nkStmtList, stmts.info)
   var impls = newNodeI(nkStmtList, stmts.info)
   for i in 0 ..< stmts.len:
     let s = stmts[i]
-    case s.kind
-    of nkTypeSection:
+    if s.kind == nkTypeSection:
       decls.add s
-    of nkImportStmt, nkImportExceptStmt, nkFromStmt:
+    elif isImportStmt(s):
       decls.add s
       impls.add s
     else:

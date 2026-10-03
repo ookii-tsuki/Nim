@@ -25,6 +25,10 @@ const
 var namespacesGenerated = false
   ## `parseModule` runs for every module; the first call drives discovery.
 
+var namespaceModules: Table[string, seq[NsNode]]
+  ## Parsed modules of each generated namespace, keyed by the namespace name, so a
+  ## module that imports one can classify its types.
+
 proc declaringNamespaces(ns: NsNode; name: string; names: var seq[string]) =
   ## Appends `name` if the namespace declares anything itself, then recurses into
   ## nested blocks. `namespace A { namespace B { } }` declares into `A.B`.
@@ -130,6 +134,26 @@ proc writeBarrel(genDir, nsPath: string) =
                 "export " & base & "_impl\n"
   writeFile(AbsoluteFile(genDir / nsPath & ".nim"), content)
 
+proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
+  ## Declaration collection for a module, extended with the declarations of the
+  ## namespaces it imports. Classification needs them: a type declared by another
+  ## file is otherwise unknown, so `/` stays floating point and `.Count` is not
+  ## lowered to `len`.
+  result = collectSymbols(module, config)
+  var seen = initHashSet[string]()
+  var pending = result.usings
+  while pending.len > 0:
+    let ns = pending.pop()
+    if ns in seen: continue
+    seen.incl ns
+    for m in namespaceModules.getOrDefault(ns):
+      let s = collectSymbols(m, config)
+      for k, v in s.classes:
+        if not result.classes.hasKey(k): result.classes[k] = v
+      for k, v in s.delegates:
+        if not result.delegates.hasKey(k): result.delegates[k] = v
+      for u in s.usings: pending.add u
+
 proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: string;
                        files: seq[NsNode]) =
   ## Lowers all of the namespace's files as one module, then splits the result.
@@ -139,7 +163,7 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: str
   for m in files:
     for d in m.sons: merged.add d
 
-  let scope = collectSymbols(merged, config)
+  let scope = collectWithNamespaces(merged, config)
   checkModule(merged, scope, config)
   let parts = splitModuleOutput(lowerModule(merged, scope, cache))
 
@@ -161,6 +185,11 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: str
   declImport.add newAtom(nkStrLit, baseName(nsPath) & "_decl", info)
   impls.add declImport
 
+  ## Imports precede the forward declarations, which may name imported types.
+  for i in 0 ..< parts.impls.len:
+    if isImportStmt(parts.impls[i]):
+      impls.add parts.impls[i]
+
   ## Gives a member with no statements an explicit `discard`, since an empty body
   ## renders as invalid Nim.
   for i in 0 ..< parts.impls.len:
@@ -179,7 +208,9 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: str
       let fwd = copyTree(s)
       fwd[6] = newNodeI(nkEmpty, s.info)
       impls.add fwd
-  for i in 0 ..< parts.impls.len: impls.add parts.impls[i]
+  for i in 0 ..< parts.impls.len:
+    if not isImportStmt(parts.impls[i]):
+      impls.add parts.impls[i]
 
   let fid = files[0].info.fileIndex
   ## A dotted namespace maps to subdirectories.
@@ -248,5 +279,11 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
       let fid = config.fileInfoIdx(AbsoluteFile(path))
       let m = parseNsModule(source, fid, config)
       if namespaceOf(m) == ns: mods.add m
-    if mods.len > 0:
-      generateNamespace(config, cache, namespaceModulePath(ns), genDir, mods)
+    if mods.len > 0: namespaceModules[ns] = mods
+
+  ## Every namespace is parsed before any is generated, so classifying one does not
+  ## depend on generation order.
+  for ns in toGenerate:
+    if namespaceModules.hasKey(ns):
+      generateNamespace(config, cache, namespaceModulePath(ns), genDir,
+                        namespaceModules[ns])

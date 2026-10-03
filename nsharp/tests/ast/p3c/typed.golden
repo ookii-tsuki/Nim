@@ -156,6 +156,39 @@ nkStmtList
           nkIdent '/'
           nkFloatLit 7.0
           nkIntLit 2
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'nat'
+          nkIdent 'int'
+          nkIntLit 7
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent 'div'
+          nkIdent 'nat'
+          nkIntLit 2
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'unat'
+          nkIdent 'uint'
+          nkIntLit 7
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent 'div'
+          nkIdent 'unat'
+          nkIntLit 2
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'handle'
+          nkIdent 'int'
+          nkIdent 'nat'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent 'div'
+          nkIdent 'handle'
+          nkIntLit 2
   nkProcDef
     nkPostfix
       nkIdent '*'

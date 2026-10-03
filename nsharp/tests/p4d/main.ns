@@ -11,6 +11,16 @@ namespace App
             P.Gadget g = new P.Gadget();
             System.Console.WriteLine(g.Name());
             System.Console.WriteLine(P.Gadget.Count());
+
+            P.Store store = new P.Store();
+            var items = store.Items();
+            Console.WriteLine(items.Count);
+
+            Int32 half = P.Gadget.Count() / 2;
+            Console.WriteLine(half);
+
+            System.String label = "n";
+            Console.WriteLine(label.Length);
         }
     }
 }

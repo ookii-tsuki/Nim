@@ -21,6 +21,16 @@ namespace Demo
 
             Console.WriteLine(7 / 2);
             Console.WriteLine(7.0 / 2);
+
+            // nint is pointer-sized, which is Nim's `int`; IntPtr is the same type.
+            nint nat = 7;
+            Console.WriteLine(nat / 2);
+
+            nuint unat = 7;
+            Console.WriteLine(unat / 2);
+
+            IntPtr handle = nat;
+            Console.WriteLine(handle / 2);
         }
     }
 }

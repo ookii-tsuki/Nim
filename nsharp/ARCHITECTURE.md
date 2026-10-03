@@ -325,6 +325,15 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v17** - Type classification across files. A built-in type is accepted under its
+  BCL class name (`Int32`, `String`, `Boolean`, `IntPtr` for `nint`, ...) through one
+  table that both lowering and classification consult, and `nint`/`nuint` map to
+  Nim's pointer-sized `int`/`uint`. A module's scope now also holds the
+  declarations of the namespaces it imports, so a value from another file lowers
+  like one from the same file: integer `/` truncates and `.Count`/`.Length` lower to
+  `len`. Qualified and aliased type names are canonicalised before being recorded,
+  so member lookups resolve, and a generated `<N>_impl` writes its imports above the
+  forward declarations. Suite now 28 tests, 37 golden ASTs, 28 C# cross-checks.
 - **v16** - `using Alias = X.Y;` and qualified names. A namespace alias imports its
   target, since a qualifier is dropped when lowering. `parseType`, `parseNew` and
   `looksLikeDecl` accept `A.B`, `bcl.unqualified` strips the qualifier, and a

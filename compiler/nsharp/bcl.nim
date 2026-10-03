@@ -10,13 +10,24 @@ type
 const
   ## C# built-in types to Nim equivalents. Only names whose Nim spelling differs
   ## appear here; everything else is passed through unchanged.
-  NsPrimitiveTypes*: array[15, NsRename] = [
+  NsPrimitiveTypes*: array[17, NsRename] = [
     ("int", "int32"), ("uint", "uint32"), ("long", "int64"),
     ("ulong", "uint64"), ("short", "int16"), ("ushort", "uint16"),
     ("byte", "uint8"), ("sbyte", "int8"), ("float", "float32"),
     ("double", "float64"), ("bool", "bool"), ("char", "char"),
     ("string", "string"), ("object", "RootRef"),
     ("Exception", "CatchableError"),
+    ("nint", "int"), ("nuint", "uint"),
+  ]
+
+  ## The BCL class name of a C# built-in type, which C# accepts in place of the
+  ## keyword. Mapping to the keyword keeps one Nim spelling per type.
+  NsBclTypeNames*: array[16, NsRename] = [
+    ("Int32", "int"), ("UInt32", "uint"), ("Int64", "long"), ("UInt64", "ulong"),
+    ("Int16", "short"), ("UInt16", "ushort"), ("Byte", "byte"),
+    ("SByte", "sbyte"), ("Single", "float"), ("Double", "double"),
+    ("Boolean", "bool"), ("Char", "char"), ("String", "string"),
+    ("Object", "object"), ("IntPtr", "nint"), ("UIntPtr", "nuint"),
   ]
 
   ## Bases that mark a class as an exception class. Such a class is emitted as a
@@ -37,8 +48,9 @@ const
   NsMessageMembers*: array[1, string] = ["Message"]
 
   ## Type names N# knows the shape of, for `sema.nim`'s type classification.
-  NsIntTypeNames*: array[8, string] = [
+  NsIntTypeNames*: array[10, string] = [
     "int", "uint", "long", "ulong", "short", "ushort", "byte", "sbyte",
+    "nint", "nuint",
   ]
   NsFloatTypeNames*: array[2, string] = ["float", "double"]
   NsSequenceTypeNames*: array[5, string] = [
@@ -51,12 +63,18 @@ proc unqualified*(s: string): string =
   let dot = s.rfind('.')
   if dot >= 0: s[dot + 1 .. ^1] else: s
 
+proc canonicalTypeName*(s: string): string =
+  ## The C# keyword spelling of a type name, without its qualifier:
+  ## `System.Int32` and `Int32` both become `int`.
+  result = unqualified(s)
+  for r in NsBclTypeNames:
+    if r.cs == result: return r.nim
+
 proc nimTypeName*(s: string): string =
-  ## Nim spelling of a C# type name, or its unqualified form unchanged.
-  let name = unqualified(s)
+  ## Nim spelling of a C# type name, or its canonical form unchanged.
+  result = canonicalTypeName(s)
   for r in NsPrimitiveTypes:
-    if r.cs == name: return r.nim
-  name
+    if r.cs == result: return r.nim
 
 proc isExceptionBase*(s: string): bool =
   for b in NsExceptionBases:

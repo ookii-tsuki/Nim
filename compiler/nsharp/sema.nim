@@ -51,6 +51,11 @@ proc declare(ctx: var NsCheckContext; name: string; kind: NsTypeKind;
                              else: NsTypeInfo(kind: tkUnknown)), had)
   ctx.types[name] = NsTypeInfo(kind: kind, name: typeName)
 
+proc declTypeName(t: NsNode): string =
+  ## The type name recorded for a local or parameter. Canonical, so a qualified
+  ## `Company.Products.Widget` matches the class names in the module scope.
+  if t == nil: "" else: canonicalTypeName(t.name)
+
 # --- type classification ----------------------------------------------------
 
 proc isExceptionDerived(ctx: NsCheckContext; name: string): bool =
@@ -66,7 +71,7 @@ proc classifyName(ctx: NsCheckContext; name: string): NsTypeKind =
   ## Kind of a type written by name, purely from `bcl.nim`'s tables plus the
   ## module scope. This is where "List is a sequence" and "Exception is an
   ## exception" come from; it is a lookup, not a guess.
-  let name = unqualified(name)
+  let name = canonicalTypeName(name)
   for s in NsIntTypeNames:
     if s == name: return tkInt
   for s in NsFloatTypeNames:
@@ -254,7 +259,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## inside it are never resolved.
     ctx.pushScope()
     for p in n.params:
-      if p.typ != nil: ctx.declare(p.name, ctx.classifyType(p.typ), p.typ.name)
+      if p.typ != nil: ctx.declare(p.name, ctx.classifyType(p.typ), declTypeName(p.typ))
       else: ctx.declare(p.name, tkUnknown)
     if n.body != nil:
       for s in n.body.sons: ctx.walkStmt(s)
@@ -283,14 +288,14 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   if n.body != nil:
     let initKind = ctx.walkExpr(n.body)
     if n.typ == nil: kind = initKind
-  ctx.declare(n.name, kind, (if n.typ != nil: n.typ.name else: n.typeName))
+  ctx.declare(n.name, kind, (if n.typ != nil: declTypeName(n.typ) else: n.typeName))
 
 proc walkForeach(ctx: var NsCheckContext; n: NsNode) =
   let elemKind = ctx.classifyType(n.typ)
   discard ctx.walkExpr(n.body)
   ctx.pushScope()
   ctx.declare(n.name, elemKind,
-              (if n.typ != nil: n.typ.name else: n.body.typeName))
+              (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName))
   for s in n.sons: ctx.walkStmt(s)
   ctx.popScope()
 
@@ -311,7 +316,7 @@ proc walkTry(ctx: var NsCheckContext; n: NsNode) =
     if c.kind == nsnCatch:
       ctx.pushScope()
       if c.typ != nil:
-        ctx.declare(c.name, ctx.classifyType(c.typ), c.typ.name)
+        ctx.declare(c.name, ctx.classifyType(c.typ), declTypeName(c.typ))
       if c.body != nil:
         for s in c.body.sons: ctx.walkStmt(s)
       ctx.popScope()
@@ -404,7 +409,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
       if acc == nil or acc.kind == nsnEmpty: continue
       ctx.pushScope()
       ## The setter's implicit parameter is `value`.
-      if i == 1: ctx.declare("value", ctx.classifyType(m.typ), m.typ.name)
+      if i == 1: ctx.declare("value", ctx.classifyType(m.typ), declTypeName(m.typ))
       for s in acc.sons: ctx.walkStmt(s)
       ctx.popScope()
   of nsnFieldDecl:

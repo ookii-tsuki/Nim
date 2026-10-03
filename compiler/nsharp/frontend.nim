@@ -14,7 +14,7 @@
 
 import std/[os, syncio]
 import ../ast, ../idents, ../lineinfos, ../options, ../msgs, ../pathutils
-import parser, symbols, sema, desugar, nsgen
+import parser, sema, desugar, nsgen
 
 proc isNsharpFile*(config: ConfigRef; fileIdx: FileIndex): bool =
   ## True when `fileIdx` names a `.ns` source file.
@@ -26,7 +26,7 @@ proc compileNsSource*(source: string; fileIdx: FileIndex; cache: IdentCache;
   ## The whole frontend: parse, collect declarations, check, lower. Exposed
   ## separately from `parseModule` so tools can drive it from a string.
   let module = parseNsModule(source, fileIdx, config)
-  let scope = collectSymbols(module, config)
+  let scope = collectWithNamespaces(module, config)
   checkModule(module, scope, config)
   result = lowerModule(module, scope, cache)
 

@@ -1,0 +1,87 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Store'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Items'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'List'
+        nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Store'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'r'
+          nkBracketExpr
+            nkIdent 'List'
+            nkIdent 'int32'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newList'
+              nkIdent 'int32'
+      nkCall
+        nkDotExpr
+          nkIdent 'r'
+          nkIdent 'Add'
+        nkIntLit 3
+      nkCall
+        nkDotExpr
+          nkIdent 'r'
+          nkIdent 'Add'
+        nkIntLit 4
+      nkReturnStmt
+        nkIdent 'r'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initStore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Store'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newStore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Store'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initStore'
+        nkIdent 'result'

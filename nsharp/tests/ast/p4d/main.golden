@@ -40,6 +40,47 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Count'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'store'
+          nkIdent 'Store'
+          nkCall
+            nkIdent 'newStore'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'items'
+          nkEmpty
+          nkCall
+            nkDotExpr
+              nkIdent 'store'
+              nkIdent 'Items'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'items'
+          nkIdent 'Count'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'half'
+          nkIdent 'int32'
+          nkInfix
+            nkIdent '/'
+            nkCall
+              nkIdent 'Count'
+            nkIntLit 2
+      nkCall
+        nkIdent 'WriteLine'
+        nkIdent 'half'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'label'
+          nkIdent 'string'
+          nkStrLit "n"
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'label'
+          nkIdent 'Length'
   nkProcDef
     nkPostfix
       nkIdent '*'

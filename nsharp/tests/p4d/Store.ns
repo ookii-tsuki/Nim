@@ -1,0 +1,15 @@
+using System.Collections.Generic;
+
+namespace Company.Products
+{
+    class Store
+    {
+        public List<int> Items()
+        {
+            List<int> r = new List<int>();
+            r.Add(3);
+            r.Add(4);
+            return r;
+        }
+    }
+}

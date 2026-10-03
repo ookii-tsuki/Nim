@@ -173,7 +173,7 @@ differ only by case is a **hard error**.
 | `short`, `ushort` | ✅ v1 | `int16`, `uint16` |
 | `int`, `uint` | ✅ v1 | `int32`, `uint32` |
 | `long`, `ulong` | ✅ v1 | `int64`, `uint64` |
-| `nint`, `nuint` | 🔜 later | `int`, `uint` |
+| `nint`, `nuint` | ✅ v1 | `int`, `uint` |
 | `char` | ✅ v1 | Nim `char` (1 byte; see §4.4) |
 | `float` | ✅ v1 | `float32` |
 | `double` | ✅ v1 | `float64` |
@@ -184,6 +184,13 @@ differ only by case is a **hard error**.
 | `null` | ✅ v1 | `nil` (see §4.4/§7.3) |
 | `var` (local inference) | ✅ v1 | `var x = expr` |
 | `dynamic` | 🚫 out | - |
+
+A type is also accepted under its BCL class name, which C# allows in place of the
+keyword: `Int32` for `int`, `String` for `string`, `Boolean` for `bool`, and so on
+down the table. `IntPtr` and `UIntPtr` are the class names of `nint` and `nuint`,
+which are the same types. Both spellings produce the same Nim type, so
+`Int32 x = 7; x / 2` truncates exactly as `int x = 7;` does. `Void` and `Decimal`
+are excluded: N# has no `void` type and no decimal.
 
 ### 4.2 Composite & reference types
 
@@ -319,12 +326,14 @@ parsed, before its imports resolve.
 declarations land in that one namespace; a file that also declares outside one, or
 spans two, is compiled on its own. A `using` is emitted as written rather than
 resolved relative to the enclosing namespace, so `using Company.Shared;` inside
-`namespace Company` works and `using Shared;` does not. A sibling `<N>.ns` file
-takes precedence over the generated barrel. Mutual references across two
-namespaces still cycle, because Nim has no cross-module forward declaration for
-procs and resolves mutually recursive types only within one section; such a cycle
-is reported as a recursive module dependency and the namespaces must be merged or
-layered.
+`namespace Company` works and `using Shared;` does not. A namespace alias is an
+import of its target, so it also puts the target's names in unqualified scope,
+which C# does not: after `using P = Company.Products;`, `Gadget` resolves as well
+as `P.Gadget`. A sibling `<N>.ns` file takes precedence over the generated barrel.
+Mutual references across two namespaces still cycle, because Nim has no
+cross-module forward declaration for procs and resolves mutually recursive types
+only within one section; such a cycle is reported as a recursive module dependency
+and the namespaces must be merged or layered.
 
 ### 5.2 Type declarations
 
