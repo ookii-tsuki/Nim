@@ -1,6 +1,11 @@
 nkStmtList
   nkImportStmt
     nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
   nkImportStmt
     nkStrLit "System"
   nkTypeSection

@@ -1,0 +1,64 @@
+// The runtime's own errors, caught by their .NET exception types.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            int[] a = new int[2];
+            try
+            {
+                Console.WriteLine(a[5]);
+            }
+            catch (IndexOutOfRangeException e)
+            {
+                Console.WriteLine("index");
+            }
+
+            int m = 2147483647;
+            try
+            {
+                checked
+                {
+                    Console.WriteLine(m + 1);
+                }
+            }
+            catch (OverflowException e)
+            {
+                Console.WriteLine("overflow");
+            }
+
+            int z = 0;
+            try
+            {
+                Console.WriteLine(10 / z);
+            }
+            catch (DivideByZeroException e)
+            {
+                Console.WriteLine("zero");
+            }
+
+            try
+            {
+                throw new NullReferenceException("n");
+            }
+            catch (NullReferenceException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            try
+            {
+                throw new ArgumentException("bad");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            Console.WriteLine("done");
+        }
+    }
+}

@@ -1,0 +1,38 @@
+// `do-while`, and the overflow-checking blocks.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            int j = 0;
+            do
+            {
+                j++;
+                if (j == 2) { continue; }
+                Console.WriteLine("do " + j);
+            }
+            while (j < 3);
+
+            int k = 0;
+            do
+            {
+                k++;
+                if (k == 2) { break; }
+                Console.WriteLine("brk " + k);
+            }
+            while (k < 5);
+
+            checked
+            {
+                Console.WriteLine("checked block");
+            }
+            unchecked
+            {
+                Console.WriteLine("unchecked block");
+            }
+        }
+    }
+}

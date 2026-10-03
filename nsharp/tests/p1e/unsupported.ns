@@ -1,0 +1,17 @@
+// Valid C# that N# rejects: the forms that need a context N# does not have yet.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(sizeof(int));
+            Console.WriteLine(typeof(int));
+            int z = default;
+            int y = checked(1 + 1);
+            Console.WriteLine(z + y);
+        }
+    }
+}

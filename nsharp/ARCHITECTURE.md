@@ -328,6 +328,45 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v21** - Exceptions became real types, and the built-in types got their members.
+  `Exception` maps to Nim's exception *root* instead of `CatchableError`, so
+  `catch (Exception)` catches `Defect`s the way C#'s does, and the .NET exception
+  names are declared by `lib/pure/ns/System.nim` as aliases of the defect the runtime
+  actually raises where one exists -- `catch (IndexOutOfRangeException)`,
+  `(OverflowException)` and `(DivideByZeroException)` now fire instead of never
+  matching, because the declared type is the raised type. Nothing is hardcoded in the
+  compiler for members: `int.MaxValue` keeps its receiver, spelled in Nim
+  (`int32.MaxValue`), and reaches a library declaration through Nim's own typedesc
+  dot-call, the way `int.high` reaches `high(int32)`; sema contributed one
+  receiver-keyed rule (a member of a built-in type has that type's kind) and a member
+  named `MaxValue` on a user class is left alone. Three more gaps came out of writing
+  the tests, all recorded in §7.3: the module-level `{.push overflowChecks: off.}`
+  that the SPEC had always described was never emitted, so C#'s unchecked-by-default
+  arithmetic has only now become true (which is also what makes `checked` mean
+  something) -- and taking it as far as it goes turned up that Nim's *divide by
+  zero* check rides on the same switch, so integer `/` and `%` are now routed to the
+  intrinsics' `nsDiv`/`nsMod`, which raise `DivideByZeroException` regardless of
+  `checked`, as C# does; Nim inserts no check for a nil field read, so
+  `NullReferenceException` can be thrown and caught but not raised by a dereference;
+  and an unhandled exception ends the process with Nim's message and status 1 where
+  C# prints `Unhandled exception.` and exits 134. Suite now 34 tests, 43 golden
+  ASTs.
+- **v20** - Casts, type tests, `do-while`, overflow blocks and two builtins.
+  `(T)x` becomes a Nim conversion, and `x is T` / `x as T` become Nim's `of` (a value
+  type is tested statically, with `is`) and a block that yields `nil` rather than
+  raising and reads its operand once. A cast that would box, an `as` on a value type,
+  and the forms that still need a context N# does not have (`sizeof`, `typeof`, a
+  target-typed `default`, `checked(...)`) report `NS9999`; `nameof` is a literal of
+  the written name and `default(T)` is Nim's `default`, and both are in the new
+  `p1e`. C# tells `(T)x` from `(x)` with a symbol table, so the frontend instead
+  requires the name to be spelled like a type *and* be followed by a value. C#'s
+  `do { } while (c)` cannot be a plain Nim `while` because `continue` must reach the
+  check, so one copy of the body sits under a first-pass flag and Nim's own `break`
+  and `continue` keep working. Writing that test exposed a second bug: a childless
+  `nkContinueStmt`/`nkBreakStmt` is an illformed AST, which only `switch` had escaped
+  by dropping its trailing `break`. Three SPEC rows that claimed `✅ v1` while still
+  unimplemented (`?.`/`??`, object initializers, `typeof`) are now marked later.
+  Suite now 32 tests, 41 golden ASTs, 32 C# cross-checks.
 - **v19** - String concatenation and stringification. `"a" + b` works without a
   `using`, as in C#, because every module is compiled with an import of
   `lib/pure/nsharp/intrinsics.nim`; that module holds `+` overloads that accept any

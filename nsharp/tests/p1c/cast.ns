@@ -1,0 +1,39 @@
+// Casts, `is`, `as`, and the compile-time helpers.
+using System;
+
+namespace Demo
+{
+    class Animal { public int Legs; }
+    class Dog : Animal { public string Name; }
+
+    enum Color { Red = 1, Blue = 2 }
+
+    class Program
+    {
+        static void Main()
+        {
+            double d = 3.9;
+            Console.WriteLine((int)d);
+
+            long big = 7;
+            Console.WriteLine((int)big + 1);
+
+            Console.WriteLine((char)65);
+
+            Color c = Color.Blue;
+            Console.WriteLine((int)c);
+
+            Animal a = new Dog();
+            Console.WriteLine(a is Dog);
+            Console.WriteLine(a is Animal);
+            Console.WriteLine((a as Dog) != null);
+
+            Animal plain = new Animal();
+            Console.WriteLine((plain as Dog) == null);
+
+            Console.WriteLine(nameof(Program));
+            Console.WriteLine(nameof(Demo.Color));
+            Console.WriteLine(default(int));
+        }
+    }
+}

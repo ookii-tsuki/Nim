@@ -139,6 +139,52 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
   result.add l.expr(callee)
   for a in n.sons: result.add l.expr(a)
 
+proc asToNim(l: Lowerer; n: NsNode): PNode =
+  ## `x as T` yields nil instead of raising, and reads its operand once. The block
+  ## scopes the temporary, so two of them in one body cannot collide.
+  let defs = newNodeI(nkIdentDefs, n.info)
+  defs.add l.id("nsAs", n.info)
+  defs.add newNodeI(nkEmpty, n.info)
+  defs.add l.expr(n.body)
+  let cond = newNodeI(nkInfix, n.info)
+  cond.add l.id("of", n.info)
+  cond.add l.id("nsAs", n.info)
+  cond.add l.typeToNim(n.typ, n.info)
+  let conv = newNodeI(nkCall, n.info)
+  conv.add l.typeToNim(n.typ, n.info)
+  conv.add l.id("nsAs", n.info)
+  let inner = newNodeI(nkStmtList, n.info)
+  inner.add newTree(nkLetSection, n.info, defs)
+  inner.add newTree(nkIfExpr, n.info,
+                    newTree(nkElifExpr, n.info, cond, conv),
+                    newTree(nkElseExpr, n.info, newNodeI(nkNilLit, n.info)))
+  result = newNodeI(nkBlockExpr, n.info)
+  result.add empty(n.info)
+  result.add inner
+
+proc memberReceiver(l: Lowerer; n: NsNode): PNode =
+  ## The receiver of a member access. A member of a *type* keeps its receiver, in
+  ## Nim's spelling, so `int.MaxValue` resolves through Nim's dot-call to the
+  ## library's declaration for `int32` rather than to a field named `MaxValue`. A
+  ## value receiver, and a user class named like a built-in, are left alone.
+  var r = n.body
+  var name = ""
+  var dotted = true
+  while r != nil:
+    if r.kind == nsnMember:
+      if name.len == 0: name = r.name
+      r = r.body
+    elif r.kind == nsnIdent:
+      if name.len == 0: name = r.name
+      r = nil
+    else:
+      dotted = false
+      r = nil
+  if dotted and name.len > 0 and not l.scope.classes.hasKey(name):
+    let spelled = knownTypeSpelling(name)
+    if spelled.len > 0: return l.id(spelled, n.info)
+  l.expr(n.body)
+
 proc expr(l: Lowerer; n: NsNode): PNode =
   if n == nil: return newNodeI(nkEmpty, unknownLineInfo)
   case n.kind
@@ -153,7 +199,7 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnCharLit: result = newAtom(nkCharLit, n.intVal, n.info)
   of nsnBoolLit: result = l.id(if n.intVal != 0: "true" else: "false", n.info)
   of nsnMember:
-    result = newTree(nkDotExpr, n.info, l.expr(n.body),
+    result = newTree(nkDotExpr, n.info, l.memberReceiver(n),
                      l.id(l.memberToNim(n), n.info))
   of nsnCall: result = l.callToNim(n)
   of nsnIndex:
@@ -173,9 +219,30 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     result = newTree(nkPrefix, n.info, l.id(n.name, n.info), l.expr(n.body))
   of nsnIncDec:
     result = newTree(nkCommand, n.info, l.id(n.name, n.info), l.expr(n.body))
+  of nsnCast:
+    ## `(T)x` is a Nim conversion, and also how a ref object is downcast.
+    result = newNodeI(nkCall, n.info)
+    result.add l.typeToNim(n.typ, n.info)
+    result.add l.expr(n.body)
+  of nsnIs:
+    result = newTree(nkInfix, n.info, l.id(n.name, n.info), l.expr(n.body),
+                     l.typeToNim(n.typ, n.info))
+  of nsnAs: result = l.asToNim(n)
+  of nsnDefault:
+    result = newNodeI(nkCall, n.info)
+    result.add l.id("default", n.info)
+    result.add l.typeToNim(n.typ, n.info)
   of nsnBinary:
-    result = newTree(nkInfix, n.info, l.id(n.name, n.info),
-                     l.expr(n.sons[0]), l.expr(n.sons[1]))
+    if n.name in ["nsDiv", "nsMod"]:
+      ## Integer `/` and `%` go through library procs, which are called rather
+      ## than used as an infix operator.
+      result = newNodeI(nkCall, n.info)
+      result.add l.id(n.name, n.info)
+      result.add l.expr(n.sons[0])
+      result.add l.expr(n.sons[1])
+    else:
+      result = newTree(nkInfix, n.info, l.id(n.name, n.info),
+                       l.expr(n.sons[0]), l.expr(n.sons[1]))
   of nsnTernary:
     result = newNodeI(nkIfExpr, n.info)
     result.add newTree(nkElifExpr, n.info, l.expr(n.sons[0]), l.expr(n.sons[1]))
@@ -316,6 +383,48 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
                            copyTree(lhs), l.expr(n.sons[1]))
     result = newTree(nkAsgn, n.info, lhs, combined)
 
+proc doWhileToNim(l: Lowerer; n: NsNode): PNode =
+  ## C#'s `do { B } while (c)` runs B once and then reads c, and a `continue` in B
+  ## must reach that read. A first-pass flag keeps one copy of the body and leaves
+  ## `break` and `continue` to Nim's own loop.
+  result = newNodeI(nkBlockStmt, n.info)
+  result.add empty(n.info)
+  let scope = newNodeI(nkStmtList, n.info)
+  let defs = newNodeI(nkIdentDefs, n.info)
+  defs.add l.id("nsFirst", n.info)
+  defs.add newNodeI(nkEmpty, n.info)
+  defs.add l.id("true", n.info)
+  scope.add newTree(nkVarSection, n.info, defs)
+  let cond = newNodeI(nkInfix, n.info)
+  cond.add l.id("or", n.info)
+  cond.add l.id("nsFirst", n.info)
+  cond.add l.expr(n.body)
+  let loop = newNodeI(nkWhileStmt, n.info)
+  loop.add cond
+  let body = newNodeI(nkStmtList, n.info)
+  let assign = newNodeI(nkAsgn, n.info)
+  assign.add l.id("nsFirst", n.info)
+  assign.add l.id("false", n.info)
+  body.add assign
+  for s in n.sons: body.add l.stmt(s)
+  loop.add body
+  scope.add loop
+  result.add scope
+
+proc checkedToNim(l: Lowerer; n: NsNode): PNode =
+  ## C# turns overflow checking on inside `checked` and off inside `unchecked`,
+  ## which is Nim's `overflowChecks` switch.
+  result = newNodeI(nkStmtList, n.info)
+  let push = newNodeI(nkPragma, n.info)
+  push.add l.id("push", n.info)
+  push.add newTree(nkExprColonExpr, n.info, l.id("overflowChecks", n.info),
+                   l.id(if n.kind == nsnChecked: "on" else: "off", n.info))
+  result.add push
+  for s in n.sons: result.add l.stmt(s)
+  let pop = newNodeI(nkPragma, n.info)
+  pop.add l.id("pop", n.info)
+  result.add pop
+
 proc stmt(l: Lowerer; n: NsNode): PNode =
   if n == nil: return empty(unknownLineInfo)
   case n.kind
@@ -345,6 +454,8 @@ proc stmt(l: Lowerer; n: NsNode): PNode =
     w.add l.expr(n.body)
     w.add l.stmtsToNode(n.sons, n.info)
     result = w
+  of nsnDoWhile: result = l.doWhileToNim(n)
+  of nsnChecked, nsnUnchecked: result = l.checkedToNim(n)
   of nsnFor: result = l.forToNim(n)
   of nsnForeach:
     result = newNodeI(nkForStmt, n.info)
@@ -356,8 +467,12 @@ proc stmt(l: Lowerer; n: NsNode): PNode =
   of nsnReturn:
     result = newNodeI(nkReturnStmt, n.info)
     result.add (if n.body == nil: empty(n.info) else: l.expr(n.body))
-  of nsnBreak: result = newNodeI(nkBreakStmt, n.info)
-  of nsnContinue: result = newNodeI(nkContinueStmt, n.info)
+  of nsnBreak:
+    result = newNodeI(nkBreakStmt, n.info)
+    result.add empty(n.info)
+  of nsnContinue:
+    result = newNodeI(nkContinueStmt, n.info)
+    result.add empty(n.info)
   of nsnThrow: result = l.throwToNim(n)
   else: result = l.expr(n)
 
@@ -703,6 +818,13 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   ## can be printed without a `using`.
   result.add newTree(nkImportStmt, module.info,
                      newAtom(nkStrLit, NsIntrinsics, module.info))
+  ## C# arithmetic is unchecked unless it is written inside `checked`, so the module
+  ## turns the check off and `checked { }` pushes it back on (§7.3).
+  let push = newNodeI(nkPragma, module.info)
+  push.add l.id("push", module.info)
+  push.add newTree(nkExprColonExpr, module.info,
+                   l.id("overflowChecks", module.info), l.id("off", module.info))
+  result.add push
   for s in stmts: result.add s
   if l.entryPoint != nil:
     result.add makeMainCall(l, l.entryPoint)

@@ -31,7 +31,31 @@ nkStmtList
     nkStmtList
       nkCall
         nkIdent 'WriteLine'
-        nkStrLit "hello from N#"
+        nkEmpty
+      nkCall
+        nkIdent 'WriteLine'
+        nkEmpty
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'z'
+          nkIdent 'int32'
+          nkEmpty
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'y'
+          nkIdent 'int32'
+          nkCall
+            nkIdent 'checked'
+            nkInfix
+              nkIdent '+'
+              nkIntLit 1
+              nkIntLit 1
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkIdent 'z'
+          nkIdent 'y'
   nkProcDef
     nkPostfix
       nkIdent '*'

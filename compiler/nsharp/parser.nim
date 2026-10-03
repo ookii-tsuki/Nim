@@ -10,7 +10,7 @@
 
 import std/strutils
 import ../lineinfos, ../msgs, ../options
-import ast, diagnostics, lexer
+import ast, bcl, diagnostics, lexer
 
 type
   NsParser = object
@@ -139,6 +139,82 @@ proc parseExpr(p: var NsParser): NsNode
 proc parseBlock(p: var NsParser): NsNode
 proc parseStatement(p: var NsParser): NsNode
 proc parseNew(p: var NsParser, kw: NsToken): NsNode
+proc parseUnary(p: var NsParser): NsNode
+
+proc skipParens(p: var NsParser) =
+  ## Consumes a balanced `( ... )`. The caller has already reported why the
+  ## construct cannot be lowered, so this only keeps the parse in step.
+  if not p.at(nsLParen): return
+  var depth = 0
+  while not p.at(nsEof):
+    if p.at(nsLParen): inc depth
+    elif p.at(nsRParen):
+      dec depth
+      if depth == 0:
+        discard p.advance
+        return
+    discard p.advance
+
+proc parseNameof(p: var NsParser; t: NsToken): NsNode =
+  ## `nameof(a.b.c)` is a string literal of the last written name, so it is answered
+  ## here rather than lowered.
+  discard p.expect(nsLParen)
+  var name = ""
+  var stop = false
+  var depth = 1
+  while not p.at(nsEof):
+    if p.at(nsLParen): inc depth
+    elif p.at(nsRParen):
+      dec depth
+      if depth == 0: break
+    elif depth == 1 and not stop:
+      if p.peek.kind == nsIdent: name = p.peek.text
+      elif p.peek.kind == nsLt: stop = true
+    discard p.advance
+  discard p.expect(nsRParen)
+  result = nsnStrLit(name, p.infoOf(t))
+
+proc parseDefault(p: var NsParser; t: NsToken): NsNode =
+  ## `default(T)`. The bare `default` is typed by its target, which the frontend
+  ## does not track here.
+  if not p.at(nsLParen):
+    p.err(t, ndUnsupported, "a target-typed 'default'")
+    return nsn(nsnEmpty, p.infoOf(t))
+  discard p.advance
+  let ty = p.parseType()
+  discard p.expect(nsRParen)
+  result = nsn(nsnDefault, p.infoOf(t))
+  result.typ = ty
+
+proc looksLikeCast(p: NsParser): bool =
+  ## `(T)x` against `(x)`. The parenthesised name must be spelled like a type and
+  ## must be followed by something that starts a value.
+  if p.peek.kind != nsLParen: return false
+  var i = 1
+  if p.peekAhead(i).kind != nsIdent: return false
+  if not isTypeName(p.peekAhead(i).text): return false
+  inc i
+  while p.peekAhead(i).kind == nsDot and p.peekAhead(i + 1).kind == nsIdent:
+    i += 2
+  if p.peekAhead(i).kind == nsLt:
+    i = skipBalancedGt(p, i)
+    if i < 0: return false
+  while p.peekAhead(i).kind == nsLBracket and p.peekAhead(i + 1).kind == nsRBracket:
+    i += 2
+  if p.peekAhead(i).kind != nsRParen: return false
+  p.peekAhead(i + 1).kind in {nsIdent, nsIntLit, nsFloatLit, nsStrLit, nsCharLit,
+                              nsLParen, nsBang, nsTilde, nsMinus, nsPlus,
+                              nsStar, nsAmp}
+
+proc parseCast(p: var NsParser): NsNode =
+  ## `(T)x` is a Nim conversion, which is also how a ref object is downcast.
+  let info = p.here()
+  discard p.expect(nsLParen)
+  let typ = p.parseType()
+  discard p.expect(nsRParen)
+  result = nsn(nsnCast, info)
+  result.typ = typ
+  result.body = p.parseUnary()
 
 proc looksLikeLambda(p: NsParser): bool =
   ## `x =>` or `( ... ) =>` (a parenthesised group immediately followed by `=>`).
@@ -220,8 +296,18 @@ proc parsePrimary(p: var NsParser): NsNode =
     of "this": result = nsn(nsnThis, p.infoOf(t))
     of "true": result = nsnBoolLit(true, p.infoOf(t))
     of "false": result = nsnBoolLit(false, p.infoOf(t))
+    of "nameof": result = p.parseNameof(t)
+    of "default": result = p.parseDefault(t)
+    of "sizeof", "typeof":
+      ## `sizeof` needs an unsafe context and `typeof` a type value, neither of
+      ## which N# has yet.
+      p.err(t, ndUnsupported, "the '" & t.text & "' operator")
+      p.skipParens()
+      result = nsn(nsnEmpty, p.infoOf(t))
     else: result = nsnIdent(t.text, p.infoOf(t))
   of nsLParen:
+    if looksLikeCast(p):
+      return p.parseCast()
     discard p.advance
     result = p.parseExpr()
     discard p.expect(nsRParen)
@@ -320,11 +406,22 @@ proc opName(k: NsTokenKind): string =
 proc parseBinary(p: var NsParser; minPrec: int): NsNode =
   result = p.parseUnary()
   while true:
-    let prec = binPrec(p.peek.kind)
+    var prec = binPrec(p.peek.kind)
+    let typeOp = prec == 0 and p.at(nsIdent) and p.peek.text in ["is", "as"]
+    if typeOp:
+      ## C# puts `is` and `as` at the relational level, and their right operand is
+      ## a type rather than an expression.
+      prec = 9
     if prec < minPrec or prec == 0: break
     let opTok = p.advance
-    let rhs = p.parseBinary(prec + 1)
-    result = nsnBinary(opName(opTok.kind), result, rhs, p.infoOf(opTok))
+    if typeOp:
+      let n = nsn(if opTok.text == "is": nsnIs else: nsnAs, p.infoOf(opTok))
+      n.body = result
+      n.typ = p.parseType()
+      result = n
+    else:
+      let rhs = p.parseBinary(prec + 1)
+      result = nsnBinary(opName(opTok.kind), result, rhs, p.infoOf(opTok))
 
 proc parseTernary(p: var NsParser): NsNode =
   result = p.parseBinary(1)
@@ -501,6 +598,8 @@ proc parseSimpleStmt(p: var NsParser): NsNode =
 
 proc parseIf(p: var NsParser): NsNode
 proc parseWhile(p: var NsParser): NsNode
+proc parseDoWhile(p: var NsParser): NsNode
+proc parseChecked(p: var NsParser; isChecked: bool): NsNode
 proc parseFor(p: var NsParser): NsNode
 proc parseForeach(p: var NsParser): NsNode
 proc parseSwitch(p: var NsParser): NsNode
@@ -517,6 +616,9 @@ proc parseStatement(p: var NsParser): NsNode =
     case t.text
     of "if": return p.parseIf()
     of "while": return p.parseWhile()
+    of "do": return p.parseDoWhile()
+    of "checked": return p.parseChecked(true)
+    of "unchecked": return p.parseChecked(false)
     of "for": return p.parseFor()
     of "foreach": return p.parseForeach()
     of "switch": return p.parseSwitch()
@@ -580,6 +682,34 @@ proc parseWhile(p: var NsParser): NsNode =
   discard p.expect(nsRParen)
   result = nsn(nsnWhile, info)
   result.body = cond
+  result.sons = p.parseBlock().sons
+
+proc parseDoWhile(p: var NsParser): NsNode =
+  ## `do { B } while (c);`, whose body runs before the condition is first read.
+  let info = p.here()
+  discard p.advance
+  result = nsn(nsnDoWhile, info)
+  result.sons = p.parseBlock().sons
+  if p.at(nsIdent) and p.peek.text == "while":
+    discard p.advance
+  else:
+    p.err(p.peek, ndSyntaxErrorExpected, "while")
+  discard p.expect(nsLParen)
+  result.body = p.parseExpr()
+  discard p.expect(nsRParen)
+  if p.at(nsSemi): discard p.advance
+
+proc parseChecked(p: var NsParser; isChecked: bool): NsNode =
+  ## `checked { ... }` turns overflow checking on for its statements and
+  ## `unchecked` turns it off.
+  let info = p.here()
+  let kwTok = p.advance
+  if not p.at(nsLBrace):
+    ## The expression form would need a statement to carry the switch.
+    p.err(kwTok, ndUnsupported, "the '" & kwTok.text & "(...)' form")
+    p.skipParens()
+    return nsn(nsnEmpty, info)
+  result = nsn(if isChecked: nsnChecked else: nsnUnchecked, info)
   result.sons = p.parseBlock().sons
 
 proc parseFor(p: var NsParser): NsNode =

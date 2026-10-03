@@ -12,7 +12,7 @@ nkStmtList
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'Thing'
+        nkIdent 'Counter'
       nkEmpty
       nkRefTy
         nkObjectTy
@@ -21,60 +21,22 @@ nkStmtList
             nkIdent 'RootObj'
           nkRecList
             nkIdentDefs
-              nkIdent 'LengthBacking'
+              nkPostfix
+                nkIdent '*'
+                nkIdent 'MaxValue'
               nkIdent 'int32'
               nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Length'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'int32'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Thing'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkDotExpr
-      nkIdent 'self'
-      nkIdent 'LengthBacking'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'Length='
+      nkIdent 'initCounter'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Thing'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'value'
-        nkIdent 'int32'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkAsgn
-      nkDotExpr
-        nkIdent 'self'
-        nkIdent 'LengthBacking'
-      nkIdent 'value'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'initThing'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkEmpty
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Thing'
+        nkIdent 'Counter'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -82,11 +44,11 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newThing'
+      nkIdent 'newCounter'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Thing'
+      nkIdent 'Counter'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -95,7 +57,7 @@ nkStmtList
         nkIdent 'new'
         nkIdent 'result'
       nkCall
-        nkIdent 'initThing'
+        nkIdent 'initCounter'
         nkIdent 'result'
   nkTypeSection
     nkTypeDef
@@ -118,84 +80,85 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'xs'
-          nkBracketExpr
-            nkIdent 'seq'
-            nkIdent 'int32'
-          nkPrefix
-            nkIdent '@'
-            nkBracket
-              nkIntLit 10
-              nkIntLit 20
-              nkIntLit 30
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkIdent 'xs'
-          nkIdent 'Length'
-      nkVarSection
-        nkIdentDefs
-          nkIdent 't'
-          nkIdent 'Thing'
-          nkCall
-            nkIdent 'newThing'
-      nkAsgn
-        nkDotExpr
-          nkIdent 't'
-          nkIdent 'Length'
-        nkIntLit 7
+          nkIdent 'int32'
+          nkIdent 'MaxValue'
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkIdent 't'
-          nkIdent 'Length'
+          nkIdent 'int32'
+          nkIdent 'MinValue'
       nkCall
         nkIdent 'WriteLine'
-        nkCall
-          nkIdent 'nsDiv'
-          nkIntLit 7
-          nkIntLit 2
+        nkDotExpr
+          nkIdent 'int64'
+          nkIdent 'MaxValue'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'uint8'
+          nkIdent 'MaxValue'
       nkCall
         nkIdent 'WriteLine'
         nkInfix
-          nkIdent '/'
-          nkFloatLit 7.0
-          nkIntLit 2
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'nat'
-          nkIdent 'int'
-          nkIntLit 7
+          nkIdent '=='
+          nkDotExpr
+            nkIdent 'int32'
+            nkIdent 'MaxValue'
+          nkDotExpr
+            nkIdent 'int32'
+            nkIdent 'MaxValue'
       nkCall
         nkIdent 'WriteLine'
-        nkCall
-          nkIdent 'nsDiv'
-          nkIdent 'nat'
-          nkIntLit 2
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'unat'
-          nkIdent 'uint'
-          nkIntLit 7
+        nkDotExpr
+          nkDotExpr
+            nkIdent 'string'
+            nkIdent 'Empty'
+          nkIdent 'Length'
       nkCall
         nkIdent 'WriteLine'
-        nkCall
-          nkIdent 'nsDiv'
-          nkIdent 'unat'
-          nkIntLit 2
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'handle'
-          nkIdent 'int'
-          nkIdent 'nat'
+        nkInfix
+          nkIdent '>'
+          nkDotExpr
+            nkIdent 'float64'
+            nkIdent 'Epsilon'
+          nkIntLit 0
       nkCall
         nkIdent 'WriteLine'
-        nkCall
-          nkIdent 'nsDiv'
-          nkIdent 'handle'
-          nkIntLit 2
+        nkInfix
+          nkIdent '>'
+          nkDotExpr
+            nkIdent 'float64'
+            nkIdent 'MaxValue'
+          nkIntLit 0
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'float64'
+          nkIdent 'NaN'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'float64'
+          nkIdent 'PositiveInfinity'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'c'
+          nkIdent 'Counter'
+          nkCall
+            nkIdent 'newCounter'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'c'
+          nkIdent 'MaxValue'
+        nkIntLit 99
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'c'
+          nkIdent 'MaxValue'
   nkProcDef
     nkPostfix
       nkIdent '*'

@@ -1,0 +1,178 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'j'
+          nkIdent 'int32'
+          nkIntLit 0
+      nkBlockStmt
+        nkEmpty
+        nkStmtList
+          nkVarSection
+            nkIdentDefs
+              nkIdent 'nsFirst'
+              nkEmpty
+              nkIdent 'true'
+          nkWhileStmt
+            nkInfix
+              nkIdent 'or'
+              nkIdent 'nsFirst'
+              nkInfix
+                nkIdent '<'
+                nkIdent 'j'
+                nkIntLit 3
+            nkStmtList
+              nkAsgn
+                nkIdent 'nsFirst'
+                nkIdent 'false'
+              nkCommand
+                nkIdent 'inc'
+                nkIdent 'j'
+              nkIfStmt
+                nkElifBranch
+                  nkInfix
+                    nkIdent '=='
+                    nkIdent 'j'
+                    nkIntLit 2
+                  nkStmtList
+                    nkContinueStmt
+                      nkEmpty
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkStrLit "do "
+                  nkIdent 'j'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'k'
+          nkIdent 'int32'
+          nkIntLit 0
+      nkBlockStmt
+        nkEmpty
+        nkStmtList
+          nkVarSection
+            nkIdentDefs
+              nkIdent 'nsFirst'
+              nkEmpty
+              nkIdent 'true'
+          nkWhileStmt
+            nkInfix
+              nkIdent 'or'
+              nkIdent 'nsFirst'
+              nkInfix
+                nkIdent '<'
+                nkIdent 'k'
+                nkIntLit 5
+            nkStmtList
+              nkAsgn
+                nkIdent 'nsFirst'
+                nkIdent 'false'
+              nkCommand
+                nkIdent 'inc'
+                nkIdent 'k'
+              nkIfStmt
+                nkElifBranch
+                  nkInfix
+                    nkIdent '=='
+                    nkIdent 'k'
+                    nkIntLit 2
+                  nkStmtList
+                    nkBreakStmt
+                      nkEmpty
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkStrLit "brk "
+                  nkIdent 'k'
+      nkStmtList
+        nkPragma
+          nkIdent 'push'
+          nkExprColonExpr
+            nkIdent 'overflowChecks'
+            nkIdent 'on'
+        nkCall
+          nkIdent 'WriteLine'
+          nkStrLit "checked block"
+        nkPragma
+          nkIdent 'pop'
+      nkStmtList
+        nkPragma
+          nkIdent 'push'
+          nkExprColonExpr
+            nkIdent 'overflowChecks'
+            nkIdent 'off'
+        nkCall
+          nkIdent 'WriteLine'
+          nkStrLit "unchecked block"
+        nkPragma
+          nkIdent 'pop'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

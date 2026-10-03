@@ -11,9 +11,53 @@ import std/[syncio, strutils]
 {.push discardable.}
 
 type
-  ArgumentException* = object of CatchableError
-  InvalidOperationException* = object of CatchableError
-  NullReferenceException* = object of CatchableError
+  # --- System.Exception -------------------------------------------------------
+  #
+  # The .NET exception types. Where Nim's runtime raises a matching defect the
+  # name is an alias for it, so `catch (NullReferenceException)` catches a real
+  # nil dereference instead of never firing at all. `Exception` itself is Nim's
+  # exception root, from which both `Defect` and `CatchableError` derive, so
+  # `catch (Exception)` catches what C# would catch.
+  NullReferenceException* = NilAccessDefect
+  OverflowException* = OverflowDefect
+  IndexOutOfRangeException* = IndexDefect
+  DivideByZeroException* = DivByZeroDefect
+  InvalidCastException* = ObjectConversionDefect
+  ArgumentOutOfRangeException* = RangeDefect
+  KeyNotFoundException* = KeyError
+  FormatException* = ValueError
+
+  SystemException* = object of CatchableError
+  ApplicationException* = object of SystemException
+  ArgumentException* = object of SystemException
+  ArgumentNullException* = object of ArgumentException
+  InvalidOperationException* = object of SystemException
+  NotSupportedException* = object of SystemException
+  NotImplementedException* = object of SystemException
+  ObjectDisposedException* = object of InvalidOperationException
+
+# --- System.Int32, Double, Char, String -------------------------------------
+#
+# C# reads these as `static` fields of the built-in types; .NET declares them as
+# `const` in the runtime library. Nim reaches a member of a type through a
+# dot-call on the type, the way `int.high` reaches `high(int32)`, so the values
+# belong here rather than in the compiler.
+
+template MaxValue*[T: SomeInteger](t: typedesc[T]): T = high(T)
+template MinValue*[T: SomeInteger](t: typedesc[T]): T = low(T)
+template MaxValue*[T: SomeFloat](t: typedesc[T]): T = high(T)
+template MinValue*[T: SomeFloat](t: typedesc[T]): T = low(T)
+template MaxValue*(t: typedesc[char]): char = high(char)
+template MinValue*(t: typedesc[char]): char = low(char)
+template Empty*(t: typedesc[string]): string = ""
+# .NET defines `Epsilon` as the smallest positive subnormal, which Nim does not
+# name, so these carry the runtime's own literals.
+template Epsilon*(t: typedesc[float32]): float32 = 1.4012984643248171e-45
+template Epsilon*(t: typedesc[float64]): float64 = 4.9406564584124654e-324
+template NaN*(t: typedesc[float32]): float32 = float32(system.NaN)
+template NaN*(t: typedesc[float64]): float64 = system.NaN
+template PositiveInfinity*[T: SomeFloat](t: typedesc[T]): T = T(system.Inf)
+template NegativeInfinity*[T: SomeFloat](t: typedesc[T]): T = T(system.NegInf)
 
 # --- System.Object ----------------------------------------------------------
 #
@@ -79,9 +123,22 @@ proc IndexOf*[T](a: openArray[T]; value: T): int32 =
 # --- System.Console ---------------------------------------------------------
 
 # C# prints a bool as `True`/`False` (`Console.WriteLine(b)` calls `b.ToString()`);
-# Nim's `$bool` gives `true`/`false`.
+# Nim's `$bool` gives `true`/`false`. The float specials differ the same way:
+# Nim spells them `nan`/`inf`/`-inf`.
 proc WriteLine*(x: bool) = echo (if x: "True" else: "False")
 proc Write*(x: bool) = stdout.write(if x: "True" else: "False")
+
+proc WriteLine*[T: SomeFloat](x: T) =
+  if x != x: echo "NaN"
+  elif x == T(Inf): echo "∞"
+  elif x == T(NegInf): echo "-∞"
+  else: echo x
+
+proc Write*[T: SomeFloat](x: T) =
+  if x != x: stdout.write "NaN"
+  elif x == T(Inf): stdout.write "∞"
+  elif x == T(NegInf): stdout.write "-∞"
+  else: stdout.write x
 
 proc WriteLine*[T](x: T) = echo x
 proc Write*[T](x: T) = stdout.write x

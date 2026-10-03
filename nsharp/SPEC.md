@@ -430,7 +430,7 @@ v2.
 | `switch` (statement) | multi-branch | ✅ v1 (basic); patterns 🔜 | desugar (→ `case`) |
 | `switch` expression `x switch { ... }` | C# 8 | 🔜 later | desugar |
 | `while` | loop | ✅ v1 | front |
-| `do { } while (c);` | post-test loop | ✅ v1 | desugar (no Nim `do-while`) |
+| `do { } while (c);` | post-test loop | ✅ v1 | desugar (flag-guarded `while`, §7.3) |
 | `for (i = 0; i < n; i++)` | C-style for | ✅ v1 | desugar (→ `while`) |
 | `foreach (var x in xs)` | iterate | ✅ v1 | desugar (→ `for`) |
 | `break` / `continue` | loop control | ✅ v1 | front |
@@ -472,11 +472,12 @@ v2.
 | String `+` | concatenation | ✅ v1 (Nim spelling) | `nsharp/intrinsics`, imported into every module |
 | `ToString` / `$` | stringify a value | ✅ v1 (Nim spelling) | Nim's `$`; an object prints as its fields |
 | Assignment & compound `= += -= ...` | ✅ | ✅ v1 | front |
-| `??` null-coalescing | ✅ | ✅ v1 | desugar |
-| `??=` | ✅ | ✅ v1 | desugar |
-| `?.` / `?[]` null-conditional | ✅ | ✅ v1 | desugar |
+| `??` null-coalescing | ✅ | 🔜 later | desugar |
+| `??=` | ✅ | 🔜 later | desugar |
+| `?.` / `?[]` null-conditional | ✅ | 🔜 later | desugar |
 | `?:` ternary | ✅ | ✅ v1 | front (→ `nkIfExpr`) |
 | `is` / `as` | type test/cast | ✅ v1 | front (→ Nim `of`/conv) |
+| `(T)x` explicit cast | conversion | ✅ v1 | front (→ Nim `T(x)`) |
 | Pattern `is T x`, property patterns | C# 7+ | 🔜 later | desugar |
 | Switch expressions | C# 8 | 🔜 later | desugar |
 | `^` (index-from-end), `..` (range) | C# 8 | 🔜 later | desugar/lib |
@@ -489,7 +490,7 @@ whole float reads `3.0` where C# writes `3`, and an object's rendering follows i
 any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 `"obj=" + obj` both work.
 | Null-forgiving `x!` | suppress NRT | 🔜 later | front |
-| `checked`/`unchecked` expr | ovf | ✅ v1 (verify) | desugar (block + push/pop) |
+| `checked`/`unchecked` expr | ovf | 🔜 later | the block form is v1 |
 | `stackalloc` | stack mem | 🚫 out | front |
 | Precedence | C# table | ✅ v1 | front |
 
@@ -502,12 +503,14 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 | `this`, `base` | self/base | ✅ v1 | desugar |
 | Lambdas `x => e`, `(a,b) => e` | closures | ✅ v1 | front (→ Nim closure) |
 | Anonymous methods `delegate { }` | older lambdas | 🔜 later | front |
-| Object initializer `new T { A = 1 }` | init props | ✅ v1 | desugar |
+| Object initializer `new T { A = 1 }` | init props | 🔜 later | desugar |
 | Collection initializer `new List<int>{1,2}` | init | 🔜 later | desugar |
 | Anonymous types `new { A = 1 }` | inferred type | 🔜 later | desugar |
-| `typeof(T)` | type object | ✅ v1 | desugar/`lib` |
-| `nameof(x)` | name string | ✅ v1 | desugar |
-| `sizeof`, `default(T)` | - | ✅ v1 | desugar/`lib` |
+| `typeof(T)` | type object | 🔜 later | needs a type value |
+| `nameof(x)` | name string | ✅ v1 | front, a literal of the written name |
+| `default(T)` | default value | ✅ v1 | desugar (→ Nim `default`) |
+| `T.MaxValue` etc. | `static` field | ✅ v1 | lib (`lib/pure/ns/System.nim`) |
+| `sizeof(T)` | byte size | 🔜 later | needs an unsafe context |
 | String interpolation `$"{x}"` | format | ✅ v1 | desugar |
 | `with` expression (records) | copy-update | 🔜 later | desugar |
 | Target-typed `new()` (C# 9) | infer type | 🔜 later | front |
@@ -518,7 +521,9 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 
 **Notes**
 - `?.`/`??`/`??=` are the main "null" desugars (null model: §4.4/§7.3).
-- `nameof`, `default`, `sizeof`, `typeof` are trivial AST rewrites / lib helpers.
+- `nameof` and `default(T)` are trivial rewrites. `sizeof` needs an unsafe context
+  and `typeof` a type value, so both report `NS9999`, as does the expression form of
+  `checked`/`unchecked` and a target-typed `default`.
 
 ### 7.3 Semantic traps (must-pin C#↔Nim mismatches)
 
@@ -526,21 +531,26 @@ These look like trivial desugars but are not - each needs an explicit rule.
 
 | Trap | C# | Nim | N# rule | Mechanism |
 |---|---|---|---|---|
-| Integer `/` | `7/2 == 3` (int div) | `7/2 == 3.5` (float!) | integer `/` → `div`; `/` only for floats | desugar |
-| `%` | sign of dividend | `mod`: sign of dividend (matches) | map `%` → `mod` | front |
-| Overflow default | unchecked (wraps) | checked (raises) | **unchecked by default** (module-level `{.push overflowChecks: off.}`) | desugar |
-| `checked`/`unchecked` | ovf on/off | `{.push overflowChecks.}` | same mechanism, `push`/`pop` (deferred in 3a) | desugar |
+| Integer `/` | `7/2 == 3` (int div) | `7/2 == 3.5` (float!) | integer `/` goes to the intrinsics' `nsDiv`; `/` stays floating point | front/lib |
+| `%` | sign of dividend | `mod`: sign of dividend (matches) | map `%` → `nsMod` | front/lib |
+| Division by zero | always `DivideByZeroException` | `overflowChecks` also governs Nim's zero check for `div`/`mod` | checked in `nsDiv`/`nsMod`, so it throws whether or not `checked` is in force | lib |
+| Overflow default | unchecked (wraps) | checked (raises) | **unchecked by default**: every generated module opens with `{.push overflowChecks: off.}` | desugar |
+| Unhandled exception | `Unhandled exception. T: msg`, exit 134 | `Error: unhandled exception: msg [T]`, exit 1 | N#'s crash output is Nim's, including the Nim type name for a runtime error | front |
+| `checked`/`unchecked` | ovf on/off | `{.push overflowChecks.}` | same mechanism, `push`/`pop`, emitted around the block's statements | desugar |
+| `checked` and conversions | covers overflow **and** conversions | only `overflowChecks` is switched | a conversion that is out of range still raises `RangeDefect` (aliased `ArgumentOutOfRangeException`) where C# raises `OverflowException` | desugar |
 | `==` / `Equals` | class = reference, struct = value | whatever is overloaded | class → reference `==`; struct/record → value `==`; `Equals`→`==` | desugar/sem |
 | `ToString()` | virtual method | `$` proc | map `ToString` → `$` | desugar |
 | Numeric conversions | implicit widening, explicit narrowing | stricter | implicit widening; explicit narrowing | desugar/sem |
+| `(T)x` vs `(x)` | the symbol table decides | - | the parenthesised name must be spelled like a type (a C# built-in, or uppercase) **and** be followed by a value, so `(x) - 1` is a subtraction while `(Foo) - 1` is a cast | front |
+| `do-while` and `continue` | the check runs *after* the body, so `continue` re-tests it | `while` tests before | one body copy under a first-pass flag (`while first or c`, cleared before the body), leaving `break` and `continue` to Nim's own loop | desugar |
 | `using` keyword | directive **and** statement | - | disambiguate by context | front |
 | `switch` fallthrough | forbidden (empty cases group) | no fallthrough | maps to Nim `case`; empty-case groups allowed; a trailing `break;` is dropped; a non-exhaustive switch gets `else: discard` | front |
 | `Main` / `args` | `Main(string[])`, exit code | module top-level | support both (D5); `int` return → exit code | front |
 | Interpolation format | `$"{x:F2}"` | `strformat`/`formatFloat` | map format specs to Nim format | desugar |
-| `null` deref | `NullReferenceException` | `NilAccessDefect` | prelude aliases it to `NullReferenceException` | lib |
+| `null` deref | `NullReferenceException` | a field read is not checked | `NullReferenceException` is an alias for `NilAccessDefect`, so a `throw` of it is catchable, but Nim inserts no check for a nil field read, so one crashes rather than raising | lib |
 | Arrays | `T[]`, `new T[n]` | `seq[T]` | `T[]` → `seq[T]`; `new T[n]` → `newSeq[T](n)`; `new T[]{..}` → `@[..]`; `.Length`/`.Count` → `len` | front |
 | Enum field scope | scoped to the enum type | unqualified globals | `E.A` resolves via Nim qualified access; two enums must not share a field name | front |
-| Exceptions | all derive from `Exception` | `CatchableError`; raised as `ref T` | C# `Exception` → `CatchableError`; `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` (Nim only raises refs) | front |
+| Exceptions | all derive from `Exception` | `Exception` is the root of both `CatchableError` and `Defect` | C# `Exception` → Nim's exception root, so `catch (Exception)` catches runtime errors too; the .NET names are declared by the library, aliasing the defect Nim raises where one exists (`OverflowException` → `OverflowDefect`); `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` | front/lib |
 | `e.Message` | property on every exception | `CatchableError.msg` field | map `.Message` → `.msg` | front |
 | `WriteLine(bool)` | `True` / `False` | `$bool` gives `true` / `false` | prelude `bool` overloads of `WriteLine`/`Write` print `True`/`False` | lib |
 | Discarding a result | any expression statement may drop a result | unused result is an error | every generated proc is `{.discardable.}` (and the collection shims `{.push discardable.}`) | front/lib |

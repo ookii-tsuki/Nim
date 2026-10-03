@@ -13,3 +13,15 @@ proc ToString*[T: ref object](x: T): string = $x[]
 proc `+`*(a, b: string): string = a & b
 proc `+`*[T](a: string, b: T): string = a & $b
 proc `+`*[T](a: T, b: string): string = $a & b
+
+# C# integer division truncates and throws on a zero divisor whatever the `checked`
+# state, while Nim's check rides on `overflowChecks`, which N# turns off so that
+# arithmetic wraps the way C#'s does. The check is therefore made here, and sema
+# routes integer `/` and `%` to these.
+proc nsDiv*[T: SomeInteger](a, b: T): T {.inline.} =
+  if b == 0: raise newException(DivByZeroDefect, "Attempted to divide by zero.")
+  system.`div`(a, b)
+
+proc nsMod*[T: SomeInteger](a, b: T): T {.inline.} =
+  if b == 0: raise newException(DivByZeroDefect, "Attempted to divide by zero.")
+  system.`mod`(a, b)

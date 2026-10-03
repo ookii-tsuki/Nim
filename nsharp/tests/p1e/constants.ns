@@ -1,0 +1,30 @@
+// Members of the built-in types, which .NET declares in the runtime library.
+using System;
+
+namespace Demo
+{
+    class Counter
+    {
+        public int MaxValue;        // same name as int.MaxValue: must not be touched
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(int.MaxValue);
+            Console.WriteLine(int.MinValue);
+            Console.WriteLine(long.MaxValue);
+            Console.WriteLine(byte.MaxValue);
+            Console.WriteLine(Int32.MaxValue == int.MaxValue);
+            Console.WriteLine(string.Empty.Length);
+            Console.WriteLine(double.Epsilon > 0);
+            Console.WriteLine(double.MaxValue > 1e308);
+            Console.WriteLine(double.NaN);
+            Console.WriteLine(double.PositiveInfinity);
+            Counter c = new Counter();
+            c.MaxValue = 99;
+            Console.WriteLine(c.MaxValue);
+        }
+    }
+}

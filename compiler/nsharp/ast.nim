@@ -91,6 +91,9 @@ type
     nsnBreak
     nsnContinue
     nsnThrow           # body = expression
+    nsnDoWhile         # body = condition, sons = statements
+    nsnChecked         # sons = statements
+    nsnUnchecked       # sons = statements
     # --- expressions ---
     nsnIdent           # name
     nsnIntLit          # intVal
@@ -111,6 +114,10 @@ type
     nsnTernary         # sons = [cond, ifTrue, ifFalse]
     nsnLambda          # params, body
     nsnIncDec          # name = "inc" or "dec", body = operand (from `++`/`--`)
+    nsnCast            # typ = target type, body = operand    (from `(T)x`)
+    nsnIs              # typ = type, body = operand           (from `x is T`)
+    nsnAs              # typ = type, body = operand           (from `x as T`)
+    nsnDefault         # typ = type                           (from `default(T)`)
 
   NsNode* = ref NsNodeObj
   NsNodeObj* = object

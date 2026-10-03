@@ -67,6 +67,16 @@ proc isExceptionDerived(ctx: NsCheckContext; name: string): bool =
     let b = ctx.scope.classes[c].base
     if b.len > 0 and isExceptionBase(b): return true
 
+const
+  NsValueKinds* = {tkInt, tkFloat, tkBool, tkChar, tkString, tkSequence}
+    ## Kinds that are values rather than references, which is what separates a cast
+    ## that boxes from one that does not.
+
+proc isObjectTarget(t: NsNode): bool =
+  ## True for `object` and `RootRef`, the targets a cast boxes into.
+  if t == nil or t.kind != nsnTypeName: return false
+  unqualified(t.name) in ["object", "Object", "RootRef"]
+
 proc classifyName(ctx: NsCheckContext; name: string): NsTypeKind =
   ## Kind of a type written by name, purely from `bcl.nim`'s tables plus the
   ## module scope. This is where "List is a sequence" and "Exception is an
@@ -151,7 +161,12 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## Member access. The receiver's kind decides what the member means: `.Length`
   ## is `len` only on a sequence or string, `.Message` is `msg` only on an
   ## exception.
-  let rk = ctx.walkExpr(n.body)
+  var rk = ctx.walkExpr(n.body)
+  if rk == tkUnknown and n.body != nil and n.body.kind == nsnIdent:
+    ## The receiver is a type written by name rather than a value: `int.MaxValue`,
+    ## `string.Empty`, `double.NaN`. The member's type is the receiver's, and which
+    ## members exist is the library's business, so no member name is consulted.
+    rk = ctx.classifyName(n.body.name)
   var kind = tkUnknown
   var tname = ""
   case rk
@@ -159,6 +174,7 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     if n.name in ["Length", "Count"]: kind = tkInt
   of tkString:
     if n.name == "Length": kind = tkInt
+    else: kind = tkString
   of tkException:
     if n.name == "Message": kind = tkString
   of tkClass:
@@ -168,6 +184,9 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of tkType:
     ## A longer qualifier, as in `Alias.Console` or `System.Console`.
     kind = tkType
+  of tkInt, tkFloat, tkBool, tkChar:
+    ## A member of a built-in type, as in `int.MaxValue`.
+    kind = rk
   else: discard
   n.setType(kind, tname)
   result = kind
@@ -226,6 +245,32 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     discard ctx.walkExpr(n.body)
     n.setType(tkInt)
     result = tkInt
+  of nsnCast:
+    ## `(T)x` converts, which covers numbers, enums and ref objects. Boxing a value
+    ## into `object` is the one case N# cannot express.
+    let target = ctx.classifyType(n.typ)
+    let operand = ctx.walkExpr(n.body)
+    if isObjectTarget(n.typ) and operand in NsValueKinds:
+      nsError(ctx.config, n.info, ndUnsupported, "a cast of a value to 'object'")
+    n.setType(target)
+    result = target
+  of nsnIs:
+    discard ctx.walkExpr(n.body)
+    ## A value type is tested statically and a class dynamically.
+    n.name = if ctx.classifyType(n.typ) in NsValueKinds: "is" else: "of"
+    n.setType(tkBool)
+    result = tkBool
+  of nsnAs:
+    discard ctx.walkExpr(n.body)
+    let target = ctx.classifyType(n.typ)
+    if target in NsValueKinds:
+      ## C# rejects `as` on a value type, which is what a cast is for.
+      nsError(ctx.config, n.info, ndUnsupported, "'as' with a value type")
+    n.setType(target)
+    result = target
+  of nsnDefault:
+    result = ctx.classifyType(n.typ)
+    n.setType(result)
   of nsnBinary:
     let lk = ctx.walkExpr(n.sons[0])
     let rk = ctx.walkExpr(n.sons[1])
@@ -238,11 +283,18 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       result = (if lk == tkInt and rk == tkInt: tkInt else: tkBool)
     of "/":
       if lk == tkInt and rk == tkInt:
-        ## C# integer division is truncating; Nim's `/` is floating point.
-        n.name = "div"
+        ## C# integer division truncates and throws on a zero divisor; the
+        ## intrinsics carry `nsDiv`, because Nim's `/` is floating point and its
+        ## zero check rides on `overflowChecks`, which N# turns off.
+        n.name = "nsDiv"
         result = tkInt
       elif lk == tkFloat or rk == tkFloat:
         result = tkFloat
+    of "mod":
+      if lk == tkInt and rk == tkInt:
+        ## Same reasoning as `/`.
+        n.name = "nsMod"
+        result = tkInt
     of "+":
       ## C# concatenates when either operand is a string.
       if lk == tkString or rk == tkString: result = tkString
@@ -350,6 +402,11 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
         walkStmts(ctx, b.sons)
   of nsnWhile:
     discard ctx.walkExpr(n.body)
+    walkStmts(ctx, n.sons)
+  of nsnDoWhile:
+    discard ctx.walkExpr(n.body)
+    walkStmts(ctx, n.sons)
+  of nsnChecked, nsnUnchecked:
     walkStmts(ctx, n.sons)
   of nsnFor: walkFor(ctx, n)
   of nsnForeach: walkForeach(ctx, n)

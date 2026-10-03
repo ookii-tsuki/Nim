@@ -1,6 +1,11 @@
 nkStmtList
   nkImportStmt
     nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
   nkImportStmt
     nkStrLit "System"
   nkTypeSection
@@ -251,12 +256,12 @@ nkStmtList
           nkRaiseStmt
             nkCall
               nkIdent 'newException'
-              nkIdent 'CatchableError'
+              nkIdent 'Exception'
               nkStrLit "boom"
         nkExceptBranch
           nkInfix
             nkIdent 'as'
-            nkIdent 'CatchableError'
+            nkIdent 'Exception'
             nkIdent 'e'
           nkStmtList
             nkCall

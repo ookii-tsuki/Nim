@@ -12,66 +12,6 @@ nkStmtList
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'AppException'
-      nkEmpty
-      nkObjectTy
-        nkEmpty
-        nkOfInherit
-          nkIdent 'Exception'
-        nkRecList
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'initAppException'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkEmpty
-      nkIdentDefs
-        nkIdent 'self'
-        nkRefTy
-          nkIdent 'AppException'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'm'
-        nkIdent 'string'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkAsgn
-        nkDotExpr
-          nkIdent 'self'
-          nkIdent 'msg'
-        nkIdent 'm'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'newAppException'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkRefTy
-        nkIdent 'AppException'
-      nkIdentDefs
-        nkIdent 'm'
-        nkIdent 'string'
-        nkEmpty
-    nkPragma
-      nkIdent 'discardable'
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkIdent 'new'
-        nkIdent 'result'
-      nkCall
-        nkIdent 'initAppException'
-        nkIdent 'result'
-        nkIdent 'm'
-  nkTypeSection
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
         nkIdent 'Program'
       nkEmpty
       nkRefTy
@@ -89,35 +29,103 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'a'
+          nkBracketExpr
+            nkIdent 'seq'
+            nkIdent 'int32'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newSeq'
+              nkIdent 'int32'
+            nkIntLit 2
       nkTryStmt
         nkStmtList
-          nkRaiseStmt
-            nkCall
-              nkIdent 'newAppException'
-              nkStrLit "custom"
+          nkCall
+            nkIdent 'WriteLine'
+            nkBracketExpr
+              nkIdent 'a'
+              nkIntLit 5
         nkExceptBranch
           nkInfix
             nkIdent 'as'
-            nkIdent 'AppException'
+            nkIdent 'IndexOutOfRangeException'
             nkIdent 'e'
           nkStmtList
             nkCall
               nkIdent 'WriteLine'
-              nkStrLit "app"
+              nkStrLit "index"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'm'
+          nkIdent 'int32'
+          nkIntLit 2147483647
+      nkTryStmt
+        nkStmtList
+          nkStmtList
+            nkPragma
+              nkIdent 'push'
+              nkExprColonExpr
+                nkIdent 'overflowChecks'
+                nkIdent 'on'
+            nkCall
+              nkIdent 'WriteLine'
+              nkInfix
+                nkIdent '+'
+                nkIdent 'm'
+                nkIntLit 1
+            nkPragma
+              nkIdent 'pop'
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'OverflowException'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkStrLit "overflow"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'z'
+          nkIdent 'int32'
+          nkIntLit 0
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkCall
+              nkIdent 'nsDiv'
+              nkIntLit 10
+              nkIdent 'z'
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'DivideByZeroException'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkStrLit "zero"
+      nkTryStmt
+        nkStmtList
+          nkRaiseStmt
+            nkCall
+              nkIdent 'newException'
+              nkIdent 'NullReferenceException'
+              nkStrLit "n"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'NullReferenceException'
+            nkIdent 'e'
+          nkStmtList
             nkCall
               nkIdent 'WriteLine'
               nkDotExpr
                 nkIdent 'e'
                 nkIdent 'msg'
-        nkExceptBranch
-          nkInfix
-            nkIdent 'as'
-            nkIdent 'Exception'
-            nkIdent 'e'
-          nkStmtList
-            nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "generic"
       nkTryStmt
         nkStmtList
           nkRaiseStmt
@@ -136,6 +144,9 @@ nkStmtList
               nkDotExpr
                 nkIdent 'e'
                 nkIdent 'msg'
+      nkCall
+        nkIdent 'WriteLine'
+        nkStrLit "done"
   nkProcDef
     nkPostfix
       nkIdent '*'
