@@ -100,6 +100,7 @@ compiler/nsharp/          # ALL compiler-integrated code (new → merge-safe)
 lib/pure/ns/              # N# namespace root: a file's path is its C# namespace
   System.nim              #   the System namespace
   System/Collections/Generic.nim   #   the System.Collections.Generic namespace
+lib/pure/nsharp/intrinsics.nim   # imported into every module: string `+`, ToString
 nsharp/                   # language assets (repo root)
   SPEC.md  GLOSSARY.md  ARCHITECTURE.md  tests/    # future: vscode/
 ```
@@ -327,6 +328,17 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v19** - String concatenation and stringification. `"a" + b` works without a
+  `using`, as in C#, because every module is compiled with an import of
+  `lib/pure/nsharp/intrinsics.nim`; that module holds `+` overloads that accept any
+  second operand type, matching C#'s `(string, object)` rules, so the feature needs
+  no operator rewriting in sema or desugar. `$` and `ToString` are the same thing and
+  an object renders as Nim renders its value, which is its fields; a class could not
+  be printed at all before this. The consequences, a bool spelled `true`, a whole
+  float spelled `3.0`, and a rendering that follows the static type, are recorded in
+  the SPEC as deliberate, and a test whose output therefore differs from C# carries
+  a `.csout` file that `run_cs.sh` checks C# against. Suite now 29 tests, 38 golden
+  ASTs, 29 C# cross-checks.
 - **v18** - Diagnostics. Every frontend diagnostic moved into a table in
   `compiler/nsharp/diagnostics.nim` and reports an `NSxxxx` code whose digits are
   the code C# gives for the same condition: `NS0246` for a `using` that names no

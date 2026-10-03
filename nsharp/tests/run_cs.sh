@@ -10,6 +10,9 @@
 # A sibling `.ns` with neither a `.out` nor a `.fail` is treated as a module of
 # the program (like p1b/Math.ns) and is compiled together with it.
 #
+# A `.csout` beside a test records what C# produces when it legitimately differs
+# from the `.out`, for instance a bool reading `true` in N# and `True` in C#.
+#
 # Usage:  ./nsharp/tests/run_cs.sh
 # Skips cleanly when `dotnet` is unavailable on PATH.
 
@@ -110,6 +113,20 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
   fi
 
   got="$("$bin")"
+  csout="${ns%.ns}.csout"
+  if [ -f "$csout" ]; then
+    ## The test records how C# differs, so that is what C# must produce.
+    want="$(cat "$csout")"
+    if [ "$got" = "$want" ]; then
+      echo "ok (C# differs from .out, as .csout records): ${ns#$root/}"
+    else
+      echo "DIFF (C# vs .csout): ${ns#$root/}"
+      echo "--- .csout ---"; echo "$want"
+      echo "--- C# produced ---"; echo "$got"
+      fail=1
+    fi
+    continue
+  fi
   want="$(cat "$out")"
   if [ "$got" = "$want" ]; then
     echo "ok (C# agrees): ${ns#$root/}"

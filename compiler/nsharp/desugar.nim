@@ -11,6 +11,11 @@ import std/[strutils, tables]
 import ../ast, ../idents, ../lineinfos
 import ast, bcl, symbols
 
+const
+  ## N# intrinsics, imported into every module: it is where string concatenation
+  ## and printing any type live, and C# needs no `using` for either.
+  NsIntrinsics* = "nsharp/intrinsics"
+
 type
   Lowerer = object
     scope: NsModuleScope
@@ -694,6 +699,10 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   for d in module.sons:
     l.lowerDecl(d, stmts)
   result = newNodeI(nkStmtList, module.info)
+  ## Every module sees the N# intrinsics, so `"a" + b` concatenates and any type
+  ## can be printed without a `using`.
+  result.add newTree(nkImportStmt, module.info,
+                     newAtom(nkStrLit, NsIntrinsics, module.info))
   for s in stmts: result.add s
   if l.entryPoint != nil:
     result.add makeMainCall(l, l.entryPoint)

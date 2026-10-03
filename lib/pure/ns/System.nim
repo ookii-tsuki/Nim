@@ -17,11 +17,10 @@ type
 
 # --- System.Object ----------------------------------------------------------
 #
-# `object` is `RootRef`, so these take any N# class. The default ToString and
-# GetHashCode want the dynamic type, which N# has no RTTI for; they fall back to
-# the bare-object answer.
+# `object` is `RootRef`, so these take any N# class. `ToString` lives in the N#
+# intrinsics, which is imported into every module; GetHashCode wants the dynamic
+# type, which N# has no RTTI for, so it falls back to the bare-object answer.
 
-method ToString*(x: RootRef): string {.base.} = "System.Object"
 method Equals*(a, b: RootRef): bool {.base.} = a == b
 method GetHashCode*(x: RootRef): int32 {.base.} = int32(cast[int](x))
 proc ReferenceEquals*(a, b: RootRef): bool = a == b

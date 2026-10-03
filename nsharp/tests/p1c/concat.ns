@@ -1,0 +1,31 @@
+// String concatenation, which C# spells `+`.
+using System;
+
+namespace Demo
+{
+    class Thing { public int N; }
+
+    class Program
+    {
+        static void Main()
+        {
+            string name = "world";
+            Console.WriteLine("hello " + name);
+            Console.WriteLine("n=" + 3);
+            Console.WriteLine(4 + "=x");
+
+            char c = 'b';
+            Console.WriteLine("c=" + c);
+
+            name += 5;
+            Console.WriteLine(name);
+
+            // N# renders a bool the way Nim does, so this line differs from C#.
+            Console.WriteLine("flag=" + (1 < 2));
+
+            // N# renders a class the way Nim renders its value: as its fields.
+            Thing t = new Thing();
+            Console.WriteLine("obj=" + t);
+        }
+    }
+}

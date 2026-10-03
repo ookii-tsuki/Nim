@@ -243,6 +243,11 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         result = tkInt
       elif lk == tkFloat or rk == tkFloat:
         result = tkFloat
+    of "+":
+      ## C# concatenates when either operand is a string.
+      if lk == tkString or rk == tkString: result = tkString
+      elif lk == tkFloat or rk == tkFloat: result = tkFloat
+      elif lk == tkInt: result = tkInt
     else:
       if lk == tkFloat or rk == tkFloat: result = tkFloat
       elif lk == tkInt: result = tkInt

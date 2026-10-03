@@ -469,6 +469,8 @@ v2.
 | Integer `& | ^ << >> ~` | ✅ | ✅ v1 | front |
 | Logical `&& || !` | ✅ | ✅ v1 | front |
 | Comparison `== != < > <= >=` | ✅ | ✅ v1 | front |
+| String `+` | concatenation | ✅ v1 (Nim spelling) | `nsharp/intrinsics`, imported into every module |
+| `ToString` / `$` | stringify a value | ✅ v1 (Nim spelling) | Nim's `$`; an object prints as its fields |
 | Assignment & compound `= += -= ...` | ✅ | ✅ v1 | front |
 | `??` null-coalescing | ✅ | ✅ v1 | desugar |
 | `??=` | ✅ | ✅ v1 | desugar |
@@ -478,6 +480,14 @@ v2.
 | Pattern `is T x`, property patterns | C# 7+ | 🔜 later | desugar |
 | Switch expressions | C# 8 | 🔜 later | desugar |
 | `^` (index-from-end), `..` (range) | C# 8 | 🔜 later | desugar/lib |
+
+**Stringification is Nim's.** `$` and `ToString` are the same thing, and an object
+renders the way Nim renders a value of its type, so a class prints as its fields.
+Three consequences are deliberate: a bool reads `true` where C# writes `True`, a
+whole float reads `3.0` where C# writes `3`, and an object's rendering follows its
+*static* type, because N# has no RTTI to reach the dynamic one. String `+` accepts
+any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
+`"obj=" + obj` both work.
 | Null-forgiving `x!` | suppress NRT | 🔜 later | front |
 | `checked`/`unchecked` expr | ovf | ✅ v1 (verify) | desugar (block + push/pop) |
 | `stackalloc` | stack mem | 🚫 out | front |
@@ -881,8 +891,8 @@ code:
 | `NS1525` | CS1525 | invalid expression term |
 | `NS2001` | CS2001 | source file could not be found |
 | `NS7036` | CS7036 | a constructor requires base arguments |
-| `NS9006` | - | the parser made no progress |
-| `NS9007` | - | two namespaces use each other |
+| `NS9001` | - | the parser made no progress |
+| `NS9002` | - | two namespaces use each other |
 | `NS9999` | - | a construct N# does not support yet |
 
 An error Nim raises on the lowered code (an undeclared name, a type mismatch, or a
@@ -899,6 +909,14 @@ code: NS0122
 `run.sh` then requires that code in the compiler output, and `run_cs.sh` requires
 the digits to appear among the codes Roslyn reports for the same file, skipping the
 reserved band.
+
+When N# deliberately renders something differently, the test carries a `.csout` file
+holding what C# produces, and `run_cs.sh` requires that instead of the `.out`:
+
+```
+flag=true       # the .out, since N# writes a bool the way Nim does
+flag=True       # the .csout, which is what C# prints
+```
 
 ---
 

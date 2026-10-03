@@ -1,5 +1,7 @@
 nkStmtList
   nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkImportStmt
     nkStrLit "System"
   nkTypeSection
     nkTypeDef

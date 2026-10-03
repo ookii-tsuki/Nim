@@ -7,36 +7,31 @@ nkStmtList
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'Vec'
+        nkIdent 'Thing'
       nkEmpty
-      nkObjectTy
-        nkEmpty
-        nkOfInherit
-          nkIdent 'RootObj'
-        nkRecList
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'X'
-            nkIdent 'int32'
-            nkEmpty
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'Y'
-            nkIdent 'int32'
-            nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+            nkIdentDefs
+              nkPostfix
+                nkIdent '*'
+                nkIdent 'N'
+              nkIdent 'int32'
+              nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initVec'
+      nkIdent 'initThing'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Vec'
+        nkIdent 'Thing'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -44,17 +39,20 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newVec'
+      nkIdent 'newThing'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Vec'
+      nkIdent 'Thing'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'initVec'
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initThing'
         nkIdent 'result'
   nkTypeSection
     nkTypeDef
@@ -79,30 +77,68 @@ nkStmtList
     nkStmtList
       nkVarSection
         nkIdentDefs
-          nkIdent 'v'
-          nkIdent 'Vec'
-          nkCall
-            nkIdent 'newVec'
-      nkAsgn
-        nkDotExpr
-          nkIdent 'v'
-          nkIdent 'X'
-        nkIntLit 3
-      nkAsgn
-        nkDotExpr
-          nkIdent 'v'
-          nkIdent 'Y'
-        nkIntLit 4
+          nkIdent 'name'
+          nkIdent 'string'
+          nkStrLit "world"
       nkCall
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '+'
-          nkDotExpr
-            nkIdent 'v'
-            nkIdent 'X'
-          nkDotExpr
-            nkIdent 'v'
-            nkIdent 'Y'
+          nkStrLit "hello "
+          nkIdent 'name'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkStrLit "n="
+          nkIntLit 3
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkIntLit 4
+          nkStrLit "=x"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'c'
+          nkIdent 'char'
+          nkCharLit 98
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkStrLit "c="
+          nkIdent 'c'
+      nkAsgn
+        nkIdent 'name'
+        nkInfix
+          nkIdent '+'
+          nkIdent 'name'
+          nkIntLit 5
+      nkCall
+        nkIdent 'WriteLine'
+        nkIdent 'name'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkStrLit "flag="
+          nkInfix
+            nkIdent '<'
+            nkIntLit 1
+            nkIntLit 2
+      nkVarSection
+        nkIdentDefs
+          nkIdent 't'
+          nkIdent 'Thing'
+          nkCall
+            nkIdent 'newThing'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkStrLit "obj="
+          nkIdent 't'
   nkProcDef
     nkPostfix
       nkIdent '*'
