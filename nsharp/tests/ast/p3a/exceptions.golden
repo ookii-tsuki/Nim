@@ -108,7 +108,7 @@ nkStmtList
               nkIdent 'WriteLine'
               nkDotExpr
                 nkIdent 'e'
-                nkIdent 'msg'
+                nkIdent 'Message'
         nkExceptBranch
           nkInfix
             nkIdent 'as'
@@ -135,7 +135,7 @@ nkStmtList
               nkIdent 'WriteLine'
               nkDotExpr
                 nkIdent 'e'
-                nkIdent 'msg'
+                nkIdent 'Message'
   nkProcDef
     nkPostfix
       nkIdent '*'

@@ -19,8 +19,9 @@ import ast, bcl, diagnostics, parser, lexer, symbols, sema, desugar
 const
   NsGenDirName = ".nsgen"
   NsExt = ".ns"
-  ## Root of the N# namespace tree, where a file's path is its C# namespace.
-  NsLibRoot = "pure/ns"
+  ## The declaration keywords that introduce a type name. `record` is a C# class
+  ## with a generated shape, which N# rejects, but the name is a type either way.
+  NsTypeKeywords = ["class", "struct", "interface", "enum", "delegate", "record"]
 
 type
   NsUsingSite* = tuple[ns: string, info: TLineInfo, path: string]
@@ -83,6 +84,20 @@ proc dottedName(toks: seq[NsToken]; start: int): string =
       result.add toks[j+1].text
       j += 2
 
+proc noteTypeDecl(toks: seq[NsToken]; i: int) =
+  ## Records the name a type declaration introduces. The parser has no symbol table
+  ## of its own -- it runs per file, before anything is collected -- so the names the
+  ## compilation declares are gathered here, where every file is seen, and looked up
+  ## when a cast is told from a parenthesised expression.
+  if i + 1 >= toks.len or toks[i + 1].kind != nsIdent: return
+  var j = i + 1
+  ## `delegate` is the one declaration with the return type in between, so its name
+  ## is the identifier after that.
+  if toks[i].text == "delegate" and j + 1 < toks.len and
+     toks[j + 1].kind == nsIdent:
+    inc j
+  if toks[j].text notin NsTypeKeywords: noteDeclaredType(toks[j].text)
+
 proc scanFile(source: string; path: string; fileIdx: FileIndex;
               namespaces: var seq[string]; sites: var seq[NsUsingSite]) =
   ## Collects the `namespace` and `using` names in a file by scanning its tokens.
@@ -107,6 +122,9 @@ proc scanFile(source: string; path: string; fileIdx: FileIndex;
         if name.len > 0:
           if open.len > 0: name = open[^1].name & "." & name
           namespaces.add name
+          ## A namespace name is global in C#, so it is recorded compilation-wide:
+          ## `Demo.Gadget.Create()` and `(Demo.Gadget)x` resolve from any file.
+          noteDeclaredNamespace(name)
           var j = i + 1
           while j < toks.len and toks[j].kind notin {nsLBrace, nsSemi, nsEof}:
             inc j
@@ -114,6 +132,8 @@ proc scanFile(source: string; path: string; fileIdx: FileIndex;
             open.add (name, depth + 1)
             i = j
             continue
+      elif t.text in NsTypeKeywords:
+        noteTypeDecl(toks, i)
       elif t.text in ["using", "import"]:
         ## `using A = X.Y;` imports `X.Y`, so the target is what counts as used.
         var start = i + 1
@@ -129,6 +149,9 @@ proc scanFile(source: string; path: string; fileIdx: FileIndex;
           if toks[k].kind == nsLt: generic = true
           inc k
         if name.len > 0 and not generic:
+          ## `using X.Y;` means the namespace `X.Y` exists, and a namespace name is
+          ## reachable from every file once it does.
+          noteDeclaredNamespace(name)
           sites.add (ns: name, info: newLineInfo(fileIdx, t.line, t.col),
                      path: path)
     else: discard
@@ -186,8 +209,8 @@ proc writeBarrel(genDir, nsPath: string) =
 proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Declaration collection for a module, extended with the declarations of the
   ## namespaces it imports. Classification needs them: a type declared by another
-  ## file is otherwise unknown, so `/` stays floating point and `.Count` is not
-  ## lowered to `len`.
+  ## file is otherwise unknown, so `/` stays floating point and `.Count` does not
+  ## resolve to the collection the library declares it on.
   result = collectSymbols(module, config)
   var seen = initHashSet[string]()
   var pending = result.usings
@@ -201,6 +224,8 @@ proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
         if not result.classes.hasKey(k): result.classes[k] = v
       for k, v in s.delegates:
         if not result.delegates.hasKey(k): result.delegates[k] = v
+      for e in s.enums: result.enums.incl e
+      for q in s.namespaces: result.namespaces.incl q
       for u in s.usings: pending.add u
 
 proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: string;

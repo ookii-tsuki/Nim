@@ -146,6 +146,7 @@ type
     body*: NsNode             ## primary body or expression (may be nil)
     declKind*: NsDeclKind     ## nsnLocalDecl only
     classKind*: NsClassKind   ## nsnClassDecl only
+    alias*: string            ## nsnUsing only: the name an alias gives the target
     initKind*: string         ## nsnCtorDecl only: "", "base" or "this"
     initArgs*: seq[NsNode]    ## nsnCtorDecl only: initializer arguments
     typeKind*: NsTypeKind     ## set by `sema.nim` on expressions
@@ -229,6 +230,9 @@ proc describe*(n: NsNode): string =
      nsnPropertyDecl, nsnFieldDecl, nsnParam, nsnLocalDecl, nsnForeach,
      nsnUnary, nsnBinary, nsnIncDec:
     if n.name.len > 0: result.add " " & n.name
+    if n.kind == nsnUsing and n.alias.len > 0:
+      ## `using P = A.B;`, spelled the way it was written.
+      result.add " (as " & n.alias & ")"
   of nsnIntLit, nsnCharLit, nsnBoolLit: result.add " " & $n.intVal
   of nsnFloatLit:
     result.add " " & formatFloat(float(n.floatVal), ffDefault, 0)

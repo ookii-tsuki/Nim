@@ -280,6 +280,18 @@ name is lowered, because imported symbols are flat: `System.Console.WriteLine`,
 namespace alias is only an import of its target, and why `using A = List<int>;` is
 reported rather than lowered: a type alias has no qualifier to drop.
 
+**...but a namespace the library declares is global.** C# has no `using` in the
+reachability rule for a fully qualified name, so `System.Console.WriteLine("hi")`
+must compile with no `using` at all, and a qualifier that starts at a namespace the
+*library* is written in (`System`, `System.Collections.Generic`) says which module
+declares the name -- the qualifier C# drops has to be replaced by an import of that
+module (`from "System" import WriteLine`), since Nim resolves a proc where it is
+*used*. Namespaces are recorded compilation-wide for exactly this reason, and the
+same lookup is what makes `(Demo.Gadget)g` parse as a cast. A namespace the
+*compilation* declares is not replaced this way: `P.Gadget` and `Demo.Gadget.Make()`
+resolve in the file that declares or imports them, which is where a `using` or a
+`namespace` block put them.
+
 **The frontend keeps no namespace to module table.** The N# standard library is the
 root of the same tree, at `lib/pure/ns/`, which the frontend puts on the module
 search path (`nsgen.nim`), so a BCL namespace is an ordinary module:
@@ -539,19 +551,19 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `checked`/`unchecked` | ovf on/off | `{.push overflowChecks.}` | same mechanism, `push`/`pop`, emitted around the block's statements | desugar |
 | `checked` and conversions | covers overflow **and** conversions | only `overflowChecks` is switched | a conversion that is out of range still raises `RangeDefect` (aliased `ArgumentOutOfRangeException`) where C# raises `OverflowException` | desugar |
 | `==` / `Equals` | class = reference, struct = value | whatever is overloaded | class → reference `==`; struct/record → value `==`; `Equals`→`==` | desugar/sem |
-| `ToString()` | virtual method | `$` proc | map `ToString` → `$` | desugar |
+| `ToString()` | virtual method | `$` proc | satisfied by a `ToString` proc in the intrinsics (`$x[]`), which Nim's dot-call reaches; no member name is mapped by the compiler | lib |
 | Numeric conversions | implicit widening, explicit narrowing | stricter | implicit widening; explicit narrowing. The refusals the frontend can *see* are diagnosed with C#'s own code (CS0029, CS0037, CS1503) before anything is lowered; what it cannot see -- an unresolved name, an enum, a type from a module it does not cover -- counts as compatible, so Nim keeps the last word | front/sem |
-| `(T)x` vs `(x)` | the symbol table decides | - | the parenthesised name must be spelled like a type (a C# built-in, or uppercase) **and** be followed by a value, so `(x) - 1` is a subtraction while `(Foo) - 1` is a cast | front |
+| `(T)x` vs `(x)` | the symbol table decides | - | the parenthesised name must resolve as a type -- C#'s vocabulary, the library's declarations, a type this compilation declares, an enum, or a namespace it imports -- **and** be followed by a value, so `(x) - 1` is a subtraction while `(Foo) - 1` is a cast | front |
 | `do-while` and `continue` | the check runs *after* the body, so `continue` re-tests it | `while` tests before | one body copy under a first-pass flag (`while first or c`, cleared before the body), leaving `break` and `continue` to Nim's own loop | desugar |
 | `using` keyword | directive **and** statement | - | disambiguate by context | front |
 | `switch` fallthrough | forbidden (empty cases group) | no fallthrough | maps to Nim `case`; empty-case groups allowed; a trailing `break;` is dropped; a non-exhaustive switch gets `else: discard` | front |
 | `Main` / `args` | `Main(string[])`, exit code | module top-level | support both (D5); `int` return → exit code | front |
 | Interpolation format | `$"{x:F2}"` | `strformat`/`formatFloat` | map format specs to Nim format | desugar |
 | `null` deref | `NullReferenceException` | no runtime check | `desugar.nim` wraps the receiver of a field access or dot-called method on a class reference in the intrinsics' `nsCheckNil`, so null raises `NullAccessDefect` -- aliased to `NullReferenceException` -- instead of faulting; off under `-d:danger` / `--nilChecks:off` | front/lib |
-| Arrays | `T[]`, `new T[n]` | `seq[T]` | `T[]` → `seq[T]`; `new T[n]` → `newSeq[T](n)`; `new T[]{..}` → `@[..]`; `.Length`/`.Count` → `len` | front |
+| Arrays | `T[]`, `new T[n]` | `seq[T]` | `T[]` → `seq[T]`; `new T[n]` → `newSeq[T](n)`; `new T[]{..}` → `@[..]`; `.Length` is the library's `openArray` proc, reached by Nim's dot-call | front/lib |
 | Enum field scope | scoped to the enum type | unqualified globals | `E.A` resolves via Nim qualified access; two enums must not share a field name | front |
 | Exceptions | all derive from `Exception` | `Exception` is the root of both `CatchableError` and `Defect` | C# `Exception` → Nim's exception root, so `catch (Exception)` catches runtime errors too; the .NET names are declared by the library, aliasing the defect Nim raises where one exists (`OverflowException` → `OverflowDefect`); `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` | front/lib |
-| `e.Message` | property on every exception | `CatchableError.msg` field | map `.Message` → `.msg` | front |
+| `e.Message` | property on every exception | an ordinary proc over `Exception` (`e.msg`) | the library declares `Message` for the exception root; Nim's dot-call reaches it, and the compiler knows no member name | lib |
 | Bool/float spelling | `True`, `NaN`, `∞` | `true`, `nan`, `inf` | Nim's rendering stands; where C# differs the test carries a `.csout` beside its `.out` | lib |
 | `T?` / `Nullable<T>` | `struct Nullable<T> { T value; bool hasValue; }` | `Option[T]` has the same shape: a value plus a flag, and a bare pointer for a reference type | `T?` → `Option[T]` for a value type; a reference is nullable already, so `Node?` is just `Node` | front |
 | `MyObj?` / `string?` | an annotation on a type that is nullable already; C# warns CS8632 while the `#nullable` annotations context is off, which is the default | a reference type has no `Option`, so the `?` is nothing to lower | accepted as a no-op and reported as NS8632 -- the same digits. N# has no `#nullable` context, so the warning is unconditional. A `struct` is exempt: C# really does make that `Nullable<T>` | front |
@@ -823,21 +835,30 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 familiarity, implemented as `lib` wrappers. (Raise if you'd rather expose Nim
 names.)
 
+Members are resolved from those declarations, not from a table of names: the
+frontend reads the prelude's own Nim sources (`bcl.nim`'s *surface*), so
+`x.Length`, `.Count`, `.Message`, `int.MaxValue` and `String.Concat` are answered
+by the proc the prelude declares, and lowering reaches it through Nim's dot-call.
+
 ### 15.1 Collections - pinned member surface (3b)
 
 `List<T>` is `seq[T]`, `Dictionary<K,V>` is `Table[K,V]`, `HashSet<T>` is
-`HashSet[T]`; `Queue<T>`/`Stack<T>` are small wrappers over `Deque[T]`. `.Count`
-is lowered to `.len` by the frontend. The shim re-exports `tables`/`sets`, since
-Nim's `import` is not transitive and `Dictionary`/`HashSet` users need indexing,
-`in`, `keys`, `values`, ... Only these members exist:
+`HashSet[T]`; `Queue<T>`/`Stack<T>` are small wrappers over `Deque[T]`. `Count` is
+C#'s name for what Nim spells `len`, so the library declares it on each collection
+(and on Nim's `HashSet`); the frontend resolves it there and lowering emits the
+call, reaching the declaring module by name when the use site has not imported
+that namespace -- the member is reachable wherever the type is, as in C#. The shim
+re-exports `tables`/`sets`, since Nim's `import` is not transitive and
+`Dictionary`/`HashSet` users need indexing, `in`, `keys`, `values`, ... Only these
+members exist:
 
 | Type | Members (3b) |
 |---|---|
-| `List<T>` | `Add` `AddRange` `Clear` `Contains` `IndexOf` `Insert` `Remove` `RemoveAt` `Reverse` `Sort` `ToArray`, `[]`, `[]=` |
-| `Dictionary<K,V>` | `Add` `Clear` `ContainsKey` `ContainsValue` `Remove` `Keys` `Values`, `[]`, `[]=` |
-| `HashSet<T>` | `Add` `Clear` `Contains` `Remove` `ToArray` `UnionWith` `IntersectWith` `ExceptWith` |
-| `Queue<T>` | `Enqueue` `Dequeue` `Peek` `Contains` `Clear` `ToArray` |
-| `Stack<T>` | `Push` `Pop` `Peek` `Contains` `Clear` `ToArray` |
+| `List<T>` | `Add` `AddRange` `Clear` `Contains` `Count` `IndexOf` `Insert` `Remove` `RemoveAt` `Reverse` `Sort` `ToArray`, `[]`, `[]=` |
+| `Dictionary<K,V>` | `Add` `Clear` `ContainsKey` `ContainsValue` `Count` `Remove` `Keys` `Values`, `[]`, `[]=` |
+| `HashSet<T>` | `Add` `Clear` `Contains` `Count` `Remove` `ToArray` `UnionWith` `IntersectWith` `ExceptWith` |
+| `Queue<T>` | `Enqueue` `Dequeue` `Peek` `Count` `Contains` `Clear` `ToArray` |
+| `Stack<T>` | `Push` `Pop` `Peek` `Count` `Contains` `Clear` `ToArray` |
 
 Deliberately deferred, with the reason recorded:
 

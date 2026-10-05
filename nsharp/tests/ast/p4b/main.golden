@@ -40,7 +40,9 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkIdent 'a'
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'a'
           nkIdent 'peer'
   nkProcDef
     nkPostfix

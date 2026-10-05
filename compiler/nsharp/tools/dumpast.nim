@@ -15,7 +15,7 @@
 import std/[os, strutils, syncio]
 import ../../ast, ../../idents, ../../lineinfos, ../../msgs, ../../options,
        ../../pathutils
-import ../ast as nsast, ../parser, ../frontend
+import ../ast as nsast, ../parser, ../frontend, ../nsgen
 
 proc esc(s: string): string =
   ## One node per line, so a literal must never contain a raw newline.
@@ -72,10 +72,15 @@ proc main() =
   # wants the tree, not diagnostic gating, so keep going.
   conf.errorMax = high(int)
   let fileIdx = conf.fileInfoIdx(AbsoluteFile(path))
+  let cache = newIdentCache()
+  ## The namespace scan is what records the type names this compilation declares, and
+  ## the parser needs them to tell a cast from a parenthesised expression. The real
+  ## pipeline runs it in `parseModule`, so the tool does the same rather than pin a
+  ## parse the compiler would never produce.
+  ensureNamespaces(conf, cache, AbsoluteFile(path))
   if nsMode:
     stdout.write nsast.repr(parseNsModule(source, fileIdx, conf))
   else:
-    let cache = newIdentCache()
     stdout.write nsTreeRepr(compileNsSource(source, fileIdx, cache, conf))
 
 when isMainModule:

@@ -1,0 +1,38 @@
+// Members and casts are resolved, not guessed from spelling: a member this module
+// declares wins over the library's, `(Total) - 1` is a subtraction because `Total`
+// is a value (an upper-case one, deliberately), and the library answers for the
+// members this module does not declare.
+using System;
+
+namespace Demo
+{
+    class Box
+    {
+        public int Count() { return 3; }
+        public int Length() { return 4; }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Box box = new Box();
+            Console.WriteLine(box.Count());
+            Console.WriteLine(box.Length());
+
+            int Total = 5;
+            Console.WriteLine((Total) - 1);
+
+            int[] nums = new int[] { 1, 2, 3 };
+            Console.WriteLine(nums.Length);
+
+            string text = "abcdef";
+            Console.WriteLine(text.Length);
+
+            if (String.IsNullOrEmpty(String.Empty))
+            {
+                Console.WriteLine("empty");
+            }
+        }
+    }
+}

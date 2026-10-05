@@ -262,7 +262,7 @@ single-purpose modules rather than one parse-and-lower script, and
 | `compiler/nsharp/parser.nim` | tokens -> `NsNode`; grammar only, no name mapping |
 | `compiler/nsharp/symbols.nim` | `NsNode` -> module scope (declaration collection) |
 | `compiler/nsharp/sema.nim` | checks, name resolution and type checking over the tree |
-| `compiler/nsharp/bcl.nim` | the one C#-to-Nim name and namespace table |
+| `compiler/nsharp/bcl.nim` | C#'s own type vocabulary, and the prelude's *surface*: the types and members the library declares, read out of its Nim sources |
 | `compiler/nsharp/diagnostics.nim` | the `NSxxxx` codes and their text |
 | `compiler/nsharp/desugar.nim` | `NsNode` -> Nim `PNode` (all lowering) |
 
@@ -274,9 +274,12 @@ Delivered in 3a: data and control. `enum` (ordinal Nim enums; qualified access
 `E.A` works directly), `switch`/`case`/`default` (desugared to Nim `case`; a
 trailing C# `break;` is dropped, and a non-exhaustive switch gets an
 `else: discard` whose body must carry an `nkEmpty` child), arrays (`T[]` ->
-`seq[T]`, `new T[n]` -> `newSeq[T](n)`, `new T[] { .. }` -> `@[..]`,
-`.Length`/`.Count` -> `len`), and exceptions (`throw` -> `raise`,
-`try`/`catch`/`finally` -> Nim `try`/`except`/`finally`, `e.Message` -> `msg`).
+`seq[T]`, `new T[n]` -> `newSeq[T](n)`, `new T[] { .. }` -> `@[..]`), and
+exceptions (`throw` -> `raise`, `try`/`catch`/`finally` -> Nim
+`try`/`except`/`finally`). A member access keeps the name the C# source wrote:
+`.Length`, `.Count` and `.Message` are the library's own procs, reached through
+Nim's dot-call, with the declaring module imported by name when the use site does
+not import its namespace.
 C# `Exception` maps to Nim `CatchableError`. A class deriving from an exception
 base is emitted as a value `object` (so `except` can match it) but its `self`
 parameters are `ref T` and its allocator returns `ref T`, because Nim can only
@@ -310,7 +313,8 @@ Delivered in 3b: callbacks and collections.
   `HashSet<T>` = `HashSet[T]`, and `Queue<T>`/`Stack<T>` wrap `Deque[T]`. The shim
   re-exports `tables`/`sets`, because Nim's `import` is not transitive and users
   need indexing, `in`, `keys`, `values`. `Add`/`Contains`/... are capitalized
-  C#-named procs reached through Nim dot-calls; `.Count` lowers to `.len`.
+  C#-named procs reached through Nim dot-calls; `Count` is declared per collection
+  and resolved by the frontend like any other member (v26).
 * Every generated proc is `{.discardable.}` (and the collection shims use
   `{.push discardable.}`): C# lets any expression statement drop a method's
   result, while Nim rejects an unused result, so `nums.Remove(1);` needed it.
@@ -332,6 +336,47 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v26** - Members and properties resolved from the library's own declarations.
+  `bcl.nim` no longer holds a table of member names: it reads the prelude
+  (`lib/pure/ns/**`, plus the intrinsics) with Nim's own parser and keeps what it
+  declares -- types (with their alias and base) and members (a declaration's first
+  parameter is the receiver, its result type is what the member yields, a
+  constraint such as `SomeInteger` or `ref Exception` is the class of types it
+  stands for). `sema` and `desugar` resolve `x.Length`, `.Count`, `.Message`,
+  `.Value`, `int.MaxValue`, `String.Concat`, `Console.WriteLine` and
+  `catch (NullReferenceException)` against that surface, so no member name is
+  hardcoded and there is no rename step: `.Count` is the `Count` proc the library
+  declares, reached by Nim's dot-call exactly as `int.high` reaches `high(int32)`.
+  What makes a *receiver* a qualifier is a lookup too -- a type, an enum, a
+  delegate, or a namespace a `using` names -- which replaces the uppercase
+  convention in `sema`, and the same lookup (plus the type names the namespace scan
+  now records) tells a cast from a parenthesised expression in the parser, which
+  replaces the convention there. A member reached this way is imported by name
+  (`from "System/Collections/Generic" import Count`) when the module does not
+  import its namespace, because Nim resolves a proc where it is *used*: the member
+  is reachable wherever the type is, as C#, while the namespace's *types* stay out
+  of scope. A namespace is a global name in C#, so a qualified name needs no
+  `using`: a qualifier whose root is a namespace the *library* is written in
+  (`System.Console.WriteLine`) names a declaration of that namespace's module, and
+  lowering imports it by name (`from "System" import WriteLine`), which is why
+  `System.Console.WriteLine("hi")` compiles with no `using` at all, `(Demo.Gadget)g`
+  parses as a cast and `Demo.Gadget.Make()` resolves without one. What the
+  compilation itself declares stays the business of the file that declares or
+  imports it -- a `P.Gadget` or `Demo.Gadget` qualifier is never replaced by an
+  import. The prelude gains `Console`, `Message` and the collections' `Count`;
+  `NsMemberRenames`, `NsLengthMembers`, `NsMessageMembers`, `NsExceptionBases`, the
+  `Ns*TypeNames` classification tables and `memberToNim` are gone. Tooling resolves
+  what a build resolves: `dumpast.nim` reads the same prelude (`preludeRoot`
+  falls back to the library beside the sources, because the AST dump leaves
+  `config.libpath` unset) and runs the namespace scan, so its output no longer
+  diverges from the real pipeline. The nine AST goldens that changed here are the
+  intended `from ... import ...` lines, the drop of the renames, and the nil checks
+  and integer division the dump now agrees about, not regressions. Suite now 49
+  tests, 58 golden ASTs, 49 C# cross-checks: `p5b/members` pins that a member the
+  module declares wins over the library's, that `(Total) - 1` is a subtraction
+  because `Total` is a value even though it is capitalised, and that the library
+  answers for what the module does not declare; `p4f/qualified` pins the namespace
+  forms above.
 - **v25** - Argument-level type checking, and the `?` on an already-nullable type.
   `sema.nim` now matches a call against the *declared* parameter lists -- every
   overload, not just the first declaration of the name -- so the frontend knows what

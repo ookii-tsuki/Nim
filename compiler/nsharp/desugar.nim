@@ -7,25 +7,44 @@
 # procPragmas). C# would allow discarding a method's result, so this asymmetry is
 # a fidelity bug, not a design choice.
 
-import std/[strutils, tables]
+import std/[strutils, tables, algorithm, sets]
 import ../ast, ../idents, ../lineinfos, ../options
 import ast, bcl, symbols
 
 const
-  ## N# intrinsics, imported into every module: it is where string concatenation
-  ## and printing any type live, and C# needs no `using` for either.
-  NsIntrinsics* = "nsharp/intrinsics"
   NsCond = "nsCond"
     ## The temporary a `?.` chain binds its guarded value to. Each link lowers inside
     ## its own block, so one name cannot collide across a chain.
 
 type
+  NsFromImports = ref object
+    ## The prelude modules a lowering had to name a declaration from, and the names
+    ## to take from each. A member of a type is reachable wherever the type is
+    ## reachable in C#, but Nim resolves a proc in the module that *uses* it, and the
+    ## namespace that declares the type is not necessarily imported at the use site
+    ## (`var xs = Other.List(); xs.Count`). So the declaration `sema.nim` resolved is
+    ## imported by name, and nothing else: `from X import Count` leaves the module's
+    ## *types* out of scope, which is what C# does with a namespace it does not have.
+    byModule: Table[string, seq[string]]
+
+type
   Lowerer = object
     scope: NsModuleScope
+    surface: NsBclSurface   ## what the prelude declares
+    imports: NsFromImports  ## the prelude declarations the lowered code names
+    usingPaths: HashSet[string]
+      ## The modules this module's own `using` directives import, so a member whose
+      ## namespace is already imported is not named twice.
     cache: IdentCache
     thisName: string        ## "self" in instance members, "" in static ones
     entryPoint: PNode       ## the emitted `Main` proc, if there was one
     nilChecks: bool         ## whether the compilation has the nil check on
+
+proc note(l: NsFromImports; module, name: string) =
+  ## Records one declaration to import by name, once.
+  if module.len == 0 or name.len == 0: return
+  if not l.byModule.hasKey(module): l.byModule[module] = @[]
+  if name notin l.byModule[module]: l.byModule[module].add name
 
 proc id(l: Lowerer; s: string; info: TLineInfo): PNode =
   newAtom(l.cache.getIdentExact(s), info)
@@ -34,21 +53,51 @@ proc empty(info: TLineInfo): PNode {.inline.} = newNodeI(nkEmpty, info)
 
 proc emptyList(info: TLineInfo): PNode {.inline.} = newNodeI(nkStmtList, info)
 
-proc memberToNim(l: Lowerer; n: NsNode): string =
-  ## `.Length`/`.Count` -> `len` and `.Message` -> `msg`, but only where the
-  ## receiver's resolved type says it is an array, string, collection or
-  ## exception. A user member that shares one of those names is left alone.
-  var renamed = ""
-  if n.body != nil:
-    case n.body.typeKind
-    of tkSequence, tkString:
-      if n.name in NsLengthMembers and renamedMember(n.name, renamed):
-        return renamed
-    of tkException:
-      if n.name in NsMessageMembers and renamedMember(n.name, renamed):
-        return renamed
-    else: discard
-  n.name
+proc qualifierNamespace(l: Lowerer; n: NsNode): string =
+  ## The longest prefix of a dotted qualifier that names a namespace the *library*
+  ## is written in, or "" when the chain does not start at one: `System.Console`
+  ## gives `System`, while `P.Gadget` and `Demo.Gadget` give nothing, because a
+  ## namespace this compilation declares is reached by the file that declares or
+  ## imports it.
+  result = ""
+  var parts: seq[string] = @[]
+  var cur = n
+  while cur != nil and cur.kind == nsnMember:
+    parts.add cur.name
+    cur = cur.body
+  if cur == nil or cur.kind != nsnIdent: return
+  parts.add cur.name
+  ## `parts` is the chain from the receiver outwards, so the prefixes are built from
+  ## its end: `System`, `System.Console`, ... and the longest match is the last one.
+  var dotted = ""
+  for i in countdown(parts.len - 1, 0):
+    dotted = if dotted.len == 0: parts[i] else: dotted & "." & parts[i]
+    if l.surface.isLibraryNamespace(dotted): result = dotted
+
+proc noteMemberImport(l: Lowerer; n: NsNode) =
+  ## Records the prelude declaration a member access resolved to, so the module can
+  ## name it. Nothing is recorded for a member this module declares, for one the
+  ## library does not declare, or for an intrinsics one -- every module imports
+  ## those already.
+  if l.imports == nil or n == nil or n.body == nil: return
+  var rk = n.body.typeKind
+  if rk == tkType: rk = l.surface.kindOfName(n.body.typeName)
+  var recv = n.body.typeName
+  if recv.len == 0: recv = n.body.name
+  let m = l.surface.member(recv, rk, n.name)
+  if m.path == NsIntrinsicsPath: return
+  if m.name.len > 0:
+    l.imports.note(m.path, m.name)
+    return
+  ## The library declares nothing of this shape, but the qualifier names one of its
+  ## namespaces: the name belongs to that namespace's *module*, since the qualifier
+  ## C# drops (`System.Console.WriteLine`) is what said so. A receiver this module
+  ## declares is left alone -- its declaration is the one in scope.
+  if l.scope.classes.hasKey(recv) or l.scope.delegates.hasKey(recv) or
+     l.scope.enums.contains(recv):
+    return
+  let ns = l.qualifierNamespace(n.body)
+  if ns.len > 0: l.imports.note(namespaceModulePath(ns), n.name)
 
 # --- types ------------------------------------------------------------------
 
@@ -151,6 +200,9 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
   ## records it as `tkType`.
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
      callee.body.typeKind == tkType:
+    ## A static member: the qualifier is dropped, so the declaration it names has to
+    ## be imported by name.
+    l.noteMemberImport(callee)
     callee = nsnIdent(callee.name, callee.info)
   ## `x.Method(...)` on a reference: C# tests the receiver before the call, so a
   ## method that never touches `self` still throws on a nil receiver. `this` is
@@ -190,9 +242,9 @@ proc asToNim(l: Lowerer; n: NsNode): PNode =
 
 proc memberReceiver(l: Lowerer; n: NsNode): PNode =
   ## The receiver of a member access. A member of a *type* keeps its receiver, in
-  ## Nim's spelling, so `int.MaxValue` resolves through Nim's dot-call to the
-  ## library's declaration for `int32` rather than to a field named `MaxValue`. A
-  ## value receiver, and a user class named like a built-in, are left alone.
+  ## the spelling the library declares it under, so `int.MaxValue` reaches Nim's
+  ## own dot-call for `int32` by the same route as `int.high` does. A value
+  ## receiver, and a class this module declares, are left alone.
   var r = n.body
   var name = ""
   var dotted = true
@@ -207,7 +259,7 @@ proc memberReceiver(l: Lowerer; n: NsNode): PNode =
       dotted = false
       r = nil
   if dotted and name.len > 0 and not l.scope.classes.hasKey(name):
-    let spelled = knownTypeSpelling(name)
+    let spelled = l.surface.nimSpellingOf(name)
     if spelled.len > 0: return l.id(spelled, n.info)
   l.expr(n.body)
 
@@ -329,8 +381,9 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnCharLit: result = newAtom(nkCharLit, n.intVal, n.info)
   of nsnBoolLit: result = l.id(if n.intVal != 0: "true" else: "false", n.info)
   of nsnMember:
+    l.noteMemberImport(n)
     result = newTree(nkDotExpr, n.info, l.memberReceiverChecked(n),
-                     l.id(l.memberToNim(n), n.info))
+                     l.id(n.name, n.info))
   of nsnCall: result = l.callToNim(n)
   of nsnIndex:
     result = newTree(nkBracketExpr, n.info, l.expr(n.body), l.expr(n.sons[0]))
@@ -855,7 +908,7 @@ proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
   ## message directly, because there is no `initCatchableError` to call.
   let externalExcBase = isException and baseName.len > 0 and
                         not l.scope.classes.hasKey(baseName) and
-                        isExceptionBase(baseName)
+                        l.surface.isExceptionType(baseName)
   if externalExcBase:
     if m.initArgs.len > 0:
       ibody.add newTree(nkAsgn, m.info,
@@ -906,7 +959,8 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let mappedBase =
     if n.typ != nil and n.typ.kind == nsnTypeName: nimTypeName(n.typ.name)
     else: ""
-  let isException = isClass and isExceptionBase(mappedBase)
+  let isException = isClass and
+    l.surface.isExceptionType(mappedBase, l.scope.baseChain(mappedBase))
 
   # 1. the type: `C = ref object` for a class, a plain `object` for a struct and
   #    for an exception class (which is raised as `ref C`).
@@ -990,7 +1044,8 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     ip.add l.selfDefs(n.name, isException, info)
     let ibody = newNodeI(nkStmtList, info)
     if mappedBase.len > 0 and baseParamless and
-       (l.scope.classes.hasKey(mappedBase) or not isExceptionBase(mappedBase)):
+       (l.scope.classes.hasKey(mappedBase) or
+        not l.surface.isExceptionType(mappedBase, l.scope.baseChain(mappedBase))):
       let icall = newNodeI(nkCall, info)
       icall.add l.id("init" & mappedBase, info)
       icall.add l.id("self", info)
@@ -1019,8 +1074,10 @@ proc lowerDecl(l: var Lowerer; d: NsNode; into: var seq[PNode]) =
   case d.kind
   of nsnUsing:
     ## Lowers `using A.B;` to `import "A/B"`, so the namespace is in scope only
-    ## where the directive appears.
+    ## where the directive appears. Recorded as well, so a member reached in this
+    ## module is not named again by a `from` when its namespace is already here.
     if d.name.len > 0:
+      l.usingPaths.incl namespaceModulePath(d.name)
       into.add newTree(nkImportStmt, d.info,
                        newAtom(nkStrLit, namespaceModulePath(d.name), d.info))
   of nsnNamespace:
@@ -1048,7 +1105,9 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
                   cache: IdentCache; config: ConfigRef): PNode =
   ## Lowers a whole `.ns` module to the Nim statements the rest of the compiler
   ## consumes.
-  var l = Lowerer(scope: scope, cache: cache,
+  var l = Lowerer(scope: scope, surface: bclSurface(config), cache: cache,
+                  imports: NsFromImports(byModule: initTable[string, seq[string]]()),
+                  usingPaths: initHashSet[string](),
                   nilChecks: optNilCheck in config.options)
   var stmts: seq[PNode] = @[]
   for d in module.sons:
@@ -1057,7 +1116,22 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   ## Every module sees the N# intrinsics, so `"a" + b` concatenates and any type
   ## can be printed without a `using`.
   result.add newTree(nkImportStmt, module.info,
-                     newAtom(nkStrLit, NsIntrinsics, module.info))
+                     newAtom(nkStrLit, NsIntrinsicsPath, module.info))
+  ## A prelude declaration a member access reached is named by the module that
+  ## declares it, since Nim resolves a proc where it is used. A namespace this
+  ## module already imports needs no naming, and the order is sorted, so the output
+  ## does not depend on the order the members were lowered in.
+  var modules: seq[string] = @[]
+  for m in l.imports.byModule.keys:
+    if not l.usingPaths.contains(m): modules.add m
+  modules.sort()
+  for m in modules:
+    let f = newNodeI(nkFromStmt, module.info)
+    f.add newAtom(nkStrLit, m, module.info)
+    var names = l.imports.byModule[m]
+    names.sort()
+    for n in names: f.add l.id(n, module.info)
+    result.add f
   ## C# arithmetic is unchecked unless it is written inside `checked`, so the module
   ## turns the check off and `checked { }` pushes it back on (§7.3).
   let push = newNodeI(nkPragma, module.info)

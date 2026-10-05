@@ -4,8 +4,13 @@
 # control, attaches coarse type information to expressions (`NsNode.typeKind`),
 # checks the conversions C# would refuse, and applies the base-constructor rule,
 # so lowering can make type-directed decisions instead of guessing from names
-# (`.Length`/`.Count`/`.Message` renames, integer `/`, `some(T)`/`none(T)` for a
-# `T?` target).
+# (integer `/`, `some(T)`/`none(T)` for a `T?` target).
+#
+# What a type is and what a member yields comes from two places: this module's own
+# declarations, and the prelude's (`bcl.nim`'s surface, read out of the prelude's
+# Nim sources). No member name is known here -- `.Length`, `.Count`, `.Message` and
+# `.Value` are whatever the library declares them to be, and Nim resolves them at
+# their call sites exactly as it resolves `int.high` to `high(int32)`.
 #
 # The information gathered is deliberately coarse (`ast.NsTypeKind`) and only as
 # precise as lowering needs. It is still not a type system: no user conversions,
@@ -14,7 +19,7 @@
 # enum, a `T?` whose element is unclear all count as compatible, so an unspotted
 # mistake stays Nim's to report rather than becoming a wrong N# error.
 
-import std/tables
+import std/[tables, sets]
 import ../lineinfos, ../options
 import ast, bcl, diagnostics, symbols
 
@@ -26,6 +31,7 @@ type
   NsCheckContext = object
     scope: NsModuleScope
     config: ConfigRef
+    surface: NsBclSurface                       ## what the prelude declares
     clsName: string                            ## enclosing class, "" outside one
     members: seq[string]                       ## names reachable from it
     retType: NsNode                            ## enclosing member's return type
@@ -66,14 +72,25 @@ proc declTypeName(t: NsNode): string =
 
 # --- type classification ----------------------------------------------------
 
-proc isExceptionDerived(ctx: NsCheckContext; name: string): bool =
-  ## A user class is an exception type when anything in its base chain is an
-  ## exception base, directly or transitively.
-  result = false
-  if not ctx.scope.classes.hasKey(name): return false
-  for c in ctx.scope.chain(name):
-    let b = ctx.scope.classes[c].base
-    if b.len > 0 and isExceptionBase(b): return true
+proc isTypeName(ctx: NsCheckContext; name: string): bool =
+  ## True when the name is a type or a namespace the frontend can place: C#'s own
+  ## vocabulary, a type the library declares, a type, enum or delegate this
+  ## compilation declares, or a namespace it imports. A qualifier -- the root of
+  ## `Console.WriteLine` or `P.Gadget` -- is told from a value by this lookup, not
+  ## by how the name is spelled.
+  ctx.surface.isKnownTypeName(name) or ctx.scope.classes.hasKey(name) or
+    ctx.scope.delegates.hasKey(name) or ctx.scope.enums.contains(name) or
+    ctx.scope.namespaces.contains(name)
+
+proc qualifierRoot(n: NsNode): string =
+  ## The innermost name of a dotted receiver: the `System` of `System.Console`, the
+  ## `P` of `P.Gadget`. "" when the receiver is not a plain dotted name, which is
+  ## how an expression receiver stays a value.
+  if n == nil: return ""
+  case n.kind
+  of nsnIdent: n.name
+  of nsnMember: qualifierRoot(n.body)
+  else: ""
 
 const
   NsValueKinds* = {tkInt, tkFloat, tkBool, tkChar, tkString, tkSequence}
@@ -86,26 +103,19 @@ proc isObjectTarget(t: NsNode): bool =
   unqualified(t.name) in ["object", "Object", "RootRef"]
 
 proc classifyName(ctx: NsCheckContext; name: string): NsTypeKind =
-  ## Kind of a type written by name, purely from `bcl.nim`'s tables plus the
-  ## module scope. This is where "List is a sequence" and "Exception is an
-  ## exception" come from; it is a lookup, not a guess.
-  let name = canonicalTypeName(name)
-  for s in NsIntTypeNames:
-    if s == name: return tkInt
-  for s in NsFloatTypeNames:
-    if s == name: return tkFloat
-  for s in NsSequenceTypeNames:
-    if s == name: return tkSequence
-  case name
-  of "bool": tkBool
-  of "char": tkChar
-  of "string": tkString
-  else:
-    if isExceptionBase(name): tkException
-    elif ctx.scope.delegates.hasKey(name): tkDelegate
-    elif ctx.scope.classes.hasKey(name):
-      if ctx.isExceptionDerived(name): tkException else: tkClass
-    else: tkUnknown
+  ## Kind of a type written by name. "List is a sequence" and "SystemException is an
+  ## exception" are both answered by the library that declares them; the rest by
+  ## C#'s own vocabulary and by this compilation's declarations. It is a lookup
+  ## either way, not a guess.
+  let canon = canonicalTypeName(name)
+  result = ctx.surface.kindOfName(canon)
+  if result != tkUnknown: return
+  if ctx.scope.delegates.hasKey(canon): return tkDelegate
+  if ctx.scope.classes.hasKey(canon):
+    return (if ctx.surface.isExceptionType(canon, ctx.scope.baseChain(canon)):
+              tkException
+            else: tkClass)
+  result = tkUnknown
 
 proc classifyType(ctx: NsCheckContext; t: NsNode): NsTypeKind =
   ## Kind of a written type. `T[]` is a sequence and `T?` is a nullable value type;
@@ -141,6 +151,23 @@ proc memberTypeName(ctx: NsCheckContext; clsName, member: string): string =
   let info = ctx.scope.findMemberInfo(clsName, member)
   if info.name.len == 0: return ""
   declTypeName(info.typ)
+
+proc memberKindOfSurface(ctx: NsCheckContext; rk: NsTypeKind; recv, name: string;
+                         tname: var string): NsTypeKind =
+  ## The kind a library member yields, from its declaration in the prelude. A
+  ## declared result is looked up like any other type name; a result that is one of
+  ## the declaration's own type parameters is the receiver's own type --
+  ## `int.MaxValue` is an `int` -- or, for a `T?`, its element, which is what
+  ## `a.Value` is. A member the library does not declare is `tkUnknown`, and stays
+  ## Nim's to resolve.
+  let m = ctx.surface.member(recv, rk, name)
+  if m.name.len == 0: return tkUnknown
+  if not m.retIsParam:
+    tname = m.ret
+    return ctx.surface.kindOfSpelling(m.ret)
+  if rk == tkNullable: return ctx.classifyName(recv)
+  if m.isStatic: return rk
+  tkUnknown
 
 # --- type checking ----------------------------------------------------------
 #
@@ -458,50 +485,56 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   elif ctx.scope.delegates.hasKey(n.name):
     n.setType(tkDelegate, n.name)
     result = tkDelegate
-  elif n.name.len > 0 and n.name[0] in {'A'..'Z'}:
-    ## A type or namespace used as a receiver (`Console.WriteLine`), or a static
-    ## call qualifier. Distinguishing these from a value needs real resolution;
-    ## the capitalisation convention is a stand-in for it.
-    n.setType(tkType, n.name)
+  elif ctx.isTypeName(n.name):
+    ## A type or a namespace used as a receiver (`Console.WriteLine`), or a static
+    ## call qualifier. Which of those it is needs no further resolution here: the
+    ## member access that follows asks the library.
+    n.setType(tkType, canonicalTypeName(n.name))
     result = tkType
   else:
     n.setType(tkUnknown)
     result = tkUnknown
 
 proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
-  ## Member access. The receiver's kind decides what the member means: `.Length`
-  ## is `len` only on a sequence or string, `.Message` is `msg` only on an
-  ## exception.
+  ## Member access. The receiver's resolved type decides what the member means, and
+  ## the declaration that owns it -- this module's, or the prelude's -- decides what
+  ## it yields. No member name is special-cased.
   var rk = ctx.walkExpr(n.body)
-  if rk == tkUnknown and n.body != nil and n.body.kind == nsnIdent:
-    ## The receiver is a type written by name rather than a value: `int.MaxValue`,
-    ## `string.Empty`, `double.NaN`. The member's type is the receiver's, and which
-    ## members exist is the library's business, so no member name is consulted.
-    rk = ctx.classifyName(n.body.name)
+  if rk == tkUnknown and n.body != nil:
+    ## The receiver is a qualifier rather than a value: a type or an imported
+    ## namespace at the root of a dotted name (`int.MaxValue`, `Console`, `P.Gadget`,
+    ## `System.Console`). The lookup is what tells the two apart.
+    let root = qualifierRoot(n.body)
+    if root.len > 0 and ctx.isTypeName(root):
+      rk = tkType
+      if n.body.kind == nsnIdent:
+        n.body.setType(tkType, canonicalTypeName(n.body.name))
   var kind = tkUnknown
   var tname = ""
   case rk
-  of tkSequence:
-    if n.name in ["Length", "Count"]: kind = tkInt
-  of tkString:
-    if n.name == "Length": kind = tkInt
-    else: kind = tkString
-  of tkException:
-    if n.name == "Message": kind = tkString
   of tkClass:
     ctx.checkMemberAccess(n)
     kind = ctx.memberKind(n.body.typeName, n.name)
-    if kind in {tkNullable, tkClass, tkException}:
-      ## The member's declared type name, which lowering needs for a `T?` and the
-      ## assignment check needs to walk a class chain.
-      tname = ctx.memberTypeName(n.body.typeName, n.name)
-    elif n.body.typeName.len == 0: tname = ""
+    if kind != tkUnknown:
+      if kind in {tkNullable, tkClass, tkException}:
+        ## The member's declared type name, which lowering needs for a `T?` and the
+        ## assignment check needs to walk a class chain.
+        tname = ctx.memberTypeName(n.body.typeName, n.name)
+    else:
+      ## Not a member this module declares: the prelude may declare one
+      ## (`Equals`, `ToString`, `q.Count`), or nothing does.
+      kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
+  of tkSequence, tkString, tkException, tkNullable:
+    kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
   of tkType:
-    ## A longer qualifier, as in `Alias.Console` or `System.Console`.
-    kind = tkType
-  of tkInt, tkFloat, tkBool, tkChar:
-    ## A member of a built-in type, as in `int.MaxValue`.
-    kind = rk
+    ## A namespace's member is a type (`System.Console`); a declared type's member
+    ## is one of its statics, which the library answers for (`string.Empty`,
+    ## `int.MaxValue`, `Array.IndexOf`).
+    if n.body != nil:
+      let recv = n.body.typeName
+      kind = ctx.memberKindOfSurface(ctx.surface.kindOfName(recv), recv, n.name,
+                                     tname)
+    if kind == tkUnknown: kind = tkType
   else: discard
   n.setType(kind, tname)
   result = kind
@@ -513,14 +546,22 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   let callee = n.body
   if callee != nil and callee.kind == nsnMember:
     let rk = ctx.walkExpr(callee.body)
+    var tn = ""
     if rk == tkType:
       ## `Class.Method(...)` or `Namespace.Method(...)`: lowering drops the
       ## qualifier, and the result type is the method's if the class is known.
       owner = unqualified(callee.body.name)
       kind = ctx.memberKind(owner, callee.name)
+      if kind == tkUnknown:
+        ## A static member of a library type: `String.Concat`, `Array.IndexOf`.
+        kind = ctx.memberKindOfSurface(ctx.surface.kindOfName(owner), owner,
+                                       callee.name, tn)
     elif rk == tkClass:
       owner = callee.body.typeName
       kind = ctx.memberKind(owner, callee.name)
+      if kind == tkUnknown:
+        ## Likewise, a member of a class the prelude declares (`Queue.Dequeue`).
+        kind = ctx.memberKindOfSurface(rk, owner, callee.name, tn)
     ## The declared parameter lists, so the arguments can be matched against them.
     ## A receiver the scope does not know (`Console`, a name from a module it does
     ## not cover) has none, and the call is left to Nim.
@@ -918,6 +959,7 @@ proc checkModule*(module: NsNode; scope: NsModuleScope; config: ConfigRef) =
   ## Resolves names, enforces access control, checks the conversions and applies the
   ## base-constructor rule. Diagnostics go through `config`.
   var ctx = NsCheckContext(scope: scope, config: config,
+                           surface: bclSurface(config),
                            types: newTable[string, NsTypeInfo]())
   for d in module.sons: ctx.walkTop(d)
   ## After the walk, so every declaration is looked at exactly once: a `MyObj?` on a

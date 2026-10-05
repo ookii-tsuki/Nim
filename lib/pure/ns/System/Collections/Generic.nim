@@ -5,9 +5,9 @@
 #
 # C# names are kept at the source level (SPEC section 15, "Naming"), so `List<T>`
 # is a `seq[T]` and `Add`, `Contains`, ... are ordinary procs reached through
-# Nim's dot-call syntax. `.Count` is lowered to `.len` by the frontend; `len`
-# exists natively for `seq`/`Table`/`HashSet` and is provided below for
-# Queue/Stack.
+# Nim's dot-call syntax. `.Count` is C#'s name for what Nim spells `len`, so the
+# library declares it per collection below; `Length` reaches the `openArray` procs
+# in `System`, the way C# reaches `Array.Length`.
 #
 # Pinned surface (SPEC section 15.1). Deliberately absent:
 #   * predicate members - Find, FindAll, Exists, RemoveAll, ForEach,
@@ -16,14 +16,14 @@
 #     type).
 #   * TryGetValue(k, out v) - `out` parameters are not parsed yet.
 #
-#   List<T>         Add AddRange Clear Contains IndexOf Insert Remove RemoveAt
-#                   Reverse Sort ToArray, [] and []= via seq
-#   Dictionary<K,V> Add Clear ContainsKey ContainsValue Remove Keys Values,
+#   List<T>         Add AddRange Clear Contains Count IndexOf Insert Remove
+#                   RemoveAt Reverse Sort ToArray, [] and []= via seq
+#   Dictionary<K,V> Add Clear ContainsKey ContainsValue Count Remove Keys Values,
 #                   [] and []= via Table
-#   HashSet<T>      Add Clear Contains Remove ToArray UnionWith IntersectWith
+#   HashSet<T>      Add Clear Contains Count Remove ToArray UnionWith IntersectWith
 #                   ExceptWith
-#   Queue<T>        Enqueue Dequeue Peek len Contains Clear ToArray
-#   Stack<T>        Push Pop Peek len Contains Clear ToArray
+#   Queue<T>        Enqueue Dequeue Peek Count Contains Clear ToArray
+#   Stack<T>        Push Pop Peek Count Contains Clear ToArray
 
 import std/tables
 import std/deques
@@ -51,6 +51,18 @@ proc newDictionary*[K, V](): Dictionary[K, V] = initTable[K, V]()
 proc newHashSet*[T](): HashSet[T] = initHashSet[T]()
 proc newQueue*[T](): Queue[T] = Queue[T](data: initDeque[T]())
 proc newStack*[T](): Stack[T] = Stack[T](data: initDeque[T]())
+
+# --- Count -----------------------------------------------------------------
+#
+# C# reads `Count` on every collection it has; Nim spells the same thing `len`, so
+# each collection C# knows gets a declaration of its own here. `HashSet` is Nim's
+# own type, which the library only builds on, so this is where its `Count` lives.
+
+proc Count*[T](l: List[T]): int32 = int32(l.len)
+proc Count*[K, V](t: Dictionary[K, V]): int32 = int32(t.len)
+proc Count*[T](s: HashSet[T]): int32 = int32(s.len)
+proc Count*[T](q: Queue[T]): int32 = int32(q.data.len)
+proc Count*[T](s: Stack[T]): int32 = int32(s.data.len)
 
 # --- List<T> ---------------------------------------------------------------
 

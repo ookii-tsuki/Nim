@@ -1,0 +1,25 @@
+// A namespace name is global in C#: a fully qualified name needs no `using`,
+// whether it names the library (`System.Console`) or a namespace this
+// compilation declares (`Demo`). The root of a dotted name is told from a value
+// by a lookup, so `(Demo.Gadget)g` is a cast as well.
+namespace Demo
+{
+    class Gadget
+    {
+        public static int Make() { return 5; }
+        public int Size() { return 3; }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            System.Console.WriteLine("hi");
+            System.Console.WriteLine(Demo.Gadget.Make());
+
+            Gadget g = new Gadget();
+            Gadget same = (Demo.Gadget)g;
+            System.Console.WriteLine(same.Size());
+        }
+    }
+}

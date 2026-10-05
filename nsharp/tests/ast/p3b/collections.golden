@@ -60,7 +60,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkIdent 'nums'
-          nkIdent 'len'
+          nkIdent 'Count'
       nkCall
         nkIdent 'WriteLine'
         nkBracketExpr
@@ -100,7 +100,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkIdent 'nums'
-          nkIdent 'len'
+          nkIdent 'Count'
       nkCall
         nkDotExpr
           nkIdent 'nums'
@@ -137,7 +137,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkIdent 'ages'
-          nkIdent 'len'
+          nkIdent 'Count'
       nkCall
         nkIdent 'WriteLine'
         nkBracketExpr
@@ -179,7 +179,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkIdent 'seen'
-          nkIdent 'len'
+          nkIdent 'Count'
       nkVarSection
         nkIdentDefs
           nkIdent 'q'
@@ -210,7 +210,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkIdent 'q'
-          nkIdent 'len'
+          nkIdent 'Count'
       nkVarSection
         nkIdentDefs
           nkIdent 's'
@@ -241,7 +241,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkIdent 's'
-          nkIdent 'len'
+          nkIdent 'Count'
   nkProcDef
     nkPostfix
       nkIdent '*'

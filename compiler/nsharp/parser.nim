@@ -8,7 +8,7 @@
 # constructs, and modifiers N# does not implement, are reported rather than
 # ignored; skipping happens only as error recovery, after a diagnostic.
 
-import std/strutils
+import std/[strutils, sets]
 import ../lineinfos, ../msgs, ../options
 import ast, bcl, diagnostics, lexer
 
@@ -19,6 +19,12 @@ type
     config: ConfigRef
     fileIdx: FileIndex
     condSeq: int            ## counts `?.` markers, so each chain link gets its own
+    surface: NsBclSurface   ## the library's declarations, for telling a cast apart
+    aliases: HashSet[string]
+      ## The namespace aliases this file's own `using` directives introduce. A type
+      ## reached through one (`(P.Gadget)x`) is a cast, not a parenthesised
+      ## expression. A plain namespace name needs no record here: namespaces are
+      ## global, so the compilation's own gather of them answers for every file.
 
 const
   NsModifierWords = ["public", "private", "protected", "internal", "static",
@@ -192,13 +198,21 @@ proc parseDefault(p: var NsParser; t: NsToken): NsNode =
   result = nsn(nsnDefault, p.infoOf(t))
   result.typ = ty
 
+proc isTypeName(p: NsParser; name: string): bool =
+  ## True when a name is a type: C#'s own vocabulary, a type the library declares,
+  ## a type or namespace this compilation declares, or a namespace alias this file
+  ## introduces. The grammar has to tell a cast from a parenthesised expression, and
+  ## this is the symbol table it reaches that through.
+  p.surface.isKnownTypeName(name) or p.aliases.contains(name)
+
 proc looksLikeCast(p: NsParser): bool =
-  ## `(T)x` against `(x)`. The parenthesised name must be spelled like a type and
-  ## must be followed by something that starts a value.
+  ## `(T)x` against `(x)`. The parenthesised name must be a type -- C#'s, the
+  ## library's, this compilation's, or a namespace this file imports -- and must be
+  ## followed by something that starts a value.
   if p.peek.kind != nsLParen: return false
   var i = 1
   if p.peekAhead(i).kind != nsIdent: return false
-  if not isTypeName(p.peekAhead(i).text): return false
+  if not p.isTypeName(p.peekAhead(i).text): return false
   inc i
   while p.peekAhead(i).kind == nsDot and p.peekAhead(i + 1).kind == nsIdent:
     i += 2
@@ -1132,7 +1146,8 @@ proc parseDelegateDecl(p: var NsParser): NsNode =
 proc parseUsing(p: var NsParser): NsNode =
   ## `using X.Y;` names a namespace. `using Alias = X.Y;` names the same namespace
   ## through an alias, which works because lowering drops the qualifier, so the
-  ## target is what gets imported.
+  ## target is what gets imported -- but the alias itself is what a *qualifier*
+  ## written with it is resolved against, so it is recorded on the node.
   result = nsn(nsnUsing, p.here())
   discard p.advance
   let first = p.parseDottedName()
@@ -1143,8 +1158,12 @@ proc parseUsing(p: var NsParser): NsNode =
       p.err(p.peek, ndUnsupported, "an alias of a type")
     else:
       result.name = target
+      result.alias = first
   else:
     result.name = first
+  ## Only the alias is this file's own name for the target; the target itself is a
+  ## namespace, and namespaces are global.
+  if result.alias.len > 0: p.aliases.incl result.alias
   while not p.at(nsSemi) and not p.at(nsEof):
     discard p.advance
   if p.at(nsSemi): discard p.advance
@@ -1194,9 +1213,12 @@ proc parseTopLevelDecl(p: var NsParser; nsPrefix: string): NsNode =
 proc parseNsModule*(source: string; fileIdx: FileIndex;
                     config: ConfigRef): NsNode =
   ## Parses one `.ns` file into an `nsnModule`. No declaration collection, no
-  ## semantic checks and no lowering happen here; see `frontend.nim`.
+  ## semantic checks and no lowering happen here; see `frontend.nim`. The library's
+  ## surface is read here because the grammar needs it: a cast is told from a
+  ## parenthesised expression by looking the name up as a type.
   var p = NsParser(toks: tokenize(source), pos: 0, config: config,
-                   fileIdx: fileIdx)
+                   fileIdx: fileIdx, surface: bclSurface(config),
+                   aliases: initHashSet[string]())
   result = nsn(nsnModule, newLineInfo(fileIdx, 1, 1))
   while not p.at(nsEof):
     if p.at(nsSemi):

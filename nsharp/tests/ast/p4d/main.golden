@@ -1,6 +1,9 @@
 nkStmtList
   nkImportStmt
     nkStrLit "nsharp/intrinsics"
+  nkFromStmt
+    nkStrLit "System/Collections/Generic"
+    nkIdent 'Count'
   nkPragma
     nkIdent 'push'
     nkExprColonExpr
@@ -41,7 +44,9 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 'g'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'g'
             nkIdent 'Name'
       nkCall
         nkIdent 'WriteLine'
@@ -59,7 +64,9 @@ nkStmtList
           nkEmpty
           nkCall
             nkDotExpr
-              nkIdent 'store'
+              nkCall
+                nkIdent 'nsCheckNil'
+                nkIdent 'store'
               nkIdent 'Items'
       nkCall
         nkIdent 'WriteLine'
@@ -70,8 +77,8 @@ nkStmtList
         nkIdentDefs
           nkIdent 'half'
           nkIdent 'int32'
-          nkInfix
-            nkIdent '/'
+          nkCall
+            nkIdent 'nsDiv'
             nkCall
               nkIdent 'Count'
             nkIntLit 2

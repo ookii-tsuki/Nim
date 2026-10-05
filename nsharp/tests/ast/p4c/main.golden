@@ -47,13 +47,17 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 'g'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'g'
             nkIdent 'Name'
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 't'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 't'
             nkIdent 'IsNamed'
           nkIdent 'g'
           nkStrLit "gadget"

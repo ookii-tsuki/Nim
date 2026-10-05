@@ -41,14 +41,18 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 'w'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'w'
             nkIdent 'IsEven'
           nkIntLit 10
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 'w'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'w'
             nkIdent 'IsEven'
           nkIntLit 7
   nkProcDef

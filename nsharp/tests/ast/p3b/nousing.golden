@@ -1,6 +1,10 @@
 nkStmtList
   nkImportStmt
     nkStrLit "nsharp/intrinsics"
+  nkFromStmt
+    nkStrLit "System/Collections/Generic"
+    nkIdent 'Add'
+    nkIdent 'Count'
   nkPragma
     nkIdent 'push'
     nkExprColonExpr
@@ -48,7 +52,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkIdent 'nums'
-          nkIdent 'len'
+          nkIdent 'Count'
   nkProcDef
     nkPostfix
       nkIdent '*'

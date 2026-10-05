@@ -3,7 +3,7 @@
 # Collects declarations from the parsed tree, so the class grammar exists exactly
 # once. Deliberately small: only what the checks and the lowering need.
 
-import std/[tables, sets]
+import std/[tables, sets, strutils]
 import ../options
 import ast
 
@@ -28,7 +28,13 @@ type
   NsModuleScope* = ref object
     classes*: Table[string, NsClassSymbol]
     delegates*: Table[string, NsNode]
+    enums*: HashSet[string]
+      ## The enums in scope. `Color.Green` is a qualifier over one of these, and
+      ## the qualifier is what tells it from a member access on a value.
     usings*: seq[string]
+    namespaces*: HashSet[string]
+      ## Every name that stands for a namespace in scope: `using A.B.C;` makes `A`,
+      ## `A.B` and `A.B.C` all name it, and `using P = A.B.C;` adds `P`.
 
 proc addMember(c: var NsClassSymbol; m: NsNode) =
   ## Records a field, method or property. Every declaration is kept: C# lets a type
@@ -58,14 +64,27 @@ proc collectClass(scope: NsModuleScope; cls: NsNode) =
     else: discard
   scope.classes[cls.name] = sym
 
+proc noteNamespace(scope: NsModuleScope; ns: string) =
+  ## Records a namespace and each of its prefixes: `using A.B.C;` means `A`, `A.B`
+  ## and `A.B.C` all name the same declarations, so all three are qualifiers.
+  var cur = ""
+  for part in ns.split('.'):
+    if part.len == 0: continue
+    cur = if cur.len == 0: part else: cur & "." & part
+    scope.namespaces.incl cur
+
 proc collect(decl: NsNode; scope: NsModuleScope) =
   case decl.kind
   of nsnClassDecl:
     scope.collectClass(decl)
   of nsnDelegateDecl:
     scope.delegates[decl.name] = decl
+  of nsnEnumDecl:
+    scope.enums.incl decl.name
   of nsnUsing:
     scope.usings.add decl.name
+    scope.noteNamespace(decl.name)
+    if decl.alias.len > 0: scope.namespaces.incl decl.alias
   of nsnNamespace:
     if decl.body != nil:
       for d in decl.body.sons: collect(d, scope)
@@ -74,7 +93,9 @@ proc collect(decl: NsNode; scope: NsModuleScope) =
 proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Builds the module scope from a parsed module.
   result = NsModuleScope(classes: initTable[string, NsClassSymbol](),
-                         delegates: initTable[string, NsNode]())
+                         delegates: initTable[string, NsNode](),
+                         enums: initHashSet[string](),
+                         namespaces: initHashSet[string]())
   for d in module.sons: collect(d, result)
 
 proc chain*(scope: NsModuleScope; clsName: string): seq[string] =
@@ -87,6 +108,18 @@ proc chain*(scope: NsModuleScope; clsName: string): seq[string] =
     seen.incl c
     result.add c
     c = scope.classes[c].base
+
+proc baseChain*(scope: NsModuleScope; clsName: string): seq[string] =
+  ## `clsName` followed by its bases, nearest first. Unlike `chain`, a base this
+  ## module does not declare is kept: the library may declare it (`Exception`, a
+  ## Nim defect), and that is what decides whether a class is an exception type.
+  result = @[]
+  var seen = initHashSet[string]()
+  var c = clsName
+  while c.len > 0 and c notin seen:
+    seen.incl c
+    result.add c
+    c = if scope.classes.hasKey(c): scope.classes[c].base else: ""
 
 proc findMember*(scope: NsModuleScope; clsName, member: string):
     tuple[found: bool, access: NsAccess, decl: string] =

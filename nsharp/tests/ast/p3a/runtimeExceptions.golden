@@ -235,7 +235,7 @@ nkStmtList
               nkIdent 'WriteLine'
               nkDotExpr
                 nkIdent 'e'
-                nkIdent 'msg'
+                nkIdent 'Message'
       nkCall
         nkIdent 'WriteLine'
         nkStrLit "done"

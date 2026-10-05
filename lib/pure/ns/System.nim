@@ -36,6 +36,21 @@ type
   NotImplementedException* = object of SystemException
   ObjectDisposedException* = object of InvalidOperationException
 
+  Console* = object
+    ## `.NET`'s `Console` is a static class: nothing is ever an instance of it. It
+    ## is declared so the frontend resolves the name as a type, and its members are
+    ## the module's own procs, reached through the qualifier the frontend drops.
+
+# --- System.Exception -------------------------------------------------------
+#
+# `e.Message` is a property of every exception in C#, and here it is an ordinary
+# proc over the exception root, reached by Nim's dot-call. It is generic because an
+# N# exception class derives from `Exception` as a *value* object and is raised as
+# a `ref` of it, exactly as Nim raises a `ref` of a `Defect`; and because a `ref`
+# does not convert to its base in an argument position.
+
+proc Message*[T: ref Exception](e: T): string = e.msg
+
 # --- System.Int32, Double, Char, String -------------------------------------
 #
 # C# reads these as `static` fields of the built-in types; .NET declares them as
