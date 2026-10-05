@@ -10,6 +10,7 @@ type
     nsIdent, nsIntLit, nsFloatLit, nsStrLit, nsCharLit
     nsLParen, nsRParen, nsLBrace, nsRBrace, nsLBracket, nsRBracket
     nsSemi, nsComma, nsDot, nsColon, nsColonColon, nsQuestion
+    nsQuestionDot, nsQuestionQuestion
     nsAssign, nsEqEq, nsNotEq, nsArrow
     nsPlus, nsMinus, nsStar, nsSlash, nsPercent
     nsLt, nsGt, nsLe, nsGe
@@ -44,6 +45,8 @@ proc `$`*(k: NsTokenKind): string =
   of nsColon: "':'"
   of nsColonColon: "'::'"
   of nsQuestion: "'?'"
+  of nsQuestionDot: "'?.'"
+  of nsQuestionQuestion: "'??'"
   of nsAssign: "'='"
   of nsEqEq: "'=='"
   of nsNotEq: "'!='"
@@ -223,6 +226,8 @@ proc tokenize*(source: string): seq[NsToken] =
         of ">=": nsGe
         of "&&": nsAmpAmp
         of "||": nsPipePipe
+        of "?.": nsQuestionDot
+        of "??": nsQuestionQuestion
         of "=>": nsArrow
         of "::": nsColonColon
         of "++": nsPlusPlus

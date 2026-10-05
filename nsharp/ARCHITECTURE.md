@@ -328,6 +328,20 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v23** - `?.` and `??`. Null-conditional access works on fields, dot-called methods
+  and `a?[i]` indexes, and `??` supplies the absent value, so `a?.Value ?? -1` and
+  `a?.B?.C ?? x` both behave as C# does. Two things make that non-trivial. `?.` is one
+  token, so the member name follows it directly and the *rest of the chain* is parsed
+  as its tail -- C# evaluates the tail only when the receiver is not null, so `a?.B.C`
+  must not become "guard `a.B`, then deref the result". And the tail refers to the
+  guarded value through a marker (`$condN`, a name no C# identifier can spell), which
+  `sema.nim` replaces with the receiver before checking the tail, and `desugar.nim`
+  replaces with a block temporary so the receiver is read exactly once; a chain nests
+  one block per link. The absent value is threaded down the chain, which is what makes
+  a value-typed `a?.Value ?? -1` work at all: C# would give that expression the type
+  `int?`, and N# has no `Nullable<T>` yet, so a value-typed `?.` on its own is rejected
+  with a diagnostic pointing at `??` rather than silently yielding `0`. Suite now 35
+  tests, 44 golden ASTs, 35 C# cross-checks.
 - **v22** - Nil dereference raises, and printing stopped being special-cased.
   Dereferencing a null class reference now raises a catchable `NullReferenceException`
   -- Nim's `NilAccessDefect`, which the library already aliases for the name -- instead

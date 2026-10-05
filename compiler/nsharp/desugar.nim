@@ -15,6 +15,9 @@ const
   ## N# intrinsics, imported into every module: it is where string concatenation
   ## and printing any type live, and C# needs no `using` for either.
   NsIntrinsics* = "nsharp/intrinsics"
+  NsCond = "nsCond"
+    ## The temporary a `?.` chain binds its guarded value to. Each link lowers inside
+    ## its own block, so one name cannot collide across a chain.
 
 type
   Lowerer = object
@@ -217,6 +220,67 @@ proc memberReceiverChecked(l: Lowerer; n: NsNode): PNode =
     checked.add result
     result = checked
 
+proc condTail(l: Lowerer; nd: NsNode; absent: PNode): PNode =
+  ## The body of a `?.`: read the guarded value once, then either yield `absent` or
+  ## evaluate the tail with the temporary as its receiver.
+  let defs = newNodeI(nkIdentDefs, nd.info)
+  defs.add l.id(NsCond, nd.info)
+  defs.add newNodeI(nkEmpty, nd.info)
+  defs.add l.expr(nd.body)
+  let cond = newNodeI(nkInfix, nd.info)
+  cond.add l.id("==", nd.info)
+  cond.add l.id(NsCond, nd.info)
+  cond.add newNodeI(nkNilLit, nd.info)
+  var tailNim = absent
+  if nd.sons.len > 0 and nd.sons[0] != nil:
+    nd.sons[0] = replaceIdentical(nd.sons[0], nd.body, nsnIdent(NsCond, nd.info))
+    let tail = nd.sons[0]
+    if tail.kind == nsnNullDot:
+      ## `a?.B?.C ?? x`: the same absent value belongs to every link of the chain.
+      tailNim = l.condTail(tail, absent)
+    else:
+      tailNim = l.expr(tail)
+  let inner = newNodeI(nkStmtList, nd.info)
+  inner.add newTree(nkLetSection, nd.info, defs)
+  ## `cond` *is* the absent case, so the absent value goes in the branch.
+  inner.add newTree(nkIfExpr, nd.info,
+                    newTree(nkElifExpr, nd.info, cond, copyTree(absent)),
+                    newTree(nkElseExpr, nd.info, tailNim))
+  result = newNodeI(nkBlockExpr, nd.info)
+  result.add empty(nd.info)
+  result.add inner
+
+proc nullDotToNim(l: Lowerer; n: NsNode): PNode =
+  ## `a?.B` on its own yields nil when the receiver is nil; a value-typed one is
+  ## rejected by `sema.nim` unless a `??` supplies the absent value.
+  result = l.condTail(n, newNodeI(nkNilLit, n.info))
+
+proc nullCoalesceToNim(l: Lowerer; n: NsNode): PNode =
+  ## `a ?? b` is `b` when `a` is absent. With a `?.` on the left, `b` is that
+  ## chain's absent value, so the two lower into one block.
+  if n.sons.len == 0: return empty(n.info)
+  let lhs = n.sons[0]
+  let fallback = if n.sons.len > 1: l.expr(n.sons[1]) else: newNodeI(nkNilLit, n.info)
+  if lhs != nil and lhs.kind == nsnNullDot:
+    result = l.condTail(lhs, fallback)
+  else:
+    result = newNodeI(nkBlockExpr, n.info)
+    result.add empty(n.info)
+    let inner = newNodeI(nkStmtList, n.info)
+    let defs = newNodeI(nkIdentDefs, n.info)
+    defs.add l.id(NsCond, n.info)
+    defs.add newNodeI(nkEmpty, n.info)
+    defs.add l.expr(lhs)
+    inner.add newTree(nkLetSection, n.info, defs)
+    let cond = newNodeI(nkInfix, n.info)
+    cond.add l.id("==", n.info)
+    cond.add l.id(NsCond, n.info)
+    cond.add newNodeI(nkNilLit, n.info)
+    inner.add newTree(nkIfExpr, n.info,
+                      newTree(nkElifExpr, n.info, cond, fallback),
+                      newTree(nkElseExpr, n.info, l.id(NsCond, n.info)))
+    result.add inner
+
 proc expr(l: Lowerer; n: NsNode): PNode =
   if n == nil: return newNodeI(nkEmpty, unknownLineInfo)
   case n.kind
@@ -275,6 +339,8 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     else:
       result = newTree(nkInfix, n.info, l.id(n.name, n.info),
                        l.expr(n.sons[0]), l.expr(n.sons[1]))
+  of nsnNullDot: result = l.nullDotToNim(n)
+  of nsnNullCoalesce: result = l.nullCoalesceToNim(n)
   of nsnTernary:
     result = newNodeI(nkIfExpr, n.info)
     result.add newTree(nkElifExpr, n.info, l.expr(n.sons[0]), l.expr(n.sons[1]))

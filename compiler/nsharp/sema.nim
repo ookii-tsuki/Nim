@@ -209,6 +209,14 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   n.setType(kind)
   result = kind
 
+proc markCoalesced(n: NsNode) =
+  ## `a?.B?.C ?? x` supplies `x` for the absent case of *every* link, so none of them
+  ## is a bare value-typed `?.` for the diag in `walkExpr`.
+  if n == nil: return
+  if n.kind == nsnNullDot: n.intVal = 1
+  for s in n.sons: markCoalesced(s)
+  markCoalesced(n.body)
+
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if n == nil: return tkUnknown
   case n.kind
@@ -303,6 +311,35 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     else:
       if lk == tkFloat or rk == tkFloat: result = tkFloat
       elif lk == tkInt: result = tkInt
+    n.setType(result)
+  of nsnNullDot:
+    ## `a?.B`: the guarded value goes back where the marker stood, so the tail is
+    ## checked like any other expression. C# makes a value-typed result `T?`, which
+    ## N# has no type for, so `??` must supply the absent value.
+    discard ctx.walkExpr(n.body)
+    if n.sons.len > 0 and n.sons[0] != nil:
+      n.sons[0] = replaceMarked(n.sons[0], n.name, n.body)
+      result = ctx.walkExpr(n.sons[0])
+    else:
+      result = tkUnknown
+    if result in {tkInt, tkFloat, tkBool, tkChar} and n.intVal == 0:
+      nsError(ctx.config, n.info, ndUnsupported,
+              "a null-conditional value without '??'")
+    n.setType(result)
+  of nsnNullCoalesce:
+    ## `a ?? b`. With a `?.` on the left, `b` is the absent value for *every* link of
+    ## that chain, which is how a value-typed `a?.V ?? b` works without `Nullable<T>`.
+    let lhs = if n.sons.len > 0: n.sons[0] else: nil
+    if lhs != nil and lhs.kind == nsnNullDot:
+      markCoalesced(lhs)
+      result = ctx.walkExpr(lhs)
+    else:
+      let lk = ctx.walkExpr(lhs)
+      if lk in {tkInt, tkFloat, tkBool, tkChar}:
+        nsError(ctx.config, n.info, ndUnsupported,
+                "'??' with a value that cannot be absent")
+      result = lk
+    if n.sons.len > 1: discard ctx.walkExpr(n.sons[1])
     n.setType(result)
   of nsnTernary:
     discard ctx.walkExpr(n.sons[0])

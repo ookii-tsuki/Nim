@@ -472,9 +472,9 @@ v2.
 | String `+` | concatenation | ✅ v1 (Nim spelling) | `nsharp/intrinsics`, imported into every module |
 | `ToString` / `$` | stringify a value | ✅ v1 (Nim spelling) | Nim's `$`; an object prints as its fields |
 | Assignment & compound `= += -= ...` | ✅ | ✅ v1 | front |
-| `??` null-coalescing | ✅ | 🔜 later | desugar |
+| `??` null-coalescing | ✅ | ✅ v1 | desugar (`nsCond` temporary) |
 | `??=` | ✅ | 🔜 later | desugar |
-| `?.` / `?[]` null-conditional | ✅ | 🔜 later | desugar |
+| `?.` / `?[]` null-conditional | ✅ | ✅ v1 | front + desugar (`nsCond` per link) |
 | `?:` ternary | ✅ | ✅ v1 | front (→ `nkIfExpr`) |
 | `is` / `as` | type test/cast | ✅ v1 | front (→ Nim `of`/conv) |
 | `(T)x` explicit cast | conversion | ✅ v1 | front (→ Nim `T(x)`) |
@@ -553,6 +553,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Exceptions | all derive from `Exception` | `Exception` is the root of both `CatchableError` and `Defect` | C# `Exception` → Nim's exception root, so `catch (Exception)` catches runtime errors too; the .NET names are declared by the library, aliasing the defect Nim raises where one exists (`OverflowException` → `OverflowDefect`); `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` | front/lib |
 | `e.Message` | property on every exception | `CatchableError.msg` field | map `.Message` → `.msg` | front |
 | Bool/float spelling | `True`, `NaN`, `∞` | `true`, `nan`, `inf` | Nim's rendering stands; where C# differs the test carries a `.csout` beside its `.out` | lib |
+| `?.` on a value | yields `T?` | no `Nullable<T>` yet | a value-typed `?.` must be coalesced (`a?.V ?? x`), which supplies the absent value to every link of the chain; otherwise it reports `NS9999` | front |
 | Discarding a result | any expression statement may drop a result | unused result is an error | every generated proc is `{.discardable.}` (and the collection shims `{.push discardable.}`) | front/lib |
 
 > The overflow / `checked` / `unchecked` rows all ride on **one** mechanism:

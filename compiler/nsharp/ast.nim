@@ -111,6 +111,8 @@ type
     nsnArrayLit        # sons = elements                        (from `new T[] { .. }`)
     nsnUnary           # name = operator, body = operand
     nsnBinary          # name = operator, sons = [lhs, rhs]
+    nsnNullDot         # name = marker name, body = guarded value, sons = [tail]
+    nsnNullCoalesce    # name = "??", sons = [lhs, rhs]
     nsnTernary         # sons = [cond, ifTrue, ifFalse]
     nsnLambda          # params, body
     nsnIncDec          # name = "inc" or "dec", body = operand (from `++`/`--`)
@@ -231,4 +233,28 @@ proc repr*(n: NsNode; indent = 0): string =
     result.add pad & "body:\n" & repr(n.body, indent + 2)
   for s in n.sons:
     result.add repr(s, indent + 1)
+
+proc replaceMarked*(n: NsNode; marker: string; repl: NsNode): NsNode =
+  ## Every node named `marker` becomes `repl`, `n` itself included, and the result is
+  ## returned. `sema.nim` uses this to put the guarded value back where a `?.` tail
+  ## refers to it, so the tail is checked like any other expression.
+  if n == nil: return nil
+  if n.kind == nsnIdent and n.name == marker: return repl
+  for i in 0 ..< n.sons.len:
+    n.sons[i] = replaceMarked(n.sons[i], marker, repl)
+  if n.body != nil:
+    n.body = replaceMarked(n.body, marker, repl)
+  n
+
+proc replaceIdentical*(n: NsNode; target: NsNode; repl: NsNode): NsNode =
+  ## Every child that *is* `target` becomes `repl`, returned for the same reason.
+  ## `desugar.nim` uses this to read a guarded value once, binding it to a temporary
+  ## wherever it appears.
+  if n == nil: return nil
+  if n == target: return repl
+  for i in 0 ..< n.sons.len:
+    n.sons[i] = replaceIdentical(n.sons[i], target, repl)
+  if n.body != nil:
+    n.body = replaceIdentical(n.body, target, repl)
+  n
 

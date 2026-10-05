@@ -18,6 +18,7 @@ type
     pos: int
     config: ConfigRef
     fileIdx: FileIndex
+    condSeq: int            ## counts `?.` markers, so each chain link gets its own
 
 const
   NsModifierWords = ["public", "private", "protected", "internal", "static",
@@ -316,9 +317,18 @@ proc parsePrimary(p: var NsParser): NsNode =
     discard p.advance
     result = nil
 
-proc parsePostfix(p: var NsParser): NsNode =
-  result = p.parsePrimary()
-  if result == nil: return
+const NsCondMarker = "$cond"
+  ## The name a `?.` tail uses for the guarded value; `desugar.nim` binds it to a
+  ## temporary. `$` cannot appear in a C# identifier, so no source name collides with
+  ## it, and each link of a chain gets its own numbered marker.
+
+proc parsePostfixTail(p: var NsParser; start: NsNode): NsNode =
+  ## The accesses that may follow an expression: `.name`, `(args)`, `[i]`, `++`/`--`
+  ## and the null-conditional forms. Everything after a `?.` belongs to the guarded
+  ## side, because C# evaluates the rest of the chain only when the receiver is not
+  ## null, so a `?.` tail is parsed by this same loop with a marker standing in for
+  ## the receiver.
+  result = start
   while true:
     if p.at(nsDot):
       discard p.advance
@@ -326,6 +336,35 @@ proc parsePostfix(p: var NsParser): NsNode =
       if nameTok.kind != nsIdent: break
       discard p.advance
       result = nsnMember(result, nameTok.text, p.infoOf(nameTok))
+    elif p.at(nsQuestionDot):
+      let opTok = p.advance
+      let nameTok = p.peek
+      ## `?.` is one token, so the member name follows it directly; the rest of the
+      ## chain is parsed on from there and belongs to the guarded side.
+      if nameTok.kind != nsIdent: break
+      discard p.advance
+      inc p.condSeq
+      let marker = nsnIdent(NsCondMarker & $p.condSeq, p.infoOf(opTok))
+      let member = nsnMember(marker, nameTok.text, p.infoOf(nameTok))
+      let n = nsn(nsnNullDot, p.infoOf(opTok))
+      n.name = marker.name
+      n.body = result
+      n.sons = @[parsePostfixTail(p, member)]
+      result = n
+    elif p.at(nsQuestion) and p.peekAhead(1).kind == nsLBracket:
+      let qTok = p.advance
+      discard p.advance                       # the `[`
+      inc p.condSeq
+      let marker = nsnIdent(NsCondMarker & $p.condSeq, p.infoOf(qTok))
+      let idx = nsn(nsnIndex, p.infoOf(qTok))
+      idx.body = marker
+      idx.add p.parseExpr()
+      discard p.expect(nsRBracket)
+      let n = nsn(nsnNullDot, p.infoOf(qTok))
+      n.name = marker.name
+      n.body = result
+      n.sons = @[parsePostfixTail(p, idx)]
+      result = n
     elif p.at(nsLParen):
       let info = result.info
       discard p.advance
@@ -352,6 +391,11 @@ proc parsePostfix(p: var NsParser): NsNode =
       result = n
     else:
       break
+
+proc parsePostfix(p: var NsParser): NsNode =
+  result = p.parsePrimary()
+  if result == nil: return
+  result = p.parsePostfixTail(result)
 
 proc parseUnary(p: var NsParser): NsNode =
   let t = p.peek
@@ -408,13 +452,23 @@ proc parseBinary(p: var NsParser; minPrec: int): NsNode =
   while true:
     var prec = binPrec(p.peek.kind)
     let typeOp = prec == 0 and p.at(nsIdent) and p.peek.text in ["is", "as"]
+    let coalesce = prec == 0 and p.at(nsQuestionQuestion)
     if typeOp:
       ## C# puts `is` and `as` at the relational level, and their right operand is
       ## a type rather than an expression.
       prec = 9
+    elif coalesce:
+      ## `??` sits above the conditional operator and below `||`.
+      prec = 2
     if prec < minPrec or prec == 0: break
     let opTok = p.advance
-    if typeOp:
+    if coalesce:
+      let rhs = p.parseBinary(prec + 1)
+      let n = nsn(nsnNullCoalesce, p.infoOf(opTok))
+      n.name = "??"
+      n.sons = @[result, rhs]
+      result = n
+    elif typeOp:
       let n = nsn(if opTok.text == "is": nsnIs else: nsnAs, p.infoOf(opTok))
       n.body = result
       n.typ = p.parseType()

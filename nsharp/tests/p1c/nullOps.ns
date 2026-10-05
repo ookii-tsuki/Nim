@@ -1,0 +1,38 @@
+// `?.` (null-conditional) and `??` (null-coalescing).
+using System;
+
+namespace Demo
+{
+    class Node
+    {
+        public int Value;
+        public Node Next;
+        public Node Self() { return this; }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Node n = new Node();
+            n.Value = 5;
+
+            Console.WriteLine(n?.Value ?? -1);
+            Node none = null;
+            Console.WriteLine(none?.Value ?? -1);
+            Console.WriteLine(n?.Self().Value ?? -1);
+            Console.WriteLine(none?.Self().Value ?? -1);
+            Console.WriteLine(n?.Next?.Value ?? -1);
+            n.Next = new Node();
+            n.Next.Value = 7;
+            Console.WriteLine(n?.Next?.Value ?? -1);
+            Console.WriteLine((none ?? n).Value);
+
+            Node[] arr = new Node[2];
+            arr[0] = n;
+            Console.WriteLine(arr[0]?.Value ?? -1);
+            Console.WriteLine(arr[1]?.Value ?? -1);
+            Console.WriteLine("done");
+        }
+    }
+}
