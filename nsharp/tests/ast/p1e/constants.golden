@@ -149,15 +149,22 @@ nkStmtList
           nkIdent 'Counter'
           nkCall
             nkIdent 'newCounter'
-      nkAsgn
-        nkDotExpr
-          nkIdent 'c'
-          nkIdent 'MaxValue'
-        nkIntLit 99
+      nkStmtList
+        nkDiscardStmt
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'c'
+        nkAsgn
+          nkDotExpr
+            nkIdent 'c'
+            nkIdent 'MaxValue'
+          nkIntLit 99
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkIdent 'c'
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'c'
           nkIdent 'MaxValue'
   nkProcDef
     nkPostfix

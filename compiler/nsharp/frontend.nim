@@ -27,7 +27,7 @@ proc compileNsSource*(source: string; fileIdx: FileIndex; cache: IdentCache;
   let module = parseNsModule(source, fileIdx, config)
   let scope = collectWithNamespaces(module, config)
   checkModule(module, scope, config)
-  result = lowerModule(module, scope, cache)
+  result = lowerModule(module, scope, cache, config)
 
 proc parseModule*(fileIdx: FileIndex; cache: IdentCache;
                   config: ConfigRef): PNode =

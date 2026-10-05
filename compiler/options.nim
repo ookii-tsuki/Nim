@@ -73,7 +73,7 @@ type                          # please make sure we have under 32 options
                               # (improves code efficiency a lot!)
   TOption* = enum             # **keep binary compatible**
     optNone, optObjCheck, optFieldCheck, optRangeCheck, optBoundsCheck,
-    optOverflowCheck, optRefCheck,
+    optOverflowCheck, optNilCheck, optRefCheck,
     optNaNCheck, optInfCheck, optStaticBoundsCheck, optStyleCheck,
     optAssert, optLineDir, optWarns, optHints,
     optOptimizeSpeed, optOptimizeSize,
@@ -638,12 +638,13 @@ when false:
 const oldExperimentalFeatures* = {dotOperators, callOperator, parallel}
 
 const
-  ChecksOptions* = {optObjCheck, optFieldCheck, optRangeCheck,
+  ChecksOptions* = {optObjCheck, optFieldCheck, optRangeCheck, optNilCheck,
     optOverflowCheck, optBoundsCheck, optAssert, optNaNCheck, optInfCheck,
     optStyleCheck}
 
   DefaultOptions* = {optObjCheck, optFieldCheck, optRangeCheck,
-    optBoundsCheck, optOverflowCheck, optAssert, optWarns, optRefCheck,
+    optBoundsCheck, optOverflowCheck, optNilCheck, optAssert, optWarns,
+    optRefCheck,
     optHints, optStackTrace, optLineTrace, # consider adding `optStackTraceMsgs`
     optTrMacros, optStyleCheck, optCursorInference}
   DefaultGlobalOptions* = {optThreadAnalysis, optExcessiveStackTrace,

@@ -1766,6 +1766,7 @@ proc genFlags*(s: set[TOption]; dest: var string) =
     of optRangeCheck: dest.add "r"
     of optBoundsCheck: dest.add "b"
     of optOverflowCheck: dest.add "c"
+    of optNilCheck: dest.add "n1"
     of optRefCheck: dest.add "r0"
     of optNaNCheck: dest.add "n0"
     of optInfCheck: dest.add "i"
@@ -1830,6 +1831,9 @@ proc parse*(t: typedesc[TOption]; s: string): set[TOption] =
     of 'n':
       if i+1 < s.len and s[i+1] == '0':
         result.incl optNaNCheck
+        inc i
+      elif i+1 < s.len and s[i+1] == '1':
+        result.incl optNilCheck
         inc i
       else: result.incl optNone
     of 'o':

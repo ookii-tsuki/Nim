@@ -223,7 +223,9 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 'a'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'a'
             nkIdent 'Equals'
           nkIdent 'b'
   nkProcDef

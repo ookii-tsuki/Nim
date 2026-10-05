@@ -122,23 +122,9 @@ proc IndexOf*[T](a: openArray[T]; value: T): int32 =
 
 # --- System.Console ---------------------------------------------------------
 
-# C# prints a bool as `True`/`False` (`Console.WriteLine(b)` calls `b.ToString()`);
-# Nim's `$bool` gives `true`/`false`. The float specials differ the same way:
-# Nim spells them `nan`/`inf`/`-inf`.
-proc WriteLine*(x: bool) = echo (if x: "True" else: "False")
-proc Write*(x: bool) = stdout.write(if x: "True" else: "False")
-
-proc WriteLine*[T: SomeFloat](x: T) =
-  if x != x: echo "NaN"
-  elif x == T(Inf): echo "∞"
-  elif x == T(NegInf): echo "-∞"
-  else: echo x
-
-proc Write*[T: SomeFloat](x: T) =
-  if x != x: stdout.write "NaN"
-  elif x == T(Inf): stdout.write "∞"
-  elif x == T(NegInf): stdout.write "-∞"
-  else: stdout.write x
+# `$` is Nim's rendering, so a bool reads `true` and a special float reads `nan`.
+# Where C# spells something differently the test records C#'s output in a `.csout`
+# beside its `.out` (SPEC section 7), rather than the library special-casing it.
 
 proc WriteLine*[T](x: T) = echo x
 proc Write*[T](x: T) = stdout.write x

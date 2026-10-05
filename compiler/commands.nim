@@ -368,7 +368,8 @@ proc compileOptionValue*(conf: ConfigRef; switch: string; known: var bool): bool
   of "implicitstatic": result = contains(conf.options, optImplicitStatic)
   of "patterns", "trmacros": result = contains(conf.options, optTrMacros)
   of "excessivestacktrace": result = contains(conf.globalOptions, optExcessiveStackTrace)
-  of "nilseqs", "nilchecks", "taintmode": result = false
+  of "nilchecks": result = contains(conf.options, optNilCheck)
+  of "nilseqs", "taintmode": result = false
   of "panics": result = contains(conf.globalOptions, optPanics)
   of "jsbigint64": result = contains(conf.globalOptions, optJsBigInt64)
   of "mangle": result = contains(conf.globalOptions, optItaniumMangle)
@@ -380,7 +381,7 @@ proc testCompileOption*(conf: ConfigRef; switch: string, info: TLineInfo): bool 
   case switch.normalize
   of "refchecks": warningDeprecated(conf, info, "refchecks is deprecated!")
   of "patterns": deprecatedAlias(switch, "trmacros")
-  of "nilseqs", "nilchecks", "taintmode": warningOptionNoop(switch)
+  of "nilseqs", "taintmode": warningOptionNoop(switch)
   else: discard
   var known = false
   result = compileOptionValue(conf, switch, known)
@@ -570,7 +571,7 @@ proc specialDefine(conf: ConfigRef, key: string; pass: TCmdLinePass) =
   if cmpIgnoreStyle(key, "danger") == 0 or cmpIgnoreStyle(key, "quick") == 0:
     if pass in {passCmd1, passPP}:
       conf.options.excl {optObjCheck, optFieldCheck, optRangeCheck, optBoundsCheck,
-        optOverflowCheck, optAssert, optStackTrace, optLineTrace, optLineDir}
+        optOverflowCheck, optNilCheck, optAssert, optStackTrace, optLineTrace, optLineDir}
       conf.globalOptions.excl {optCDebug}
 
 proc initOrcDefines*(conf: ConfigRef) =
@@ -889,6 +890,7 @@ proc processSwitch*(switch, arg: string, pass: TCmdLinePass, info: TLineInfo;
     warningDeprecated(conf, info, "refchecks is deprecated!")
     processOnOffSwitch(conf, {optRefCheck}, arg, pass, info)
   of "overflowchecks": processOnOffSwitch(conf, {optOverflowCheck}, arg, pass, info)
+  of "nilchecks": processOnOffSwitch(conf, {optNilCheck}, arg, pass, info)
   of "staticboundchecks": processOnOffSwitch(conf, {optStaticBoundsCheck}, arg, pass, info)
   of "stylechecks": processOnOffSwitch(conf, {optStyleCheck}, arg, pass, info)
   of "linedir": processOnOffSwitch(conf, {optLineDir}, arg, pass, info)
@@ -1330,7 +1332,7 @@ proc processSwitch*(switch, arg: string, pass: TCmdLinePass, info: TLineInfo;
     processOnOffSwitchG(conf, {optEnableDeepCopy}, arg, pass, info)
   of "": # comes from "-" in for example: `nim c -r -` (gets stripped from -)
     handleStdinInput(conf)
-  of "nilseqs", "nilchecks", "symbol", "taintmode", "cs", "deadcodeelim": warningOptionNoop(switch)
+  of "nilseqs", "symbol", "taintmode", "cs", "deadcodeelim": warningOptionNoop(switch)
   of "nimmainprefix": conf.nimMainPrefix = arg
   else:
     if strutils.find(switch, '.') >= 0: options.setConfigVar(conf, switch, arg)

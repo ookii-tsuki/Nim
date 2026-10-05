@@ -204,13 +204,17 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 'd'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'd'
             nkIdent 'GetSecret'
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 'd'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'd'
             nkIdent 'Twice'
   nkProcDef
     nkPostfix

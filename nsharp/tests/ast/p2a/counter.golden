@@ -145,17 +145,23 @@ nkStmtList
             nkIntLit 10
       nkCall
         nkDotExpr
-          nkIdent 'c'
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'c'
           nkIdent 'Inc'
       nkCall
         nkDotExpr
-          nkIdent 'c'
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'c'
           nkIdent 'Inc'
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 'c'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'c'
             nkIdent 'Value'
   nkProcDef
     nkPostfix

@@ -168,25 +168,39 @@ nkStmtList
           nkIdent 'Point'
           nkCall
             nkIdent 'newPoint'
-      nkAsgn
-        nkDotExpr
-          nkIdent 'p'
-          nkIdent 'X'
-        nkIntLit 3
-      nkAsgn
-        nkDotExpr
-          nkIdent 'p'
-          nkIdent 'Y'
-        nkIntLit 4
+      nkStmtList
+        nkDiscardStmt
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'p'
+        nkAsgn
+          nkDotExpr
+            nkIdent 'p'
+            nkIdent 'X'
+          nkIntLit 3
+      nkStmtList
+        nkDiscardStmt
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'p'
+        nkAsgn
+          nkDotExpr
+            nkIdent 'p'
+            nkIdent 'Y'
+          nkIntLit 4
       nkCall
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '+'
           nkDotExpr
-            nkIdent 'p'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'p'
             nkIdent 'X'
           nkDotExpr
-            nkIdent 'p'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'p'
             nkIdent 'Y'
   nkProcDef
     nkPostfix

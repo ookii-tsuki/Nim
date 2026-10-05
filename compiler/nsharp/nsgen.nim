@@ -214,7 +214,7 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: str
 
   let scope = collectWithNamespaces(merged, config)
   checkModule(merged, scope, config)
-  let parts = splitModuleOutput(lowerModule(merged, scope, cache))
+  let parts = splitModuleOutput(lowerModule(merged, scope, cache, config))
 
   ## All types in one type section: Nim resolves mutually recursive types only
   ## within a single section, and the files' types may reference each other.

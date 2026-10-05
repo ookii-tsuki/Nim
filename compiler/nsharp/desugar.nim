@@ -8,7 +8,7 @@
 # a fidelity bug, not a design choice.
 
 import std/[strutils, tables]
-import ../ast, ../idents, ../lineinfos
+import ../ast, ../idents, ../lineinfos, ../options
 import ast, bcl, symbols
 
 const
@@ -22,6 +22,7 @@ type
     cache: IdentCache
     thisName: string        ## "self" in instance members, "" in static ones
     entryPoint: PNode       ## the emitted `Main` proc, if there was one
+    nilChecks: bool         ## whether the compilation has the nil check on
 
 proc id(l: Lowerer; s: string; info: TLineInfo): PNode =
   newAtom(l.cache.getIdentExact(s), info)
@@ -96,6 +97,7 @@ proc annotateLambda(l: Lowerer; lam, declared: NsNode) =
 
 proc expr(l: Lowerer; n: NsNode): PNode
 proc stmtSeq(l: Lowerer; blk: NsNode): PNode
+proc nilableReceiver(l: Lowerer; n: NsNode): bool
 
 proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
   let fp = newNodeI(nkFormalParams, n.info)
@@ -135,8 +137,17 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
      callee.body.typeKind == tkType:
     callee = nsnIdent(callee.name, callee.info)
+  ## `x.Method(...)` on a reference: C# tests the receiver before the call, so a
+  ## method that never touches `self` still throws on a nil receiver. `this` is
+  ## left alone, and the whole check follows the compilation's nil-check setting.
   result = newNodeI(nkCall, n.info)
-  result.add l.expr(callee)
+  if l.nilChecks and callee.kind == nsnMember and l.nilableReceiver(callee.body):
+    let checked = newNodeI(nkCall, n.info)
+    checked.add l.id("nsCheckNil", n.info)
+    checked.add l.expr(callee.body)
+    result.add newTree(nkDotExpr, n.info, checked, l.id(callee.name, n.info))
+  else:
+    result.add l.expr(callee)
   for a in n.sons: result.add l.expr(a)
 
 proc asToNim(l: Lowerer; n: NsNode): PNode =
@@ -185,6 +196,27 @@ proc memberReceiver(l: Lowerer; n: NsNode): PNode =
     if spelled.len > 0: return l.id(spelled, n.info)
   l.expr(n.body)
 
+proc nilableReceiver(l: Lowerer; n: NsNode): bool =
+  ## True for a receiver the nil check may test: a declared *class*. A struct is a
+  ## value, so it can never be nil, and `this` is a parameter a method body cannot
+  ## see as nil without the call-site check having fired first.
+  if n == nil or n.kind == nsnThis: return false
+  if n.typeKind != tkClass: return false
+  let name = n.typeName
+  name.len > 0 and l.scope.classes.hasKey(name) and
+    l.scope.classes[name].classKind == ckClass
+
+proc memberReceiverChecked(l: Lowerer; n: NsNode): PNode =
+  ## A field access on a class reference tests the receiver first, so dereferencing
+  ## null raises `NullReferenceException` instead of faulting. C# tests at the
+  ## access, and `-d:danger` / `--nilChecks:off` turn the whole check off.
+  result = l.memberReceiver(n)
+  if l.nilChecks and l.nilableReceiver(n.body):
+    let checked = newNodeI(nkCall, n.info)
+    checked.add l.id("nsCheckNil", n.info)
+    checked.add result
+    result = checked
+
 proc expr(l: Lowerer; n: NsNode): PNode =
   if n == nil: return newNodeI(nkEmpty, unknownLineInfo)
   case n.kind
@@ -199,7 +231,7 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnCharLit: result = newAtom(nkCharLit, n.intVal, n.info)
   of nsnBoolLit: result = l.id(if n.intVal != 0: "true" else: "false", n.info)
   of nsnMember:
-    result = newTree(nkDotExpr, n.info, l.memberReceiver(n),
+    result = newTree(nkDotExpr, n.info, l.memberReceiverChecked(n),
                      l.id(l.memberToNim(n), n.info))
   of nsnCall: result = l.callToNim(n)
   of nsnIndex:
@@ -374,7 +406,12 @@ proc localDeclToNim(l: Lowerer; n: NsNode): PNode =
   result.add defs
 
 proc assignToNim(l: Lowerer; n: NsNode): PNode =
-  let lhs = l.expr(n.sons[0])
+  ## The left side is lowered without the nil check, because `nsCheckNil(x).f` is
+  ## not an lvalue; the check becomes a statement of its own instead, and only for a
+  ## receiver that is a plain name, so no receiver is evaluated twice.
+  var bare = l
+  bare.nilChecks = false
+  let lhs = bare.expr(n.sons[0])
   if n.name.len == 0:
     result = newTree(nkAsgn, n.info, lhs, l.expr(n.sons[1]))
   else:
@@ -382,6 +419,15 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
     let combined = newTree(nkInfix, n.info, l.id(n.name, n.info),
                            copyTree(lhs), l.expr(n.sons[1]))
     result = newTree(nkAsgn, n.info, lhs, combined)
+  let target = n.sons[0]
+  if l.nilChecks and target != nil and target.kind == nsnMember and
+     target.body != nil and target.body.kind == nsnIdent and
+     l.nilableReceiver(target.body):
+    let check = newNodeI(nkCall, n.info)
+    check.add l.id("nsCheckNil", n.info)
+    check.add bare.expr(target.body)
+    result = newTree(nkStmtList, n.info,
+                     newTree(nkDiscardStmt, n.info, check), result)
 
 proc doWhileToNim(l: Lowerer; n: NsNode): PNode =
   ## C#'s `do { B } while (c)` runs B once and then reads c, and a `continue` in B
@@ -806,10 +852,11 @@ proc makeMainCall(l: Lowerer; procDef: PNode): PNode =
                    newTree(nkElifBranch, info, l.id("isMainModule", info), body))
 
 proc lowerModule*(module: NsNode; scope: NsModuleScope;
-                  cache: IdentCache): PNode =
+                  cache: IdentCache; config: ConfigRef): PNode =
   ## Lowers a whole `.ns` module to the Nim statements the rest of the compiler
   ## consumes.
-  var l = Lowerer(scope: scope, cache: cache)
+  var l = Lowerer(scope: scope, cache: cache,
+                  nilChecks: optNilCheck in config.options)
   var stmts: seq[PNode] = @[]
   for d in module.sons:
     l.lowerDecl(d, stmts)

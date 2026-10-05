@@ -328,6 +328,25 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v22** - Nil dereference raises, and printing stopped being special-cased.
+  Dereferencing a null class reference now raises a catchable `NullReferenceException`
+  -- Nim's `NilAccessDefect`, which the library already aliases for the name -- instead
+  of segfaulting. `desugar.nim` wraps the receiver of any field access or dot-called
+  method on a class reference in the intrinsics' `nsCheckNil`, so a method that never
+  touches `self` throws at the call too, the way C# does; a field *write* gets the
+  check as a statement of its own, since `nsCheckNil(x).f = v` is not an lvalue. The
+  whole thing follows the compilation's `nilChecks` setting, which `-d:danger` and
+  `--nilChecks:off` clear, so a raw build stays raw. That switch had to come back to
+  the compiler first (`options.nim`, `pragmas.nim`, `commands.nim`, `enum2nif.nim`);
+  upstream removed it in 2020 (PR #11570, "remove nil checks") because it had never
+  checked a dereference at all -- only a reset-time guard and a crash handler -- and
+  Araq's own reply, "This was too aggressive", is why the capability is being restored
+  rather than merely documented. The SPEC records what the check does *not* cover,
+  because a check that raises is not the same as being null-safe. Separately, the
+  library stopped special-casing rendering: the `WriteLine`/`Write` `bool` and float
+  overloads are gone, so `$` alone decides, and a test whose C# output therefore
+  differs carries a `.csout` beside its `.out`. Suite now 34 tests, 43 golden ASTs,
+  34 C# cross-checks.
 - **v21** - Exceptions became real types, and the built-in types got their members.
   `Exception` maps to Nim's exception *root* instead of `CatchableError`, so
   `catch (Exception)` catches `Defect`s the way C#'s does, and the .NET exception

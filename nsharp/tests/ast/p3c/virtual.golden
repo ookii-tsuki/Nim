@@ -100,7 +100,9 @@ nkStmtList
             nkIdent 'newBase'
       nkCall
         nkDotExpr
-          nkIdent 'b'
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'b'
           nkIdent 'Speak'
   nkProcDef
     nkPostfix

@@ -1,6 +1,7 @@
 index
+null deref
+null call
 overflow
 zero
-n
 bad
 done

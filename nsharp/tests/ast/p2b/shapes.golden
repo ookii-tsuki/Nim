@@ -224,21 +224,30 @@ nkStmtList
           nkCall
             nkIdent 'newShape'
             nkIntLit 3
-      nkAsgn
-        nkDotExpr
-          nkIdent 'sh'
-          nkIdent 'Sides'
-        nkIntLit 7
+      nkStmtList
+        nkDiscardStmt
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'sh'
+        nkAsgn
+          nkDotExpr
+            nkIdent 'sh'
+            nkIdent 'Sides'
+          nkIntLit 7
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkIdent 'sh'
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'sh'
           nkIdent 'Sides'
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 'sh'
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'sh'
             nkIdent 'Doubled'
       nkVarSection
         nkIdentDefs
@@ -250,7 +259,9 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkIdent 'sq'
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'sq'
           nkIdent 'Sides'
   nkProcDef
     nkPostfix

@@ -89,9 +89,9 @@ proc chckRangeU(i, a, b: uint64): uint64 {.compilerproc.} =
     result = 0
     sysFatal(RangeDefect, "value out of range")
 
-proc chckNil(p: pointer) =
+proc chckNil(p: pointer) {.compilerproc.} =
   if p == nil:
-    sysFatal(NilAccessDefect, "attempt to write to a nil address")
+    sysFatal(NilAccessDefect, "attempt to access a nil address")
 
 proc chckNilDisp(p: pointer) {.compilerproc.} =
   if p == nil:

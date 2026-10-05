@@ -25,3 +25,11 @@ proc nsDiv*[T: SomeInteger](a, b: T): T {.inline.} =
 proc nsMod*[T: SomeInteger](a, b: T): T {.inline.} =
   if b == 0: raise newException(DivByZeroDefect, "Attempted to divide by zero.")
   system.`mod`(a, b)
+
+proc nsCheckNil*[T: ref object](x: T): T {.inline.} =
+  ## C# throws when a method is called on a nil receiver even if the body never
+  ## touches `self`. A dereference check cannot see that, so the receiver is tested
+  ## at the call. `desugar.nim` emits this around a dot-called class receiver; `x`
+  ## is evaluated once, here.
+  if x == nil: raise newException(NilAccessDefect, "attempt to access a nil address")
+  x

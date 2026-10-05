@@ -547,12 +547,12 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `switch` fallthrough | forbidden (empty cases group) | no fallthrough | maps to Nim `case`; empty-case groups allowed; a trailing `break;` is dropped; a non-exhaustive switch gets `else: discard` | front |
 | `Main` / `args` | `Main(string[])`, exit code | module top-level | support both (D5); `int` return → exit code | front |
 | Interpolation format | `$"{x:F2}"` | `strformat`/`formatFloat` | map format specs to Nim format | desugar |
-| `null` deref | `NullReferenceException` | a field read is not checked | `NullReferenceException` is an alias for `NilAccessDefect`, so a `throw` of it is catchable, but Nim inserts no check for a nil field read, so one crashes rather than raising | lib |
+| `null` deref | `NullReferenceException` | no runtime check | `desugar.nim` wraps the receiver of a field access or dot-called method on a class reference in the intrinsics' `nsCheckNil`, so null raises `NullAccessDefect` -- aliased to `NullReferenceException` -- instead of faulting; off under `-d:danger` / `--nilChecks:off` | front/lib |
 | Arrays | `T[]`, `new T[n]` | `seq[T]` | `T[]` → `seq[T]`; `new T[n]` → `newSeq[T](n)`; `new T[]{..}` → `@[..]`; `.Length`/`.Count` → `len` | front |
 | Enum field scope | scoped to the enum type | unqualified globals | `E.A` resolves via Nim qualified access; two enums must not share a field name | front |
 | Exceptions | all derive from `Exception` | `Exception` is the root of both `CatchableError` and `Defect` | C# `Exception` → Nim's exception root, so `catch (Exception)` catches runtime errors too; the .NET names are declared by the library, aliasing the defect Nim raises where one exists (`OverflowException` → `OverflowDefect`); `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` | front/lib |
 | `e.Message` | property on every exception | `CatchableError.msg` field | map `.Message` → `.msg` | front |
-| `WriteLine(bool)` | `True` / `False` | `$bool` gives `true` / `false` | prelude `bool` overloads of `WriteLine`/`Write` print `True`/`False` | lib |
+| Bool/float spelling | `True`, `NaN`, `∞` | `true`, `nan`, `inf` | Nim's rendering stands; where C# differs the test carries a `.csout` beside its `.out` | lib |
 | Discarding a result | any expression statement may drop a result | unused result is an error | every generated proc is `{.discardable.}` (and the collection shims `{.push discardable.}`) | front/lib |
 
 > The overflow / `checked` / `unchecked` rows all ride on **one** mechanism:
@@ -560,6 +560,16 @@ These look like trivial desugars but are not - each needs an explicit rule.
 > `compiler/ccgstmts.nim:1839` and read by codegen at `compiler/ccgexprs.nim:678`,
 > `:712`, `:2959`. Verified: `unchecked { … }` ⟹ `{.push overflowChecks: off.} … {.pop.}`.
 > Always emit the matched `{.pop.}`.
+
+> What the nil check does *not* buy, because raising on a dereference is not the
+> same as being null-safe: it stays silent when the null is only stored, passed or
+> returned (the fault, if there is one, is later and somewhere else), when the
+> receiver is non-nil but invalid -- `cast`, C interop, an uninitialised `alloc`, a
+> data race -- and when a method reached as `this` never touches `self`. The build
+> flag matters too: `-d:danger` and `--nilChecks:off` remove every check, so what a
+> debug run catches can still crash in release. The compile-time counterpart,
+> `--experimental:strictNotNil` (`compiler/nilcheck.nim`), catches null *flow*
+> rather than the dereference, and is worth enabling on top.
 
 ---
 

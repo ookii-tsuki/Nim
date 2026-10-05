@@ -3,6 +3,12 @@ using System;
 
 namespace Demo
 {
+    class Gadget
+    {
+        public int Size;
+        public int Ignore() { return 7; }
+    }
+
     class Program
     {
         static void Main()
@@ -15,6 +21,25 @@ namespace Demo
             catch (IndexOutOfRangeException e)
             {
                 Console.WriteLine("index");
+            }
+
+            Gadget g = null;
+            try
+            {
+                Console.WriteLine(g.Size);
+            }
+            catch (NullReferenceException e)
+            {
+                Console.WriteLine("null deref");
+            }
+
+            try
+            {
+                Console.WriteLine(g.Ignore());
+            }
+            catch (NullReferenceException e)
+            {
+                Console.WriteLine("null call");
             }
 
             int m = 2147483647;
@@ -38,15 +63,6 @@ namespace Demo
             catch (DivideByZeroException e)
             {
                 Console.WriteLine("zero");
-            }
-
-            try
-            {
-                throw new NullReferenceException("n");
-            }
-            catch (NullReferenceException e)
-            {
-                Console.WriteLine(e.Message);
             }
 
             try
