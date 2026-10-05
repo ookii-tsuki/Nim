@@ -1,0 +1,14 @@
+// A declared type is a conversion, and C# refuses the ones with no implicit path.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            int x = "oops";
+            Console.WriteLine(x);
+        }
+    }
+}

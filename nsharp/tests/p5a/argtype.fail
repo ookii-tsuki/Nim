@@ -1,0 +1,3 @@
+This test must fail to compile: argument 1 of `Show` is a `string` where the
+parameter is an `int` (CS1503).
+code: NS1503

@@ -1,0 +1,22 @@
+// The right number of arguments, the wrong type: CS1503.
+using System;
+
+namespace Demo
+{
+    class Box
+    {
+        public void Show(int x)
+        {
+            Console.WriteLine(x);
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Box b = new Box();
+            b.Show("oops");
+        }
+    }
+}

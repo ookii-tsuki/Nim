@@ -110,7 +110,9 @@ proc expr(l: Lowerer; n: NsNode): PNode
 proc stmtSeq(l: Lowerer; blk: NsNode): PNode
 proc nilableReceiver(l: Lowerer; n: NsNode): bool
 proc noneFromName(l: Lowerer; name: string; info: TLineInfo): PNode
+proc someNamed(l: Lowerer; v: PNode; name: string; info: TLineInfo): PNode
 proc presentOf(l: Lowerer; v: NsNode; info: TLineInfo): PNode
+proc wrappedArg(l: Lowerer; a: NsNode): PNode
 
 proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
   let fp = newNodeI(nkFormalParams, n.info)
@@ -140,7 +142,7 @@ proc newToNim(l: Lowerer; n: NsNode): PNode =
     callee = be
   result = newNodeI(nkCall, n.info)
   result.add callee
-  for a in n.sons: result.add l.expr(a)
+  for a in n.sons: result.add l.wrappedArg(a)
 
 proc callToNim(l: Lowerer; n: NsNode): PNode =
   var callee = n.body
@@ -161,7 +163,7 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
     result.add newTree(nkDotExpr, n.info, checked, l.id(callee.name, n.info))
   else:
     result.add l.expr(callee)
-  for a in n.sons: result.add l.expr(a)
+  for a in n.sons: result.add l.wrappedArg(a)
 
 proc asToNim(l: Lowerer; n: NsNode): PNode =
   ## `x as T` yields nil instead of raising, and reads its operand once. The block
@@ -533,6 +535,17 @@ proc noneFromName(l: Lowerer; name: string; info: TLineInfo): PNode =
   result = newNodeI(nkCall, info)
   result.add l.id("none", info)
   result.add l.id(nimTypeName(name), info)
+
+proc wrappedArg(l: Lowerer; a: NsNode): PNode =
+  ## One call argument, with the implicit conversion `sema.nim` chose from the
+  ## parameter's declared type applied: a value into a `T?` parameter becomes
+  ## `some[T](value)` and `null` into one becomes `none(T)`, which is what C# does
+  ## without writing anything.
+  result = l.expr(a)
+  case a.argConv
+  of acSome: result = l.someNamed(result, a.argConvType, a.info)
+  of acNoneOption: result = l.noneFromName(a.argConvType, a.info)
+  of acNone: discard
 
 proc presentOf(l: Lowerer; v: NsNode; info: TLineInfo): PNode =
   ## `nsPresent(v)`, for a cast of a `T?` to its element type.

@@ -14,7 +14,8 @@ type
     isMethod*: bool
     isProperty*: bool
     isStatic*: bool
-    typ*: NsNode              ## declared type of a field or property
+    typ*: NsNode              ## declared type of a field, or a method's return type
+    params*: seq[NsNode]      ## a method's declared parameter list
 
   NsClassSymbol* = object
     name*: string
@@ -22,6 +23,7 @@ type
     classKind*: NsClassKind
     members*: seq[NsMemberSymbol]
     ctorArities*: seq[int]
+    ctorParams*: seq[seq[NsNode]]  ## one parameter list per declared constructor
 
   NsModuleScope* = ref object
     classes*: Table[string, NsClassSymbol]
@@ -29,16 +31,18 @@ type
     usings*: seq[string]
 
 proc addMember(c: var NsClassSymbol; m: NsNode) =
-  ## Records a field, method or property. A redeclaration is ignored.
-  for existing in c.members:
-    if existing.name == m.name: return
+  ## Records a field, method or property. Every declaration is kept: C# lets a type
+  ## declare overloads, which differ only in their parameter lists, and a call site
+  ## has to be matched against all of them. Lookups still answer with the first
+  ## declaration, which is the behaviour a single declaration had.
   c.members.add NsMemberSymbol(
     name: m.name,
     access: m.attrs.access,
     isMethod: m.kind == nsnMethodDecl,
     isProperty: m.kind == nsnPropertyDecl,
     isStatic: m.attrs.isStatic,
-    typ: m.typ)              ## field/property type, or a method's return type
+    typ: m.typ,              ## field/property type, or a method's return type
+    params: (if m.kind == nsnMethodDecl: m.params else: @[]))
 
 proc collectClass(scope: NsModuleScope; cls: NsNode) =
   var sym = NsClassSymbol(name: cls.name, classKind: cls.classKind)
@@ -50,6 +54,7 @@ proc collectClass(scope: NsModuleScope; cls: NsNode) =
       sym.addMember(m)
     of nsnCtorDecl:
       sym.ctorArities.add m.params.len
+      sym.ctorParams.add m.params
     else: discard
   scope.classes[cls.name] = sym
 
@@ -117,3 +122,23 @@ proc memberNames*(scope: NsModuleScope; clsName: string): seq[string] =
     for c in scope.chain(clsName):
       for m in scope.classes[c].members:
         if m.name notin result: result.add m.name
+
+proc memberOverloads*(scope: NsModuleScope; clsName, member: string): seq[seq[NsNode]] =
+  ## Every declared parameter list for `member` along the class chain, nearest class
+  ## first. `findMemberInfo` answers what the name *means*; this answers what each
+  ## overload *takes*, which is what a call site has to be matched against. An empty
+  ## result means the name is not a method of that class, so the call is not ours to
+  ## judge (a library method, or a name the frontend cannot resolve).
+  result = @[]
+  if clsName.len == 0: return
+  for c in scope.chain(clsName):
+    for m in scope.classes[c].members:
+      if m.name == member and m.isMethod: result.add m.params
+
+proc ctorOverloads*(scope: NsModuleScope; clsName: string): seq[seq[NsNode]] =
+  ## The declared constructors of `clsName`. A class that declares none has the
+  ## implicit parameterless one, so `new C(1)` is CS1729 rather than unknown.
+  result = @[]
+  if not scope.classes.hasKey(clsName): return
+  result = scope.classes[clsName].ctorParams
+  if result.len == 0: result = @[@[]]

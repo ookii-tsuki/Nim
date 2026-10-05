@@ -1,0 +1,25 @@
+// A `catch` clause naming something that is not an exception: CS0155.
+using System;
+
+namespace Demo
+{
+    class Gadget
+    {
+        public int Id;
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            try
+            {
+                Console.WriteLine("try");
+            }
+            catch (Gadget g)
+            {
+                Console.WriteLine(g.Id);
+            }
+        }
+    }
+}

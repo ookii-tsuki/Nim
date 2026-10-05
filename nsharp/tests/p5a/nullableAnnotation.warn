@@ -1,0 +1,6 @@
+This test must compile and run, but its compilation must *also* report a warning:
+`Gadget?` and `string?` are annotations on types that are already nullable, which is
+the condition C# gives CS8632 for. `run.sh` recompiles it with warnings enabled and
+requires the code, so the warning cannot silently go away. The third line is the
+value-type `int?`, which is `Nullable<T>` and warns about nothing.
+code: NS8632

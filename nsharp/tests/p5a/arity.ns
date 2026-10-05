@@ -1,0 +1,22 @@
+// A call with more arguments than any overload takes: CS1501.
+using System;
+
+namespace Demo
+{
+    class Box
+    {
+        public void Show(int x)
+        {
+            Console.WriteLine(x);
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Box b = new Box();
+            b.Show(1, 2);
+        }
+    }
+}

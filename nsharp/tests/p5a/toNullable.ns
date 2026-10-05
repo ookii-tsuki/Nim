@@ -1,0 +1,64 @@
+// A bare value, or `null`, where a `T?` is expected: C# converts at the call and so
+// does N# -- `some(T)` for the value, `none(T)` for the absent one. This is the gap
+// §7.3 recorded as unavailable while N# had no argument-level type checking.
+using System;
+
+namespace Demo
+{
+    class Box
+    {
+        public int? Slot;
+
+        public Box(int? start)
+        {
+            Slot = start;
+        }
+
+        public void Set(int? value)
+        {
+            Slot = value;
+        }
+
+        public void Show(int x)
+        {
+            Console.WriteLine("int " + x);
+        }
+
+        public void Show(int? x)
+        {
+            Console.WriteLine("nullable " + (x ?? -1));
+        }
+
+        public void SetSlot(int start)
+        {
+            Slot = start;                    // the same conversion on the write path
+        }
+
+        public int? SlotPlus(int extra)
+        {
+            return Slot + extra;             // and on `return`
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Box a = new Box(5);              // int -> int? at a constructor
+            Console.WriteLine(a.Slot ?? -1);
+            Box b = new Box(null);           // null -> int? at a constructor
+            Console.WriteLine(b.Slot ?? -1);
+
+            a.Set(9);                        // int -> int? at a method call
+            Console.WriteLine(a.Slot ?? -1);
+            a.Set(null);
+            Console.WriteLine(a.Slot ?? -1);
+
+            a.SetSlot(11);
+            Console.WriteLine(a.SlotPlus(1) ?? -1);
+
+            a.Show(3);                       // the exact overload wins
+            a.Show(null);                    // and this one only the `T?` overload takes
+        }
+    }
+}

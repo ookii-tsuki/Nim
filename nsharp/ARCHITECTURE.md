@@ -221,12 +221,16 @@ Test suite (21 total): `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter`,
 `p3c/virtual`, `p3c/interface`, `p3c/fieldinit`.
 
 A `<name>.fail` marker means both N# and C# must reject the program (an access
-violation, a missing base constructor). A `<name>.unsupported` marker means the
+violation, a missing base constructor, a conversion C# refuses). A
+`<name>.unsupported` marker means the
 program is **valid C# that N# deliberately refuses**: `run.sh` requires the N#
 compile to fail and `run_cs.sh` requires the C# compiler to accept it, so the
 marker cannot be used to hide a broken test. `p3c/virtual`, `p3c/interface` and
 `p3c/fieldinit` cover the modifiers and constructs that Stage 3 of the parser
-cleanup stopped ignoring silently.
+cleanup stopped ignoring silently. A `<name>.warn` marker is for the diagnostics
+that must be *reported and not be fatal* (the CS8632-style annotation warning):
+`run.sh` runs the test as usual and then recompiles it with warnings enabled to
+require the code, so a warning that silently disappears fails the suite.
 
 `nsharp/tests/run.sh` is the N# runner; it then runs `nsharp/tests/run_cs.sh`,
 the C#<->N# equivalence gate, unless `NS_SKIP_CS=1` is set. Because every `.ns`
@@ -241,7 +245,7 @@ when `dotnet` is not on PATH.
 cleanup, see PARSER-CLEANUP.md), run by `run.sh` unless `NS_SKIP_AST=1`. It
 builds `compiler/nsharp/tools/dumpast.nim`, a standalone tool that drives
 `parseNsModule` directly so the compiler tree stays untouched, and diffs its
-output against `nsharp/tests/ast/<name>.golden` for all 18 `.ns` files (including
+output against `nsharp/tests/ast/<name>.golden` for every `.ns` file (including
 the module-only `p1b/Math.ns` and the expected-failure tests). The dump is
 deliberately the *parse output*, not post-`sem`: the lowering fused into the
 parser is exactly what the refactor must preserve, and a program's stdout cannot
@@ -257,7 +261,7 @@ single-purpose modules rather than one parse-and-lower script, and
 | `compiler/nsharp/ast.nim` | the N# syntax tree (`NsNode`), which mirrors C# syntax |
 | `compiler/nsharp/parser.nim` | tokens -> `NsNode`; grammar only, no name mapping |
 | `compiler/nsharp/symbols.nim` | `NsNode` -> module scope (declaration collection) |
-| `compiler/nsharp/sema.nim` | checks and name resolution over the tree |
+| `compiler/nsharp/sema.nim` | checks, name resolution and type checking over the tree |
 | `compiler/nsharp/bcl.nim` | the one C#-to-Nim name and namespace table |
 | `compiler/nsharp/diagnostics.nim` | the `NSxxxx` codes and their text |
 | `compiler/nsharp/desugar.nim` | `NsNode` -> Nim `PNode` (all lowering) |
@@ -328,6 +332,37 @@ rule), and static properties are not yet supported.
 ---
 
 *Change log*
+- **v25** - Argument-level type checking, and the `?` on an already-nullable type.
+  `sema.nim` now matches a call against the *declared* parameter lists -- every
+  overload, not just the first declaration of the name -- so the frontend knows what
+  each argument has to be, and the two things that follow from that are the point of
+  the change. First, C#'s implicit conversion into a `T?` happens where it always
+  should have: a bare value or `null` for a `T?` parameter, initialiser, assignment or
+  `return` is recorded on the argument node as `argConv` and spelled by lowering as
+  `some(T)(v)` or `none(T)`, which closes the §7.3 gap that said a value could not be
+  passed where a `T?` was expected. Overload resolution prefers the candidate that
+  needs the fewest conversions, so an exact `Show(int)` beats `Show(int?)`, and only
+  the `null` call reaches the `T?` one. Second, the refusals: a value or `null` the
+  target cannot take (CS0029, CS0037), an argument list short of or past every
+  overload (CS1501, CS7036), an argument of the wrong type (CS1503), a `new` with no
+  matching constructor (CS1729), a condition that is not a `bool`, a `throw` of
+  something that is not an `Exception`, and a `catch` that names something that is not
+  one (CS0155) are all reported with C#'s own code before anything is lowered. Where
+  Roslyn gives one code for two conditions N# does the same: `NS7036` covers both a
+  short argument list that has exactly one candidate to blame and a constructor that
+  must call a base constructor. Every rule is written so that what the frontend cannot
+  *see* -- an unresolved receiver, an enum, a type from a module it does not cover --
+  counts as compatible, so Nim keeps the last word and N# never refuses code Nim would
+  have accepted. `MyObj?`/`string?` on an already-nullable type was a silent no-op and
+  is now reported as NS8632, the code C# uses while the `#nullable` annotations
+  context is off, which for N# is always; a `struct` is exempt because C# really does
+  make that `Nullable<T>`. Writing this turned up a latent bug in `diagnostics.nim`:
+  the `NSxxxx` text table had drifted out of order from the enum that indexes it, so
+  four codes printed another condition's message. The suite grew a `.warn` marker for
+  a diagnostic that must be reported and *not* be fatal -- `run.sh` recompiles that
+  test with warnings enabled and requires the code -- and a new `p5a/` directory whose
+  nine expected-failure tests are each cross-checked against Roslyn by code. Suite now
+  47 tests, 56 golden ASTs, 47 C# cross-checks.
 - **v23** - `?.` and `??`. Null-conditional access works on fields, dot-called methods
   and `a?[i]` indexes, and `??` supplies the absent value, so `a?.Value ?? -1` and
   `a?.B?.C ?? x` both behave as C# does. Two things make that non-trivial. `?.` is one
@@ -355,7 +390,8 @@ rule), and static properties are not yet supported.
   needed the element type named, so `sema.nim` records a canonical name on every type
   node and reads the declared type of a member through `memberTypeName`. Two gaps are
   recorded rather than worked around: a bare value or `null` cannot be passed where a
-  `T?` parameter is expected, because N# does no argument-level type checking, and
+  `T?` parameter is expected, because N# does no argument-level type checking (v25
+  closed this one), and
   `1 + a` has no lifted form because the result type would follow the literal. Suite
   now 36 tests, 45 golden ASTs, 36 C# cross-checks.
 - **v22** - Nil dereference raises, and printing stopped being special-cased.

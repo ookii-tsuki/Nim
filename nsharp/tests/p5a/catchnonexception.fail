@@ -1,0 +1,4 @@
+This test must fail to compile: `catch (Gadget g)` catches something that does not
+derive from `Exception` (CS0155), which is what the message about "caught or
+thrown" is really for.
+code: NS0155

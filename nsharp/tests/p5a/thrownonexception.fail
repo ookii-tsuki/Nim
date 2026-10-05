@@ -1,0 +1,3 @@
+This test must fail to compile: `throw 5` needs an `Exception`, and Roslyn reports
+the value type as the failing implicit conversion to `System.Exception` (CS0029).
+code: NS0029

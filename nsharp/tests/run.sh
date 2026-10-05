@@ -3,9 +3,11 @@
 #
 #   * `<name>.ns` with a sibling `<name>.out`  -> stdout must match the `.out`
 #   * `<name>.ns` with a sibling `<name>.fail` -> compilation must FAIL
+#   * `<name>.ns` with a sibling `<name>.warn` -> compiles and runs as above, and the
+#     compilation must also report the diagnostic the marker names
 #
-# A `.fail` or `.unsupported` marker may name the diagnostic it expects with a
-# `code: NSxxxx` line, which the output must then carry.
+# A `.fail`, `.unsupported` or `.warn` marker may name the diagnostic it expects with
+# a `code: NSxxxx` line, which the output must then carry.
 #
 # Usage:  NIM=/path/to/nim ./nsharp/tests/run.sh
 # Build an N#-capable compiler first (see nsharp/ARCHITECTURE.md section 3.1).
@@ -64,6 +66,24 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
     echo "--- expected ---"; echo "$want"
     echo "--- got ---"; echo "$got"
     fail=1
+    continue
+  fi
+  # A `.warn` marker pins a diagnostic that must be *reported* and not be fatal, so
+  # the compile has to be repeated with warnings on: the run above silences them.
+  warnmark="${ns%.ns}.warn"
+  [ -f "$warnmark" ] || continue
+  want="$(sed -n 's/^code: *//p' "$warnmark" | head -1)"
+  if ! "$NIM" c --hints:off --lib:"$lib" -o:"$bin" "$ns" \
+        > /tmp/ns_test_warn.log 2>&1; then
+    echo "FAIL (warning expected, but the compile failed): ${ns#$root/}"
+    sed -n '1,5p' /tmp/ns_test_warn.log
+    fail=1
+  elif [ -n "$want" ] && ! grep -q "$want" /tmp/ns_test_warn.log; then
+    echo "FAIL (marker names $want): ${ns#$root/}"
+    sed -n '1,5p' /tmp/ns_test_warn.log
+    fail=1
+  else
+    echo "ok (warns $want, and still runs): ${ns#$root/}"
   fi
 done
 

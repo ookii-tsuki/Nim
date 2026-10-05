@@ -1,0 +1,14 @@
+// `null` has no value form, so a value type refuses it. CS0037.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            int x = null;
+            Console.WriteLine(x);
+        }
+    }
+}

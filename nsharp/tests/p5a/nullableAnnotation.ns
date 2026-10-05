@@ -1,0 +1,33 @@
+// `Gadget?` on a reference type is an annotation, and C# does nothing with it while
+// the `#nullable` annotations context is off -- which is the default. C# warns
+// CS8632 there, and N# reports NS8632 with the same digits, since N# has no context
+// to turn it on. `int?` is the value-type form, `Nullable<T>`, and is not this.
+using System;
+
+namespace Demo
+{
+    class Gadget
+    {
+        public int Id;
+
+        public Gadget(int id)
+        {
+            Id = id;
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Gadget? g = new Gadget(7);       // CS8632: a reference is nullable already
+            Console.WriteLine(g.Id);
+
+            string? s = "hi";                // CS8632: and so is a string
+            Console.WriteLine(s.Length);
+
+            int? n = 3;                      // Nullable<int>: nothing to warn about
+            Console.WriteLine(n ?? -1);
+        }
+    }
+}

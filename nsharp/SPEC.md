@@ -203,7 +203,7 @@ are excluded: N# has no `void` type and no decimal.
 | `List<T>`, `Dictionary<K,V>`, `HashSet<T>`, `Queue<T>`, `Stack<T>` | collections | ✅ v1 | lib |
 | `Span<T>`, `Memory<T>` | views | 🔜 later | lib |
 | `Nullable<T>` / `int?` | nullable value | ✅ v1 | lib (→ `Option[T]`) |
-| Nullable reference types `string?` | NRT annotations | 🔜 later | sem |
+| Nullable reference types `string?` | NRT annotations | ✅ v1 (no-op, §7.3) | front (reported as the CS8632-style warning) |
 | `object`-typed boxes | boxing | 🔜 later | sem |
 | `IEnumerable<T>` etc. | interfaces | ✅ v1 (static/concept) | sem/lib |
 | Pointers `T*`, `&`, `*`, `cast` | unsafe | ✅ v1 | front (→ `ptr`/`addr`/`[]`/`cast`) |
@@ -540,7 +540,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `checked` and conversions | covers overflow **and** conversions | only `overflowChecks` is switched | a conversion that is out of range still raises `RangeDefect` (aliased `ArgumentOutOfRangeException`) where C# raises `OverflowException` | desugar |
 | `==` / `Equals` | class = reference, struct = value | whatever is overloaded | class → reference `==`; struct/record → value `==`; `Equals`→`==` | desugar/sem |
 | `ToString()` | virtual method | `$` proc | map `ToString` → `$` | desugar |
-| Numeric conversions | implicit widening, explicit narrowing | stricter | implicit widening; explicit narrowing | desugar/sem |
+| Numeric conversions | implicit widening, explicit narrowing | stricter | implicit widening; explicit narrowing. The refusals the frontend can *see* are diagnosed with C#'s own code (CS0029, CS0037, CS1503) before anything is lowered; what it cannot see -- an unresolved name, an enum, a type from a module it does not cover -- counts as compatible, so Nim keeps the last word | front/sem |
 | `(T)x` vs `(x)` | the symbol table decides | - | the parenthesised name must be spelled like a type (a C# built-in, or uppercase) **and** be followed by a value, so `(x) - 1` is a subtraction while `(Foo) - 1` is a cast | front |
 | `do-while` and `continue` | the check runs *after* the body, so `continue` re-tests it | `while` tests before | one body copy under a first-pass flag (`while first or c`, cleared before the body), leaving `break` and `continue` to Nim's own loop | desugar |
 | `using` keyword | directive **and** statement | - | disambiguate by context | front |
@@ -554,10 +554,11 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `e.Message` | property on every exception | `CatchableError.msg` field | map `.Message` → `.msg` | front |
 | Bool/float spelling | `True`, `NaN`, `∞` | `true`, `nan`, `inf` | Nim's rendering stands; where C# differs the test carries a `.csout` beside its `.out` | lib |
 | `T?` / `Nullable<T>` | `struct Nullable<T> { T value; bool hasValue; }` | `Option[T]` has the same shape: a value plus a flag, and a bare pointer for a reference type | `T?` → `Option[T]` for a value type; a reference is nullable already, so `Node?` is just `Node` | front |
+| `MyObj?` / `string?` | an annotation on a type that is nullable already; C# warns CS8632 while the `#nullable` annotations context is off, which is the default | a reference type has no `Option`, so the `?` is nothing to lower | accepted as a no-op and reported as NS8632 -- the same digits. N# has no `#nullable` context, so the warning is unconditional. A `struct` is exempt: C# really does make that `Nullable<T>` | front |
 | Lifted operators on `T?` | `a + b` is absent when either operand is; `a > b` is a plain `bool`, false then | none | ordinary procs over `Option` in the intrinsics, so no member name is known to the compiler; `/` and `%` reuse the `nsDiv`/`nsMod` check | lib |
 | `.Value` / `.HasValue` / `GetValueOrDefault()` / `x == null` | members of `Nullable<T>` | `get` / `isSome`, structural `==` | ordinary procs over `Option` reached by Nim's own dot-call, the way `int.high` reaches `high(int32)`; `== null` lowers to a comparison against `none(T)` | lib |
 | `(T)x` on a `T?` | unwraps, throwing `InvalidOperationException` when absent | `get` raises `UnpackDefect` | unwrapped in lowering; the thrown type is the recorded divergence | front |
-| A bare value for a `T?` *parameter* | implicit conversion at the call | - | unavailable: N# does no argument-level type checking, so a parameter's type is unknown where the arguments are lowered. Declare the local first, or assign through a field | - |
+| A bare value or `null` for a `T?` target | implicit conversion wherever a value is bound: an argument, an initialiser, an assignment, a `return` | - | `sema.nim` matches a call against the *declared* parameter lists (every overload, not just the first declaration) and records the conversion the winning one needs on the argument node; `desugar.nim` spells it as `some(T)(v)` or `none(T)`. An argument the scope cannot match is left to Nim, so a library method or a type from a module the frontend does not cover is never a false refusal | front |
 | Discarding a result | any expression statement may drop a result | unused result is an error | every generated proc is `{.discardable.}` (and the collection shims `{.push discardable.}`) | front/lib |
 
 > The overflow / `checked` / `unchecked` rows all ride on **one** mechanism:
@@ -678,6 +679,11 @@ map directly. The cost is in **constraints**, which map to Nim
 
 **Note:** Nim closures (`{.closure.}` procs) cover the 95% case (single-target
 delegates). Multicast delegates and `event` become a small `lib` library type.
+
+**Known gap:** a lambda written *directly* as an argument still needs its parameter
+types from the delegate the parameter declares, which lowering does not yet copy in
+from the call site; bind it to a local of the delegate type first
+(`IntFn dbl = x => x * 2;`), then pass the local.
 
 ---
 
@@ -903,28 +909,40 @@ code:
 
 | N# | C# | Condition |
 |---|---|---|
+| `NS0029` | CS0029 | a value cannot be converted to the type expected of it (an initialiser, an assignment, a `return`, a condition, or `throw`) |
+| `NS0037` | CS0037 | `null` for a non-nullable value type |
 | `NS0122` | CS0122 | a member is inaccessible |
+| `NS0155` | CS0155 | a `catch` names something that is not an `Exception` |
 | `NS0246` | CS0246 | a `using` names no namespace or module |
 | `NS1001` | CS1001 | identifier expected |
 | `NS1002` | CS1002 | `;` expected |
 | `NS1003` | CS1003 | syntax error, a token expected |
 | `NS1026` | CS1026 | `)` expected |
+| `NS1501` | CS1501 | no overload takes this many arguments |
+| `NS1503` | CS1503 | an argument cannot be converted to what the overload's parameter takes |
 | `NS1513` | CS1513 | `}` expected |
 | `NS1514` | CS1514 | `{` expected |
 | `NS1515` | CS1515 | `in` expected |
 | `NS1519` | CS1519 | invalid token in a member declaration list |
 | `NS1525` | CS1525 | invalid expression term |
+| `NS1729` | CS1729 | a type has no constructor that takes this many arguments |
 | `NS2001` | CS2001 | source file could not be found |
-| `NS7036` | CS7036 | a constructor requires base arguments |
+| `NS7036` | CS7036 | an argument list fell short of the one candidate's parameters, naming the first parameter it left out; also a constructor that must call a base constructor |
+| `NS8632` | CS8632 | a `?` was written on a type that is nullable already (a warning) |
 | `NS9001` | - | the parser made no progress |
 | `NS9002` | - | two namespaces use each other |
 | `NS9999` | - | a construct N# does not support yet |
 
-An error Nim raises on the lowered code (an undeclared name, a type mismatch, or a
-bad arity) still prints Nim's own text and carries no `NS` code. Giving those codes
-needs name resolution in the frontend, which is not in v1.
+`NS7036` is one code for both conditions because Roslyn gives one code for both:
+which candidate an argument list fell short of is what the message names.
 
-A `.fail` or `.unsupported` marker may name the code it expects:
+An error Nim raises on the lowered code (an undeclared name, a type mismatch, a bad
+arity the frontend could not see) still prints Nim's own text and carries no `NS`
+code. What the frontend *can* see it now reports first, with C#'s code: the type of
+an argument, an initialiser, an assignment, a `return`, a condition and a `throw`;
+the arity of a call and of a `new`; and the type a `catch` names.
+
+A `.fail`, `.unsupported` or `.warn` marker may name the code it expects:
 
 ```
 This test must fail to compile: it accesses a private base-class member.
@@ -934,6 +952,15 @@ code: NS0122
 `run.sh` then requires that code in the compiler output, and `run_cs.sh` requires
 the digits to appear among the codes Roslyn reports for the same file, skipping the
 reserved band.
+
+A `.warn` marker is the same contract for a diagnostic that must *not* be fatal: the
+test compiles and its stdout is compared as usual, and the compile is repeated with
+warnings enabled to require the code.
+
+```
+This test must compile and run, but its compilation must report a warning.
+code: NS8632
+```
 
 When N# deliberately renders something differently, the test carries a `.csout` file
 holding what C# produces, and `run_cs.sh` requires that instead of the `.out`:

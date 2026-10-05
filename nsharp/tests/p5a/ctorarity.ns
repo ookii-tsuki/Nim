@@ -1,0 +1,29 @@
+// No constructor takes no arguments: CS1729, *because* there is a choice between
+// two declarations. With a single one C# names the missing parameter (CS7036)
+// instead, which `p5a/missingarg` covers on the method side.
+using System;
+
+namespace Demo
+{
+    class Box
+    {
+        public Box(int start)
+        {
+            Console.WriteLine(start);
+        }
+
+        public Box(int start, int step)
+        {
+            Console.WriteLine(start + step);
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Box b = new Box();
+            Console.WriteLine(b);
+        }
+    }
+}

@@ -28,6 +28,14 @@ type
     ndConstructorRequired
     ndParserStalled
     ndNamespaceCycle
+    ndCannotConvert
+    ndCannotConvertNull
+    ndArgumentNoOverload
+    ndArgumentCannotConvert
+    ndCtorNoOverload
+    ndMissingArgument
+    ndNotAnException
+    ndNullableAnnotation
     ndUnsupported
 
   NsDiagInfo* = tuple[code, msg: string]
@@ -57,6 +65,19 @@ const
     (code: "9001", msg: "the parser made no progress; skipping the token"),
     (code: "9002", msg: "'$1' and '$2' use each other; Nim cannot compile" &
                         " mutually dependent namespaces"),
+    (code: "0029", msg: "Cannot implicitly convert type '$1' to '$2'"),
+    (code: "0037", msg: "Cannot convert null to '$1' because it is a" &
+                        " non-nullable value type"),
+    (code: "1501", msg: "No overload for method '$1' takes $2 arguments"),
+    (code: "1503", msg: "Argument $1: cannot convert from '$2' to '$3'"),
+    (code: "1729", msg: "'$1' does not contain a constructor that takes $2" &
+                        " arguments"),
+    (code: "7036", msg: "There is no argument given that corresponds to the" &
+                        " required parameter '$1' of '$2'"),
+    (code: "0155", msg: "The type caught or thrown must be derived from" &
+                        " System.Exception"),
+    (code: "8632", msg: "The annotation for nullable reference types should only" &
+                        " be used in code within a '#nullable' annotations context."),
     (code: "9999", msg: "$1 is currently unsupported"),
   ]
 
@@ -70,3 +91,11 @@ proc nsError*(conf: ConfigRef; info: TLineInfo; d: NsDiag;
   ## `file(line, col) Error:` prefix is unchanged and the error still counts
   ## towards `errorMax` and reaches the structured error hook.
   localError(conf, info, nsCode(d) & ": " & NsDiagText[d].msg % @args)
+
+proc nsWarn*(conf: ConfigRef; info: TLineInfo; d: NsDiag;
+             args: varargs[string]) =
+  ## Reports `d` at `info` as a warning, with the same code-led text an error would
+  ## carry. `warnUser` is the compiler's door for a message of its own, so
+  ## `--warnings:off` silences it exactly as it silences Nim's own warnings, and
+  ## `--warningAsError` promotes it.
+  message(conf, info, warnUser, nsCode(d) & ": " & NsDiagText[d].msg % @args)

@@ -1,0 +1,3 @@
+This test must fail to compile: `if` wants a `bool` and gets an `int` (CS0029).
+`while`, `do`/`while` and `for` are checked the same way.
+code: NS0029

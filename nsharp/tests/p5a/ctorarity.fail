@@ -1,0 +1,3 @@
+This test must fail to compile: `Box` declares two constructors and neither takes
+zero arguments (CS1729).
+code: NS1729

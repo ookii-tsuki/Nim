@@ -1,0 +1,3 @@
+This test must fail to compile: `Show` takes one argument and the call passes two,
+which C# reports as CS1501 and N# now reports before lowering.
+code: NS1501

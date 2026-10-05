@@ -1,0 +1,17 @@
+// A condition C# accepts must be a `bool`; anything else is CS0029.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            int flag = 1;
+            if (flag)
+            {
+                Console.WriteLine("yes");
+            }
+        }
+    }
+}

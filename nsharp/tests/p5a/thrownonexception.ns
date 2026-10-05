@@ -1,0 +1,15 @@
+// Only something deriving from `Exception` can be thrown. Roslyn reports this as
+// the implicit conversion to `System.Exception`, which is CS0029 -- not the CS0155
+// the wording of the error suggests.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            throw 5;
+        }
+    }
+}

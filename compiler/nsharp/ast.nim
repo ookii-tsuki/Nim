@@ -32,6 +32,14 @@ type
   NsClassKind* = enum
     ckClass, ckStruct, ckInterface
 
+  NsArgConv* = enum
+    ## The implicit conversion C# inserts for an argument, chosen by `sema.nim` from
+    ## the parameter's declared type and applied by `desugar.nim`. `acNone` uses the
+    ## argument as written; the other two are the two halves of `T?`.
+    acNone
+    acSome       ## a value into a `T?` parameter: `some[T](value)`
+    acNoneOption ## `null` into a `T?` parameter: `none(T)`
+
   NsTypeKind* = enum
     ## Coarse type information attached to expressions by `sema.nim`; lowering
     ## consults it instead of guessing from names. Only the distinctions the
@@ -142,6 +150,8 @@ type
     initArgs*: seq[NsNode]    ## nsnCtorDecl only: initializer arguments
     typeKind*: NsTypeKind     ## set by `sema.nim` on expressions
     typeName*: string         ## the resolved type name behind `typeKind`
+    argConv*: NsArgConv       ## `nsnCall`/`nsnNew` argument: C#'s implicit conversion
+    argConvType*: string      ## ... and the element type name it is spelled with
 
 # --- constructors -----------------------------------------------------------
 #

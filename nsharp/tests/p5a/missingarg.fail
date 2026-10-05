@@ -1,0 +1,4 @@
+This test must fail to compile: `Show` has one declaration and it wants an
+argument, so C# names the parameter it did not get (CS7036) instead of giving the
+arity message it would give if `Show` were overloaded.
+code: NS7036

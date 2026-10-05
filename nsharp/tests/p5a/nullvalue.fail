@@ -1,0 +1,3 @@
+This test must fail to compile: `null` has no representation for the value type
+`int`, which is CS0037 -- the mirror of `int x = "oops"` being CS0029.
+code: NS0037

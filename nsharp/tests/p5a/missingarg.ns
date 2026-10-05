@@ -1,0 +1,23 @@
+// Too few arguments, with a single candidate to blame: CS7036 names the parameter
+// the call left out rather than the arity.
+using System;
+
+namespace Demo
+{
+    class Box
+    {
+        public void Show(int x)
+        {
+            Console.WriteLine(x);
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Box b = new Box();
+            b.Show();
+        }
+    }
+}
