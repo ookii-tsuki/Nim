@@ -53,8 +53,11 @@ proc declare(ctx: var NsCheckContext; name: string; kind: NsTypeKind;
 
 proc declTypeName(t: NsNode): string =
   ## The type name recorded for a local or parameter. Canonical, so a qualified
-  ## `Company.Products.Widget` matches the class names in the module scope.
-  if t == nil: "" else: canonicalTypeName(t.name)
+  ## `Company.Products.Widget` matches the class names in the module scope. For a
+  ## `T?` it is the inner name, which is what `x.Value` needs.
+  if t == nil: ""
+  elif t.kind == nsnNullableType: declTypeName(t.typ)
+  else: canonicalTypeName(t.name)
 
 # --- type classification ----------------------------------------------------
 
@@ -100,14 +103,25 @@ proc classifyName(ctx: NsCheckContext; name: string): NsTypeKind =
     else: tkUnknown
 
 proc classifyType(ctx: NsCheckContext; t: NsNode): NsTypeKind =
-  ## Kind of a written type. `T[]` is a sequence; a name goes through
-  ## `classifyName`; anything unrecognised stays unknown so lowering stays
-  ## conservative.
+  ## Kind of a written type. `T[]` is a sequence and `T?` is a nullable value type;
+  ## a name goes through `classifyName`; anything unrecognised stays unknown so
+  ## lowering stays conservative. The node records its own kind, which is how
+  ## `desugar.nim` knows whether the type needs `Option`.
   if t == nil: return tkUnknown
   case t.kind
-  of nsnArrayType: tkSequence
-  of nsnTypeName: ctx.classifyName(t.name)
-  else: tkUnknown
+  of nsnArrayType:
+    t.setType(tkSequence)
+    result = tkSequence
+  of nsnNullableType:
+    let inner = ctx.classifyType(t.typ)
+    ## Only a value type needs `Option`: a reference is nullable already, so `Node?`
+    ## is just `Node`, as C# reads it.
+    result = if inner in {tkInt, tkFloat, tkBool, tkChar}: tkNullable else: inner
+    t.setType(result, declTypeName(t.typ))
+  of nsnTypeName:
+    result = ctx.classifyName(t.name)
+    t.setType(result, canonicalTypeName(t.name))
+  else: result = tkUnknown
 
 proc memberKind(ctx: NsCheckContext; clsName, member: string): NsTypeKind =
   ## Kind of `this.member` / `Class.member`. For a method this is its return
@@ -115,6 +129,13 @@ proc memberKind(ctx: NsCheckContext; clsName, member: string): NsTypeKind =
   let info = ctx.scope.findMemberInfo(clsName, member)
   if info.name.len == 0: return tkUnknown
   ctx.classifyType(info.typ)
+
+proc memberTypeName(ctx: NsCheckContext; clsName, member: string): string =
+  ## A member's declared type name, which a nullable field needs so that lowering can
+  ## name the element type when building `some(T)` or `none(T)`.
+  let info = ctx.scope.findMemberInfo(clsName, member)
+  if info.name.len == 0: return ""
+  declTypeName(info.typ)
 
 # --- expressions ------------------------------------------------------------
 
@@ -180,7 +201,9 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of tkClass:
     ctx.checkMemberAccess(n)
     kind = ctx.memberKind(n.body.typeName, n.name)
-    if n.body.typeName.len == 0: tname = ""
+    if kind == tkNullable:
+      tname = ctx.memberTypeName(n.body.typeName, n.name)
+    elif n.body.typeName.len == 0: tname = ""
   of tkType:
     ## A longer qualifier, as in `Alias.Console` or `System.Console`.
     kind = tkType
@@ -296,6 +319,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         ## zero check rides on `overflowChecks`, which N# turns off.
         n.name = "nsDiv"
         result = tkInt
+      elif lk == tkNullable or rk == tkNullable:
+        ## The library lifts the operator and reuses the same division check, so the
+        ## operator keeps its name and the result is absent when an operand is.
+        result = tkNullable
       elif lk == tkFloat or rk == tkFloat:
         result = tkFloat
     of "mod":
@@ -303,13 +330,17 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         ## Same reasoning as `/`.
         n.name = "nsMod"
         result = tkInt
+      elif lk == tkNullable or rk == tkNullable:
+        result = tkNullable
     of "+":
       ## C# concatenates when either operand is a string.
       if lk == tkString or rk == tkString: result = tkString
+      elif lk == tkNullable or rk == tkNullable: result = tkNullable
       elif lk == tkFloat or rk == tkFloat: result = tkFloat
       elif lk == tkInt: result = tkInt
     else:
-      if lk == tkFloat or rk == tkFloat: result = tkFloat
+      if lk == tkNullable or rk == tkNullable: result = tkNullable
+      elif lk == tkFloat or rk == tkFloat: result = tkFloat
       elif lk == tkInt: result = tkInt
     n.setType(result)
   of nsnNullDot:

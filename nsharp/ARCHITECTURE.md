@@ -342,6 +342,22 @@ rule), and static properties are not yet supported.
   `int?`, and N# has no `Nullable<T>` yet, so a value-typed `?.` on its own is rejected
   with a diagnostic pointing at `??` rather than silently yielding `0`. Suite now 35
   tests, 44 golden ASTs, 35 C# cross-checks.
+- **v24** - `T?` / `Nullable<T>` and `??=`. `Option[T]` is the target because it has
+  C#'s shape -- a value plus a flag, and a bare pointer for a reference type -- so
+  `int?` is `Option[int32]` and `Node?` stays `Node`, as C# reads it. Everything
+  `Nullable<T>` exposes lives in the library: `.Value`, `.HasValue`,
+  `GetValueOrDefault()`, the lifted `+ - * / %` and `< <= > >=`, and the `== null` /
+  `!= null` tests, all ordinary procs over `Option` reached by Nim's own dot-call, the
+  way `int.high` reaches `high(int32)`. The compiler knows no member name, and
+  lowering asks the library through `nsAbsent` / `nsPresent`, in the same category as
+  `nsDiv` and `nsCheckNil`. `x = 5` and `x ??= 5` both re-wrap for a `T?` target,
+  which `??=` needs because `a ?? b` yields the unwrapped `T`. A nullable *field*
+  needed the element type named, so `sema.nim` records a canonical name on every type
+  node and reads the declared type of a member through `memberTypeName`. Two gaps are
+  recorded rather than worked around: a bare value or `null` cannot be passed where a
+  `T?` parameter is expected, because N# does no argument-level type checking, and
+  `1 + a` has no lifted form because the result type would follow the literal. Suite
+  now 36 tests, 45 golden ASTs, 36 C# cross-checks.
 - **v22** - Nil dereference raises, and printing stopped being special-cased.
   Dereferencing a null class reference now raises a catchable `NullReferenceException`
   -- Nim's `NilAccessDefect`, which the library already aliases for the name -- instead

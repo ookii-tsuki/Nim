@@ -62,6 +62,14 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   of nsnArrayType:
     result = newTree(nkBracketExpr, info, l.id("seq", info),
                      l.typeToNim(t.typ, info))
+  of nsnNullableType:
+    ## A value type needs `Option`; a reference is nullable already, so `Node?` is
+    ## just `Node`, which is how C# reads it.
+    if t.typeKind == tkNullable:
+      result = newTree(nkBracketExpr, info, l.id("Option", info),
+                       l.typeToNim(t.typ, info))
+    else:
+      result = l.typeToNim(t.typ, info)
   of nsnTypeName:
     result = l.id(nimTypeName(t.name), info)
     if t.sons.len > 0:
@@ -101,6 +109,8 @@ proc annotateLambda(l: Lowerer; lam, declared: NsNode) =
 proc expr(l: Lowerer; n: NsNode): PNode
 proc stmtSeq(l: Lowerer; blk: NsNode): PNode
 proc nilableReceiver(l: Lowerer; n: NsNode): bool
+proc noneFromName(l: Lowerer; name: string; info: TLineInfo): PNode
+proc presentOf(l: Lowerer; v: NsNode; info: TLineInfo): PNode
 
 proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
   let fp = newNodeI(nkFormalParams, n.info)
@@ -263,7 +273,29 @@ proc nullCoalesceToNim(l: Lowerer; n: NsNode): PNode =
   let fallback = if n.sons.len > 1: l.expr(n.sons[1]) else: newNodeI(nkNilLit, n.info)
   if lhs != nil and lhs.kind == nsnNullDot:
     result = l.condTail(lhs, fallback)
+  elif lhs != nil and lhs.typeKind == tkNullable:
+    ## `a ?? b` on a `T?`: the library answers the test and the unwrap, so no member
+    ## name is known here, and `b` stays lazy.
+    result = newNodeI(nkBlockExpr, n.info)
+    result.add empty(n.info)
+    let inner = newNodeI(nkStmtList, n.info)
+    let defs = newNodeI(nkIdentDefs, n.info)
+    defs.add l.id(NsCond, n.info)
+    defs.add newNodeI(nkEmpty, n.info)
+    defs.add l.expr(lhs)
+    inner.add newTree(nkLetSection, n.info, defs)
+    let cond = newNodeI(nkCall, n.info)
+    cond.add l.id("nsAbsent", n.info)
+    cond.add l.id(NsCond, n.info)
+    let present = newNodeI(nkCall, n.info)
+    present.add l.id("nsPresent", n.info)
+    present.add l.id(NsCond, n.info)
+    inner.add newTree(nkIfExpr, n.info,
+                      newTree(nkElifExpr, n.info, cond, fallback),
+                      newTree(nkElseExpr, n.info, present))
+    result.add inner
   else:
+    ## `a ?? b` for a reference: `b` when it is nil.
     result = newNodeI(nkBlockExpr, n.info)
     result.add empty(n.info)
     let inner = newNodeI(nkStmtList, n.info)
@@ -316,10 +348,14 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnIncDec:
     result = newTree(nkCommand, n.info, l.id(n.name, n.info), l.expr(n.body))
   of nsnCast:
-    ## `(T)x` is a Nim conversion, and also how a ref object is downcast.
+    ## `(T)x` is a Nim conversion, and also how a ref object is downcast. A `T?`
+    ## operand is unwrapped first, since the conversion applies to the value.
     result = newNodeI(nkCall, n.info)
     result.add l.typeToNim(n.typ, n.info)
-    result.add l.expr(n.body)
+    if n.body != nil and n.body.typeKind == tkNullable:
+      result.add l.presentOf(n.body, n.info)
+    else:
+      result.add l.expr(n.body)
   of nsnIs:
     result = newTree(nkInfix, n.info, l.id(n.name, n.info), l.expr(n.body),
                      l.typeToNim(n.typ, n.info))
@@ -329,7 +365,19 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     result.add l.id("default", n.info)
     result.add l.typeToNim(n.typ, n.info)
   of nsnBinary:
-    if n.name in ["nsDiv", "nsMod"]:
+    if n.name in ["==", "!="] and
+       ((n.sons[0] != nil and n.sons[0].typeKind == tkNullable and
+         n.sons[1] != nil and n.sons[1].kind == nsnNull) or
+        (n.sons[1] != nil and n.sons[1].typeKind == tkNullable and
+         n.sons[0] != nil and n.sons[0].kind == nsnNull)):
+      ## `x == null` on a `T?`: compare with the absent value of that type and let
+      ## the library's `==` decide, so no member name is known here.
+      let probe = if n.sons[0].typeKind == tkNullable: n.sons[0] else: n.sons[1]
+      result = newNodeI(nkInfix, n.info)
+      result.add l.id(n.name, n.info)
+      result.add l.expr(probe)
+      result.add l.noneFromName(probe.typeName, n.info)
+    elif n.name in ["nsDiv", "nsMod"]:
       ## Integer `/` and `%` go through library procs, which are called rather
       ## than used as an infix operator.
       result = newNodeI(nkCall, n.info)
@@ -458,12 +506,60 @@ proc tryToNim(l: Lowerer; n: NsNode): PNode =
       f.add l.stmtSeq(c.body)
       result.add f
 
+proc noneCall(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
+  ## `none(T)`: the absent value of a `T?`.
+  result = newNodeI(nkCall, info)
+  result.add l.id("none", info)
+  result.add (if t.kind == nsnNullableType: l.typeToNim(t.typ, info)
+              else: l.typeToNim(t, info))
+
+proc someCall(l: Lowerer; v: PNode; inner: NsNode; info: TLineInfo): PNode =
+  ## `some[int32](v)`: C# converts a value to `T?` implicitly, and the element type is
+  ## stated because a literal's own type (Nim's `int`) is not it.
+  result = newNodeI(nkCall, info)
+  result.add newTree(nkBracketExpr, info, l.id("some", info),
+                     l.typeToNim(inner, info))
+  result.add v
+
+proc someNamed(l: Lowerer; v: PNode; name: string; info: TLineInfo): PNode =
+  ## `some[int32](v)` where the target's type is only known by name.
+  result = newNodeI(nkCall, info)
+  result.add newTree(nkBracketExpr, info, l.id("some", info),
+                     l.id(nimTypeName(name), info))
+  result.add v
+
+proc noneFromName(l: Lowerer; name: string; info: TLineInfo): PNode =
+  ## `none(T)` for a target whose type is only known by name (`x = null` on `int?`).
+  result = newNodeI(nkCall, info)
+  result.add l.id("none", info)
+  result.add l.id(nimTypeName(name), info)
+
+proc presentOf(l: Lowerer; v: NsNode; info: TLineInfo): PNode =
+  ## `nsPresent(v)`, for a cast of a `T?` to its element type.
+  result = newNodeI(nkCall, info)
+  result.add l.id("nsPresent", info)
+  result.add l.expr(v)
+
 proc localDeclToNim(l: Lowerer; n: NsNode): PNode =
   l.annotateLambda(n.body, n.typ)
   let defs = newNodeI(nkIdentDefs, n.info)
   defs.add l.id(n.name, n.info)
   defs.add l.typeToNim(n.typ, n.info)
-  defs.add (if n.body == nil: empty(n.info) else: l.expr(n.body))
+  var value = empty(n.info)
+  let nullable = n.typ != nil and n.typ.typeKind == tkNullable
+  if n.body != nil:
+    if nullable and n.body.kind == nsnNull:
+      ## `int? x = null;` is the absent value.
+      value = l.noneCall(n.typ, n.info)
+    else:
+      value = l.expr(n.body)
+      if nullable and n.body.typeKind != tkNullable:
+        ## `int? x = 5;`, where C# converts the value to `T?` implicitly.
+        value = l.someCall(value, n.typ.typ, n.info)
+  elif nullable:
+    ## `int? x;` starts absent.
+    value = l.noneCall(n.typ, n.info)
+  defs.add value
   let kind = case n.declKind
     of dkVar: nkVarSection
     of dkLet: nkLetSection
@@ -478,13 +574,31 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
   var bare = l
   bare.nilChecks = false
   let lhs = bare.expr(n.sons[0])
-  if n.name.len == 0:
-    result = newTree(nkAsgn, n.info, lhs, l.expr(n.sons[1]))
+  var value: PNode
+  if n.name == "??":
+    ## `a ??= b`: the compound form of `a = a ?? b`.
+    let co = nsn(nsnNullCoalesce, n.info)
+    co.name = "??"
+    co.sons = @[n.sons[0], n.sons[1]]
+    value = bare.nullCoalesceToNim(co)
+  elif n.name.len == 0:
+    value = l.expr(n.sons[1])
   else:
     ## Compound assignment: `x += e` becomes `x = x + e`.
-    let combined = newTree(nkInfix, n.info, l.id(n.name, n.info),
-                           copyTree(lhs), l.expr(n.sons[1]))
-    result = newTree(nkAsgn, n.info, lhs, combined)
+    value = newTree(nkInfix, n.info, l.id(n.name, n.info),
+                    copyTree(lhs), l.expr(n.sons[1]))
+  let nullableTarget = n.sons[0] != nil and n.sons[0].typeKind == tkNullable
+  let wrapTarget = nullableTarget and (n.name == "??" or
+                                        n.sons[1].typeKind != tkNullable)
+  if wrapTarget:
+    ## The result goes back into a `T?` target, so C#'s implicit conversion applies to
+    ## `x = 5` and `x ??= 5` alike. `a ?? b` yields the unwrapped `T`, so `??=` always
+    ## needs the wrap, while `x = otherNullable` already has one.
+    if n.name.len == 0 and n.sons[1].kind == nsnNull:
+      value = l.noneFromName(n.sons[0].typeName, n.info)
+    else:
+      value = l.someNamed(value, n.sons[0].typeName, n.info)
+  result = newTree(nkAsgn, n.info, lhs, value)
   let target = n.sons[0]
   if l.nilChecks and target != nil and target.kind == nsnMember and
      target.body != nil and target.body.kind == nsnIdent and

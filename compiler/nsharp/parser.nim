@@ -129,6 +129,11 @@ proc parseType(p: var NsParser): NsNode =
       result.add p.parseType()
       if p.at(nsComma): discard p.advance else: break
     p.expectGt()
+  if p.at(nsQuestion):
+    ## `T?`. It sits against the type, so a `?:` elsewhere is unaffected, and it is
+    ## read before `[]` because `int?[]` is an array of nullable ints in C#.
+    discard p.advance
+    result = nsnNullableType(result, p.infoOf(t))
   while p.at(nsLBracket) and p.peekAhead(1).kind == nsRBracket:
     discard p.advance
     discard p.advance
@@ -587,6 +592,10 @@ proc looksLikeDecl(p: NsParser): bool =
   if p.peekAhead(i).kind == nsLt:
     i = skipBalancedGt(p, i)
     if i < 0: return false
+  if p.peekAhead(i).kind == nsQuestion:
+    ## `int? x = ...`. A ternary in statement position still fails the declarator
+    ## test below, so `x ? y : z;` stays an expression.
+    inc i
   while p.peekAhead(i).kind == nsLBracket and p.peekAhead(i + 1).kind == nsRBracket:
     i += 2
   if p.peekAhead(i).kind != nsIdent: return false
@@ -633,6 +642,7 @@ proc parseSimpleStmt(p: var NsParser): NsNode =
     of nsStarEq: "*"
     of nsSlashEq: "/"
     of nsPercentEq: "mod"
+    of nsQuestionQuestionEq: "??"
     of nsAmpEq: "and"
     of nsPipeEq: "or"
     of nsCaretEq: "xor"

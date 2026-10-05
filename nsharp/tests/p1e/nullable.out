@@ -1,0 +1,27 @@
+some(5)
+5
+a has a value
+none(int32)
+b is absent
+a is present
+5
+-1
+7
+7
+4
+none(int32)
+some(6)
+some(4)
+some(10)
+some(2)
+some(1)
+true
+false
+true
+true
+5
+11
+11
+-1
+0
+divide by zero

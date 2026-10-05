@@ -1,0 +1,79 @@
+// `T?` (Nullable<T>), lifted operators, and `??=`.
+using System;
+
+namespace Demo
+{
+    class Box
+    {
+        public int? Slot;
+
+        public Box(int start)
+        {
+            Slot = start;
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            int? a = 5;
+            Console.WriteLine(a);
+            Console.WriteLine(a.Value);
+            if (a.HasValue) { Console.WriteLine("a has a value"); }
+
+            int? b = null;
+            Console.WriteLine(b);
+            if (b == null) { Console.WriteLine("b is absent"); }
+            if (a != null) { Console.WriteLine("a is present"); }
+
+            Console.WriteLine(a ?? -1);
+            Console.WriteLine(b ?? -1);
+
+            int? c = null;
+            c ??= 7;
+            Console.WriteLine(c ?? -1);
+            c ??= 9;
+            Console.WriteLine(c ?? -1);
+
+            b = 3;
+            Console.WriteLine(b.Value + 1);
+            Console.WriteLine(default(int?));
+
+            Console.WriteLine(a + 1);
+            Console.WriteLine(b + 1);
+            Console.WriteLine(a * 2);
+            Console.WriteLine(a / 2);
+            Console.WriteLine(a % 2);
+            Console.WriteLine(a > 3);
+            Console.WriteLine(b > 3);
+            Console.WriteLine(b <= 3);
+            Console.WriteLine(a > b);
+
+            int unboxed = (int)a;
+            Console.WriteLine(unboxed);
+
+            Box box = new Box(0);
+            box.Slot = null;
+            box.Slot ??= 11;
+            Console.WriteLine(box.Slot ?? -1);
+            box.Slot ??= 13;
+            Console.WriteLine(box.Slot ?? -1);
+
+            int? d = null;
+            Console.WriteLine((d + 1) ?? -1);
+            Console.WriteLine(d.GetValueOrDefault());
+
+            int? zero = 0;
+            try
+            {
+                Console.WriteLine(a / zero.Value);
+                Console.WriteLine("no raise");
+            }
+            catch (DivideByZeroException)
+            {
+                Console.WriteLine("divide by zero");
+            }
+        }
+    }
+}

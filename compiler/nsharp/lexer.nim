@@ -11,6 +11,7 @@ type
     nsLParen, nsRParen, nsLBrace, nsRBrace, nsLBracket, nsRBracket
     nsSemi, nsComma, nsDot, nsColon, nsColonColon, nsQuestion
     nsQuestionDot, nsQuestionQuestion
+    nsQuestionQuestionEq
     nsAssign, nsEqEq, nsNotEq, nsArrow
     nsPlus, nsMinus, nsStar, nsSlash, nsPercent
     nsLt, nsGt, nsLe, nsGe
@@ -47,6 +48,7 @@ proc `$`*(k: NsTokenKind): string =
   of nsQuestion: "'?'"
   of nsQuestionDot: "'?.'"
   of nsQuestionQuestion: "'??'"
+  of nsQuestionQuestionEq: "'??='"
   of nsAssign: "'='"
   of nsEqEq: "'=='"
   of nsNotEq: "'!='"
@@ -210,6 +212,7 @@ proc tokenize*(source: string): seq[NsToken] =
       let kind3 = case three
         of "<<=": nsShlEq
         of ">>=": nsShrEq
+        of "??=": nsQuestionQuestionEq
         else: nsEof
       if kind3 != nsEof:
         result.add NsToken(kind: kind3, text: three, line: startLine, col: startCol)

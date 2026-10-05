@@ -473,7 +473,7 @@ v2.
 | `ToString` / `$` | stringify a value | ✅ v1 (Nim spelling) | Nim's `$`; an object prints as its fields |
 | Assignment & compound `= += -= ...` | ✅ | ✅ v1 | front |
 | `??` null-coalescing | ✅ | ✅ v1 | desugar (`nsCond` temporary) |
-| `??=` | ✅ | 🔜 later | desugar |
+| `??=` | ✅ | ✅ v1 | desugar (`x = x ?? b`, re-wrapped for a `T?` target) |
 | `?.` / `?[]` null-conditional | ✅ | ✅ v1 | front + desugar (`nsCond` per link) |
 | `?:` ternary | ✅ | ✅ v1 | front (→ `nkIfExpr`) |
 | `is` / `as` | type test/cast | ✅ v1 | front (→ Nim `of`/conv) |
@@ -553,7 +553,11 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Exceptions | all derive from `Exception` | `Exception` is the root of both `CatchableError` and `Defect` | C# `Exception` → Nim's exception root, so `catch (Exception)` catches runtime errors too; the .NET names are declared by the library, aliasing the defect Nim raises where one exists (`OverflowException` → `OverflowDefect`); `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` | front/lib |
 | `e.Message` | property on every exception | `CatchableError.msg` field | map `.Message` → `.msg` | front |
 | Bool/float spelling | `True`, `NaN`, `∞` | `true`, `nan`, `inf` | Nim's rendering stands; where C# differs the test carries a `.csout` beside its `.out` | lib |
-| `?.` on a value | yields `T?` | no `Nullable<T>` yet | a value-typed `?.` must be coalesced (`a?.V ?? x`), which supplies the absent value to every link of the chain; otherwise it reports `NS9999` | front |
+| `T?` / `Nullable<T>` | `struct Nullable<T> { T value; bool hasValue; }` | `Option[T]` has the same shape: a value plus a flag, and a bare pointer for a reference type | `T?` → `Option[T]` for a value type; a reference is nullable already, so `Node?` is just `Node` | front |
+| Lifted operators on `T?` | `a + b` is absent when either operand is; `a > b` is a plain `bool`, false then | none | ordinary procs over `Option` in the intrinsics, so no member name is known to the compiler; `/` and `%` reuse the `nsDiv`/`nsMod` check | lib |
+| `.Value` / `.HasValue` / `GetValueOrDefault()` / `x == null` | members of `Nullable<T>` | `get` / `isSome`, structural `==` | ordinary procs over `Option` reached by Nim's own dot-call, the way `int.high` reaches `high(int32)`; `== null` lowers to a comparison against `none(T)` | lib |
+| `(T)x` on a `T?` | unwraps, throwing `InvalidOperationException` when absent | `get` raises `UnpackDefect` | unwrapped in lowering; the thrown type is the recorded divergence | front |
+| A bare value for a `T?` *parameter* | implicit conversion at the call | - | unavailable: N# does no argument-level type checking, so a parameter's type is unknown where the arguments are lowered. Declare the local first, or assign through a field | - |
 | Discarding a result | any expression statement may drop a result | unused result is an error | every generated proc is `{.discardable.}` (and the collection shims `{.push discardable.}`) | front/lib |
 
 > The overflow / `checked` / `unchecked` rows all ride on **one** mechanism:

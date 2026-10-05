@@ -37,6 +37,7 @@ type
     ## consults it instead of guessing from names. Only the distinctions the
     ## lowering actually needs.
     tkUnknown      ## not resolved; lowering must stay conservative
+    tkNullable     ## `T?` on a value type: a value that may be absent (`Option[T]`)
     tkInt          ## an integer type, so `/` means `div`
     tkFloat        ## a floating point type
     tkBool
@@ -53,6 +54,7 @@ type
     # --- types ---
     nsnTypeName        # name, sons = generic arguments (may be empty)
     nsnArrayType       # typ = element type
+    nsnNullableType    # typ = inner type                 (from `T?`)
     nsnVoidType
     # --- declarations ---
     nsnModule          # sons = top level declarations
@@ -172,6 +174,11 @@ proc nsnTypeName*(name: string; info: TLineInfo): NsNode =
 
 proc nsnArrayType*(elem: NsNode; info: TLineInfo): NsNode =
   NsNode(kind: nsnArrayType, info: info, typ: elem)
+
+proc nsnNullableType*(inner: NsNode; info: TLineInfo): NsNode =
+  ## `T?`: a nullable value type (`Option[T]` in Nim), or for a reference type just
+  ## the reference, which C# reads as a nullability annotation.
+  NsNode(kind: nsnNullableType, info: info, typ: inner)
 
 proc nsnVoidType*(info: TLineInfo): NsNode =
   NsNode(kind: nsnVoidType, info: info)
