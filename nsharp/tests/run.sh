@@ -101,6 +101,14 @@ if [ -z "${NS_SKIP_CS:-}" ] && [ -x "$here/run_cs.sh" ]; then
   "$here/run_cs.sh" || fail=1
 fi
 
+# Semantic conformance gate (Stage 0b): the facts the frontend resolved must equal
+# the facts Roslyn resolves for the same file. Skips cleanly without `dotnet`.
+# Set NS_SKIP_SEMA=1 to skip.
+if [ -z "${NS_SKIP_SEMA:-}" ] && [ -x "$here/run_sema.sh" ]; then
+  echo "--- semantic conformance ---"
+  "$here/run_sema.sh" || fail=1
+fi
+
 echo "ran $count test(s)"
 exit $fail
 

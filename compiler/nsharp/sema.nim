@@ -543,10 +543,10 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   var kind = tkUnknown
   var cands: seq[seq[NsNode]] = @[]
   var owner = ""
+  var tn = ""
   let callee = n.body
   if callee != nil and callee.kind == nsnMember:
     let rk = ctx.walkExpr(callee.body)
-    var tn = ""
     if rk == tkType:
       ## `Class.Method(...)` or `Namespace.Method(...)`: lowering drops the
       ## qualifier, and the result type is the method's if the class is known.
@@ -566,11 +566,16 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## A receiver the scope does not know (`Console`, a name from a module it does
     ## not cover) has none, and the call is left to Nim.
     cands = ctx.scope.memberOverloads(owner, callee.name)
+    ## A member the module declares carries its declared result type name, which
+    ## the surrounding `var x = ...` needs to name `x` (`List<int> Items()` makes
+    ## `x` a `List`); the surface path has already recorded its own.
+    if kind != tkUnknown and tn.len == 0:
+      tn = ctx.memberTypeName(owner, callee.name)
     callee.setType(kind)
   elif callee != nil:
     discard ctx.walkExpr(callee)
   for a in n.sons: discard ctx.walkExpr(a)
-  n.setType(kind)
+  n.setType(kind, tn)
   if callee != nil and callee.kind == nsnMember:
     ctx.checkCallArgs(cands, n.sons, callee.name, owner, false, n.info)
   result = kind
@@ -763,7 +768,9 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
     let initKind = ctx.walkExpr(n.body)
     if n.typ == nil: kind = initKind
     else: ctx.checkConvertible(n.body, ctx.targetOfType(n.typ), n.body.info)
-  ctx.declare(n.name, kind, (if n.typ != nil: declTypeName(n.typ) else: n.typeName))
+  ## An inferred local (`var x = ...`) takes its type name from its initialiser,
+  ## exactly as a `foreach` variable takes it from the collection it walks.
+  ctx.declare(n.name, kind, (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName))
 
 proc walkForeach(ctx: var NsCheckContext; n: NsNode) =
   let elemKind = ctx.classifyType(n.typ)

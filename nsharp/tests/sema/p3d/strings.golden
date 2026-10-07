@@ -1,0 +1,14 @@
+using System
+member Item.Equals = System | bool
+member array.Length = System | int
+member string.Contains = System | bool
+member string.EndsWith = System | bool
+member string.IndexOf = System | int
+member string.Length = System | int
+member string.Length = System | int
+member string.Replace = System | string
+member string.StartsWith = System | bool
+member string.Substring = System | string
+member string.Substring = System | string
+member string.ToLower = System | string
+member string.ToUpper = System | string

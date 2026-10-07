@@ -1,0 +1,2 @@
+using System
+member array.Length = System | int

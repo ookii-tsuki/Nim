@@ -101,7 +101,12 @@ proc Values*[K, V](t: Dictionary[K, V]): seq[V] =
 
 # --- HashSet<T> ------------------------------------------------------------
 
-proc Add*[T](s: var HashSet[T], x: T) = s.incl x
+proc Add*[T](s: var HashSet[T], x: T): bool =
+  ## `HashSet<T>.Add` reports whether the element was new, exactly as .NET's does.
+  if x in s: false
+  else:
+    s.incl x
+    true
 proc Clear*[T](s: var HashSet[T]) = s.clear()
 proc Contains*[T](s: HashSet[T], x: T): bool = x in s
 proc Remove*[T](s: var HashSet[T], x: T): bool =

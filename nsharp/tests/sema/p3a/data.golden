@@ -1,0 +1,4 @@
+using System
+member Exception.Message = System | string
+member array.Length = System | int
+member array.Length = System | int

@@ -192,9 +192,11 @@ nkStmtList
               nkElseExpr
                 nkDotExpr
                   nkCall
-                    nkDotExpr
-                      nkIdent 'nsCond'
-                      nkIdent 'Self'
+                    nkIdent 'nsCheckNil'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsCond'
+                        nkIdent 'Self'
                   nkIdent 'Value'
       nkCall
         nkIdent 'WriteLine'
@@ -218,9 +220,11 @@ nkStmtList
               nkElseExpr
                 nkDotExpr
                   nkCall
-                    nkDotExpr
-                      nkIdent 'nsCond'
-                      nkIdent 'Self'
+                    nkIdent 'nsCheckNil'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsCond'
+                        nkIdent 'Self'
                   nkIdent 'Value'
       nkCall
         nkIdent 'WriteLine'

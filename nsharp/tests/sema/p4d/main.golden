@@ -1,0 +1,4 @@
+using P = Company.Products
+using System
+member List.Count = System.Collections.Generic | int
+member string.Length = System | int

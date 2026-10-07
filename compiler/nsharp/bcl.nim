@@ -94,7 +94,7 @@ const
   ## own names -- the stdlib types the prelude aliases, and the exception roots Nim
   ## raises -- which is why they are listed here rather than read out of `lib/`:
   ## they are what the prelude's declarations are *about*, not part of its surface.
-  NsNimKinds*: array[35, NsTypeEntry] = [
+  NsNimKinds*: array[37, NsTypeEntry] = [
     ("int8", tkInt), ("int16", tkInt), ("int32", tkInt), ("int64", tkInt),
     ("uint8", tkInt), ("uint16", tkInt), ("uint32", tkInt), ("uint64", tkInt),
     ("int", tkInt), ("uint", tkInt),
@@ -104,6 +104,7 @@ const
     ("Table", tkSequence), ("OrderedTable", tkSequence), ("HashSet", tkSequence),
     ("OrderedSet", tkSequence), ("Deque", tkSequence),
     ("Option", tkNullable),
+    ("RootRef", tkClass), ("RootObj", tkClass),
     ("Exception", tkException), ("CatchableError", tkException),
     ("Defect", tkException), ("NilAccessDefect", tkException),
     ("OverflowDefect", tkException), ("IndexDefect", tkException),
@@ -408,7 +409,10 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
   let ret = headSpelling(fp[0])
   let p0 = fp[1]
   if p0 == nil or p0.kind != nkIdentDefs or p0.len < 2: return
-  var sel = p0[1]
+  ## The first parameter's *type*. An `IdentDefs` lists every name first and the
+  ## type second to last, so a grouped parameter (`s, value: string`) carries its
+  ## type at `[^2]`, not `[1]`.
+  var sel = (if p0.len >= 3: p0[p0.len - 2] else: p0[1])
   var isStatic = false
   if sel != nil and sel.kind == nkVarTy and sel.len > 0: sel = sel[0]
   if sel != nil and sel.kind == nkBracketExpr and headSpelling(sel) == "typedesc":

@@ -36,6 +36,10 @@ doc/*.idx
 /build/*
 bin/*
 
+# Build output of the Roslyn conformance oracle (see nsharp/CONFORMANCE.md)
+/tools/nsoracle/bin/
+/tools/nsoracle/obj/
+
 # iOS specific wildcards.
 *.mode1v3
 *.pbxuser

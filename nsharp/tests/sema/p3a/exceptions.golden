@@ -1,0 +1,3 @@
+using System
+member AppException.Message = System | string
+member Exception.Message = System | string

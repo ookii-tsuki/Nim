@@ -1,0 +1,23 @@
+using System
+using System.Collections.Generic
+member Dictionary.Add = System.Collections.Generic | void
+member Dictionary.ContainsKey = System.Collections.Generic | bool
+member Dictionary.Count = System.Collections.Generic | int
+member HashSet.Add = System.Collections.Generic | bool
+member HashSet.Add = System.Collections.Generic | bool
+member HashSet.Add = System.Collections.Generic | bool
+member HashSet.Count = System.Collections.Generic | int
+member List.Add = System.Collections.Generic | void
+member List.Add = System.Collections.Generic | void
+member List.Add = System.Collections.Generic | void
+member List.Contains = System.Collections.Generic | bool
+member List.Count = System.Collections.Generic | int
+member List.Count = System.Collections.Generic | int
+member List.Remove = System.Collections.Generic | bool
+member List.Sort = System.Collections.Generic | void
+member Queue.Count = System.Collections.Generic | int
+member Queue.Enqueue = System.Collections.Generic | void
+member Queue.Enqueue = System.Collections.Generic | void
+member Stack.Count = System.Collections.Generic | int
+member Stack.Push = System.Collections.Generic | void
+member Stack.Push = System.Collections.Generic | void
