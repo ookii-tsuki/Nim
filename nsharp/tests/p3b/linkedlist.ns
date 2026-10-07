@@ -1,0 +1,30 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            LinkedList<int> xs = new LinkedList<int>();
+            xs.AddLast(1);
+            xs.AddLast(3);
+            xs.AddFirst(2);
+            Console.WriteLine(xs.Count);
+
+            foreach (int x in xs)
+            {
+                Console.WriteLine(x);
+            }
+
+            Console.WriteLine(xs.Contains(3));
+            xs.Remove(3);
+            Console.WriteLine(xs.Count);
+            xs.RemoveLast();
+            Console.WriteLine(xs.Count);
+            xs.RemoveFirst();
+            Console.WriteLine(xs.Count);
+        }
+    }
+}

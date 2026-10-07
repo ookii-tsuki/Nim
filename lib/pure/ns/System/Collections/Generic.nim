@@ -24,6 +24,8 @@
 #                   ExceptWith
 #   Queue<T>        Enqueue Dequeue Peek Count Contains Clear ToArray
 #   Stack<T>        Push Pop Peek Count Contains Clear ToArray
+#   LinkedList<T>   AddFirst AddLast RemoveFirst RemoveLast Remove Contains Clear
+#                   Count (and iteration via `foreach`)
 
 import std/tables
 import std/deques
@@ -43,6 +45,15 @@ type
     data: Deque[T]
   Stack*[T] = object
     data: Deque[T]
+  LinkedList*[T] = object
+    ## C#'s doubly-linked list. Members are spelled as C# spells them
+    ## (`AddFirst`, `RemoveLast`, ...); the backing store is Nim's `seq`.
+    data: seq[T]
+  LinkedListNode*[T] = ref object
+    ## C#'s `LinkedList<T>` node. `AddFirst`/`AddLast` return one, so the type
+    ## has to exist here; the frontend places it as a class, which is what makes
+    ## the semantic projection agree with C#'s `LinkedListNode<T>` (SPEC 15.1).
+    value*: T
 
 {.push discardable.}
 
@@ -51,6 +62,7 @@ proc newDictionary*[K, V](): Dictionary[K, V] = initTable[K, V]()
 proc newHashSet*[T](): HashSet[T] = initHashSet[T]()
 proc newQueue*[T](): Queue[T] = Queue[T](data: initDeque[T]())
 proc newStack*[T](): Stack[T] = Stack[T](data: initDeque[T]())
+proc newLinkedList*[T](): LinkedList[T] = LinkedList[T](data: @[])
 
 # --- Count -----------------------------------------------------------------
 #
@@ -63,6 +75,7 @@ proc Count*[K, V](t: Dictionary[K, V]): int32 = int32(t.len)
 proc Count*[T](s: HashSet[T]): int32 = int32(s.len)
 proc Count*[T](q: Queue[T]): int32 = int32(q.data.len)
 proc Count*[T](s: Stack[T]): int32 = int32(s.data.len)
+proc Count*[T](l: LinkedList[T]): int32 = int32(l.data.len)
 
 # --- List<T> ---------------------------------------------------------------
 
@@ -145,5 +158,35 @@ proc Contains*[T](s: Stack[T], x: T): bool = x in s.data
 proc Clear*[T](s: var Stack[T]) = s.data.clear()
 proc ToArray*[T](s: Stack[T]): seq[T] =
   for x in s.data: result.add x
+
+# --- LinkedList<T> ---------------------------------------------------------
+#
+# C#'s `LinkedList<T>` members, named as C# names them. `AddFirst`/`AddLast`
+# return the new node, as C# does, so they hand back a `LinkedListNode<T>`;
+# `First`/`Last` and the `AddAfter`/`AddBefore` families stay absent until a test
+# needs them (SPEC section 15.1).
+
+proc AddFirst*[T](l: var LinkedList[T], x: T): LinkedListNode[T] =
+  l.data.insert(x, 0)
+  LinkedListNode[T](value: x)
+proc AddLast*[T](l: var LinkedList[T], x: T): LinkedListNode[T] =
+  l.data.add x
+  LinkedListNode[T](value: x)
+proc RemoveFirst*[T](l: var LinkedList[T]) =
+  ## C#'s `RemoveFirst` removes the node at the head and returns nothing.
+  if l.data.len > 0: l.data.delete(0)
+proc RemoveLast*[T](l: var LinkedList[T]) =
+  if l.data.len > 0: l.data.setLen(l.data.len - 1)
+proc Remove*[T](l: var LinkedList[T], x: T): bool =
+  ## `LinkedList<T>.Remove` drops the first node holding `x`.
+  let i = l.data.find(x)
+  if i >= 0:
+    l.data.delete(i)
+    result = true
+proc Contains*[T](l: LinkedList[T], x: T): bool = x in l.data
+proc Clear*[T](l: var LinkedList[T]) = l.data.setLen(0)
+iterator items*[T](l: LinkedList[T]): T =
+  ## Lets `foreach (int x in list)` reach the elements, as C# requires.
+  for x in l.data: yield x
 
 {.pop.}

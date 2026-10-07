@@ -1,0 +1,16 @@
+using System
+using System.Collections.Generic
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member LinkedList.Contains = System.Collections.Generic | bool
+member LinkedList.Count = System.Collections.Generic | int
+member LinkedList.Count = System.Collections.Generic | int
+member LinkedList.Count = System.Collections.Generic | int
+member LinkedList.Count = System.Collections.Generic | int
+member LinkedList.Remove = System.Collections.Generic | bool
+member LinkedList.RemoveFirst = System.Collections.Generic | void
+member LinkedList.RemoveLast = System.Collections.Generic | void

@@ -1,0 +1,144 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'xs'
+          nkBracketExpr
+            nkIdent 'LinkedList'
+            nkIdent 'int32'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newLinkedList'
+              nkIdent 'int32'
+      nkCall
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'AddLast'
+        nkIntLit 1
+      nkCall
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'AddLast'
+        nkIntLit 3
+      nkCall
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'AddFirst'
+        nkIntLit 2
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'Count'
+      nkForStmt
+        nkIdent 'x'
+        nkIdent 'xs'
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkIdent 'x'
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'xs'
+            nkIdent 'Contains'
+          nkIntLit 3
+      nkCall
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'Remove'
+        nkIntLit 3
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'Count'
+      nkCall
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'RemoveLast'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'Count'
+      nkCall
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'RemoveFirst'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'xs'
+          nkIdent 'Count'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'
