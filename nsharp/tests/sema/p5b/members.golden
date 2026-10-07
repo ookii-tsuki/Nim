@@ -1,3 +1,11 @@
 using System
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
 member array.Length = System | int
+member string.Empty = System | string
+member string.IsNullOrEmpty = System | bool
 member string.Length = System | int

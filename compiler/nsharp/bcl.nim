@@ -1,21 +1,7 @@
-# N# frontend - the library's surface, and C#'s own type vocabulary
+# N# frontend: C#'s type vocabulary, and the surface of the N# prelude.
 #
-# Two kinds of knowledge live here, and they are kept apart on purpose.
-#
-# C#'s vocabulary: the built-in type keywords, the BCL class names C# accepts in
-# their place (`int`/`Int32`), and the handful of Nim type names the prelude is
-# written in. C# lets a program name a type this way whatever any library
-# declares, so this is the language's, not a library's.
-#
-# The library's surface: the types and members the N# prelude *declares*, read out
-# of the prelude's own Nim sources. `sema.nim` and `desugar.nim` resolve
-# `List<T>`, `x.Length`, `.Count`, `.Message`, `Console.WriteLine`,
-# `int.MaxValue` and `catch (NullReferenceException)` against those declarations,
-# so no member name is hardcoded in the compiler: the prelude is the authority,
-# exactly as `int.high` reaches `high(int32)`. A member reached this way is an
-# ordinary proc over `typedesc`/`openArray`/`Option`/an exception root, and it
-# reaches the N# program through Nim's own dot-call -- there is no rename step to
-# keep in step with the library.
+# C#'s vocabulary is the language's, whatever any library declares. The surface is
+# read from the prelude's own Nim sources, so no member name is hardcoded here.
 
 import std/[os, syncio, strutils, sets, tables, algorithm]
 import ../ast, ../idents, ../lineinfos, ../msgs, ../options, ../pathutils
@@ -29,47 +15,39 @@ type
     ## One Nim type spelling, and how N# classifies it.
 
   NsBclType* = object
-    ## A type the prelude declares: `List<T> = seq[T]`, `Console = object`.
-    name*: string         ## the name as declared, which is its Nim spelling
-    alias*: string        ## a type it is declared to be equal to ("seq")
-    base*: string         ## its declared base type, for an object
-    kind*: NsTypeKind     ## its own kind, when it has neither
+    ## A type the prelude declares.
+    name*: string         ## as declared, which is its Nim spelling
+    alias*: string        ## equal to this type
+    base*: string         ## declared base type
+    kind*: NsTypeKind     ## own kind, when neither of the above
 
   NsBclMember* = object
-    ## A proc or template the prelude declares, seen as a member: the receiver is
-    ## its first parameter. `name == ""` means the library declares no such member.
-    name*: string
-    path*: string         ## the module that declares it, as an import path
-    recv*: string         ## the receiver's spelling, or the key of a type class
-    ret*: string          ## the declared result spelling ("" for `void`)
+    ## A prelude proc seen as a member; the receiver is its first parameter.
+    name*: string         ## "" means the library declares no such member
+    path*: string         ## declaring module, as an import path
+    recv*: string         ## receiver spelling, or a type-class key
+    ret*: string          ## declared result spelling ("" for `void`)
     isStatic*: bool       ## declared over `typedesc[...]`: `int.MaxValue`
     retIsParam*: bool     ## the result is one of the declaration's own parameters
 
+  NsStaticDecl* = tuple[typ, member, module: string]
+    ## A `{.nsStatic: "T".}` pragma: the qualifier, the proc, and its module.
+
   NsBclSurface* = object
-    ## What the prelude declares, in the shape the rest of the frontend asks about
-    ## it. `types` is keyed by declared name, `members` by the receiver spelling
-    ## (and by the key of the type class the receiver's kind stands for).
+    ## The prelude's declarations, keyed by name and by receiver.
     types*: Table[string, NsBclType]
     members*: Table[string, seq[NsBclMember]]
     namespaces*: HashSet[string]
-      ## The namespaces the library is *written in*, and each of their prefixes, so
-      ## `System.Collections.Generic` is reached from `System`. A qualified name
-      ## starting at one of these is a name the library's module declares, even when
-      ## no declaration records it as a member (`System.Console.WriteLine` reaches a
-      ## proc `Console` would own in C# but the prelude writes at module level).
+      ## The namespaces the prelude is written in, and their prefixes.
+    staticDecls: seq[NsStaticDecl]
+      ## Pending `{.nsStatic: "T".}` pragmas, resolved after every file is read.
 
 const
-  ## Where the N# prelude lives inside the library: the namespace tree N# imports,
-  ## and the intrinsics every N# module is given. `NsIntrinsicsPath` is also the
-  ## import path `desugar.nim` names it by, since the prelude is a Nim module like
-  ## any other.
+  ## The prelude's location in the library, and the module every N# module gets.
   NsLibRoot* = "pure/ns"
   NsIntrinsicsPath* = "nsharp/intrinsics"
 
-  ## C# type names to the Nim spelling the prelude writes them in. Only names whose
-  ## Nim spelling differs appear here; everything else is passed through unchanged.
-  ## `Array` is C#'s built-in array type, whose members the prelude declares over
-  ## `openArray`.
+  ## C# type names whose Nim spelling differs; the rest pass through unchanged.
   NsPrimitiveTypes*: array[17, NsRename] = [
     ("int", "int32"), ("uint", "uint32"), ("long", "int64"),
     ("ulong", "uint64"), ("short", "int16"), ("ushort", "uint16"),
@@ -80,8 +58,7 @@ const
     ("Array", "openArray"),
   ]
 
-  ## The BCL class name of a C# built-in type, which C# accepts in place of the
-  ## keyword. Mapping to the keyword keeps one Nim spelling per type.
+  ## BCL class names C# accepts in place of the keyword, mapped to that keyword.
   NsBclTypeNames*: array[16, NsRename] = [
     ("Int32", "int"), ("UInt32", "uint"), ("Int64", "long"), ("UInt64", "ulong"),
     ("Int16", "short"), ("UInt16", "ushort"), ("Byte", "byte"),
@@ -90,10 +67,7 @@ const
     ("Object", "object"), ("IntPtr", "nint"), ("UIntPtr", "nuint"),
   ]
 
-  ## Nim types the prelude builds on, and how N# classifies them. These are Nim's
-  ## own names -- the stdlib types the prelude aliases, and the exception roots Nim
-  ## raises -- which is why they are listed here rather than read out of `lib/`:
-  ## they are what the prelude's declarations are *about*, not part of its surface.
+  ## Nim types the prelude builds on, and how N# classifies them.
   NsNimKinds*: array[37, NsTypeEntry] = [
     ("int8", tkInt), ("int16", tkInt), ("int32", tkInt), ("int64", tkInt),
     ("uint8", tkInt), ("uint16", tkInt), ("uint32", tkInt), ("uint64", tkInt),
@@ -113,10 +87,7 @@ const
     ("ValueError", tkException),
   ]
 
-  ## A generic constraint, and the key a member declared over it hangs off. A member
-  ## written for a *class of types* (`SomeInteger`, `ref Exception`) therefore has
-  ## one declaration, found through whatever concrete type a receiver turns out to
-  ## have.
+  ## A generic constraint, and the key a member declared over it is filed under.
   NsTypeClassKeys*: array[5, NsRename] = [
     ("SomeInteger", "#int"), ("SomeFloat", "#float"),
     ("ref Exception", "#exception"), ("ref CatchableError", "#exception"),
@@ -124,14 +95,12 @@ const
   ]
 
 proc unqualified*(s: string): string =
-  ## Drops the namespace qualifier from a type name: `A.B.C` becomes `C`. Imported
-  ## symbols are flat, so the qualifier is decorative.
+  ## `A.B.C` as `C`; imported symbols are flat, so the qualifier is decorative.
   let dot = s.rfind('.')
   if dot >= 0: s[dot + 1 .. ^1] else: s
 
 proc canonicalTypeName*(s: string): string =
-  ## The C# keyword spelling of a type name, without its qualifier:
-  ## `System.Int32` and `Int32` both become `int`.
+  ## The type as C# spells it, without its qualifier: `System.Int32` is `int`.
   result = unqualified(s)
   for r in NsBclTypeNames:
     if r.cs == result: return r.nim
@@ -143,10 +112,7 @@ proc nimTypeName*(s: string): string =
     if r.cs == result: return r.nim
 
 proc kindKey*(k: NsTypeKind): string =
-  ## The key a declaration written over a class of types hangs off. It is the
-  ## bridge between the two sides of a member lookup: a *declared* constraint is
-  ## read as one of these keys when the prelude is loaded, and a receiver's
-  ## *resolved* kind is read as the same key when a member is looked up.
+  ## The key a declared constraint and a resolved receiver kind both map to.
   case k
   of tkInt: "#int"
   of tkFloat: "#float"
@@ -160,33 +126,24 @@ proc kindKey*(k: NsTypeKind): string =
   of tkNullable: "#nullable"
   of tkUnknown, tkType: ""
 
-# --- the types the compilation declares --------------------------------------
+# --- the names the compilation declares --------------------------------------
 #
-# The frontend's own symbol tables cover the module and the namespaces it imports,
-# which is everything `sema.nim` needs. The *parser* has no such table -- it runs
-# per file, before anything is collected -- yet C# grammar has to know whether
-# `(T)` starts a cast. The names the compilation declares are the answer, so the
-# namespace scan records them here.
+# The parser has no symbol table, but C# grammar must tell a cast from `(T)`, so
+# the namespace scan records every type and namespace it sees.
 
 var declaredTypes: HashSet[string]
 
 proc noteDeclaredType*(name: string) =
-  ## Records a type name the compilation declares. Called by the namespace scan,
-  ## which sees every `.ns` file of the compilation before any of them is parsed.
   if name.len > 0: declaredTypes.incl name
 
 proc isDeclaredType*(name: string): bool =
-  ## True when the compilation declares a type of this name. Only the parser asks:
-  ## telling a cast from a parenthesised expression is a grammar decision, and the
-  ## grammar has no scope to consult.
+  ## The parser asks, to tell a cast from a parenthesised expression.
   declaredTypes.contains(name)
 
 var declaredNamespaces: HashSet[string]
 
 proc namespacePrefixes*(name: string): seq[string] =
-  ## A namespace and each of its prefixes: `A.B.C` gives `A`, `A.B` and `A.B.C`. All
-  ## three name the same declarations, so all three are names a qualifier can start
-  ## at.
+  ## A namespace and each of its prefixes: `A.B.C` gives `A`, `A.B`, `A.B.C`.
   result = @[]
   var cur = ""
   for part in name.split('.'):
@@ -195,12 +152,7 @@ proc namespacePrefixes*(name: string): seq[string] =
     result.add cur
 
 proc noteDeclaredNamespace*(name: string) =
-  ## Records a namespace, and each of its prefixes. C# namespaces are *global* -- a
-  ## fully qualified `System.Console.WriteLine` is reachable from any file, with no
-  ## `using` -- so they are recorded for the whole compilation, unlike an alias,
-  ## which is a file-local name the parser keeps for itself. The namespace scan and
-  ## the prelude fill this in, and it is what tells the root of a dotted name from a
-  ## value.
+  ## C# namespaces are global, so they are recorded for the whole compilation.
   for p in namespacePrefixes(name):
     declaredNamespaces.incl p
 
@@ -209,28 +161,22 @@ proc isDeclaredNamespace*(name: string): bool =
   declaredNamespaces.contains(name)
 
 proc isLibraryNamespace*(s: NsBclSurface; name: string): bool =
-  ## True when a namespace the prelude is written in has this name. Lowering needs
-  ## it: a qualifier named after one of these is dropped in favour of the module that
-  ## declares the name, while a namespace this compilation declares is reached by the
-  ## file that declares or imports it.
+  ## A namespace the prelude itself is written in.
   s.namespaces.contains(name)
 
 proc namespaceModulePath*(ns: string): string =
-  ## `A.B` as the module path `A/B`. `addFileExt` reads a trailing `.B` as a file
-  ## extension, so the dots cannot be kept.
+  ## `A.B` as `A/B`; dots cannot be kept, `addFileExt` would read `.B` as a suffix.
   result = newStringOfCap(ns.len)
   for c in ns:
     result.add(if c == '.': '/' else: c)
 
 # --- the library's surface ---------------------------------------------------
 #
-# The prelude is Nim, so Nim's own parser reads it. Only declarations are
-# collected; nothing is compiled, and the resulting table is what `sema.nim` and
-# `desugar.nim` resolve a type or a member against.
+# Nim's own parser reads the prelude; only declarations are collected, and
+# nothing is compiled.
 
 proc declaredName(n: PNode): string =
-  ## The name a definition declares, with the `*` export marker dropped, and an
-  ## operator as its own text (`+`).
+  ## The declared name, with the `*` export marker dropped.
   if n == nil: return ""
   case n.kind
   of nkPostfix: result = (if n.len > 1: declaredName(n[1]) else: "")
@@ -242,8 +188,7 @@ proc declaredName(n: PNode): string =
   else: result = ""
 
 proc headSpelling(n: PNode): string =
-  ## The type a written type is headed by: `Table[K, V]` is a `Table`, and
-  ## `var Queue[T]` a `Queue`.
+  ## The type a written type is headed by: `Table[K, V]` is `Table`.
   if n == nil: return ""
   case n.kind
   of nkIdent, nkSym, nkAccQuoted: result = declaredName(n)
@@ -255,8 +200,7 @@ proc headSpelling(n: PNode): string =
   else: result = ""
 
 proc constraintSpelling(n: PNode): string =
-  ## A generic constraint as the prelude writes it: `SomeInteger`, `ref Exception`,
-  ## `ref object`. A member declared over one hangs off the class of types it names.
+  ## A constraint as written: `SomeInteger`, `ref Exception`, `ref object`.
   if n == nil: return ""
   case n.kind
   of nkRefTy:
@@ -266,15 +210,13 @@ proc constraintSpelling(n: PNode): string =
   else: result = headSpelling(n)
 
 proc typeClassKeyOf(spelling: string): string =
-  ## What a receiver spelling stands for: a type class through its own table, a
-  ## concrete type by its name.
+  ## A type class through its own table, a concrete type by name.
   for r in NsTypeClassKeys:
     if r.cs == spelling: return r.nim
   spelling
 
 proc kindOfSpelling*(s: NsBclSurface; nim: string): NsTypeKind =
-  ## The kind a Nim type spelling has: a Nim type the prelude builds on, a type the
-  ## prelude declares (following its alias or base), or nothing.
+  ## The kind of a Nim spelling, following a prelude type's alias or base.
   result = tkUnknown
   var cur = nim
   var seen = initHashSet[string]()
@@ -294,9 +236,7 @@ proc kindOfSpelling*(s: NsBclSurface; nim: string): NsTypeKind =
     else: return tkUnknown
 
 proc nimSpellingOf*(s: NsBclSurface; name: string): string =
-  ## The Nim spelling of a C# type name: a keyword through C#'s own tables, a
-  ## library type through its declaration, a Nim type the library builds on
-  ## (`HashSet`) under its own name, and otherwise "".
+  ## The Nim spelling of a C# type name, or "" when it names no such type.
   let canon = canonicalTypeName(name)
   for r in NsPrimitiveTypes:
     if r.cs == canon: return r.nim
@@ -306,17 +246,13 @@ proc nimSpellingOf*(s: NsBclSurface; name: string): string =
   ""
 
 proc kindOfName*(s: NsBclSurface; name: string): NsTypeKind =
-  ## The kind a type written by name has: C#'s (`int`, `List`), the library's
-  ## (`Console`), or a Nim type the library builds on (`Table`, `HashSet`).
+  ## The kind of a type named in C# (`int`), by the library (`Console`), or in Nim.
   let canon = canonicalTypeName(name)
   let nim = s.nimSpellingOf(canon)
   result = s.kindOfSpelling(if nim.len > 0: nim else: canon)
 
 proc isKnownTypeName*(s: NsBclSurface; name: string): bool =
-  ## True when the name is a type the frontend can place without a symbol table of
-  ## its own: C#'s vocabulary, the library's declarations, a Nim type the library
-  ## builds on, a type the compilation declares, or a namespace either of them
-  ## declares. A cast is told from a parenthesised expression by this lookup.
+  ## Whether the name is a type this frontend can place; tells a cast from `(T)`.
   if name.len == 0: return false
   let canon = canonicalTypeName(name)
   for r in NsPrimitiveTypes:
@@ -326,11 +262,7 @@ proc isKnownTypeName*(s: NsBclSurface; name: string): bool =
 
 proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
              name: string): NsBclMember =
-  ## The library member `name` on a receiver, or a zeroed member when the library
-  ## declares none. Which declarations apply is decided by the receiver's *resolved*
-  ## type, so `x.Length` reaches the `openArray` declaration whether `x` was
-  ## declared as a `List`, as an array, or as a `String` -- and a member declared
-  ## over a class of types is reached through the key that class stands for.
+  ## The member on a receiver, or a zeroed member when the library declares none.
   result = NsBclMember()
   if name.len == 0: return
   var keys: seq[string] = @[]
@@ -343,12 +275,8 @@ proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
       if m.name == name: return m
 
 proc noteMember(s: var NsBclSurface; m: NsBclMember) =
-  ## Files a declaration under its receiver. A receiver naming a Nim type the
-  ## library only *builds on* is filed under the class of types it belongs to as
-  ## well -- `openArray` under the sequences, `ref object` under the classes --
-  ## because N# has no declaration of those types to look a member up on. A
-  ## receiver the library declares keeps its own name: `List` *is* a `seq`, but the
-  ## prelude says so by declaring the member over `List`.
+  ## Files a declaration under its receiver, and under that receiver's type class
+  ## unless the prelude declares the receiver as a type in its own right.
   var keys: seq[string] = @[]
   if m.recv.len > 0:
     keys.add m.recv
@@ -359,8 +287,7 @@ proc noteMember(s: var NsBclSurface; m: NsBclMember) =
     s.members.mgetOrPut(k, @[]).add m
 
 proc collectNimFiles(root: string; into: var seq[string]) =
-  ## Every `.nim` file under `root`, recursively. The prelude's namespaces map to
-  ## directories, so the tree is walked rather than a list of modules kept here.
+  ## Every `.nim` file under `root`, recursively.
   if not dirExists(root): return
   for kind, path in walkDir(root):
     if kind == pcDir: collectNimFiles(path, into)
@@ -372,8 +299,7 @@ proc isDefinition(n: PNode): bool =
              nkTemplateDef, nkMacroDef}
 
 proc loadTypes(s: var NsBclSurface; n: PNode) =
-  ## The types a `type` section declares: what they are equal to, what they derive
-  ## from, and their own kind when they are neither.
+  ## The alias, base and kind a `type` section declares.
   for i in 0 ..< n.len:
     let d = n[i]
     if d == nil or d.kind != nkTypeDef or d.len < 3: continue
@@ -391,10 +317,22 @@ proc loadTypes(s: var NsBclSurface; n: PNode) =
         if a.len > 0 and a != t.name: t.alias = a
     s.types[t.name] = t
 
+proc nsStaticOf(n: PNode): string =
+  ## The type a declaration's `{.nsStatic: "T".}` pragma names, or "".
+  for i in 0 ..< n.len:
+    let p = n[i]
+    if p == nil or p.kind != nkPragma: continue
+    for j in 0 ..< p.len:
+      let e = p[j]
+      if e != nil and e.kind == nkExprColonExpr and e.len == 2 and
+         declaredName(e[0]) == "nsStatic" and
+         e[1] != nil and e[1].kind in {nkStrLit..nkTripleStrLit}:
+        return e[1].strVal
+  ""
+
 proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
-  ## One declaration, seen as a member: the receiver is the first parameter, and a
-  ## receiver spelled with one of the declaration's type parameters stands for what
-  ## that parameter is constrained to.
+  ## One declaration as a member: the receiver is its first parameter, and a type
+  ## parameter receiver stands for what that parameter is constrained to.
   if n.len < 4: return
   let name = declaredName(n[0])
   if name.len == 0: return
@@ -409,21 +347,78 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
   let ret = headSpelling(fp[0])
   let p0 = fp[1]
   if p0 == nil or p0.kind != nkIdentDefs or p0.len < 2: return
-  ## The first parameter's *type*. An `IdentDefs` lists every name first and the
-  ## type second to last, so a grouped parameter (`s, value: string`) carries its
-  ## type at `[^2]`, not `[1]`.
+  ## An `IdentDefs` lists names first, so a grouped parameter's type is at `[^2]`.
   var sel = (if p0.len >= 3: p0[p0.len - 2] else: p0[1])
   var isStatic = false
   if sel != nil and sel.kind == nkVarTy and sel.len > 0: sel = sel[0]
   if sel != nil and sel.kind == nkBracketExpr and headSpelling(sel) == "typedesc":
-    ## A member of a *type*: `int.MaxValue` is reached through a `typedesc`.
+    ## A member of a type: `int.MaxValue` is reached through a `typedesc`.
     isStatic = true
     sel = (if sel.len > 1: sel[1] else: nil)
   var recv = headSpelling(sel)
-  if constraints.hasKey(recv): recv = constraints[recv]
+  if constraints.hasKey(recv):
+    ## An unconstrained type parameter names no type; `nsStatic` gives it one.
+    let c = constraints[recv]
+    recv = (if c.len > 0: c else: "#param")
   s.noteMember NsBclMember(name: name, path: module, recv: typeClassKeyOf(recv),
                            ret: ret, isStatic: isStatic,
                            retIsParam: ret.len > 0 and constraints.hasKey(ret))
+  let qualifier = nsStaticOf(n)
+  if qualifier.len > 0:
+    ## Queued for `applyStatics`, which runs once every file has been read.
+    s.staticDecls.add (typ: qualifier, member: name, module: module)
+
+proc sameDecl(a, b: NsBclMember): bool =
+  ## The same declaration filed under different receiver keys.
+  a.name == b.name and a.path == b.path and a.recv == b.recv and
+    a.ret == b.ret and a.isStatic == b.isStatic
+
+proc applyStatics(s: var NsBclSurface; config: ConfigRef) =
+  ## Re-files each `{.nsStatic: "T".}` member under the type its qualifier names and
+  ## marks it `static`. An entry that matches nothing is a bug in the prelude, so it
+  ## is reported rather than skipped.
+  for e in s.staticDecls:
+    let recv = s.nimSpellingOf(e.typ)
+    if recv.len == 0:
+      internalError(config, "nsStatic: the prelude declares no type '" & e.typ &
+                    "' (on " & e.module & "." & e.member & ")")
+      continue
+    let targetKind = s.kindOfSpelling(recv)
+    var keys: seq[string] = @[]
+    for k in s.members.keys: keys.add k
+    ## Every distinct declaration of this name in the module, deduped by receiver.
+    var cands: seq[NsBclMember] = @[]
+    for key in keys:
+      for m in s.members[key]:
+        if m.name != e.member or m.path != e.module: continue
+        var dup = false
+        for c in cands:
+          if sameDecl(c, m): dup = true
+        if not dup: cands.add m
+    ## One candidate: the name is the identity. Several: the receiver's kind decides.
+    var chosen: seq[NsBclMember] = @[]
+    if cands.len == 1: chosen = cands
+    else:
+      for c in cands:
+        if s.kindOfSpelling(c.recv) == targetKind: chosen.add c
+    if chosen.len == 0:
+      internalError(config, "nsStatic: the prelude declares no member '" & e.member &
+                    "' of '" & e.typ & "' (" & e.module & ")")
+      continue
+    ## Move exactly the chosen declarations; same-named ones stay put.
+    for key in keys:
+      var kept: seq[NsBclMember] = @[]
+      for m in s.members[key]:
+        var drop = false
+        for c in chosen:
+          if sameDecl(c, m): drop = true
+        if not drop: kept.add m
+      s.members[key] = kept
+    for c in chosen:
+      var sm = c
+      sm.recv = recv
+      sm.isStatic = true
+      s.noteMember sm
 
 proc loadDecl(s: var NsBclSurface; n: PNode; module: string) =
   if n == nil: return
@@ -435,8 +430,7 @@ proc loadDecl(s: var NsBclSurface; n: PNode; module: string) =
     if isDefinition(n): s.loadMembers(n, module)
 
 proc modulePathOf(file, root: string): string =
-  ## The import path of a prelude file: its path under the prelude root, without the
-  ## extension, which is how a `using` names the module a declaration belongs to.
+  ## A prelude file's import path: its path under the root, without the extension.
   result = relativePath(file, root)
   if result.len == 0 or result == file: result = splitFile(file).name
   let dot = result.rfind('.')
@@ -444,22 +438,16 @@ proc modulePathOf(file, root: string): string =
   result = result.replace('\\', '/')
 
 proc preludeRoot(config: ConfigRef): string =
-  ## The library directory the prelude is read from: the one this compilation is
-  ## built against, because that is the prelude the generated imports resolve to. A
-  ## tool that drives the frontend without a configured library path -- the AST dump
-  ## tool, which only wants the tree -- falls back to the library beside these
-  ## sources, so it resolves what a real build resolves instead of resolving
-  ## nothing.
+  ## The library this compilation is built against; a tool with no configured
+  ## library falls back to the one beside these sources.
   result = config.libpath.string
   if not dirExists(result / NsLibRoot):
     let beside = currentSourcePath().parentDir.parentDir.parentDir / "lib"
     if dirExists(beside / NsLibRoot): result = beside
 
 proc loadPrelude(s: var NsBclSurface; config: ConfigRef) =
-  ## Reads the prelude's declarations. The prelude is Nim, so Nim's own parser
-  ## reads it; nothing is compiled, and a file that cannot be read is skipped
-  ## rather than reported -- the frontend's job is to compile the program, not to
-  ## audit the library it is compiled against.
+  ## Reads the prelude's declarations. A file that cannot be read is skipped:
+  ## compiling the program is the frontend's job, auditing the library is not.
   let lib = preludeRoot(config)
   let nsRoot = lib / NsLibRoot
   var files: seq[tuple[path, module: string]] = @[]
@@ -467,10 +455,7 @@ proc loadPrelude(s: var NsBclSurface; config: ConfigRef) =
   collectNimFiles(nsRoot, nsFiles)
   for f in nsFiles:
     files.add (f, modulePathOf(f, nsRoot))
-    ## The library's namespaces are global like any other, so a fully qualified
-    ## `System.Console.WriteLine` resolves without a `using`, and lowering can name
-    ## the module a qualified declaration belongs to. The intrinsics is not a
-    ## namespace and is left out.
+    ## The library's namespaces are global, so a qualified name needs no `using`.
     let nsName = modulePathOf(f, nsRoot).replace('/', '.')
     for p in namespacePrefixes(nsName):
       s.namespaces.incl p
@@ -489,30 +474,27 @@ proc loadPrelude(s: var NsBclSurface; config: ConfigRef) =
                entry.module)
 
 var surfaceCache: Table[string, NsBclSurface]
-  ## One surface per library, keyed by its path: the prelude does not change under
-  ## a running compiler, and reading it once keeps a compile cheap.
+  ## One surface per library path; the prelude cannot change under a running
+  ## compiler, so it is read once.
 
 proc bclSurface*(config: ConfigRef): NsBclSurface =
-  ## The prelude's surface, read once and then answered from memory. Everything the
-  ## frontend resolves about a type or a member comes from here.
+  ## The prelude's surface, read once and then answered from memory.
   let key = preludeRoot(config)
   if surfaceCache.hasKey(key): return surfaceCache[key]
   var s = NsBclSurface(types: initTable[string, NsBclType](),
                        members: initTable[string, seq[NsBclMember]](),
                        namespaces: initHashSet[string]())
   s.loadPrelude(config)
+  ## Resolved here rather than per file: the type may be in another module.
+  s.applyStatics(config)
   surfaceCache[key] = s
   s
 
 proc isExceptionType*(s: NsBclSurface; name: string;
                       chain: seq[string] = @[]): bool =
-  ## True when a type is an exception type. `name` is the type as written -- a
-  ## library type, a Nim defect, or a class this module declares -- and `chain` is
-  ## this module's class chain for it when it is one of its own, so a class deriving
-  ## from an exception is one too. The library's own declarations and Nim's
-  ## exception roots decide; nothing is known from the spelling of a name.
-  ## A class declared this way is emitted as a value `object` (so `except T` can
-  ## match it) but raised as `ref T`, because Nim can only raise a reference.
+  ## Whether a type is an exception type, as the library's declarations and Nim's
+  ## exception roots decide. `chain` carries this module's own class chain, so a
+  ## class deriving from an exception is one too.
   if name.len > 0:
     let nim = s.nimSpellingOf(name)
     if s.kindOfSpelling(if nim.len > 0: nim else: name) == tkException: return true

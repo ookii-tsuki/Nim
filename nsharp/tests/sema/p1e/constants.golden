@@ -1,2 +1,24 @@
 using System
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member byte.MaxValue = System | int
+member double.Epsilon = System | float
+member double.MaxValue = System | float
+member double.NaN = System | float
+member double.PositiveInfinity = System | float
+member int.MaxValue = System | int
+member int.MaxValue = System | int
+member int.MaxValue = System | int
+member int.MinValue = System | int
+member long.MaxValue = System | int
+member string.Empty = System | string
 member string.Length = System | int

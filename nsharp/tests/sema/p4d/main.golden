@@ -1,4 +1,9 @@
 using P = Company.Products
 using System
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
 member List.Count = System.Collections.Generic | int
 member string.Length = System | int

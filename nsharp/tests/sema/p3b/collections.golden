@@ -1,5 +1,19 @@
 using System
 using System.Collections.Generic
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
 member Dictionary.Add = System.Collections.Generic | void
 member Dictionary.ContainsKey = System.Collections.Generic | bool
 member Dictionary.Count = System.Collections.Generic | int

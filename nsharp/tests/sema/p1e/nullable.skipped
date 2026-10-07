@@ -1,0 +1,5 @@
+a.HasValue = nullable
+a.Value = nullable
+b.Value = nullable
+d.GetValueOrDefault = nullable
+zero.Value = nullable

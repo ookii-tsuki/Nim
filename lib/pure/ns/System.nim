@@ -1,23 +1,24 @@
-# N# standard library: the System namespace.
+# N# standard library: the System namespace. Imported by `using System;`.
 #
-# Covers Object, String, Array and Console. Members are ordinary Nim procs: an
-# instance member is reached through Nim's dot-call, a static one such as
-# `String.IsNullOrEmpty` through the qualifier the frontend drops.
-#
-# Imported by `using System;`.
+# Members are ordinary Nim procs: an instance member is reached by Nim's
+# dot-call, a static one through the qualifier the frontend drops.
 
 import std/[syncio, strutils]
+
+# `{.nsStatic: "T".}` marks a proc C# reaches through a type qualifier
+# (`Console.WriteLine`, `String.Concat`) rather than a receiver; the frontend
+# re-files it as a member of that type, marked `static`. A name the library
+# cannot place is reported rather than skipped. Members over `typedesc` already
+# name their type, so they carry no pragma.
+template nsStatic(typ: string) {.pragma.}
 
 {.push discardable.}
 
 type
   # --- System.Exception -------------------------------------------------------
   #
-  # The .NET exception types. Where Nim's runtime raises a matching defect the
-  # name is an alias for it, so `catch (NullReferenceException)` catches a real
-  # nil dereference instead of never firing at all. `Exception` itself is Nim's
-  # exception root, from which both `Defect` and `CatchableError` derive, so
-  # `catch (Exception)` catches what C# would catch.
+  # The .NET exception types: Nim raises a matching defect under this name, so the
+  # alias is what `catch` catches, and `Exception` is Nim's exception root.
   NullReferenceException* = NilAccessDefect
   OverflowException* = OverflowDefect
   IndexOutOfRangeException* = IndexDefect
@@ -37,26 +38,21 @@ type
   ObjectDisposedException* = object of InvalidOperationException
 
   Console* = object
-    ## `.NET`'s `Console` is a static class: nothing is ever an instance of it. It
-    ## is declared so the frontend resolves the name as a type, and its members are
-    ## the module's own procs, reached through the qualifier the frontend drops.
+    ## Declared so the frontend resolves the name as a type; nothing is ever an
+    ## instance of it.
 
 # --- System.Exception -------------------------------------------------------
 #
-# `e.Message` is a property of every exception in C#, and here it is an ordinary
-# proc over the exception root, reached by Nim's dot-call. It is generic because an
-# N# exception class derives from `Exception` as a *value* object and is raised as
-# a `ref` of it, exactly as Nim raises a `ref` of a `Defect`; and because a `ref`
-# does not convert to its base in an argument position.
+# `e.Message` reaches a proc on the exception root, and is generic because an N#
+# exception is a value object but is raised as a `ref`, which does not convert to
+# its base in an argument position.
 
 proc Message*[T: ref Exception](e: T): string = e.msg
 
 # --- System.Int32, Double, Char, String -------------------------------------
 #
-# C# reads these as `static` fields of the built-in types; .NET declares them as
-# `const` in the runtime library. Nim reaches a member of a type through a
-# dot-call on the type, the way `int.high` reaches `high(int32)`, so the values
-# belong here rather than in the compiler.
+# C# reads these as `static` fields of a built-in type. Nim reaches a type member
+# by dot-call on the type, so the values live here rather than in the compiler.
 
 template MaxValue*[T: SomeInteger](t: typedesc[T]): T = high(T)
 template MinValue*[T: SomeInteger](t: typedesc[T]): T = low(T)
@@ -76,13 +72,12 @@ template NegativeInfinity*[T: SomeFloat](t: typedesc[T]): T = T(system.NegInf)
 
 # --- System.Object ----------------------------------------------------------
 #
-# `object` is `RootRef`, so these take any N# class. `ToString` lives in the N#
-# intrinsics, which is imported into every module; GetHashCode wants the dynamic
-# type, which N# has no RTTI for, so it falls back to the bare-object answer.
+# `object` is `RootRef`. `ToString` is in the intrinsics; `GetHashCode` has no
+# RTTI, so it falls back to the bare-object answer.
 
 method Equals*(a, b: RootRef): bool {.base.} = a == b
 method GetHashCode*(x: RootRef): int32 {.base.} = int32(cast[int](x))
-proc ReferenceEquals*(a, b: RootRef): bool = a == b
+proc ReferenceEquals*(a, b: RootRef): bool {.nsStatic: "object".} = a == b
 
 # --- System.String ----------------------------------------------------------
 
@@ -114,13 +109,13 @@ proc Remove*(s: string; startIndex, count: int32): string =
   s[0 ..< int(startIndex)] & s[int(startIndex) + int(count) .. ^1]
 
 # Static members; the frontend drops the `String.` qualifier.
-proc IsNullOrEmpty*(s: string): bool = s.len == 0
-proc IsNullOrWhiteSpace*(s: string): bool =
+proc IsNullOrEmpty*(s: string): bool {.nsStatic: "String".} = s.len == 0
+proc IsNullOrWhiteSpace*(s: string): bool {.nsStatic: "String".} =
   s.len == 0 or s.allCharsInSet({' ', '\t', '\n', '\r', '\v', '\f'})
-proc Concat*(a, b: string): string = a & b
-proc Join*(separator: string; values: openArray[string]): string =
+proc Concat*(a, b: string): string {.nsStatic: "String".} = a & b
+proc Join*(separator: string; values: openArray[string]): string {.nsStatic: "String".} =
   values.join(separator)
-proc Compare*(a, b: string): int32 = int32(cmp(a, b))
+proc Compare*(a, b: string): int32 {.nsStatic: "String".} = int32(cmp(a, b))
 
 # --- System.Array -----------------------------------------------------------
 #
@@ -130,19 +125,20 @@ proc Length*[T](a: openArray[T]): int32 = int32(a.len)
 proc Clone*[T](a: openArray[T]): seq[T] = @a
 proc GetLength*[T](a: openArray[T]; dimension: int32): int32 =
   if dimension == 0: int32(a.len) else: 0
-proc IndexOf*[T](a: openArray[T]; value: T): int32 =
+proc IndexOf*[T](a: openArray[T]; value: T): int32 {.nsStatic: "Array".} =
   result = -1
   for i in 0 ..< a.len:
     if a[i] == value: return int32(i)
 
 # --- System.Console ---------------------------------------------------------
 
-# `$` is Nim's rendering, so a bool reads `true` and a special float reads `nan`.
-# Where C# spells something differently the test records C#'s output in a `.csout`
-# beside its `.out` (SPEC section 7), rather than the library special-casing it.
+# `$` is Nim's rendering, so a bool reads `true`; where C# spells differently the
+# test records C#'s output in a `.csout` beside the `.out` (SPEC 7).
 
-proc WriteLine*[T](x: T) = echo x
-proc Write*[T](x: T) = stdout.write x
+proc WriteLine*[T](x: T) {.nsStatic: "Console".} = echo x
+proc Write*[T](x: T) {.nsStatic: "Console".} = stdout.write x
 proc ReadLine*(): string = stdin.readLine
 
 {.pop.}
+
+

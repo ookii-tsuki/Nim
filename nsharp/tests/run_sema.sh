@@ -1,31 +1,24 @@
 #!/bin/sh
-# N# semantic conformance gate (Stage 0b).
-#
-# The parser golden-AST check shows the parse is what it always was; this one
-# shows the *meaning* is what C# says it is. Two halves produce the same
-# projected facts:
+# N# semantic conformance gate: the meaning is what C# says, not just the parse.
 #
 #   compiler/nsharp/tools/dumpsema.nim   what the N# frontend resolved
 #   tools/nsoracle                       what Roslyn resolves for the same file
 #
-# Every `.ns` test is deliberately valid C# (see run_cs.sh), so the oracle compiles
-# the very same file with Roslyn and reads the facts back. The gate fails when the
-# two disagree, so a change that resolves a name to a different namespace or type
-# than C# does is caught here rather than only by reading a diff.
+# Every `.ns` test is deliberately valid C# (see run_cs.sh), so the oracle
+# compiles the same file with Roslyn and the gate fails when the two projections
+# disagree on a namespace or a type.
 #
-# The committed golden under nsharp/tests/sema/<name>.golden is the *Roslyn*
-# output. `--update` (re)generates it from Roslyn; verification compares both
-# halves against it, so the goldens also record the BCL the oracle was measured
-# against.
+# The committed golden under nsharp/tests/sema/<name>.golden is the Roslyn
+# output; `--update` regenerates it. Beside it a `.skipped` ledger enumerates
+# every member access this stage does *not* project, so a blind spot is ratcheted
+# rather than silently growing.
 #
 # Usage:
 #   ./nsharp/tests/run_sema.sh            # verify against the committed goldens
 #   ./nsharp/tests/run_sema.sh --update   # (re)generate the goldens from Roslyn
 #   NIM1=/path/to/nim1 ./nsharp/tests/run_sema.sh
 #
-# Skips cleanly when the N# tool cannot be built. Without `dotnet` on PATH the N#
-# half is still checked against the committed goldens. Set NS_SKIP_SEMA=1 in
-# run.sh to skip the whole check.
+# Skips cleanly when the N# tool cannot be built or `dotnet` is not on PATH.
 
 set -u
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -43,8 +36,7 @@ update=0
 
 mkdir -p "$work"
 
-# Build the N# half, but only when it is missing or older than the frontend
-# sources; the bootstrap costs about a minute that a suite run should not pay.
+# Build the N# half only when it is missing or older than the frontend sources.
 stale=0
 [ -x "$tool" ] || stale=1
 if [ "$stale" = "0" ] && \
@@ -60,8 +52,8 @@ if [ "$stale" = "1" ]; then
   fi
 fi
 
-# The Roslyn half, built the same way (only when the sources are newer). Without
-# the SDK, the N# half is still checked against the committed goldens.
+# The Roslyn half, built the same way; without it the N# half is still checked
+# against the committed goldens.
 have_dotnet=0
 if command -v dotnet >/dev/null 2>&1; then
   if [ -f "$oracleDll" ] && \
@@ -87,9 +79,10 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
   count=$((count + 1))
   rel="${ns#$here/}"
   golden="$goldenDir/${rel%.ns}.golden"
+  ledger="$goldenDir/${rel%.ns}.skipped"
 
-  # The program: the main file, plus every sibling `.ns` with no marker of its
-  # own, which is a module (`p4d/Store.ns`) the main file is compiled with.
+  # The main file plus every sibling `.ns` with no marker of its own: a module
+  # the main file is compiled with.
   files="$ns"
   dir="$(dirname "$ns")"
   for sib in "$dir"/*.ns; do
@@ -105,7 +98,9 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
     want="$(dotnet "$oracleDll" $files)"
     mkdir -p "$(dirname "$golden")"
     printf '%s\n' "$want" > "$golden"
+    printf '%s\n' "$(dotnet "$oracleDll" --ledger $files)" > "$ledger"
     echo "wrote: nsharp/tests/sema/${rel%.ns}.golden"
+    echo "wrote: nsharp/tests/sema/${rel%.ns}.skipped"
     continue
   fi
 
@@ -116,8 +111,8 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
   fi
   want="$(cat "$golden")"
 
-  # The oracle half must still reproduce the golden: if Roslyn or the BCL it is
-  # measured against moved, the golden is stale and should be regenerated.
+  # The oracle must still reproduce the golden; if it does not, Roslyn or its BCL
+  # moved and the golden is stale.
   if [ "$have_dotnet" = "1" ]; then
     fresh="$(dotnet "$oracleDll" $files)"
     if [ "$fresh" != "$want" ]; then
@@ -127,6 +122,21 @@ for ns in "$here"/*.ns "$here"/*/*.ns; do
       diff "$work/want.txt" "$work/fresh.txt"
       fail=1
       continue
+    fi
+
+    # The out-of-scope ledger is ratcheted the same way.
+    if [ ! -f "$ledger" ]; then
+      echo "MISSING ledger: nsharp/tests/sema/${rel%.ns}.skipped (run with --update)"
+      fail=1
+    else
+      freshled="$(dotnet "$oracleDll" --ledger $files)"
+      if [ "$freshled" != "$(cat "$ledger")" ]; then
+        echo "OUT-OF-SCOPE CHANGED: nsharp/tests/$rel"
+        printf '%s\n' "$(cat "$ledger")" > "$work/lwant.txt"
+        printf '%s\n' "$freshled" > "$work/lfresh.txt"
+        diff "$work/lwant.txt" "$work/lfresh.txt"
+        fail=1
+      fi
     fi
   fi
 
