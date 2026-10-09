@@ -1,0 +1,376 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'x'
+          nkIdent 'int32'
+          nkIntLit 3
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'd'
+          nkIdent 'float64'
+          nkFloatLit 2.5
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'name'
+          nkIdent 'string'
+          nkStrLit "Ann"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkInfix
+                        nkIdent '&'
+                        nkInfix
+                          nkIdent '&'
+                          nkStrLit "x="
+                          nkCall
+                            nkIdent 'nsFmt'
+                            nkIdent 'x'
+                            nkStrLit ""
+                        nkStrLit " d="
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkIdent 'd'
+                        nkStrLit "F2"
+                    nkStrLit " ["
+                  nkCall
+                    nkIdent 'nsAlign'
+                    nkCall
+                      nkIdent 'nsFmt'
+                      nkIdent 'name'
+                      nkStrLit ""
+                    nkIntLit 6
+                nkStrLit "] ["
+              nkCall
+                nkIdent 'nsAlign'
+                nkCall
+                  nkIdent 'nsFmt'
+                  nkIdent 'name'
+                  nkStrLit ""
+                nkPrefix
+                  nkIdent '-'
+                  nkIntLit 6
+            nkStrLit "] {lit} "
+          nkCall
+            nkIdent 'nsFmt'
+            nkInfix
+              nkIdent '*'
+              nkIdent 'x'
+              nkIntLit 2
+            nkStrLit ""
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkInfix
+                        nkIdent '&'
+                        nkCall
+                          nkIdent 'nsFmt'
+                          nkFloatLit 1234567.891
+                          nkStrLit "N2"
+                        nkStrLit " "
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkIntLit 255
+                        nkStrLit "X"
+                    nkStrLit " "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkIntLit 255
+                    nkStrLit "x4"
+                nkStrLit " "
+              nkCall
+                nkIdent 'nsFmt'
+                nkIntLit 42
+                nkStrLit "D5"
+            nkStrLit " "
+          nkCall
+            nkIdent 'nsFmt'
+            nkFloatLit 0.125
+            nkStrLit "P1"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkInfix
+                        nkIdent '&'
+                        nkCall
+                          nkIdent 'nsFmt'
+                          nkFloatLit 3.14159
+                          nkStrLit "E2"
+                        nkStrLit " "
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkFloatLit 1.5
+                        nkStrLit "G"
+                    nkStrLit " "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkFloatLit 1e+20
+                    nkStrLit "G"
+                nkStrLit " "
+              nkCall
+                nkIdent 'nsFmt'
+                nkPrefix
+                  nkIdent '-'
+                  nkIntLit 7
+                nkStrLit "D3"
+            nkStrLit " "
+          nkCall
+            nkIdent 'nsFmt'
+            nkIntLit 1234
+            nkStrLit "N0"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkInfix
+                    nkIdent '&'
+                    nkCall
+                      nkIdent 'nsFmt'
+                      nkFloatLit 12.3456
+                      nkStrLit "0.00"
+                    nkStrLit " "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkIntLit 7
+                    nkStrLit "000"
+                nkStrLit " "
+              nkCall
+                nkIdent 'nsFmt'
+                nkFloatLit 1234.5
+                nkStrLit "#,##0.0"
+            nkStrLit " "
+          nkCall
+            nkIdent 'nsFmt'
+            nkIfExpr
+              nkElifExpr
+                nkInfix
+                  nkIdent '>'
+                  nkIdent 'x'
+                  nkIntLit 2
+                nkStrLit "big"
+              nkElseExpr
+                nkStrLit "small"
+            nkStrLit ""
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkCall
+              nkIdent 'nsFmt'
+              nkDotExpr
+                nkIdent 'name'
+                nkIdent 'Length'
+              nkStrLit ""
+            nkStrLit " chars, upper "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkDotExpr
+                nkIdent 'name'
+                nkIdent 'ToUpper'
+            nkStrLit ""
+      nkCall
+        nkIdent 'WriteLine'
+        nkStrLit "c:\\dir \"q\""
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '&'
+          nkCall
+            nkIdent 'nsFmt'
+            nkIdent 'name'
+            nkStrLit ""
+          nkStrLit "\\n"
+      nkCall
+        nkIdent 'WriteLine'
+        nkStrLit "AB\t|\\"
+      nkCall
+        nkIdent 'WriteLine'
+        nkStrLit "raw \"text\"\n  indented"
+      nkCall
+        nkIdent 'WriteLine'
+        nkStrLit ""
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

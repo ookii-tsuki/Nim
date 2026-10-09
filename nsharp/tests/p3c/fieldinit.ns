@@ -4,9 +4,10 @@ namespace Demo
 {
     class Counter
     {
-        // Valid C# that N# rejects: field initialisers are not lowered yet, and
-        // dropping one silently would leave the field at its default value.
+        // A field initialiser runs in every constructor, before its body.
         int count = 7;
+
+        public int Count() { return count; }
     }
 
     class Program
@@ -14,6 +15,7 @@ namespace Demo
         static void Main()
         {
             Console.WriteLine("field init");
+            Console.WriteLine(new Counter().Count());
         }
     }
 }

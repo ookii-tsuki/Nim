@@ -1,0 +1,75 @@
+// virtual / override / abstract / sealed, base calls, and object.ToString.
+using System;
+
+namespace Zoo
+{
+    abstract class Animal
+    {
+        protected string name;
+        public Animal(string name) { this.name = name; }
+
+        public abstract string Sound();
+        public virtual string Describe() { return name + " says " + Sound(); }
+        public virtual int Legs { get { return 4; } }
+        public string Kind() { return "animal"; }
+    }
+
+    class Dog : Animal
+    {
+        public Dog(string name) : base(name) { }
+        public override string Sound() => "woof";
+        public override string Describe() { return "Dog: " + base.Describe(); }
+        public override string ToString() { return "Dog(" + name + ")"; }
+    }
+
+    class Puppy : Dog
+    {
+        public Puppy(string name) : base(name) { }
+        public sealed override string Sound() { return "yip"; }
+        public new string Kind() { return "puppy"; }
+    }
+
+    class Bird : Animal
+    {
+        public Bird(string name) : base(name) { }
+        public override string Sound() { return "tweet"; }
+        public override int Legs => base.Legs - 2;
+    }
+
+    sealed class Plain { }
+
+    struct Point
+    {
+        public int X;
+        public int Y;
+        public override string ToString() { return "(" + X + ", " + Y + ")"; }
+    }
+
+    struct Bare { public int V; }
+
+    class Program
+    {
+        static void Main()
+        {
+            Animal[] zoo = new Animal[] { new Dog("rex"), new Bird("tweety"), new Puppy("bit") };
+            foreach (Animal a in zoo)
+            {
+                Console.WriteLine(a.Describe());
+                Console.WriteLine(a.Legs);
+                Console.WriteLine(a.Kind());
+            }
+            Puppy p = new Puppy("max");
+            Console.WriteLine(p.Kind());
+            Console.WriteLine(p);
+            Console.WriteLine(zoo[1]);
+            Console.WriteLine(new Plain());
+            Console.WriteLine(zoo[0].ToString());
+            Point pt = new Point();
+            pt.X = 3;
+            pt.Y = 4;
+            Console.WriteLine(pt);
+            Console.WriteLine("at " + pt);
+            Console.WriteLine(new Bare());
+        }
+    }
+}

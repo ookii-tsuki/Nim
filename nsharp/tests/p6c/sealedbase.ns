@@ -1,0 +1,13 @@
+// A sealed class cannot be derived from.
+using System;
+
+namespace Demo
+{
+    sealed class Leaf { }
+    class Twig : Leaf { }
+
+    class Program
+    {
+        static void Main() { Console.WriteLine(new Twig()); }
+    }
+}

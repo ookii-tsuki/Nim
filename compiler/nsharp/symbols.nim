@@ -14,6 +14,13 @@ type
     isMethod*: bool
     isProperty*: bool
     isStatic*: bool
+    isConst*: bool
+    isReadonly*: bool
+    isVirtual*: bool          ## `virtual` or `abstract`: opens a slot
+    isOverride*: bool
+    isAbstract*: bool
+    isSealed*: bool
+    owner*: string            ## the class that declares it
     typ*: NsNode              ## declared type of a field, or a method's return type
     params*: seq[NsNode]      ## a method's declared parameter list
 
@@ -21,6 +28,8 @@ type
     name*: string
     base*: string
     classKind*: NsClassKind
+    isAbstract*: bool
+    isSealed*: bool
     members*: seq[NsMemberSymbol]
     ctorArities*: seq[int]
     ctorParams*: seq[seq[NsNode]]  ## one parameter list per declared constructor
@@ -47,11 +56,19 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
     isMethod: m.kind == nsnMethodDecl,
     isProperty: m.kind == nsnPropertyDecl,
     isStatic: m.attrs.isStatic,
+    isConst: m.attrs.isConst,
+    isReadonly: m.attrs.isReadonly,
+    isVirtual: m.attrs.isVirtual or m.attrs.isAbstract,
+    isOverride: m.attrs.isOverride,
+    isAbstract: m.attrs.isAbstract,
+    isSealed: m.attrs.isSealed,
+    owner: c.name,
     typ: m.typ,              ## field/property type, or a method's return type
     params: (if m.kind == nsnMethodDecl: m.params else: @[]))
 
 proc collectClass(scope: NsModuleScope; cls: NsNode) =
-  var sym = NsClassSymbol(name: cls.name, classKind: cls.classKind)
+  var sym = NsClassSymbol(name: cls.name, classKind: cls.classKind,
+                          isAbstract: cls.attrs.isAbstract, isSealed: cls.attrs.isSealed)
   if cls.typ != nil and cls.typ.kind == nsnTypeName:
     sym.base = cls.typ.name
   for m in cls.sons:
@@ -59,6 +76,7 @@ proc collectClass(scope: NsModuleScope; cls: NsNode) =
     of nsnFieldDecl, nsnMethodDecl, nsnPropertyDecl:
       sym.addMember(m)
     of nsnCtorDecl:
+      if m.attrs.isStatic: continue   ## a static constructor is never called
       sym.ctorArities.add m.params.len
       sym.ctorParams.add m.params
     else: discard
@@ -175,3 +193,20 @@ proc ctorOverloads*(scope: NsModuleScope; clsName: string): seq[seq[NsNode]] =
   if not scope.classes.hasKey(clsName): return
   result = scope.classes[clsName].ctorParams
   if result.len == 0: result = @[@[]]
+
+proc isDispatched*(scope: NsModuleScope; clsName, member: string): bool =
+  ## True when `member` of `clsName` sits in a dispatch slot: declared `virtual`,
+  ## `abstract` or `override` somewhere along the chain.
+  for c in scope.chain(clsName):
+    for m in scope.classes[c].members:
+      if m.name == member and (m.isVirtual or m.isOverride): return true
+  false
+
+proc baseSlot*(scope: NsModuleScope; clsName, member: string): NsMemberSymbol =
+  ## The nearest base member an `override` of `member` in `clsName` fills: one that
+  ## is `virtual`, `abstract` or itself an `override`. Zeroed when there is none.
+  result = NsMemberSymbol()
+  let ch = scope.chain(clsName)
+  for i in 1 ..< ch.len:
+    for m in scope.classes[ch[i]].members:
+      if m.name == member and (m.isVirtual or m.isOverride): return m

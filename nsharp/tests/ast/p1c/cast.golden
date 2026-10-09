@@ -26,6 +26,201 @@ nkStmtList
                 nkIdent 'Legs'
               nkIdent 'int32'
               nkEmpty
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Dog'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'Animal'
+          nkRecList
+            nkIdentDefs
+              nkPostfix
+                nkIdent '*'
+                nkIdent 'Name'
+              nkIdent 'string'
+              nkEmpty
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Color'
+      nkEmpty
+      nkEnumTy
+        nkEmpty
+        nkEnumFieldDef
+          nkIdent 'Red'
+          nkIntLit 1
+        nkEnumFieldDef
+          nkIdent 'Blue'
+          nkIntLit 2
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Animal'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initAnimal'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Animal'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newAnimal'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Animal'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Dog'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initDog'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Dog'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newDog'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Dog'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Animal'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Animal"
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -59,24 +254,22 @@ nkStmtList
       nkCall
         nkIdent 'initAnimal'
         nkIdent 'result'
-  nkTypeSection
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
         nkIdent 'Dog'
-      nkEmpty
-      nkRefTy
-        nkObjectTy
-          nkEmpty
-          nkOfInherit
-            nkIdent 'Animal'
-          nkRecList
-            nkIdentDefs
-              nkPostfix
-                nkIdent '*'
-                nkIdent 'Name'
-              nkIdent 'string'
-              nkEmpty
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Dog"
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -113,32 +306,22 @@ nkStmtList
       nkCall
         nkIdent 'initDog'
         nkIdent 'result'
-  nkTypeSection
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'Color'
-      nkEmpty
-      nkEnumTy
-        nkEmpty
-        nkEnumFieldDef
-          nkIdent 'Red'
-          nkIntLit 1
-        nkEnumFieldDef
-          nkIdent 'Blue'
-          nkIntLit 2
-  nkTypeSection
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
         nkIdent 'Program'
-      nkEmpty
-      nkRefTy
-        nkObjectTy
-          nkEmpty
-          nkOfInherit
-            nkIdent 'RootObj'
-          nkRecList
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
   nkProcDef
     nkIdent 'Main'
     nkEmpty

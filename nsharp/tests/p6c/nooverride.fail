@@ -1,0 +1,2 @@
+This test must fail to compile: it overrides a non-virtual method (CS0506; CS0115 when no member exists).
+code: NS0506

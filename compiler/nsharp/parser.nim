@@ -34,8 +34,10 @@ const
     "sealed", "static"]
   ## Modifiers N# actually implements. Anything else recognised but unimplemented
   ## is reported by `parseModifierList` instead of being silently dropped.
-  NsMemberModifiers = ["public", "private", "protected", "internal", "static"]
-  NsClassModifiers = ["public", "private", "protected", "internal"]
+  NsMemberModifiers = ["public", "private", "protected", "internal", "static",
+    "const", "readonly", "virtual", "override", "abstract", "sealed", "new"]
+  NsClassModifiers = ["public", "private", "protected", "internal", "abstract",
+    "sealed"]
 
 # --- token helpers ----------------------------------------------------------
 
@@ -283,6 +285,36 @@ proc parseLambda(p: var NsParser): NsNode =
     b.add p.parseExpr()
     result.body = b
 
+proc parseInterpolated(p: var NsParser): NsNode =
+  ## `$"a{x,5:F2}b"`: the lexer has already split it into literal chunks and holes,
+  ## so each hole is an ordinary expression, an optional `, alignment`, and the
+  ## format text the hole-end token carries.
+  let begin = p.advance
+  result = nsn(nsnInterpolated, p.infoOf(begin))
+  while not p.at(nsInterpEnd) and not p.at(nsEof):
+    if p.at(nsStrLit):
+      let t = p.advance
+      result.add nsnStrLit(t.text, p.infoOf(t))
+    elif p.at(nsInterpHole):
+      let h = p.advance
+      let hole = nsn(nsnInterpHole, p.infoOf(h))
+      hole.body = p.parseExpr()
+      if p.at(nsComma):
+        discard p.advance
+        hole.add p.parseExpr()
+      if p.at(nsInterpHoleEnd):
+        hole.strVal = p.advance.text
+      else:
+        p.err(p.peek, ndSyntaxErrorExpected, "}")
+        while not p.at(nsInterpHoleEnd) and not p.at(nsInterpEnd) and not p.at(nsEof):
+          discard p.advance
+        if p.at(nsInterpHoleEnd): discard p.advance
+      result.add hole
+    else:
+      p.err(p.peek, ndInvalidExpressionTerm, p.peek.text)
+      discard p.advance
+  discard p.expect(nsInterpEnd)
+
 proc parsePrimary(p: var NsParser): NsNode =
   if looksLikeLambda(p):
     return p.parseLambda()
@@ -294,26 +326,40 @@ proc parsePrimary(p: var NsParser): NsNode =
   of nsIntLit:
     discard p.advance
     var v: BiggestInt = 0
-    try: v = parseBiggestInt(t.text)
-    except ValueError: discard
+    try:
+      if t.text.startsWith("0x"): v = cast[BiggestInt](parseHexInt(t.text))
+      elif t.text.startsWith("0b"): v = cast[BiggestInt](parseBinInt(t.text))
+      else: v = cast[BiggestInt](parseBiggestUInt(t.text))
+    except ValueError:
+      p.err(t, ndIntegralConstantTooLarge)
     result = nsnIntLit(v, p.infoOf(t))
+    result.strVal = t.suffix
   of nsFloatLit:
     discard p.advance
     var v: BiggestFloat = 0.0
     try: v = BiggestFloat(parseFloat(t.text))
     except ValueError: discard
     result = nsnFloatLit(v, p.infoOf(t))
+    result.strVal = t.suffix
+    if t.suffix == "m":
+      p.err(t, ndUnsupported, "the 'decimal' type")
   of nsCharLit:
     discard p.advance
     var v = 0
     if t.text.len == 1: v = ord(t.text[0])
+    elif t.text.len > 1:
+      ## A character outside ASCII: N#'s `char` is one byte (SPEC 4.4).
+      p.err(t, ndUnsupported, "a char literal outside ASCII")
     result = nsnCharLit(BiggestInt(v), p.infoOf(t))
+  of nsInterpBegin:
+    result = p.parseInterpolated()
   of nsIdent:
     discard p.advance
     case t.text
     of "null": result = nsn(nsnNull, p.infoOf(t))
     of "new": result = p.parseNew(t)
     of "this": result = nsn(nsnThis, p.infoOf(t))
+    of "base": result = nsn(nsnBase, p.infoOf(t))
     of "true": result = nsnBoolLit(true, p.infoOf(t))
     of "false": result = nsnBoolLit(false, p.infoOf(t))
     of "nameof": result = p.parseNameof(t)
@@ -629,8 +675,8 @@ proc parseVarDecl(p: var NsParser): NsNode =
     hasType = false
     discard p.advance
   elif p.at(nsIdent) and p.peek.text == "const":
+    ## `const int X = 1;`: C# writes the type after `const`.
     result.declKind = dkConst
-    hasType = false
     discard p.advance
   if hasType:
     result.typ = p.parseType()
@@ -960,8 +1006,12 @@ proc parseClassMember(p: var NsParser; clsName: string;
                       isInterface = false): NsNode =
   let modInfo = p.here()
   let mods = p.parseModifierList(NsModifierWords, NsMemberModifiers)
-  let isStatic = "static" in mods
-  let attrs = NsAttrs(access: accessOf(mods), isStatic: isStatic)
+  let isConst = "const" in mods
+  let isStatic = "static" in mods or isConst
+  let attrs = NsAttrs(access: accessOf(mods), isStatic: isStatic, isConst: isConst,
+                      isReadonly: "readonly" in mods, isVirtual: "virtual" in mods,
+                      isOverride: "override" in mods, isAbstract: "abstract" in mods,
+                      isSealed: "sealed" in mods, isNew: "new" in mods)
 
   # constructor: `ClassName(params)` (no return type, as in C#)
   if p.at(nsIdent) and p.peek.text == clsName and p.peekAhead(1).kind == nsLParen:
@@ -1004,10 +1054,26 @@ proc parseClassMember(p: var NsParser; clsName: string;
     result.typ = ty
     result.attrs = attrs
     result.params = p.parseParams()
-    if isInterface and p.at(nsSemi):
-      ## An interface member has no body. Accepting it here lets the check that
-      ## reports interfaces as unsupported run, which says more than a syntax error.
+    if p.at(nsSemi):
+      ## An interface or `abstract` member has no body; `sema.nim` reports one that
+      ## should have had one.
       discard p.advance
+    elif p.at(nsArrow):
+      ## `R M() => e;` is `R M() { return e; }`, or the statement for `void`.
+      let arrowInfo = p.here()
+      discard p.advance
+      let e = p.parseExpr()
+      let b = nsn(nsnBlock, arrowInfo)
+      if ty.kind == nsnVoidType:
+        let st = nsn(nsnExprStmt, e.info)
+        st.body = e
+        b.add st
+      else:
+        let r = nsn(nsnReturn, e.info)
+        r.body = e
+        b.add r
+      result.body = b
+      if p.at(nsSemi): discard p.advance
     else:
       result.body = p.parseBlock()
   elif p.at(nsLBrace) or p.at(nsArrow):
@@ -1048,6 +1114,11 @@ proc parseClassMember(p: var NsParser; clsName: string;
           p.err(p.peek, ndUnsupported, "this property accessor")
           discard p.advance
       discard p.expect(nsRBrace)
+      if p.at(nsAssign):
+        ## `{ get; set; } = value;` initialises the backing field.
+        discard p.advance
+        result.body = p.parseExpr()
+        if p.at(nsSemi): discard p.advance
     result.params = @[getter, setter]
   else:
     result = nsn(nsnFieldDecl, info)
@@ -1072,7 +1143,8 @@ proc parseTypeDecl(p: var NsParser): NsNode =
   result = nsn(nsnClassDecl, p.infoOf(nameTok))
   result.name = nameTok.text
   result.classKind = ckind
-  result.attrs = NsAttrs(access: accessOfTopLevel(mods))
+  result.attrs = NsAttrs(access: accessOfTopLevel(mods), isAbstract: "abstract" in mods,
+                         isSealed: "sealed" in mods)
   if p.at(nsColon):
     discard p.advance
     result.typ = p.parseType()
@@ -1216,7 +1288,26 @@ proc parseNsModule*(source: string; fileIdx: FileIndex;
   ## semantic checks and no lowering happen here; see `frontend.nim`. The library's
   ## surface is read here because the grammar needs it: a cast is told from a
   ## parenthesised expression by looking the name up as a type.
-  var p = NsParser(toks: tokenize(source), pos: 0, config: config,
+  let isDefined = proc (sym: string): bool = options.isDefined(config, sym)
+  var toks = tokenize(source, isDefined)
+  ## Tokens that are diagnostics rather than grammar: a character C# has no token
+  ## for, and `#error`/`#warning`.
+  var kept: seq[NsToken] = @[]
+  for t in toks:
+    case t.kind
+    of nsInvalid:
+      nsError(config, newLineInfo(fileIdx, t.line, t.col), ndUnexpectedCharacter, t.text)
+    of nsDirective:
+      let sp = t.text.find(' ')
+      let msg = (if sp >= 0: t.text[sp + 1 .. ^1] else: "")
+      if t.text.startsWith("late "):
+        nsError(config, newLineInfo(fileIdx, t.line, t.col), ndDefineAfterToken)
+      elif t.text.startsWith("error"):
+        nsError(config, newLineInfo(fileIdx, t.line, t.col), ndErrorDirective, msg)
+      else:
+        nsWarn(config, newLineInfo(fileIdx, t.line, t.col), ndWarningDirective, msg)
+    else: kept.add t
+  var p = NsParser(toks: kept, pos: 0, config: config,
                    fileIdx: fileIdx, surface: bclSurface(config),
                    aliases: initHashSet[string]())
   result = nsn(nsnModule, newLineInfo(fileIdx, 1, 1))

@@ -1,0 +1,12 @@
+// `#error` stops the compilation with its message: CS1029.
+using System;
+
+#error this build is not configured
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main() { Console.WriteLine("x"); }
+    }
+}

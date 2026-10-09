@@ -1,0 +1,2 @@
+This test must fail to compile: it leaves an abstract member unimplemented.
+code: NS0534

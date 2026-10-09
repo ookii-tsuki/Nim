@@ -1,0 +1,13 @@
+// A concrete class must implement every abstract member it inherits.
+using System;
+
+namespace Demo
+{
+    abstract class Shape { public abstract double Area(); }
+    class Square : Shape { }
+
+    class Program
+    {
+        static void Main() { Console.WriteLine(new Square()); }
+    }
+}

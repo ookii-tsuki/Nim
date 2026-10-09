@@ -116,20 +116,20 @@ Status of the blocking decisions (full log in §18). ✅ = resolved, 🟡 = stil
 | **Case sensitivity** | `Foo` ≠ `foo` | ✅ **v1: case-sensitive** | front + `idents` mode (§3.1) |
 | Keywords | reserved words | ✅ v1 | front |
 | Contextual keywords (`var`, `async`, `record`, `init`, `required`, `nameof`…) | usable as identifiers | ✅ v1 | front |
-| Integer literals `123`, `0xFF`, `0b1010`, `1_000` | dec/hex/bin, separators | ✅ v1 | front |
+| Integer literals `123`, `0xFF`, `0b1010`, `1_000` | dec/hex/bin, separators | ✅ v1 (typed as C# types them: int, uint, long, ulong) | front/sem |
 | Integer suffixes `u`, `l`, `ul` | unsigned/long | ✅ v1 | front |
 | Real literals `1.5`, `1e10`, `.5` | floats | ✅ v1 | front |
 | Real suffixes `f`, `d`, `m` | float/double/decimal | ✅ v1 (`f`,`d`); `m` 🔜 (D7) | front |
 | Char literals + escapes `'\n'`, `'\u0041'` | char | ✅ v1 | front |
 | String literals + escapes | `"..."` | ✅ v1 | front |
-| Verbatim strings `@"..."` | no escaping, `""` = quote | ✅ v1 | front |
-| Interpolated strings `$"...{x}..."` | format holes | ✅ v1 | front/desugar |
-| Raw strings `"""..."""` (C# 11) | multiline raw | 🔜 later | front |
+| Verbatim strings `@"..."`, verbatim identifiers `@class` | no escaping, `""` = quote | ✅ v1 | front |
+| Interpolated strings `$"...{x,align:fmt}..."`, `$@"..."` | format holes | ✅ v1 | front (holes lexed as expressions) + desugar (→ `nsFmt`/`nsAlign`, `lib/pure/nsharp/format.nim`) |
+| Raw strings `"""..."""` (C# 11) | multiline raw | ✅ v1 | front (closing-line indentation stripped, as C# does) |
 | UTF-8 strings `u8"..."` | byte spans | 🔜 later | front |
-| Preprocessor `#if/#elif/#else/#endif/#define/#undef` | conditional compile | ✅ v1 (maps to Nim `when`) | front/desugar |
-| `#region/#endregion` | folding only | 🚫 out (ignored) | front |
-| `#error`, `#warning` | diagnostics | ✅ v1 | front |
-| `#pragma`, `#line` | compiler hints | 🔜 later | front |
+| Preprocessor `#if/#elif/#else/#endif/#define/#undef` | conditional compile | ✅ v1 (lexical, as in C#; an undefined symbol is asked of `-d:`) | front |
+| `#region/#endregion`, `#nullable` | folding / NRT context | ✅ v1 (accepted and ignored) | front |
+| `#error`, `#warning` | diagnostics | ✅ v1 (NS1029 / NS1030) | front |
+| `#pragma`, `#line` | compiler hints | ✅ v1 (accepted and ignored) | front |
 | `goto` + labels | jump | 🚫 out | - |
 | `;` terminators, `{ }` blocks | structure | ✅ v1 | front |
 
@@ -359,8 +359,8 @@ and the namespaces must be merged or layered.
 | `record`, `record struct` | data classes | 🔜 later | desugar |
 | `partial class` | split decl | 🚫 out (argue) | - |
 | Nested types | inner | 🔜 later | - |
-| `abstract class` | non-instantiable | ✅ v1 | front |
-| `sealed class` | non-inheritable | ✅ v1 | front |
+| `abstract class` | non-instantiable | ✅ v1 | sem (`new` is NS0144; an unfilled abstract slot NS0534) |
+| `sealed class` | non-inheritable | ✅ v1 | sem (deriving is NS0509) |
 | `static class` | no instances | 🔜 later (→ module) | front |
 
 ### 5.3 Members
@@ -368,20 +368,20 @@ and the namespaces must be merged or layered.
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
 | **Fields** `int x;` | data member | ✅ v1 | front (→ `nkIdentDefs`) |
-| `const` fields | compile-time const | ✅ v1 | front (→ `const`) |
-| `readonly` fields | assign-once | ✅ v1 | desugar (→ `let`/guard) |
-| `static` fields | type-level | ✅ v1 | front (→ global/pragma) |
+| `const` fields | compile-time const | ✅ v1 | desugar (→ Nim `const` + accessor template; assigning one is NS0131) |
+| `readonly` fields | assign-once | ✅ v1 | sem (assignment outside a ctor of the class is NS0191 / NS0198) |
+| `static` fields | type-level | ✅ v1 | desugar (→ module global `nsC_x` + `template x(t: typedesc[C])`, so `C.x = 1` and `C.x += 1` are Nim's dot-call) |
 | `static readonly` | type-level const | ✅ v1 | desugar |
 | **Methods** `R M(P a) { }` | method | ✅ v1 | front (→ `proc`) |
 | Expression-bodied method `=> e;` | `R M() => e;` | ✅ v1 | desugar |
 | `static` methods | type-level | ✅ v1 | front |
-| `virtual` / `override` / `abstract` | dispatch | ✅ v1 | sem (`method`) |
-| `sealed override` | stop override | 🔜 later | sem |
-| `new` (hide) | shadow base | 🔜 later | sem |
+| `virtual` / `override` / `abstract` | dispatch | ✅ v1 | desugar (`virtual`/`abstract` → `method {.base.}`, `override` → `method`; an override without a slot is NS0115) |
+| `sealed override` | stop override | ✅ v1 | sem (overriding it again is NS0239) |
+| `new` (hide) | shadow base | ✅ v1 | desugar (a plain proc beside the base's `method`, so static type decides, as in C#) |
 | **Constructors** `C(a) { }` | init | ✅ v1 | desugar (→ `proc new`) |
 | `this(...)` chaining | ctor call | ✅ v1 | desugar |
 | `base(...)` in ctor | base ctor | ✅ v1 | desugar |
-| Static constructor `static C() { }` | type init | 🔜 later | desugar |
+| Static constructor `static C() { }` | type init | ✅ v1 | desugar (→ `nsStaticInitC`, run after the static field initialisers and before any statement of the program; C# runs it lazily, before first use) |
 | Primary constructors (C# 12) | `class C(int x)` | 🔜 later | desugar |
 | **Destructor/Finalizer** `~C() { }` | cleanup | 🔜 later | sem (`=destroy`) |
 | **Properties** (see §5.4) | accessors | ✅ v1 | desugar |
@@ -408,7 +408,7 @@ and the namespaces must be merged or layered.
 | Expression-bodied `R P => e;` | single expr | ✅ v1 | desugar |
 | Init-only `R P { get; init; }` | set in ctor only | 🔜 later | sem/desugar |
 | `required` members | must-init | 🔜 later | sem |
-| Static properties | type-level | ✅ v1 | desugar |
+| Static properties | type-level | ✅ v1 | desugar (getter/setter over `typedesc[C]`, backing in a module global) |
 | Accessor visibility `{ get; private set; }` | per-accessor | ✅ v1 | desugar |
 | Abstract/virtual properties | dispatch | ✅ v1 | sem |
 | Interface properties | contract | ✅ v1 (static) | desugar → concept |
@@ -494,11 +494,12 @@ v2.
 | Switch expressions | C# 8 | 🔜 later | desugar |
 | `^` (index-from-end), `..` (range) | C# 8 | 🔜 later | desugar/lib |
 
-**Stringification is Nim's.** `$` and `ToString` are the same thing, and an object
-renders the way Nim renders a value of its type, so a class prints as its fields.
-Three consequences are deliberate: a bool reads `true` where C# writes `True`, a
-whole float reads `3.0` where C# writes `3`, and an object's rendering follows its
-*static* type, because N# has no RTTI to reach the dynamic one. String `+` accepts
+**Stringification of primitives is Nim's.** `$` and `ToString` are the same thing.
+Two consequences are deliberate: a bool reads `true` where C# writes `True`, and a
+whole float reads `3.0` where C# writes `3` (a format spec, `{x:G}`, gives C#'s
+form). An object prints the way C# prints it: `ToString` is a dispatched `method`,
+so a class shows its override, or its namespace-qualified name, for its *dynamic*
+type; a struct likewise through a generated `$`. String `+` accepts
 any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 `"obj=" + obj` both work.
 | Null-forgiving `x!` | suppress NRT | 🔜 later | front |
@@ -552,13 +553,13 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `checked` and conversions | covers overflow **and** conversions | only `overflowChecks` is switched | a conversion that is out of range still raises `RangeDefect` (aliased `ArgumentOutOfRangeException`) where C# raises `OverflowException` | desugar |
 | `==` / `Equals` | class = reference, struct = value | whatever is overloaded | class → reference `==`; struct/record → value `==`; `Equals`→`==` | desugar/sem |
 | `ToString()` | virtual method | `$` proc | satisfied by a `ToString` proc in the intrinsics (`$x[]`), which Nim's dot-call reaches; no member name is mapped by the compiler | lib |
-| Numeric conversions | implicit widening, explicit narrowing | stricter | implicit widening; explicit narrowing. The refusals the frontend can *see* are diagnosed with C#'s own code (CS0029, CS0037, CS1503) before anything is lowered; what it cannot see -- an unresolved name, an enum, a type from a module it does not cover -- counts as compatible, so Nim keeps the last word | front/sem |
+| Numeric conversions | implicit widening, explicit narrowing; binary numeric promotion (`byte + byte` is `int`, `int * double` is `double`) | stricter: no implicit `int`→`float`, no `char` arithmetic, `uint8 + uint8` stays `uint8` | `compiler/nsharp/numeric.nim` holds C#'s promotion and implicit-conversion tables; `sema.nim` records the conversion an operand or a value needs (`conv`) wherever both types are known exactly, and `desugar.nim` spells it `T(x)`. A compound `x op= y` promotes and casts back, as C# does. Implicit narrowing of a non-constant is NS0266. Elsewhere implicit widening; explicit narrowing. The refusals the frontend can *see* are diagnosed with C#'s own code (CS0029, CS0037, CS1503) before anything is lowered; what it cannot see -- an unresolved name, an enum, a type from a module it does not cover -- counts as compatible, so Nim keeps the last word | front/sem |
 | `(T)x` vs `(x)` | the symbol table decides | - | the parenthesised name must resolve as a type -- C#'s vocabulary, the library's declarations, a type this compilation declares, an enum, or a namespace it imports -- **and** be followed by a value, so `(x) - 1` is a subtraction while `(Foo) - 1` is a cast | front |
 | `do-while` and `continue` | the check runs *after* the body, so `continue` re-tests it | `while` tests before | one body copy under a first-pass flag (`while first or c`, cleared before the body), leaving `break` and `continue` to Nim's own loop | desugar |
 | `using` keyword | directive **and** statement | - | disambiguate by context | front |
 | `switch` fallthrough | forbidden (empty cases group) | no fallthrough | maps to Nim `case`; empty-case groups allowed; a trailing `break;` is dropped; a non-exhaustive switch gets `else: discard` | front |
 | `Main` / `args` | `Main(string[])`, exit code | module top-level | support both (D5); `int` return → exit code | front |
-| Interpolation format | `$"{x:F2}"` | `strformat`/`formatFloat` | map format specs to Nim format | desugar |
+| Interpolation format | `$"{x:F2}"` | `strformat`/`formatFloat` | a hole lowers to `nsFmt(x, spec)`, which renders .NET's standard numeric specs (`C D E F G N P R X` with precision) and custom ones (`0 # . , %`) as .NET's en-US culture does; a hole without a spec is the value's `$`, so N#'s float rendering applies there | desugar/lib |
 | `null` deref | `NullReferenceException` | no runtime check | `desugar.nim` wraps the receiver of a field access or dot-called method on a class reference in the intrinsics' `nsCheckNil`, so null raises `NullAccessDefect` -- aliased to `NullReferenceException` -- instead of faulting; off under `-d:danger` / `--nilChecks:off` | front/lib |
 | Arrays | `T[]`, `new T[n]` | `seq[T]` | `T[]` → `seq[T]`; `new T[n]` → `newSeq[T](n)`; `new T[]{..}` → `@[..]`; `.Length` is the library's `openArray` proc, reached by Nim's dot-call | front/lib |
 | Enum field scope | scoped to the enum type | unqualified globals | `E.A` resolves via Nim qualified access; two enums must not share a field name | front |
@@ -601,11 +602,11 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `override` | replace base | ✅ v1 | sem (`{.override.}`) |
 | `abstract` methods/classes | no impl | ✅ v1 | sem |
 | `sealed` | stop inheritance | ✅ v1 | sem |
-| `new` (hide) | shadow | 🔜 later | sem |
+| `new` (hide) | shadow | ✅ v1 | desugar (plain proc) |
 | Dynamic dispatch | via vtable | ✅ v1 | Nim `method` |
-| `base.M()` calls | call base impl | ✅ v1 | desugar |
+| `base.M()` calls | call base impl | ✅ v1 | desugar (→ `procCall M(Base(self), ...)`; `base.P` likewise for a property) |
 | `this` | self ref | ✅ v1 | desugar |
-| `Object` base (`Equals`/`ToString`/`GetHashCode`) | universal methods | ✅ v1 | desugar (→ `==`, `$`, `hash`) |
+| `Object` base (`Equals`/`ToString`/`GetHashCode`) | universal methods | ✅ v1 | `ToString` is a base `method` in the intrinsics; every class N# compiles overrides it with its namespace-qualified name unless it (or a base) overrides it, and `$` calls it, so `Console.WriteLine(obj)` prints what C# prints |
 | Boxing/unboxing (value↔`object`) | implicit | 🔜 later | sem |
 | Operator overloading | `operator +` | ✅ v1 | front |
 | Method overloading | same name, diff sig | ✅ v1 | sem (Nim overloads) |
@@ -966,7 +967,26 @@ code:
 | `NS0037` | CS0037 | `null` for a non-nullable value type |
 | `NS0122` | CS0122 | a member is inaccessible |
 | `NS0155` | CS0155 | a `catch` names something that is not an `Exception` |
+| `NS0115` | CS0115 | `override` with no virtual member to override |
+| `NS0131` | CS0131 | assigning a `const` |
+| `NS0144` | CS0144 | `new` on an abstract class |
+| `NS0145` | CS0145 | a `const` field without a value |
+| `NS0191` | CS0191 | assigning a `readonly` field outside a constructor |
+| `NS0198` | CS0198 | assigning a `static readonly` field outside the static constructor |
+| `NS0238` | CS0238 | `sealed` on a member that is not an override |
+| `NS0239` | CS0239 | overriding a `sealed` override |
 | `NS0246` | CS0246 | a `using` names no namespace or module |
+| `NS0500` | CS0500 | an abstract member with a body |
+| `NS0501` | CS0501 | a non-abstract method without a body |
+| `NS0509` | CS0509 | deriving from a `sealed` class |
+| `NS0513` | CS0513 | an abstract member in a non-abstract class |
+| `NS0534` | CS0534 | a concrete class leaves an inherited abstract member unimplemented |
+| `NS0266` | CS0266 | a numeric value would narrow implicitly; a cast is needed |
+| `NS1021` | CS1021 | an integer literal is too large |
+| `NS1029` | CS1029 | `#error` |
+| `NS1030` | CS1030 | `#warning` (a warning) |
+| `NS1032` | CS1032 | `#define`/`#undef` after the file's first token |
+| `NS1056` | CS1056 | a character C# has no token for |
 | `NS1001` | CS1001 | identifier expected |
 | `NS1002` | CS1002 | `;` expected |
 | `NS1003` | CS1003 | syntax error, a token expected |

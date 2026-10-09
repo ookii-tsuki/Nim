@@ -29,6 +29,7 @@ type
     ret*: string          ## declared result spelling ("" for `void`)
     isStatic*: bool       ## declared over `typedesc[...]`: `int.MaxValue`
     retIsParam*: bool     ## the result is one of the declaration's own parameters
+    isVirtual*: bool      ## declared as a Nim `method`: a C# `virtual` member
 
   NsStaticDecl* = tuple[typ, member, module: string]
     ## A `{.nsStatic: "T".}` pragma: the qualifier, the proc, and its module.
@@ -362,7 +363,8 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
     recv = (if c.len > 0: c else: "#param")
   s.noteMember NsBclMember(name: name, path: module, recv: typeClassKeyOf(recv),
                            ret: ret, isStatic: isStatic,
-                           retIsParam: ret.len > 0 and constraints.hasKey(ret))
+                           retIsParam: ret.len > 0 and constraints.hasKey(ret),
+                           isVirtual: n.kind == nkMethodDef)
   let qualifier = nsStaticOf(n)
   if qualifier.len > 0:
     ## Queued for `applyStatics`, which runs once every file has been read.

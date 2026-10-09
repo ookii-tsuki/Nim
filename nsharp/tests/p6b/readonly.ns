@@ -1,0 +1,16 @@
+// A readonly field may only be assigned by a constructor of its class.
+using System;
+
+namespace Demo
+{
+    class Box
+    {
+        public readonly int Size = 1;
+        public void Grow() { Size = 2; }
+    }
+
+    class Program
+    {
+        static void Main() { new Box().Grow(); Console.WriteLine("x"); }
+    }
+}

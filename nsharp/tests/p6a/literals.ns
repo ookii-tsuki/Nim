@@ -1,0 +1,62 @@
+#define LOCAL
+// Numeric literal forms, preprocessor directives and C#'s numeric promotion.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static double Half(double v) { return v / 2; }
+        static long Widen(long v) { return v * 2; }
+
+        static void Main()
+        {
+            long l = 10L;
+            float f = 1.5f;
+            int h = 0xFF;
+            int b = 0b101;
+            uint u = 7u;
+            int big = 1_000_000;
+            ulong ul = 18446744073709551615UL;
+            Console.WriteLine(l);
+            Console.WriteLine(f);
+            Console.WriteLine(h + b + big);
+            Console.WriteLine(u);
+            Console.WriteLine(ul);
+            Console.WriteLine(.5);
+            Console.WriteLine(1.5e3);
+
+            int i = 3;
+            byte by = 200;
+            char c = 'A';
+            Console.WriteLine(l + i);
+            Console.WriteLine(by + by);
+            Console.WriteLine(c + 1);
+            Console.WriteLine((char)(c + 2));
+            Console.WriteLine(Half(i));
+            Console.WriteLine(Widen(i));
+            long q = i;
+            Console.WriteLine(q * 1000000000);
+            int n = 17;
+            n /= 5;
+            Console.WriteLine(n);
+            by += 100;
+            Console.WriteLine(by);
+            Console.WriteLine(h >> 4);
+            Console.WriteLine(i < l);
+            Console.WriteLine($"{i * 0.5:F1}");
+#if NSHARP_UNDEFINED_SYMBOL
+            Console.WriteLine("never");
+#elif true
+            Console.WriteLine("elif");
+#else
+            Console.WriteLine("never");
+#endif
+#if LOCAL && !NSHARP_UNDEFINED_SYMBOL
+            Console.WriteLine("local");
+#endif
+#region ignored
+#endregion
+        }
+    }
+}

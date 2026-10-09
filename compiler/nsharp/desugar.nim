@@ -38,7 +38,15 @@ type
     cache: IdentCache
     thisName: string        ## "self" in instance members, "" in static ones
     entryPoint: PNode       ## the emitted `Main` proc, if there was one
+    staticInits: seq[PNode]
+      ## One `nsStaticInit<C>` proc per class with static initialisers or a static
+      ## constructor. They are emitted after every declaration and called before
+      ## `Main`, so they may name any member of the module.
     nilChecks: bool         ## whether the compilation has the nil check on
+    curClass: NsNode        ## the class whose members are being lowered
+    curBase: string         ## its base class, for `base.M()`
+    curIsException: bool    ## whether it is lowered as a value object raised by `ref`
+    curNamespace: string    ## the enclosing namespace, for `object.ToString()`
 
 proc note(l: NsFromImports; module, name: string) =
   ## Records one declaration to import by name, once.
@@ -98,6 +106,51 @@ proc noteMemberImport(l: Lowerer; n: NsNode) =
     return
   let ns = l.qualifierNamespace(n.body)
   if ns.len > 0: l.imports.note(namespaceModulePath(ns), n.name)
+
+# --- dispatch ----------------------------------------------------------------
+
+proc isDispatchedMember(cls, m: NsNode): bool =
+  ## A member in a dispatch slot is a Nim `method`. Only a class has slots: a struct
+  ## is sealed, so its `override string ToString()` is an ordinary proc.
+  cls.classKind == ckClass and not m.attrs.isStatic and
+    (m.attrs.isVirtual or m.attrs.isAbstract or m.attrs.isOverride)
+
+proc asMethod(l: Lowerer; cls, m: NsNode; def: PNode): PNode =
+  ## Turns a lowered member into a `method`: `{.base.}` where C# opens the slot
+  ## (`virtual`, `abstract`), and a body that throws for an abstract one, which C#
+  ## never lets run because the class cannot be instantiated.
+  result = def
+  if not isDispatchedMember(cls, m): return
+  result = newNodeI(nkMethodDef, def.info, 7)
+  for i in 0 .. 6: result[i] = def[i]
+  if m.attrs.isVirtual or m.attrs.isAbstract:
+    let pr = newNodeI(nkPragma, def.info)
+    pr.add l.id("base", def.info)
+    result[4] = pr
+  if m.attrs.isAbstract:
+    let raiseCall = newNodeI(nkCall, def.info)
+    raiseCall.add l.id("newException", def.info)
+    raiseCall.add l.id("Defect", def.info)
+    raiseCall.add newAtom(nkStrLit, "abstract member called: " & m.name, def.info)
+    result[6] = newTree(nkStmtList, def.info, newTree(nkRaiseStmt, def.info, raiseCall))
+
+proc baseConv(l: Lowerer; info: TLineInfo): PNode =
+  ## `this` seen as its base class: `Base(self)`, or `(ref Base)(self)` for an
+  ## exception class, whose `self` is a `ref`.
+  let target =
+    if l.curIsException: newTree(nkRefTy, info, l.id(nimTypeName(l.curBase), info))
+    else: l.id(nimTypeName(l.curBase), info)
+  result = newTree(nkCall, info, (if l.curIsException: newTree(nkPar, info, target)
+                                  else: target), l.id("self", info))
+
+proc baseCall(l: Lowerer; name: string; args: seq[PNode]; info: TLineInfo): PNode =
+  ## `base.M(args)`: `procCall M(Base(self), args)`, which calls the base's own
+  ## implementation instead of dispatching again.
+  let call = newNodeI(nkCall, info)
+  call.add l.id(name, info)
+  call.add l.baseConv(info)
+  for a in args: call.add a
+  result = newTree(nkCommand, info, l.id("procCall", info), call)
 
 # --- types ------------------------------------------------------------------
 
@@ -195,6 +248,12 @@ proc newToNim(l: Lowerer; n: NsNode): PNode =
 
 proc callToNim(l: Lowerer; n: NsNode): PNode =
   var callee = n.body
+  if callee != nil and callee.kind == nsnMember and callee.body != nil and
+     callee.body.kind == nsnBase:
+    ## `base.M(args)` calls the base implementation, never the override.
+    var args: seq[PNode] = @[]
+    for a in n.sons: args.add l.wrappedArg(a)
+    return l.baseCall(callee.name, args, n.info)
   ## `Class.Method(...)` / `Console.WriteLine(...)`: the qualifier is dropped,
   ## because it is a namespace or a static class. `sema.nim` decides this and
   ## records it as `tkType`.
@@ -267,7 +326,7 @@ proc nilableReceiver(l: Lowerer; n: NsNode): bool =
   ## True for a receiver the nil check may test: a declared *class*. A struct is a
   ## value, so it can never be nil, and `this` is a parameter a method body cannot
   ## see as nil without the call-site check having fired first.
-  if n == nil or n.kind == nsnThis: return false
+  if n == nil or n.kind in {nsnThis, nsnBase}: return false
   if n.typeKind != tkClass: return false
   let name = n.typeName
   name.len > 0 and l.scope.classes.hasKey(name) and
@@ -367,6 +426,29 @@ proc nullCoalesceToNim(l: Lowerer; n: NsNode): PNode =
                       newTree(nkElseExpr, n.info, l.id(NsCond, n.info)))
     result.add inner
 
+proc interpolatedToNim(l: Lowerer; n: NsNode): PNode =
+  ## `$"a{x,5:F2}b"` as `"a" & nsAlign(nsFmt(x, "F2"), 5) & "b"`. The intrinsics own
+  ## what a format spec means; a hole with no spec is the value's `$`.
+  result = nil
+  for part in n.sons:
+    var piece: PNode
+    if part.kind == nsnStrLit:
+      piece = newAtom(nkStrLit, part.strVal, part.info)
+    else:
+      piece = newNodeI(nkCall, part.info)
+      piece.add l.id("nsFmt", part.info)
+      piece.add l.expr(part.body)
+      piece.add newAtom(nkStrLit, part.strVal, part.info)
+      if part.sons.len > 0:
+        let al = newNodeI(nkCall, part.info)
+        al.add l.id("nsAlign", part.info)
+        al.add piece
+        al.add l.expr(part.sons[0])
+        piece = al
+    result = (if result == nil: piece
+              else: newTree(nkInfix, part.info, l.id("&", part.info), result, piece))
+  if result == nil: result = newAtom(nkStrLit, "", n.info)
+
 proc expr(l: Lowerer; n: NsNode): PNode =
   if n == nil: return newNodeI(nkEmpty, unknownLineInfo)
   case n.kind
@@ -374,16 +456,38 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnIdent: result = l.id(n.name, n.info)
   of nsnThis:
     result = l.id(if l.thisName.len > 0: l.thisName else: "this", n.info)
+  of nsnBase: result = l.baseConv(n.info)
   of nsnNull: result = newNodeI(nkNilLit, n.info)
-  of nsnIntLit: result = newAtom(nkIntLit, n.intVal, n.info)
-  of nsnFloatLit: result = newAtom(nkFloatLit, n.floatVal, n.info)
+  of nsnIntLit:
+    ## The literal's C# type, chosen by `sema.nim`, picks the typed Nim literal; an
+    ## `int` one stays untyped so it adapts to its context the way C#'s does.
+    let kind = case n.typeName
+      of "uint": nkUInt32Lit
+      of "long": nkInt64Lit
+      of "ulong": nkUInt64Lit
+      else: nkIntLit
+    result = newAtom(kind, n.intVal, n.info)
+  of nsnFloatLit:
+    result = newAtom((if n.strVal == "f": nkFloat32Lit else: nkFloatLit),
+                     n.floatVal, n.info)
+  of nsnInterpolated: result = l.interpolatedToNim(n)
   of nsnStrLit: result = newAtom(nkStrLit, n.strVal, n.info)
   of nsnCharLit: result = newAtom(nkCharLit, n.intVal, n.info)
   of nsnBoolLit: result = l.id(if n.intVal != 0: "true" else: "false", n.info)
   of nsnMember:
-    l.noteMemberImport(n)
-    result = newTree(nkDotExpr, n.info, l.memberReceiverChecked(n),
-                     l.id(n.name, n.info))
+    if n.body != nil and n.body.kind == nsnBase and l.curBase.len > 0 and
+       l.scope.classes.hasKey(l.curBase) and
+       l.scope.findMemberInfo(l.curBase, n.name).isProperty:
+      ## `base.P`: the base's getter, not the override's.
+      result = l.baseCall(n.name, @[], n.info)
+    elif n.body != nil and n.body.typeKind == tkType and n.typeKind == tkDelegate and
+         l.scope.classes.hasKey(n.body.typeName):
+      ## `C.M` as a method group: the static method itself, a proc value.
+      result = l.id(n.name, n.info)
+    else:
+      l.noteMemberImport(n)
+      result = newTree(nkDotExpr, n.info, l.memberReceiverChecked(n),
+                       l.id(n.name, n.info))
   of nsnCall: result = l.callToNim(n)
   of nsnIndex:
     result = newTree(nkBracketExpr, n.info, l.expr(n.body), l.expr(n.sons[0]))
@@ -450,6 +554,10 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     result.add newTree(nkElseExpr, n.info, l.expr(n.sons[2]))
   of nsnLambda: result = l.lambdaToNim(n)
   else: result = empty(n.info)
+  if n.conv.len > 0:
+    ## The implicit numeric conversion `sema.nim` recorded: C# promotes and widens
+    ## where Nim wants the conversion spelled.
+    result = newTree(nkCall, n.info, l.id(nimTypeName(n.conv), n.info), result)
 
 # --- statements -------------------------------------------------------------
 
@@ -608,7 +716,7 @@ proc presentOf(l: Lowerer; v: NsNode; info: TLineInfo): PNode =
 
 proc localDeclToNim(l: Lowerer; n: NsNode): PNode =
   l.annotateLambda(n.body, n.typ)
-  let defs = newNodeI(nkIdentDefs, n.info)
+  let defs = newNodeI((if n.declKind == dkConst: nkConstDef else: nkIdentDefs), n.info)
   defs.add l.id(n.name, n.info)
   defs.add l.typeToNim(n.typ, n.info)
   var value = empty(n.info)
@@ -650,9 +758,21 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
   elif n.name.len == 0:
     value = l.expr(n.sons[1])
   else:
-    ## Compound assignment: `x += e` becomes `x = x + e`.
-    value = newTree(nkInfix, n.info, l.id(n.name, n.info),
-                    copyTree(lhs), l.expr(n.sons[1]))
+    ## Compound assignment: `x += e` becomes `x = x + e`. With numeric operands
+    ## `sema.nim` recorded the promoted type (`strVal`) and `x`'s own (`typeName`):
+    ## `x` is promoted for the operator and the result cast back, as C# does.
+    var operand = copyTree(lhs)
+    if n.strVal.len > 0:
+      operand = newTree(nkCall, n.info, l.id(nimTypeName(n.strVal), n.info), operand)
+    let rhs = l.expr(n.sons[1])
+    if n.typeKind == tkInt and n.name in ["/", "mod"]:
+      value = newTree(nkCall, n.info,
+                      l.id((if n.name == "/": "nsDiv" else: "nsMod"), n.info),
+                      operand, rhs)
+    else:
+      value = newTree(nkInfix, n.info, l.id(n.name, n.info), operand, rhs)
+    if n.strVal.len > 0 and n.typeName.len > 0:
+      value = newTree(nkCall, n.info, l.id(nimTypeName(n.typeName), n.info), value)
   let nullableTarget = n.sons[0] != nil and n.sons[0].typeKind == tkNullable
   let wrapTarget = nullableTarget and (n.name == "??" or
                                         n.sons[1].typeKind != tkNullable)
@@ -789,8 +909,8 @@ proc procPragmas(l: Lowerer; params: PNode; info: TLineInfo): PNode =
     result = pragma
 
 proc mkProc(l: Lowerer; nameNode, params, body: PNode; info: TLineInfo;
-            withPragmas = false): PNode =
-  result = newNodeI(nkProcDef, info, 7)
+            withPragmas = false; kind = nkProcDef): PNode =
+  result = newNodeI(kind, info, 7)
   result[0] = nameNode
   result[1] = empty(info)
   result[2] = empty(info)
@@ -855,51 +975,103 @@ proc lowerDelegate(l: Lowerer; n: NsNode): PNode =
   result = newNodeI(nkTypeSection, n.info)
   result.add td
 
+# --- static members ---------------------------------------------------------
+
+proc staticStorageName(cls, member: string): string =
+  ## The module global behind a static field or a static auto-property. The class
+  ## is part of the name, so two classes' `count` are two globals.
+  "ns" & cls & "_" & member
+
+proc typedescDefs(l: Lowerer; cls: string; info: TLineInfo): PNode =
+  ## `t: typedesc[C]`, the receiver of a static member, so `C.x` is Nim's dot-call.
+  result = newNodeI(nkIdentDefs, info)
+  result.add l.id("t", info)
+  result.add newTree(nkBracketExpr, info, l.id("typedesc", info), l.id(cls, info))
+  result.add empty(info)
+
+proc staticAccessor(l: Lowerer; cls: string; m: NsNode; storage: string): PNode =
+  ## `template x*(t: typedesc[C]): untyped = nsC_x`: `C.x` reads and writes the
+  ## global, so `C.x = 1` and `C.x += 1` need nothing else.
+  let fp = newNodeI(nkFormalParams, m.info)
+  fp.add l.id("untyped", m.info)
+  fp.add l.typedescDefs(cls, m.info)
+  result = newNodeI(nkTemplateDef, m.info, 7)
+  result[0] = l.exportedName(m.attrs, m.name, m.info)
+  for i in 1 .. 5: result[i] = empty(m.info)
+  result[3] = fp
+  result[6] = newTree(nkStmtList, m.info, l.id(storage, m.info))
+
+proc lowerStaticField(l: Lowerer; cls: NsNode; m: NsNode; inits: var seq[PNode];
+                      into: var seq[PNode]) =
+  ## A `static` field is a module global, a `const` one a Nim `const`; both are
+  ## reached through an accessor template over the class's `typedesc`. A static
+  ## field's initialiser runs in the class's static initialiser.
+  let storage = staticStorageName(cls.name, m.name)
+  let defs = newNodeI((if m.attrs.isConst: nkConstDef else: nkIdentDefs), m.info)
+  defs.add l.id(storage, m.info)
+  defs.add l.typeToNim(m.typ, m.info)
+  if m.attrs.isConst:
+    defs.add l.expr(m.body)
+    into.add newTree(nkConstSection, m.info, defs)
+  else:
+    defs.add empty(m.info)
+    into.add newTree(nkVarSection, m.info, defs)
+    if m.body != nil:
+      inits.add newTree(nkAsgn, m.info, l.id(storage, m.info), l.expr(m.body))
+  into.add l.staticAccessor(cls.name, m, storage)
+
 # --- properties -------------------------------------------------------------
 
 proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[PNode] =
   ## A C# property becomes a getter named `P` and a setter named `P=`. An
   ## accessor written `get;`/`set;` reads and writes a generated `PBacking` field.
   result = @[]
-  if m.attrs.isStatic: return   # static properties are not supported
   let getter = if m.params.len > 0: m.params[0] else: nil
   let setter = if m.params.len > 1: m.params[1] else: nil
+  ## A static property is reached through its type, so its receiver is the
+  ## `typedesc`, and an auto-property's storage is a module global.
+  let isStatic = m.attrs.isStatic
+  let backing =
+    if isStatic: l.id(staticStorageName(cls.name, m.name & "Backing"), m.info)
+    else: newTree(nkDotExpr, m.info, l.id("self", m.info),
+                  l.id(m.name & "Backing", m.info))
+  let recvDefs =
+    if isStatic: l.typedescDefs(cls.name, m.info)
+    else: l.selfDefs(cls.name, isException, m.info)
   if getter != nil:
     let gbody =
-      if getter.kind == nsnEmpty:
-        newTree(nkDotExpr, m.info, l.id("self", m.info),
-                l.id(m.name & "Backing", m.info))
-      else:
-        l.stmtSeq(getter)
+      if getter.kind == nsnEmpty: copyTree(backing)
+      else: l.stmtSeq(getter)
     let gp = newNodeI(nkFormalParams, m.info)
     gp.add l.typeToNim(m.typ, m.info)
-    gp.add l.selfDefs(cls.name, isException, m.info)
+    gp.add copyTree(recvDefs)
     result.add l.mkProc(l.exportedName(m.attrs, m.name, m.info), gp, gbody, m.info)
   if setter != nil:
     let sbody =
       if setter.kind == nsnEmpty:
-        newTree(nkAsgn, m.info,
-                newTree(nkDotExpr, m.info, l.id("self", m.info),
-                        l.id(m.name & "Backing", m.info)),
-                l.id("value", m.info))
+        newTree(nkAsgn, m.info, copyTree(backing), l.id("value", m.info))
       else:
         l.stmtSeq(setter)
     let sp = newNodeI(nkFormalParams, m.info)
     sp.add empty(m.info)
-    sp.add l.selfDefs(cls.name, isException, m.info)
+    sp.add copyTree(recvDefs)
     sp.add l.paramDef(nsnParam("value", m.typ, m.info))
     result.add l.mkProc(l.exportedName(m.attrs, m.name & "=", m.info), sp, sbody, m.info)
 
 # --- constructors -----------------------------------------------------------
 
 proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
-               baseName: string): PNode =
-  ## `proc initC(self: C, params) = <base init>; <body>`
+               baseName: string; fieldInits: seq[PNode]): PNode =
+  ## `proc initC(self: C, params) = <field initialisers>; <base init>; <body>`.
+  ## C# runs the initialisers before the base constructor, and not at all in a
+  ## constructor that chains to `this(...)`, whose target runs them.
   let ip = newNodeI(nkFormalParams, m.info)
   ip.add empty(m.info)
   ip.add l.selfDefs(cls.name, isException, m.info)
   for p in m.params: ip.add l.paramDef(p)
   let ibody = newNodeI(nkStmtList, m.info)
+  if m.initKind != "this":
+    for f in fieldInits: ibody.add copyTree(f)
   var initName = ""
   if m.initKind == "base": initName = "init" & baseName
   elif m.initKind == "this": initName = "init" & cls.name
@@ -954,6 +1126,37 @@ proc alwaysExported(l: Lowerer; name: string; info: TLineInfo): PNode =
   ## emitter, regardless of the class's own accessibility.
   result = newTree(nkPostfix, info, l.id("*", info), l.id(name, info))
 
+proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
+  ## C#'s `object.ToString()` names the dynamic type, namespace included. A class
+  ## that does not override it, and inherits no override from this compilation, gets
+  ## a `method` that says so; a struct gets a proc, and `$` for both reaches it.
+  result = @[]
+  var overridden = false
+  for c in l.scope.chain(n.name):
+    for m in l.scope.classes[c].members:
+      if m.name == "ToString" and m.isMethod and not m.isStatic: overridden = true
+  let info = n.info
+  let full = (if l.curNamespace.len > 0: l.curNamespace & "." & n.name else: n.name)
+  let selfDefs = newNodeI(nkIdentDefs, info)
+  selfDefs.add l.id("self", info)
+  selfDefs.add l.id(n.name, info)
+  selfDefs.add empty(info)
+  if not overridden:
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add l.id("string", info)
+    fp.add copyTree(selfDefs)
+    result.add l.mkProc(l.alwaysExported("ToString", info), fp,
+                        newTree(nkStmtList, info, newAtom(nkStrLit, full, info)), info,
+                        kind = (if isClass: nkMethodDef else: nkProcDef))
+  if not isClass:
+    ## `$` for a struct: the class form is the intrinsics' generic one.
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add l.id("string", info)
+    fp.add copyTree(selfDefs)
+    let call = newTree(nkCall, info, l.id("ToString", info), l.id("self", info))
+    result.add l.mkProc(l.alwaysExported("$", info), fp, newTree(nkStmtList, info, call),
+                        info)
+
 proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let isClass = n.classKind == ckClass
   let mappedBase =
@@ -961,11 +1164,18 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     else: ""
   let isException = isClass and
     l.surface.isExceptionType(mappedBase, l.scope.baseChain(mappedBase))
+  l.curClass = n
+  l.curBase = mappedBase
+  l.curIsException = isException
+  if not isException:
+    for p in l.objectToString(n, isClass): into.add p
 
   # 1. the type: `C = ref object` for a class, a plain `object` for a struct and
   #    for an exception class (which is raised as `ref C`).
   let recList = newNodeI(nkRecList, n.info)
   for m in n.sons:
+    if m.attrs.isStatic and m.kind in {nsnFieldDecl, nsnPropertyDecl}:
+      continue   ## a module global, below
     if m.kind == nsnFieldDecl:
       let defs = newNodeI(nkIdentDefs, m.info)
       defs.add l.exportedName(m.attrs, m.name, m.info)
@@ -998,7 +1208,42 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   sec.add td
   into.add sec
 
-  # 2. members, in source order (Nim resolves `self.Prop` dot-calls against
+  # 2. static storage and the initialisers: instance ones run in every
+  #    constructor, static ones and the static constructor in `nsStaticInit<C>`.
+  var fieldInits: seq[PNode] = @[]
+  var staticInits: seq[PNode] = @[]
+  block:
+    var inner = l
+    inner.thisName = "self"
+    for m in n.sons:
+      if m.kind == nsnFieldDecl and m.attrs.isStatic:
+        var st = l
+        st.thisName = ""
+        st.lowerStaticField(n, m, staticInits, into)
+      elif m.kind == nsnPropertyDecl and m.attrs.isStatic and isAutoProperty(m):
+        let storage = staticStorageName(n.name, m.name & "Backing")
+        let defs = newNodeI(nkIdentDefs, m.info)
+        defs.add l.id(storage, m.info)
+        defs.add l.typeToNim(m.typ, m.info)
+        defs.add empty(m.info)
+        into.add newTree(nkVarSection, m.info, defs)
+        if m.body != nil:
+          var st = l
+          st.thisName = ""
+          staticInits.add newTree(nkAsgn, m.info, l.id(storage, m.info),
+                                  st.expr(m.body))
+      elif m.kind == nsnFieldDecl and m.body != nil:
+        fieldInits.add newTree(nkAsgn, m.info,
+                               newTree(nkDotExpr, m.info, l.id("self", m.info),
+                                       l.id(m.name, m.info)),
+                               inner.expr(m.body))
+      elif m.kind == nsnPropertyDecl and m.body != nil and isAutoProperty(m):
+        fieldInits.add newTree(nkAsgn, m.info,
+                               newTree(nkDotExpr, m.info, l.id("self", m.info),
+                                       l.id(m.name & "Backing", m.info)),
+                               inner.expr(m.body))
+
+  # 3. members, in source order (Nim resolves `self.Prop` dot-calls against
   #    declarations seen so far, so a property must precede its users)
   var hasCtor = false
   for m in n.sons:
@@ -1017,22 +1262,35 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         np.add l.selfDefs(n.name, isException, m.info)
         for i in 1 ..< params.len: np.add params[i]
         params = np
-      let pd = inner.mkProc(l.exportedName(m.attrs, m.name, m.info), params,
-                            inner.stmtSeq(m.body), m.info)
+      let pd = l.asMethod(n, m, inner.mkProc(l.exportedName(m.attrs, m.name, m.info),
+                                             params, inner.stmtSeq(m.body), m.info))
       into.add pd
       if m.name == "Main" and l.entryPoint == nil: l.entryPoint = pd
     of nsnPropertyDecl:
-      inner.thisName = "self"
-      for p in inner.lowerProperty(n, m, isException): into.add p
+      inner.thisName = (if m.attrs.isStatic: "" else: "self")
+      for p in inner.lowerProperty(n, m, isException): into.add l.asMethod(n, m, p)
     of nsnCtorDecl:
+      if m.attrs.isStatic:
+        ## The static constructor runs once, after the static initialisers.
+        inner.thisName = ""
+        if m.body != nil:
+          for st in m.body.sons: staticInits.add inner.stmt(st)
+        continue
       hasCtor = true
       inner.thisName = "self"
-      into.add inner.lowerInit(n, m, isException, mappedBase)
+      into.add inner.lowerInit(n, m, isException, mappedBase, fieldInits)
       into.add inner.lowerAllocator(n, m, isException)
     of nsnFieldDecl: discard
     else: discard
 
-  # 3. the implicit constructor pair when none was declared
+  if staticInits.len > 0:
+    let fp = newNodeI(nkFormalParams, n.info)
+    fp.add empty(n.info)
+    let body = newNodeI(nkStmtList, n.info)
+    for st in staticInits: body.add st
+    l.staticInits.add l.mkProc(l.id("nsStaticInit" & n.name, n.info), fp, body, n.info)
+
+  # 4. the implicit constructor pair when none was declared
   if not hasCtor:
     let info = n.info
     let baseParamless =
@@ -1043,6 +1301,7 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     ip.add empty(info)
     ip.add l.selfDefs(n.name, isException, info)
     let ibody = newNodeI(nkStmtList, info)
+    for f in fieldInits: ibody.add copyTree(f)
     if mappedBase.len > 0 and baseParamless and
        (l.scope.classes.hasKey(mappedBase) or
         not l.surface.isExceptionType(mappedBase, l.scope.baseChain(mappedBase))):
@@ -1082,14 +1341,22 @@ proc lowerDecl(l: var Lowerer; d: NsNode; into: var seq[PNode]) =
                        newAtom(nkStrLit, namespaceModulePath(d.name), d.info))
   of nsnNamespace:
     ## Namespaces are flattened; they carry no scope of their own yet.
+    let saved = l.curNamespace
+    l.curNamespace = d.name
     if d.body != nil:
       for x in d.body.sons: lowerDecl(l, x, into)
+    l.curNamespace = saved
   of nsnClassDecl:
     if d.classKind == ckInterface: return   # interfaces are not supported yet
     lowerClass(l, d, into)
   of nsnEnumDecl: into.add l.lowerEnum(d)
   of nsnDelegateDecl: into.add l.lowerDelegate(d)
   else: into.add l.stmt(d)
+
+proc isImportStmt*(n: PNode): bool =
+  ## An import, which both halves of a namespace module need: the declarations may
+  ## name imported types and the implementations imported procs.
+  n.kind in {nkImportStmt, nkImportExceptStmt, nkFromStmt}
 
 proc makeMainCall(l: Lowerer; procDef: PNode): PNode =
   ## `when isMainModule: Main()`
@@ -1139,14 +1406,35 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   push.add newTree(nkExprColonExpr, module.info,
                    l.id("overflowChecks", module.info), l.id("off", module.info))
   result.add push
-  for s in stmts: result.add s
+  ## Declarations first, then every routine forward declared, then the rest in
+  ## source order. C# members may name each other in any order, and Nim resolves a
+  ## name against what precedes it, so this is what lets a member call one declared
+  ## after it, and a derived class come before its base.
+  var routines: seq[PNode] = @[]
+  const declKinds = {nkTypeSection, nkVarSection, nkConstSection, nkTemplateDef,
+                     nkImportStmt, nkImportExceptStmt, nkFromStmt}
+  for s in stmts:
+    if isImportStmt(s): result.add s
+  for s in stmts:
+    if s.kind in declKinds and not isImportStmt(s):
+      result.add s
+  for p in l.staticInits: routines.add p
+  for s in stmts:
+    if s.kind in {nkProcDef, nkMethodDef}: routines.add s
+  for r in routines:
+    let fwd = copyTree(r)
+    fwd[6] = newNodeI(nkEmpty, r.info)
+    result.add fwd
+  ## Static initialisers run before any statement of the program, top-level ones
+  ## included; their bodies may name anything, since everything is declared above.
+  for p in l.staticInits:
+    result.add newTree(nkCall, p.info, copyTree(p[0]))
+  for s in stmts:
+    if s.kind notin declKinds:
+      result.add s
+  for p in l.staticInits: result.add p
   if l.entryPoint != nil:
     result.add makeMainCall(l, l.entryPoint)
-
-proc isImportStmt*(n: PNode): bool =
-  ## An import, which both halves of a namespace module need: the declarations may
-  ## name imported types and the implementations imported procs.
-  n.kind in {nkImportStmt, nkImportExceptStmt, nkFromStmt}
 
 proc splitModuleOutput*(stmts: PNode): tuple[decls, impls: PNode] =
   ## Splits a lowered module into type declarations and implementations, which

@@ -1,0 +1,66 @@
+// Field initialisers, static and const fields, static properties, static
+// constructors and readonly fields.
+using System;
+
+namespace Demo
+{
+    class Counter
+    {
+        public static int Created = 0;
+        public const int Limit = 3;
+        public static readonly string Tag;
+        static int seed = 40;
+        public static int Total { get; set; } = 100;
+
+        public int Id = 0;
+        public string Name = "anon";
+        public readonly int Twice;
+        public double Ratio { get; set; } = 0.5;
+
+        static Counter()
+        {
+            Tag = "ctr";
+            seed = seed + 2;
+        }
+
+        public Counter()
+        {
+            Created++;
+            Id = Created;
+            Twice = Id * 2;
+        }
+
+        public Counter(string name) : this()
+        {
+            Name = name;
+        }
+
+        public static int Seed() { return seed; }
+
+        public string Describe()
+        {
+            return Name + "#" + Id + " of " + Limit + " (" + Tag + ")";
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(Counter.Created);
+            Counter a = new Counter();
+            Counter b = new Counter("bob");
+            Console.WriteLine(a.Describe());
+            Console.WriteLine(b.Describe());
+            Console.WriteLine(Counter.Created);
+            Console.WriteLine(b.Twice);
+            Console.WriteLine(Counter.Seed());
+            Console.WriteLine(Counter.Limit * 10);
+            Counter.Total += 5;
+            Console.WriteLine(Counter.Total);
+            Console.WriteLine(a.Ratio);
+            const int local = 7;
+            Console.WriteLine(local + Counter.Limit);
+        }
+    }
+}

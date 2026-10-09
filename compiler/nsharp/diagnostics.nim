@@ -36,49 +36,100 @@ type
     ndMissingArgument
     ndNotAnException
     ndNullableAnnotation
+    ndUnexpectedCharacter
+    ndIntegralConstantTooLarge
+    ndCannotConvertExplicit
+    ndDefineAfterToken
+    ndNotAssignable
+    ndReadonlyAssigned
+    ndStaticReadonlyAssigned
+    ndConstNeedsValue
+    ndAbstractInstance
+    ndSealedBase
+    ndNoOverrideSlot
+    ndOverrideNotVirtual
+    ndOverrideSealed
+    ndAbstractInConcrete
+    ndAbstractHasBody
+    ndMissingBody
+    ndSealedNotOverride
+    ndAbstractNotImplemented
+    ndErrorDirective
+    ndWarningDirective
     ndUnsupported
 
   NsDiagInfo* = tuple[code, msg: string]
 
 const
   NsDiagText*: array[NsDiag, NsDiagInfo] = [
-    (code: "0122", msg: "'$1' is inaccessible due to its protection level"),
-    (code: "0246", msg: "The type or namespace name '$1' could not be found" &
+    ndNotAccessible: (code: "0122", msg: "'$1' is inaccessible due to its protection level"),
+    ndNamespaceNotFound: (code: "0246", msg: "The type or namespace name '$1' could not be found" &
                         " (are you missing a using directive or an assembly" &
                         " reference?)"),
-    (code: "1001", msg: "Identifier expected"),
-    (code: "1002", msg: "';' expected"),
-    (code: "1003", msg: "Syntax error, '$1' expected"),
-    (code: "1026", msg: "')' expected"),
-    (code: "1513", msg: "'}' expected"),
-    (code: "1514", msg: "'{' expected"),
-    (code: "1514", msg: "'{' expected to open the body of '$1'"),
-    (code: "1515", msg: "'in' expected"),
-    (code: "1519", msg: "Invalid token '$1' in class, record, struct, or" &
+    ndIdentifierExpected: (code: "1001", msg: "Identifier expected"),
+    ndSemicolonExpected: (code: "1002", msg: "';' expected"),
+    ndSyntaxErrorExpected: (code: "1003", msg: "Syntax error, '$1' expected"),
+    ndCloseParenExpected: (code: "1026", msg: "')' expected"),
+    ndCloseBraceExpected: (code: "1513", msg: "'}' expected"),
+    ndOpenBraceExpected: (code: "1514", msg: "'{' expected"),
+    ndOpenBraceExpectedBody: (code: "1514", msg: "'{' expected to open the body of '$1'"),
+    ndForeachInExpected: (code: "1515", msg: "'in' expected"),
+    ndMemberDeclarationExpected: (code: "1519", msg: "Invalid token '$1' in class, record, struct, or" &
                         " interface member declaration"),
-    (code: "1525", msg: "Invalid expression term '$1'"),
-    (code: "2001", msg: "Source file '$1' could not be found"),
-    (code: "7036", msg: "'$1' must call a base constructor: '$2' has no" &
+    ndInvalidExpressionTerm: (code: "1525", msg: "Invalid expression term '$1'"),
+    ndSourceFileNotFound: (code: "2001", msg: "Source file '$1' could not be found"),
+    ndBaseConstructorRequired: (code: "7036", msg: "'$1' must call a base constructor: '$2' has no" &
                         " accessible parameterless constructor"),
-    (code: "7036", msg: "'$1' must define a constructor: '$2' has no accessible" &
+    ndConstructorRequired: (code: "7036", msg: "'$1' must define a constructor: '$2' has no accessible" &
                         " parameterless constructor"),
-    (code: "9001", msg: "the parser made no progress; skipping the token"),
-    (code: "9002", msg: "'$1' and '$2' use each other; Nim cannot compile" &
+    ndParserStalled: (code: "9001", msg: "the parser made no progress; skipping the token"),
+    ndNamespaceCycle: (code: "9002", msg: "'$1' and '$2' use each other; Nim cannot compile" &
                         " mutually dependent namespaces"),
-    (code: "0029", msg: "Cannot implicitly convert type '$1' to '$2'"),
-    (code: "0037", msg: "Cannot convert null to '$1' because it is a" &
+    ndCannotConvert: (code: "0029", msg: "Cannot implicitly convert type '$1' to '$2'"),
+    ndCannotConvertNull: (code: "0037", msg: "Cannot convert null to '$1' because it is a" &
                         " non-nullable value type"),
-    (code: "1501", msg: "No overload for method '$1' takes $2 arguments"),
-    (code: "1503", msg: "Argument $1: cannot convert from '$2' to '$3'"),
-    (code: "1729", msg: "'$1' does not contain a constructor that takes $2" &
+    ndArgumentNoOverload: (code: "1501", msg: "No overload for method '$1' takes $2 arguments"),
+    ndArgumentCannotConvert: (code: "1503", msg: "Argument $1: cannot convert from '$2' to '$3'"),
+    ndCtorNoOverload: (code: "1729", msg: "'$1' does not contain a constructor that takes $2" &
                         " arguments"),
-    (code: "7036", msg: "There is no argument given that corresponds to the" &
+    ndMissingArgument: (code: "7036", msg: "There is no argument given that corresponds to the" &
                         " required parameter '$1' of '$2'"),
-    (code: "0155", msg: "The type caught or thrown must be derived from" &
+    ndNotAnException: (code: "0155", msg: "The type caught or thrown must be derived from" &
                         " System.Exception"),
-    (code: "8632", msg: "The annotation for nullable reference types should only" &
+    ndNullableAnnotation: (code: "8632", msg: "The annotation for nullable reference types should only" &
                         " be used in code within a '#nullable' annotations context."),
-    (code: "9999", msg: "$1 is currently unsupported"),
+    ndUnexpectedCharacter: (code: "1056", msg: "Unexpected character '$1'"),
+    ndIntegralConstantTooLarge: (code: "1021", msg: "Integral constant is too large"),
+    ndCannotConvertExplicit: (code: "0266", msg: "Cannot implicitly convert type '$1' to '$2'. An explicit" &
+                        " conversion exists (are you missing a cast?)"),
+    ndDefineAfterToken: (code: "1032", msg: "Cannot define/undefine preprocessor symbols after first" &
+                        " token in file"),
+    ndNotAssignable: (code: "0131", msg: "The left-hand side of an assignment must be a variable," &
+                        " property or indexer"),
+    ndReadonlyAssigned: (code: "0191", msg: "A readonly field cannot be assigned to (except in a" &
+                        " constructor or init-only setter of the type in which the" &
+                        " field is defined or a variable initializer)"),
+    ndStaticReadonlyAssigned: (code: "0198", msg: "A static readonly field cannot be assigned to (except in a" &
+                        " static constructor or a variable initializer)"),
+    ndConstNeedsValue: (code: "0145", msg: "A const field requires a value to be provided"),
+    ndAbstractInstance: (code: "0144", msg: "Cannot create an instance of the abstract type or interface" &
+                        " '$1'"),
+    ndSealedBase: (code: "0509", msg: "'$1': cannot derive from sealed type '$2'"),
+    ndNoOverrideSlot: (code: "0115", msg: "'$1': no suitable method found to override"),
+    ndOverrideNotVirtual: (code: "0506", msg: "'$1': cannot override inherited member" &
+                        " '$2' because it is not marked virtual, abstract, or override"),
+    ndOverrideSealed: (code: "0239", msg: "'$1': cannot override inherited member '$2' because it is" &
+                        " sealed"),
+    ndAbstractInConcrete: (code: "0513", msg: "'$1' is abstract but it is contained in non-abstract type" &
+                        " '$2'"),
+    ndAbstractHasBody: (code: "0500", msg: "'$1' cannot declare a body because it is marked abstract"),
+    ndMissingBody: (code: "0501", msg: "'$1' must declare a body because it is not marked abstract," &
+                        " extern, or partial"),
+    ndSealedNotOverride: (code: "0238", msg: "'$1' cannot be sealed because it is not an override"),
+    ndAbstractNotImplemented: (code: "0534", msg: "'$1' does not implement inherited abstract member '$2'"),
+    ndErrorDirective: (code: "1029", msg: "#error: '$1'"),
+    ndWarningDirective: (code: "1030", msg: "#warning: '$1'"),
+    ndUnsupported: (code: "9999", msg: "$1 is currently unsupported"),
   ]
 
 proc nsCode*(d: NsDiag): string =

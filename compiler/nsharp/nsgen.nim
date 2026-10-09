@@ -274,14 +274,8 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: str
       sl.add newTree(nkDiscardStmt, s.info, newNodeI(nkEmpty, s.info))
       s[6] = sl
 
-  ## Forward declares every proc, which lets a method in one file of the namespace
-  ## call one defined in another. Bodies are emptied copies.
-  for i in 0 ..< parts.impls.len:
-    let s = parts.impls[i]
-    if s.kind == nkProcDef:
-      let fwd = copyTree(s)
-      fwd[6] = newNodeI(nkEmpty, s.info)
-      impls.add fwd
+  ## `lowerModule` already forward declares every routine, so a method in one file
+  ## of the namespace may call one defined in another.
   for i in 0 ..< parts.impls.len:
     if not isImportStmt(parts.impls[i]):
       impls.add parts.impls[i]

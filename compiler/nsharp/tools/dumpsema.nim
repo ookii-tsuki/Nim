@@ -63,6 +63,7 @@ proc recvSpelling(n: NsNode): string =
   ## the frontend has one, otherwise the class of the resolved kind. "" means it
   ## could not be placed, and the access is not projected.
   if n == nil: return ""
+  if n.typeKind == tkSequence and n.typeName.endsWith("[]"): return "array"
   if n.typeName.len > 0: return n.typeName
   case n.typeKind
   of tkInt: "int"
@@ -73,6 +74,11 @@ proc recvSpelling(n: NsNode): string =
   of tkSequence: "array"
   of tkType: canonicalTypeName(n.name)
   else: ""
+
+proc nsOf(path: string): string =
+  ## The C# namespace of a declaring module. The intrinsics hold `System.Object`'s
+  ## members (`ToString`), which every N# module sees without a `using`.
+  if path == NsIntrinsicsPath: "System" else: path.replace('/', '.')
 
 # --- walking ----------------------------------------------------------------
 
@@ -96,7 +102,7 @@ proc walk(n: NsNode; surface: NsBclSurface; facts: var seq[string];
         let tok = retTokenFor(surface, m, kind)
         if isProjected(tok):
           facts.add "member " & recv & "." & n.name & " = " &
-                    m.path.replace('/', '.') & " | " & tok
+                    nsOf(m.path) & " | " & tok
     elif isValueKind(rk):
       let recv = recvSpelling(n.body)
       let m = surface.member(recv, rk, n.name)
@@ -104,7 +110,7 @@ proc walk(n: NsNode; surface: NsBclSurface; facts: var seq[string];
         let tok = retTokenFor(surface, m, rk)
         if isProjected(tok):
           facts.add "member " & recv & "." & n.name & " = " &
-                    m.path.replace('/', '.') & " | " & tok
+                    nsOf(m.path) & " | " & tok
   else: discard
   walk(n.typ, surface, facts, usings)
   for p in n.params: walk(p, surface, facts, usings)
