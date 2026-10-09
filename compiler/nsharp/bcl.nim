@@ -20,6 +20,7 @@ type
     alias*: string        ## equal to this type
     base*: string         ## declared base type
     kind*: NsTypeKind     ## own kind, when neither of the above
+    isInterface*: bool    ## declared `{.nsInterface.}`: a C# interface
 
   NsBclMember* = object
     ## A prelude proc seen as a member; the receiver is its first parameter.
@@ -304,7 +305,13 @@ proc loadTypes(s: var NsBclSurface; n: PNode) =
   for i in 0 ..< n.len:
     let d = n[i]
     if d == nil or d.kind != nkTypeDef or d.len < 3: continue
-    var t = NsBclType(name: declaredName(d[0]))
+    var nameNode = d[0]
+    var isIface = false
+    if nameNode.kind == nkPragmaExpr and nameNode.len > 1:
+      for j in 0 ..< nameNode[1].len:
+        if declaredName(nameNode[1][j]) == "nsInterface": isIface = true
+      nameNode = nameNode[0]
+    var t = NsBclType(name: declaredName(nameNode), isInterface: isIface)
     if t.name.len == 0: continue
     let body = d[2]
     if body != nil:
@@ -491,6 +498,12 @@ proc bclSurface*(config: ConfigRef): NsBclSurface =
   s.applyStatics(config)
   surfaceCache[key] = s
   s
+
+proc libraryInterfaces*(s: NsBclSurface): HashSet[string] =
+  ## The interfaces the library declares.
+  result = initHashSet[string]()
+  for k, t in s.types:
+    if t.isInterface: result.incl k
 
 proc isExceptionType*(s: NsBclSurface; name: string;
                       chain: seq[string] = @[]): bool =

@@ -225,6 +225,7 @@ proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
       for k, v in s.delegates:
         if not result.delegates.hasKey(k): result.delegates[k] = v
       for e in s.enums: result.enums.incl e
+      for e in s.libIfaces: result.libIfaces.incl e
       for q in s.namespaces: result.namespaces.incl q
       for u in s.usings: pending.add u
   result.resolveBases()

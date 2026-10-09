@@ -5,7 +5,7 @@
 
 import std/[tables, sets, strutils]
 import ../options
-import ast
+import ast, bcl
 
 type
   NsMemberSymbol* = object
@@ -34,6 +34,9 @@ type
     interfaces*: seq[string]       ## the interfaces it names directly
     typeParams*: seq[string]       ## a generic class's `<T, U>`
     written*: seq[string]          ## its base list as written, before resolution
+    writtenTypes*: seq[NsNode]     ## ... and as types, generic arguments included
+    ifaceTypes*: seq[NsNode]       ## the interfaces it names directly, as types
+    libInterfaces*: seq[NsNode]    ## library interfaces it names (`IComparable<T>`)
     decl*: NsNode                  ## its declaration
     members*: seq[NsMemberSymbol]
     ctorArities*: seq[int]
@@ -46,6 +49,9 @@ type
       ## The enums in scope. `Color.Green` is a qualifier over one of these, and
       ## the qualifier is what tells it from a member access on a value.
     usings*: seq[string]
+    libIfaces*: HashSet[string]
+      ## The interfaces the library declares (`{.nsInterface.}`): a class may name
+      ## one, which N# lowers as a duck-typed contract rather than a table.
     namespaces*: HashSet[string]
       ## Every name that stands for a namespace in scope: `using A.B.C;` makes `A`,
       ## `A.B` and `A.B.C` all name it, and `using P = A.B.C;` adds `P`.
@@ -81,7 +87,9 @@ proc collectClass(scope: NsModuleScope; cls: NsNode) =
                           decl: cls)
   for t in cls.typeParams: sym.typeParams.add t.name
   for b in cls.bases:
-    if b.kind == nsnTypeName: sym.written.add b.name
+    if b.kind == nsnTypeName:
+      sym.written.add b.name
+      sym.writtenTypes.add b
   if cls.typ != nil and cls.typ.kind == nsnTypeName:
     sym.base = cls.typ.name
   for m in cls.sons:
@@ -134,15 +142,24 @@ proc resolveBases*(scope: NsModuleScope) =
     var c = scope.classes[k]
     if c.written.len == 0: continue
     c.interfaces = @[]
+    c.ifaceTypes = @[]
+    c.libInterfaces = @[]
     var start = 0
+    let first = canonicalTypeName(c.written[0])
     if c.classKind == ckInterface:
       c.base = ""
-    elif scope.isInterface(c.written[0]):
+    elif scope.isInterface(first) or first in scope.libIfaces:
       c.base = ""
     else:
       c.base = c.written[0]
       start = 1
-    for i in start ..< c.written.len: c.interfaces.add c.written[i]
+    for i in start ..< c.written.len:
+      let nm = canonicalTypeName(c.written[i])
+      if nm in scope.libIfaces and not scope.classes.hasKey(nm):
+        c.libInterfaces.add c.writtenTypes[i]
+      else:
+        c.interfaces.add c.written[i]
+        c.ifaceTypes.add c.writtenTypes[i]
     if c.decl != nil and c.base.len == 0: c.decl.typ = nil
     scope.classes[k] = c
 
@@ -151,7 +168,8 @@ proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
   result = NsModuleScope(classes: initTable[string, NsClassSymbol](),
                          delegates: initTable[string, NsNode](),
                          enums: initHashSet[string](),
-                         namespaces: initHashSet[string]())
+                         namespaces: initHashSet[string](),
+                         libIfaces: bclSurface(config).libraryInterfaces())
   for d in module.sons: collect(d, result)
   result.resolveBases()
 
@@ -208,6 +226,37 @@ proc directInterfaces*(scope: NsModuleScope; clsName: string): seq[string] =
     result.add i
     if scope.classes.hasKey(i):
       for j in scope.classes[i].interfaces: work.add j
+
+proc mangleType*(t: NsNode): string =
+  ## A type as part of an identifier: `IRepo<int>` is `IRepo_int`.
+  if t == nil: return ""
+  case t.kind
+  of nsnTypeName:
+    result = unqualified(t.name)
+    for a in t.sons: result.add "_" & mangleType(a)
+  of nsnArrayType: result = mangleType(t.typ) & "Arr"
+  of nsnNullableType: result = mangleType(t.typ) & "Opt"
+  else: result = "x"
+
+proc directInterfaceTypes*(scope: NsModuleScope; clsName: string): seq[NsNode] =
+  ## The interfaces `clsName` itself names, with the ones they extend, as types:
+  ## `class R : INamedRepo<int>` implements `INamedRepo<int>` and `IRepo<int>`.
+  result = @[]
+  if not scope.classes.hasKey(clsName): return
+  var work = scope.classes[clsName].ifaceTypes
+  var seen: seq[string] = @[]
+  var k = 0
+  while k < work.len:
+    let t = work[k]
+    inc k
+    let key = mangleType(t)
+    if key in seen: continue
+    seen.add key
+    result.add t
+    let nm = canonicalTypeName(t.name)
+    if scope.classes.hasKey(nm):
+      let ic = scope.classes[nm]
+      for b in ic.ifaceTypes: work.add substitute(b, ic.typeParams, t.sons)
 
 proc lookupChain*(scope: NsModuleScope; clsName: string): seq[string] =
   ## Where a member of `clsName` may be declared: its class chain, then the

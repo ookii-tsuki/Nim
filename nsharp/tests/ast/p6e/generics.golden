@@ -482,7 +482,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'nsVtGet_Item_IHasName'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Item_IHasName'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -494,7 +496,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToIHasName'
+      nkIdent 'nsTo_IHasName'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1191,7 +1193,9 @@ nkStmtList
     nkStmtList
       nkStrLit "Demo.Item"
   nkProcDef
-    nkIdent 'nsVtGet_Item_IHasName'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Item_IHasName'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1250,7 +1254,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToIHasName'
+      nkIdent 'nsTo_IHasName'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1296,7 +1300,7 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsToIHasName'
+        nkIdent 'nsTo_IHasName'
         nkIdent 'x'
   nkProcDef
     nkPostfix

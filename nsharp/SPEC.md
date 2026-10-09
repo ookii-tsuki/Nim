@@ -645,9 +645,17 @@ an `IShape[]`, and an override of `nsAsIShape`, which is how `is`, `as` and cast
 ask the *dynamic* type. An interface value converts to the interfaces it extends the
 same way. A struct is boxed into `nsBox_S` (a copy, as C#'s box is), and
 `(S)iface` unboxes. `null` is the empty value; `==` compares the objects. `R I.M()`
-explicit implementations are reachable only through the table. Deferred: default
-interface methods and static interface members (NS9999), and generic interfaces
-(with generics, §9).
+explicit implementations are reachable only through the table.
+
+Generic interfaces (`IRepo<T>`) lower to generic tables and values; a class
+implementing `IRepo<int>` gets `nsVtGet_C_IRepo_int` and `nsTo_IRepo_int`, so one
+class may implement several instantiations. An interface value converts to an
+interface it extends through the pointers its table keeps (`up0`, ...). A library
+interface (`IComparable<T>`, `IEquatable<T>`, `IDisposable`, declared
+`{.nsInterface.}` in the prelude) may be named in a base list; it is a contract the
+generic code calls by name, not a value type (NS9999 if a value is declared with
+one). Deferred: default interface methods, static interface members, and `is`/`as`/
+casts to a generic interface (NS9999).
 
 ---
 
@@ -662,11 +670,11 @@ interface methods and static interface members (NS9999), and generic interfaces
 | `where T : class` / `struct` | constraint | ✅ v1 (parsed; checked per instantiation by Nim) | desugar |
 | `where T : new()` | ctor constraint | ✅ v1 | desugar (`new T()` → `nsCreate(T)`, which every class with a parameterless constructor declares) |
 | `where T : Base` | base constraint | ✅ v1 | sem (typeclass) |
-| `where T : IComparable` | interface constraint | ✅ v1 (concept) | sem |
+| `where T : IComparable` | interface constraint | ✅ v1 (parsed; members called by name per instantiation) | desugar |
 | `where K : notnull` | nullness constraint | 🔜 later | sem |
 | Multiple constraints | `where T : A, B` | ✅ v1 | sem |
 | Generic delegates | `Func<T,R>` | ✅ v1 | lib + desugar (C# overloads `Func`/`Action` by arity; the library declares `Func2[T, R]` etc. and lowering picks the suffix matching the argument count) |
-| Generic interfaces | `IEnumerable<T>` | ✅ v1 (static) | sem |
+| Generic interfaces | `IEnumerable<T>` | ✅ v1 | desugar (generic tables, §8) |
 | `default(T)` | default value | ✅ v1 | lib |
 | Static members of generics | per-instantiation | ✅ v1 | desugar (a `{.global.}` inside a generic storage proc, initialised on first use); a static constructor in a generic class is NS9999 |
 | Variance `in`/`out` | - | 🔜 later | sem |

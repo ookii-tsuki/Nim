@@ -1,0 +1,18 @@
+// Valid C# that N# rejects: a type test against a generic interface needs the
+// object's class to name its type arguments, which N#'s tables do not record yet.
+using System;
+
+namespace Demo
+{
+    interface IBox<T> { T Get(); }
+    class IntBox : IBox<int> { public int Get() { return 1; } }
+
+    class Program
+    {
+        static void Main()
+        {
+            object o = new IntBox();
+            Console.WriteLine(o is IBox<int>);
+        }
+    }
+}
