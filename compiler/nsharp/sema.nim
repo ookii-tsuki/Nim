@@ -67,22 +67,6 @@ proc declare(ctx: var NsCheckContext; name: string; kind: NsTypeKind;
                              else: NsTypeInfo(kind: tkUnknown)), had)
   ctx.types[name] = NsTypeInfo(kind: kind, name: typeName, node: node)
 
-proc substitute(t: NsNode; params: seq[string]; args: seq[NsNode]): NsNode =
-  ## `t` with each type parameter replaced by its argument: a member of
-  ## `Stack2<string>` declared `T` is a `string`.
-  if t == nil or params.len == 0 or params.len != args.len: return t
-  case t.kind
-  of nsnTypeName:
-    if t.sons.len == 0:
-      let k = params.find(t.name)
-      if k >= 0: return args[k]
-      return t
-    result = nsnTypeName(t.name, t.info)
-    for a in t.sons: result.add substitute(a, params, args)
-  of nsnArrayType: result = nsnArrayType(substitute(t.typ, params, args), t.info)
-  of nsnNullableType: result = nsnNullableType(substitute(t.typ, params, args), t.info)
-  else: result = t
-
 proc declTypeName(t: NsNode): string =
   ## The type name recorded for a local or parameter. Canonical, so a qualified
   ## `Company.Products.Widget` matches the class names in the module scope. For a
@@ -594,6 +578,24 @@ proc staticReceiver(ctx: NsCheckContext; owner: string; info: TLineInfo): NsNode
     for t in ctx.scope.classes[owner].typeParams:
       result.typeArgs.add nsnTypeName(t, info)
 
+proc checkTypeTest(ctx: NsCheckContext; n: NsNode) =
+  ## `is`, `as` and casts to a generic interface would need the dynamic type to name
+  ## its type arguments, which the interface tables do not record yet.
+  let t = n.typ
+  if t != nil and t.kind == nsnTypeName and t.sons.len > 0 and
+     ctx.scope.isInterface(canonicalTypeName(t.name)):
+    nsError(ctx.config, n.info, ndUnsupported,
+            "a type test or cast to a generic interface")
+
+proc checkLibraryInterfaceValue(ctx: NsCheckContext; t: NsNode) =
+  ## A library interface (`IComparable<T>`) is a contract N# checks by name; it has
+  ## no table, so it cannot be the type of a value.
+  if t != nil and t.kind == nsnTypeName and
+     canonicalTypeName(t.name) in ctx.scope.libIfaces and
+     not ctx.scope.classes.hasKey(canonicalTypeName(t.name)):
+    nsError(ctx.config, t.info, ndUnsupported,
+            "a value of the library interface '" & unqualified(t.name) & "'")
+
 proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## A bare name. Inside an instance member body, a name that is a class member
   ## is rewritten in place into `this.name` and then resolved as a member, which
@@ -852,6 +854,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     n.setType(tkInt)
     result = tkInt
   of nsnCast:
+    ctx.checkTypeTest(n)
     ## `(T)x` converts, which covers numbers, enums and ref objects. Boxing a value
     ## into `object` is the one case N# cannot express.
     let target = ctx.classifyType(n.typ)
@@ -861,12 +864,14 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     n.setType(target)
     result = target
   of nsnIs:
+    ctx.checkTypeTest(n)
     discard ctx.walkExpr(n.body)
     ## A value type is tested statically and a class dynamically.
     n.name = if ctx.classifyType(n.typ) in NsValueKinds: "is" else: "of"
     n.setType(tkBool)
     result = tkBool
   of nsnAs:
+    ctx.checkTypeTest(n)
     discard ctx.walkExpr(n.body)
     let target = ctx.classifyType(n.typ)
     if target in NsValueKinds:
@@ -1023,6 +1028,7 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   ## Resolves a declaration's initialiser, then introduces the local (or the
   ## parameter) in the current scope so later statements see its type. A declared
   ## type makes the initialiser a conversion C# may refuse.
+  ctx.checkLibraryInterfaceValue(n.typ)
   var kind = ctx.classifyType(n.typ)
   if n.body != nil:
     let initKind = ctx.walkExpr(n.body)

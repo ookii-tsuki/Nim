@@ -123,6 +123,13 @@ nkStmtList
               nkPragma
                 nkIdent 'nimcall'
             nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'up0'
+            nkPtrTy
+              nkIdent 'nsVT_INamed'
+            nkEmpty
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -426,7 +433,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToINamed'
+      nkIdent 'nsTo_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -519,7 +526,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'nsVtGet_Shape_IShape'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Shape_IShape'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -531,7 +540,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToIShape'
+      nkIdent 'nsTo_IShape'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -559,7 +568,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'nsVtGet_Shape_INamed'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Shape_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -571,7 +582,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToINamed'
+      nkIdent 'nsTo_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -692,7 +703,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'nsVtGet_Circle_IScalable'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Circle_IScalable'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -704,7 +717,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToIScalable'
+      nkIdent 'nsTo_IScalable'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -896,7 +909,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'nsVtGet_Label_INamed'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Label_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -908,7 +923,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToINamed'
+      nkIdent 'nsTo_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1355,7 +1370,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToINamed'
+      nkIdent 'nsTo_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1367,11 +1382,29 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkCall
-        nkIdent 'nsAsINamed'
-        nkDotExpr
-          nkIdent 'x'
+      nkObjConstr
+        nkIdent 'INamed'
+        nkExprColonExpr
           nkIdent 'nsObj'
+          nkDotExpr
+            nkIdent 'x'
+            nkIdent 'nsObj'
+        nkExprColonExpr
+          nkIdent 'nsVt'
+          nkIfExpr
+            nkElifExpr
+              nkCall
+                nkIdent 'isNil'
+                nkDotExpr
+                  nkIdent 'x'
+                  nkIdent 'nsVt'
+              nkNilLit
+            nkElseExpr
+              nkDotExpr
+                nkDotExpr
+                  nkIdent 'x'
+                  nkIdent 'nsVt'
+                nkIdent 'up0'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1480,7 +1513,9 @@ nkStmtList
     nkStmtList
       nkStrLit "Shapes.Shape"
   nkProcDef
-    nkIdent 'nsVtGet_Shape_IShape'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Shape_IShape'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1580,13 +1615,17 @@ nkStmtList
                         nkCall
                           nkIdent 'Shape'
                           nkIdent 'self'
+                nkExprColonExpr
+                  nkIdent 'up0'
+                  nkCall
+                    nkIdent 'nsVtGet_Shape_INamed'
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToIShape'
+      nkIdent 'nsTo_IShape'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1632,10 +1671,12 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsToIShape'
+        nkIdent 'nsTo_IShape'
         nkIdent 'x'
   nkProcDef
-    nkIdent 'nsVtGet_Shape_INamed'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Shape_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1694,7 +1735,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToINamed'
+      nkIdent 'nsTo_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1740,7 +1781,7 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsToINamed'
+        nkIdent 'nsTo_INamed'
         nkIdent 'x'
   nkMethodDef
     nkPostfix
@@ -1880,7 +1921,9 @@ nkStmtList
     nkStmtList
       nkStrLit "Shapes.Circle"
   nkProcDef
-    nkIdent 'nsVtGet_Circle_IScalable'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Circle_IScalable'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1944,7 +1987,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToIScalable'
+      nkIdent 'nsTo_IScalable'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1990,7 +2033,7 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsToIScalable'
+        nkIdent 'nsTo_IScalable'
         nkIdent 'x'
   nkProcDef
     nkPostfix
@@ -2222,7 +2265,9 @@ nkStmtList
     nkStmtList
       nkStrLit "Shapes.Label"
   nkProcDef
-    nkIdent 'nsVtGet_Label_INamed'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Label_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -2281,7 +2326,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToINamed'
+      nkIdent 'nsTo_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -2327,7 +2372,7 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsToINamed'
+        nkIdent 'nsTo_INamed'
         nkIdent 'x'
   nkProcDef
     nkPostfix

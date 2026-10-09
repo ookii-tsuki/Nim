@@ -188,7 +188,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'nsVtGet_Square_IShape'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Square_IShape'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -200,7 +202,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToIShape'
+      nkIdent 'nsTo_IShape'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -484,7 +486,9 @@ nkStmtList
     nkStmtList
       nkStrLit "Demo.Square"
   nkProcDef
-    nkIdent 'nsVtGet_Square_IShape'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Square_IShape'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -564,7 +568,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToIShape'
+      nkIdent 'nsTo_IShape'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -610,7 +614,7 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsToIShape'
+        nkIdent 'nsTo_IShape'
         nkIdent 'x'
   nkProcDef
     nkPostfix

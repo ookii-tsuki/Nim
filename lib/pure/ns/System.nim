@@ -12,6 +12,11 @@ import std/[syncio, strutils]
 # name their type, so they carry no pragma.
 template nsStatic(typ: string) {.pragma.}
 
+# `{.nsInterface.}` marks a C# interface the library declares. A class may name one
+# in its base list; N# checks the members exist (Nim's generics call them by name),
+# but builds no interface table for it, so it is a contract rather than a value type.
+template nsInterface() {.pragma.}
+
 {.push discardable.}
 
 type
@@ -59,6 +64,13 @@ type
   Func4*[T1, T2, T3, R] = proc (a: T1, b: T2, c: T3): R
   Func5*[T1, T2, T3, T4, R] = proc (a: T1, b: T2, c: T3, d: T4): R
 
+  IComparable*[T] {.nsInterface.} = object
+    ## `int CompareTo(T other)`, which `List<T>.Sort()` and friends call.
+  IEquatable*[T] {.nsInterface.} = object
+    ## `bool Equals(T other)`.
+  IDisposable* {.nsInterface.} = object
+    ## `void Dispose()`, which the `using` statement calls.
+
   Console* = object
     ## Declared so the frontend resolves the name as a type; nothing is ever an
     ## instance of it.
@@ -93,7 +105,10 @@ template PositiveInfinity*[T: SomeFloat](t: typedesc[T]): T = T(system.Inf)
 template NegativeInfinity*[T: SomeFloat](t: typedesc[T]): T = T(system.NegInf)
 
 # `IComparable<T>.CompareTo` on the built-in types.
-proc CompareTo*[T: SomeNumber | char | bool](a, b: T): int32 = int32(cmp(a, b))
+proc CompareTo*[T: SomeInteger](a, b: T): int32 = int32(cmp(a, b))
+proc CompareTo*[T: SomeFloat](a, b: T): int32 = int32(cmp(a, b))
+proc CompareTo*(a, b: char): int32 = int32(cmp(a, b))
+proc CompareTo*(a, b: bool): int32 = int32(cmp(a, b))
 
 # --- System.Object ----------------------------------------------------------
 #

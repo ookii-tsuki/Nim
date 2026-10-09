@@ -305,3 +305,18 @@ proc replaceIdentical*(n: NsNode; target: NsNode; repl: NsNode): NsNode =
     n.body = replaceIdentical(n.body, target, repl)
   n
 
+proc substitute*(t: NsNode; params: seq[string]; args: seq[NsNode]): NsNode =
+  ## `t` with each type parameter replaced by its argument: a member of
+  ## `Stack2<string>` declared `T` is a `string`.
+  if t == nil or params.len == 0 or params.len != args.len: return t
+  case t.kind
+  of nsnTypeName:
+    if t.sons.len == 0:
+      let k = params.find(t.name)
+      if k >= 0: return args[k]
+      return t
+    result = nsnTypeName(t.name, t.info)
+    for a in t.sons: result.add substitute(a, params, args)
+  of nsnArrayType: result = nsnArrayType(substitute(t.typ, params, args), t.info)
+  of nsnNullableType: result = nsnNullableType(substitute(t.typ, params, args), t.info)
+  else: result = t

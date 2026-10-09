@@ -312,7 +312,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'nsVtGet_Polite_IGreeter'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Polite_IGreeter'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -324,7 +326,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToIGreeter'
+      nkIdent 'nsTo_IGreeter'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -477,7 +479,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'nsVtGet_Ticker_ICounter'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Ticker_ICounter'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -489,7 +493,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToICounter'
+      nkIdent 'nsTo_ICounter'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -871,7 +875,9 @@ nkStmtList
     nkStmtList
       nkStrLit "Demo.Polite"
   nkProcDef
-    nkIdent 'nsVtGet_Polite_IGreeter'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Polite_IGreeter'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -935,7 +941,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToIGreeter'
+      nkIdent 'nsTo_IGreeter'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -981,7 +987,7 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsToIGreeter'
+        nkIdent 'nsTo_IGreeter'
         nkIdent 'x'
   nkProcDef
     nkIdent 'nsIGreeter_Greet'
@@ -1136,7 +1142,9 @@ nkStmtList
           nkIdent 'self'
           nkIdent 'v'
   nkProcDef
-    nkIdent 'nsVtGet_Ticker_ICounter'
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Ticker_ICounter'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1197,7 +1205,7 @@ nkStmtList
   nkConverterDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsToICounter'
+      nkIdent 'nsTo_ICounter'
     nkEmpty
     nkEmpty
     nkFormalParams

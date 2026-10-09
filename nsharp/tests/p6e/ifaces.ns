@@ -1,0 +1,65 @@
+// Generic interfaces, interface inheritance with type arguments, a generic class
+// implementing a generic interface, and a library interface in a base list.
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    interface IRepo<T>
+    {
+        void Add(T item);
+        T Get(int i);
+        int Count { get; }
+    }
+
+    interface INamedRepo<T> : IRepo<T>
+    {
+        string Name();
+    }
+
+    class IntRepo : INamedRepo<int>
+    {
+        List<int> items = new List<int>();
+        public void Add(int item) { items.Add(item); }
+        public int Get(int i) { return items[i]; }
+        public int Count { get { return items.Count; } }
+        public string Name() { return "ints"; }
+    }
+
+    class Repo<T> : IRepo<T>
+    {
+        List<T> items = new List<T>();
+        public void Add(T item) { items.Add(item); }
+        public T Get(int i) { return items[i]; }
+        public int Count => items.Count;
+    }
+
+    class Money : IComparable<Money>
+    {
+        public int Cents;
+        public Money(int c) { Cents = c; }
+        public int CompareTo(Money other) { return Cents.CompareTo(other.Cents); }
+    }
+
+    class Program
+    {
+        static void Fill<T>(IRepo<T> r, T a, T b) { r.Add(a); r.Add(b); }
+
+        static void Main()
+        {
+            IRepo<int> r = new IntRepo();
+            Fill(r, 3, 4);
+            Console.WriteLine(r.Get(1) + r.Count);
+            INamedRepo<int> nr = new IntRepo();
+            Console.WriteLine(nr.Name());
+            IRepo<int> up = nr;
+            up.Add(9);
+            Console.WriteLine(up.Count);
+            IRepo<string> sr = new Repo<string>();
+            sr.Add("x");
+            Console.WriteLine(sr.Get(0) + sr.Count);
+            Money a = new Money(5);
+            Console.WriteLine(a.CompareTo(new Money(7)));
+        }
+    }
+}
