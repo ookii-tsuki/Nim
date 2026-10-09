@@ -353,6 +353,52 @@ proc parseLambda(p: var NsParser): NsNode =
     b.add p.parseExpr()
     result.body = b
 
+proc typeShapeEnd(p: NsParser; start: int): int =
+  ## The offset just past a type written at `start` -- a dotted name, an optional
+  ## generic argument list, `?`, and any `[]` -- or -1 when no type starts there.
+  if p.peekAhead(start).kind != nsIdent: return -1
+  var i = start + 1
+  while p.peekAhead(i).kind == nsDot and p.peekAhead(i + 1).kind == nsIdent: i += 2
+  if p.peekAhead(i).kind == nsLt:
+    i = skipBalancedGt(p, i)
+    if i < 0: return -1
+  if p.peekAhead(i).kind == nsQuestion: inc i
+  while p.peekAhead(i).kind == nsLBracket and p.peekAhead(i + 1).kind == nsRBracket:
+    i += 2
+  i
+
+proc parseArgument(p: var NsParser): NsNode =
+  ## One call argument: `e`, `name: e`, `ref x`, `out x`, `out int x`, `out var x`,
+  ## `in x`.
+  if p.at(nsIdent) and p.peekAhead(1).kind == nsColon and
+     p.peek.text notin ["ref", "out", "in"]:
+    let t = p.advance
+    discard p.advance   # ':'
+    result = nsn(nsnNamedArg, p.infoOf(t))
+    result.name = t.text
+    result.body = p.parseArgument()
+    return
+  if p.at(nsIdent) and p.peek.text in ["ref", "out", "in"] and
+     p.peekAhead(1).kind == nsIdent:
+    let t = p.advance
+    if t.text == "out" and p.typeShapeEnd(0) > 0 and
+       p.peekAhead(p.typeShapeEnd(0)).kind == nsIdent:
+      ## `out int x` / `out var x` declares `x` where the call is.
+      let declInfo = p.here()
+      result = nsn(nsnOutDecl, declInfo)
+      if p.peek.text == "var" and p.peekAhead(1).kind == nsIdent:
+        discard p.advance
+      else:
+        result.typ = p.parseType()
+      if p.peek.kind == nsIdent:
+        result.name = p.advance.text
+      return
+    result = nsn(nsnRefArg, p.infoOf(t))
+    result.name = t.text
+    result.body = p.parseExpr()
+    return
+  result = p.parseExpr()
+
 proc parseInterpolated(p: var NsParser): NsNode =
   ## `$"a{x,5:F2}b"`: the lexer has already split it into literal chunks and holes,
   ## so each hole is an ordinary expression, an optional `, alignment`, and the
@@ -506,7 +552,7 @@ proc parsePostfixTail(p: var NsParser; start: NsNode): NsNode =
       let call = nsn(nsnCall, info)
       call.body = result
       while not p.at(nsRParen) and not p.at(nsEof):
-        call.add p.parseExpr()
+        call.add p.parseArgument()
         if p.at(nsComma): discard p.advance else: break
       discard p.expect(nsRParen)
       result = call
@@ -654,6 +700,7 @@ proc parseNew(p: var NsParser, kw: NsToken): NsNode =
     if p.at(nsRBracket):
       discard p.advance
       result = nsn(nsnArrayLit, info)
+      result.typ = typ
       if p.at(nsLBrace):
         discard p.advance
         while not p.at(nsRBrace) and not p.at(nsEof):
@@ -672,7 +719,7 @@ proc parseNew(p: var NsParser, kw: NsToken): NsNode =
   if p.at(nsLParen):
     discard p.advance
     while not p.at(nsRParen) and not p.at(nsEof):
-      result.add p.parseExpr()
+      result.add p.parseArgument()
       if p.at(nsComma): discard p.advance else: break
     discard p.expect(nsRParen)
 
@@ -698,13 +745,25 @@ proc parseParams(p: var NsParser): seq[NsNode] =
   discard p.expect(nsLParen)
   while not p.at(nsRParen) and not p.at(nsEof):
     let info = p.here()
+    var pmod = ""
+    while p.at(nsIdent) and p.peek.text in ["ref", "out", "in", "params", "this",
+                                            "scoped"] and
+          p.peekAhead(1).kind == nsIdent:
+      let m = p.advance.text
+      if m != "scoped": pmod = m
     let ty = p.parseType()
     if p.peek.kind != nsIdent:
       p.err(p.peek, ndIdentifierExpected)
     var pname = ""
     if p.peek.kind == nsIdent:
       pname = p.advance.text
-    result.add nsnParam(pname, ty, info)
+    let prm = nsnParam(pname, ty, info)
+    prm.paramMod = pmod
+    if p.at(nsAssign):
+      ## An optional parameter's default value.
+      discard p.advance
+      prm.body = p.parseExpr()
+    result.add prm
     if p.at(nsComma): discard p.advance else: break
   discard p.expect(nsRParen)
 
@@ -758,6 +817,22 @@ proc parseVarDecl(p: var NsParser): NsNode =
   if p.at(nsAssign):
     discard p.advance
     result.body = p.parseExpr()
+  if p.at(nsComma) and p.peekAhead(1).kind == nsIdent:
+    ## `int a = 1, b = 2;`: one declaration per declarator, of the same type, in
+    ## the same scope.
+    let group = nsn(nsnMultiDecl, info)
+    group.add result
+    while p.at(nsComma) and p.peekAhead(1).kind == nsIdent:
+      discard p.advance
+      let d = nsn(nsnLocalDecl, p.here())
+      d.declKind = result.declKind
+      d.typ = result.typ
+      d.name = p.advance.text
+      if p.at(nsAssign):
+        discard p.advance
+        d.body = p.parseExpr()
+      group.add d
+    result = group
 
 proc parseSimpleStmt(p: var NsParser): NsNode =
   if looksLikeDecl(p):
@@ -801,8 +876,45 @@ proc parseForeach(p: var NsParser): NsNode
 proc parseSwitch(p: var NsParser): NsNode
 proc parseTry(p: var NsParser): NsNode
 
+proc looksLikeLocalFunc(p: NsParser): bool =
+  ## `R F(...) { }` / `R F<T>(...) => e;` inside a body, optionally `static`.
+  var start = 0
+  while p.peekAhead(start).kind == nsIdent and
+        p.peekAhead(start).text in ["static", "async", "unsafe"]:
+    inc start
+  let e = p.typeShapeEnd(start)
+  if e < 0 or p.peekAhead(e).kind != nsIdent: return false
+  var i = e + 1
+  if p.peekAhead(i).kind == nsLt:
+    i = skipBalancedGt(p, i)
+    if i < 0: return false
+  if p.peekAhead(i).kind != nsLParen: return false
+  var depth = 0
+  while true:
+    case p.peekAhead(i).kind
+    of nsEof: return false
+    of nsLParen: inc depth
+    of nsRParen:
+      dec depth
+      if depth == 0: break
+    else: discard
+    inc i
+  inc i
+  while p.peekAhead(i).kind == nsIdent and p.peekAhead(i).text == "where":
+    ## `where T : ...` clauses run to the body.
+    while p.peekAhead(i).kind notin {nsLBrace, nsArrow, nsEof}: inc i
+  p.peekAhead(i).kind in {nsLBrace, nsArrow}
+
+proc parseClassMember(p: var NsParser; clsName: string; isInterface = false): NsNode
+
 proc parseStatement(p: var NsParser): NsNode =
   let t = p.peek
+  if t.kind == nsIdent and p.looksLikeLocalFunc():
+    ## A local function is a method declared in a body.
+    result = p.parseClassMember("")
+    if result != nil and result.kind == nsnMethodDecl:
+      result.kind = nsnLocalFunc
+    return
   if t.kind == nsLBrace:
     let info = p.infoOf(t)
     result = nsn(nsnBlockStmt, info)
@@ -1112,7 +1224,7 @@ proc parseClassMember(p: var NsParser; clsName: string;
       if p.at(nsLParen):
         discard p.advance
         while not p.at(nsRParen) and not p.at(nsEof):
-          result.initArgs.add p.parseExpr()
+          result.initArgs.add p.parseArgument()
           if p.at(nsComma): discard p.advance else: break
         discard p.expect(nsRParen)
     result.body = p.parseBlock()

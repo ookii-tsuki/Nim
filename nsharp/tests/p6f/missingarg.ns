@@ -1,0 +1,11 @@
+// A required parameter after the optional ones were taken by name is still required.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static int F(int a, int b = 2, int c = 3) { return a + b + c; }
+        static void Main() { Console.WriteLine(F(b: 5)); }
+    }
+}

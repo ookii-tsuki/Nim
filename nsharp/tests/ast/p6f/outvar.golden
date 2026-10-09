@@ -8,8 +8,6 @@ nkStmtList
       nkIdent 'off'
   nkImportStmt
     nkStrLit "System"
-  nkImportStmt
-    nkStrLit "System/Collections/Generic"
   nkTypeSection
     nkTypeDef
       nkPostfix
@@ -115,49 +113,22 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'xs'
-          nkBracketExpr
-            nkIdent 'List'
-            nkIdent 'int32'
-          nkCall
-            nkBracketExpr
-              nkIdent 'newList'
-              nkIdent 'int32'
-      nkCall
-        nkDotExpr
-          nkIdent 'xs'
-          nkIdent 'Add'
-        nkIntLit 1
-      nkCall
-        nkDotExpr
-          nkIdent 'xs'
-          nkIdent 'Add'
-        nkIntLit 2
-      nkCall
-        nkIdent 'WriteLine'
-        nkCall
-          nkDotExpr
-            nkIdent 'xs'
-            nkIdent 'Find'
-          nkLambda
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'n'
             nkEmpty
             nkEmpty
-            nkEmpty
-            nkFormalParams
-              nkIdent 'bool'
-              nkIdentDefs
-                nkIdent 'x'
-                nkIdent 'int32'
-                nkEmpty
-            nkEmpty
-            nkEmpty
+        nkIfStmt
+          nkElifBranch
+            nkCall
+              nkIdent 'TryParse'
+              nkStrLit "12"
+              nkIdent 'n'
             nkStmtList
-              nkInfix
-                nkIdent '>'
-                nkIdent 'x'
-                nkIntLit 1
+              nkCall
+                nkIdent 'WriteLine'
+                nkIdent 'n'
   nkProcDef
     nkPostfix
       nkIdent '*'

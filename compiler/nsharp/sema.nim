@@ -21,7 +21,7 @@
 
 import std/[tables, sets, strutils]
 import ../lineinfos, ../options
-import ast, bcl, diagnostics, numeric, symbols
+import ast, bcl, diagnostics, lambdas, numeric, symbols
 
 type
   NsTypeInfo* = object
@@ -42,6 +42,9 @@ type
     ctorIsStatic: bool                         ## ... and it is the static one
     types: TableRef[string, NsTypeInfo]        ## locals, params, loop variables
     undo: seq[seq[(string, NsTypeInfo, bool)]] ## one frame per open scope
+
+const NsLocalFuncMark = "#local"
+  ## The type name a local function is declared under, so a call can find it.
 
 proc setType(n: NsNode; kind: NsTypeKind; name = "") =
   n.typeKind = kind
@@ -147,6 +150,11 @@ proc classifyType(ctx: NsCheckContext; t: NsNode): NsTypeKind =
     t.setType(result, declTypeName(t.typ))
   of nsnTypeName:
     result = ctx.classifyName(t.name)
+    if result == tkUnknown and t.sons.len > 0 or result == tkUnknown and
+       ctx.surface.types.hasKey(nimTypeName(t.name) & "0"):
+      ## `Func<int, int>`: the library declares C#'s per-arity names with a suffix.
+      let k = ctx.surface.kindOfName(nimTypeName(t.name) & $t.sons.len)
+      if k != tkUnknown: result = k
     t.setType(result, canonicalTypeName(t.name))
   else: result = tkUnknown
 
@@ -411,23 +419,87 @@ proc argConv(ctx: NsCheckContext; arg, target: NsNode): NsArgConv =
     if arg.kind == nsnNull: result = acNoneOption
     elif arg.typeKind != tkNullable: result = acSome   ## a `T?` is already one
 
+type
+  NsArgMap = object
+    ## How a call's arguments fill one candidate's parameters.
+    fits: bool              ## every argument found a parameter, every required one is filled
+    slot: seq[int]          ## the parameter each argument fills
+    element: seq[bool]      ## the argument is one element of a `params` array
+    missing: int            ## the first required parameter left unfilled, or -1
+
+proc argValue*(a: NsNode): NsNode =
+  ## The value an argument passes: `v` in `name: v`, `x` in `ref x`.
+  if a != nil and a.kind in {nsnNamedArg, nsnRefArg}: a.body else: a
+
+proc mapArgs(params, args: seq[NsNode]): NsArgMap =
+  ## C#'s argument list rules: positional arguments in order, named ones by name,
+  ## the last parameter `params T[]` taking the rest as elements (or one array), and
+  ## every parameter left out needing a default value.
+  result = NsArgMap(fits: true, slot: newSeq[int](args.len),
+                    element: newSeq[bool](args.len), missing: -1)
+  var filled = newSeq[bool](params.len)
+  var pos = 0
+  for j, a in args:
+    if a.kind == nsnNamedArg:
+      var k = -1
+      for i, p in params:
+        if p != nil and p.name == a.name: k = i
+      if k < 0 or filled[k]:
+        result.fits = false
+        return
+      filled[k] = true
+      result.slot[j] = k
+    elif pos < params.len and params[pos] != nil and params[pos].paramMod == "params":
+      result.slot[j] = pos
+      filled[pos] = true
+      ## One array argument is the array itself; anything else is an element.
+      let v = argValue(a)
+      result.element[j] = not (j == args.len - 1 and j == pos and
+                               v.typeKind == tkSequence)
+    elif pos < params.len:
+      result.slot[j] = pos
+      filled[pos] = true
+      inc pos
+    else:
+      result.fits = false
+      return
+  for k, p in params:
+    if not filled[k] and p != nil and p.body == nil and p.paramMod != "params":
+      result.fits = false
+      result.missing = k
+      return
+
+proc slotType(params: seq[NsNode]; m: NsArgMap; j: int): NsNode =
+  ## The type argument `j` must convert to: its parameter's, or the element type of a
+  ## `params` array.
+  let p = params[m.slot[j]]
+  if p == nil: return nil
+  if m.element[j] and p.typ != nil and p.typ.kind == nsnArrayType: p.typ.typ
+  else: p.typ
+
 proc resolveOverload(ctx: NsCheckContext; cands: seq[seq[NsNode]];
-                     args: seq[NsNode]): tuple[ok: bool, idx, score: int] =
+                     args: seq[NsNode]): tuple[ok: bool, idx, score: int, map: NsArgMap] =
   ## Picks the overload every argument fits, preferring the one that needs the fewest
-  ## conversions, so an exact match beats the `T?` one C# would also have reached.
-  result = (ok: false, idx: -1, score: high(int))
+  ## conversions, so an exact match beats the `T?` one C# would also have reached,
+  ## and one that needs no `params` expansion or default beats one that does.
+  result = (ok: false, idx: -1, score: high(int), map: NsArgMap())
   for i in 0 ..< cands.len:
-    if cands[i].len != args.len: continue
+    let m = mapArgs(cands[i], args)
+    if not m.fits: continue
     var fits = true
     var score = 0
     for j in 0 ..< args.len:
-      let pt = if cands[i][j] != nil: cands[i][j].typ else: nil
-      if ctx.incompatible(args[j], ctx.targetOfType(pt)):
+      let pt = slotType(cands[i], m, j)
+      let v = argValue(args[j])
+      if v.kind == nsnOutDecl: continue
+      if ctx.incompatible(v, ctx.targetOfType(pt)):
         fits = false
         break
-      if ctx.argConv(args[j], pt) != acNone: inc score
+      if ctx.argConv(v, pt) != acNone: inc score
+      if m.element[j]: inc score
+    if cands[i].len > args.len: inc score
     if fits and score < result.score:
-      result = (ok: true, idx: i, score: score)
+      result = (ok: true, idx: i, score: score, map: m)
 
 proc markNull(ctx: NsCheckContext; value: NsNode; target: string) =
   ## `null` for an interface is the empty interface value, which lowering spells
@@ -453,52 +525,67 @@ proc isTypeParamRef(ctx: NsCheckContext; t: NsNode): bool =
   t != nil and t.kind == nsnTypeName and t.sons.len == 0 and '.' notin t.name and
     not ctx.isTypeName(t.name)
 
-proc checkCallArgs(ctx: NsCheckContext; cands: seq[seq[NsNode]];
+proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
                    args: seq[NsNode]; displayName, recvName: string;
                    isCtor: bool; info: TLineInfo) =
   ## CS1501 / CS1729 when no overload takes this many arguments, CS7036 when one
   ## takes more, CS1503 when one takes exactly this many but an argument cannot be
   ## converted. A call the scope cannot resolve -- a library method, a name from a
-  ## module it does not cover -- has no candidates and is left to Nim.
+  ## module it does not cover -- has no candidates and is left to Nim. The chosen
+  ## overload's parameter is recorded on each argument, which `out var` declarations
+  ## and lambda arguments take their types from.
   if cands.len == 0: return
-  let (ok, idx, _) = ctx.resolveOverload(cands, args)
+  let (ok, idx, _, map) = ctx.resolveOverload(cands, args)
   if ok:
     for j in 0 ..< args.len:
-      let pt = if cands[idx][j] != nil: cands[idx][j].typ else: nil
-      let conv = ctx.argConv(args[j], pt)
+      let a = args[j]
+      let pt = slotType(cands[idx], map, j)
+      a.argParam = cands[idx][map.slot[j]]
+      a.argElement = map.element[j]
+      let v = argValue(a)
+      if v.kind == nsnOutDecl:
+        ## `out var x` takes the parameter's type.
+        if v.typ == nil and pt != nil: v.typ = pt
+        ctx.declare(v.name, ctx.classifyType(v.typ), declTypeName(v.typ), v.typ)
+        continue
+      if a.kind == nsnRefArg: continue
+      let conv = ctx.argConv(v, pt)
       if conv != acNone:
         ## Lowering applies it, so the argument reaches `some`/`none` spelled with
         ## the element type rather than with the literal's own type.
-        args[j].argConv = conv
-        args[j].argConvType =
+        v.argConv = conv
+        v.argConvType =
           declTypeName(if pt.kind == nsnNullableType: pt.typ else: pt)
       elif pt != nil:
-        ctx.coerce(args[j], declTypeName(pt), args[j].info)
-        ctx.markNull(args[j], declTypeName(pt))
-        if ctx.isTypeParamRef(pt) and args[j].kind in {nsnIntLit, nsnFloatLit} and
-           args[j].typeName.len == 0:
+        ctx.coerce(v, declTypeName(pt), v.info)
+        ctx.markNull(v, declTypeName(pt))
+        if ctx.isTypeParamRef(pt) and v.kind in {nsnIntLit, nsnFloatLit} and
+           v.typeName.len == 0:
           ## A literal for a type parameter fixes the type argument, and C# types
           ## `3` as `int` where Nim would infer its own `int`.
-          args[j].conv = (if args[j].kind == nsnIntLit: "int" else: "double")
+          v.conv = (if v.kind == nsnIntLit: "int" else: "double")
     return
-  var exact = -1
+  ## No overload fits. One that takes the arguments' shape but not a value's type is
+  ## CS1503, naming the first argument that does not convert.
   for i in 0 ..< cands.len:
-    if cands[i].len == args.len: exact = i
-  if exact >= 0:
+    let m = mapArgs(cands[i], args)
+    if not m.fits: continue
     for j in 0 ..< args.len:
-      let pt = if cands[exact][j] != nil: cands[exact][j].typ else: nil
-      if ctx.incompatible(args[j], ctx.targetOfType(pt)):
-        nsError(ctx.config, args[j].info, ndArgumentCannotConvert,
-                $(j + 1), valueSpelling(args[j]), typeSpelling(pt))
+      let pt = slotType(cands[i], m, j)
+      let v = argValue(args[j])
+      if v.kind != nsnOutDecl and ctx.incompatible(v, ctx.targetOfType(pt)):
+        nsError(ctx.config, v.info, ndArgumentCannotConvert,
+                $(j + 1), valueSpelling(v), typeSpelling(pt))
         return
     return
-  ## No overload takes this many arguments. Roslyn names the one short candidate and
+  ## No overload takes these arguments. Roslyn names the one short candidate and
   ## its first missing parameter when there is exactly one -- a constructor with a
   ## single declaration, or a method with no overloads -- and falls back to the arity
   ## message as soon as there is a choice.
   let where = if args.len > 0: args[0].info else: info
-  if cands.len == 1 and cands[0].len > args.len:
-    let p = cands[0][args.len]
+  let single = (if cands.len == 1: mapArgs(cands[0], args) else: NsArgMap(missing: -1))
+  if cands.len == 1 and single.missing >= 0:
+    let p = cands[0][single.missing]
     nsError(ctx.config, where, ndMissingArgument,
             (if p != nil: p.name else: "?"),
             signature(qualifiedName(recvName, displayName), cands[0]))
@@ -700,6 +787,10 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   n.setType(kind, tname)
   result = kind
 
+proc isLambdaArg(a: NsNode): bool =
+  a != nil and (a.kind == nsnLambda or
+                (a.kind == nsnNamedArg and a.body != nil and a.body.kind == nsnLambda))
+
 proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   var kind = tkUnknown
   var cands: seq[seq[NsNode]] = @[]
@@ -751,12 +842,38 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     if kind != tkUnknown and tn.len == 0:
       tn = ctx.memberTypeName(owner, callee.name)
     callee.setType(kind)
+  elif callee != nil and callee.kind == nsnIdent and ctx.types.hasKey(callee.name) and
+       ctx.types[callee.name].name == NsLocalFuncMark:
+    ## A local function: its declaration answers like a method's.
+    let decl = ctx.types[callee.name].node
+    kind = ctx.classifyType(decl.typ)
+    tn = declTypeName(decl.typ)
+    cands = @[decl.params]
+    callee.setType(tkDelegate)
   elif callee != nil:
     discard ctx.walkExpr(callee)
-  for a in n.sons: discard ctx.walkExpr(a)
+  ## Lambdas last: their parameter types come from the overload the other
+  ## arguments select.
+  for a in n.sons:
+    if not isLambdaArg(a): discard ctx.walkExpr(a)
   n.setType(kind, tn)
-  if callee != nil and callee.kind == nsnMember:
+  if callee != nil and (callee.kind == nsnMember or cands.len > 0):
     ctx.checkCallArgs(cands, n.sons, callee.name, owner, false, n.info)
+  let sigs = callLambdaSigs(ctx.scope, ctx.surface, n)
+  for j, a in n.sons:
+    if isLambdaArg(a):
+      applySig((if a.kind == nsnNamedArg: a.body else: a), sigs[j])
+      discard ctx.walkExpr(a)
+  for a in n.sons:
+    let v = argValue(a)
+    if v != nil and v.kind == nsnOutDecl and not ctx.types.hasKey(v.name):
+      ## A call the frontend cannot resolve still declares an `out int x`; an
+      ## `out var x` there has no type to declare.
+      if v.typ != nil:
+        ctx.declare(v.name, ctx.classifyType(v.typ), declTypeName(v.typ), v.typ)
+      else:
+        nsError(ctx.config, v.info, ndUnsupported,
+                "'out var' for a method whose parameters N# cannot see")
   result = kind
 
 proc markCoalesced(n: NsNode) =
@@ -789,6 +906,13 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnFloatLit:
     n.setType(tkFloat, (if n.strVal == "f": "float" else: ""))
     result = tkFloat
+  of nsnNamedArg, nsnRefArg:
+    result = ctx.walkExpr(n.body)
+    n.setType(result, (if n.body != nil: n.body.typeName else: ""))
+  of nsnOutDecl:
+    ## Declared by the call once its overload is known (`out var` takes the type).
+    result = (if n.typ != nil: ctx.classifyType(n.typ) else: tkUnknown)
+    n.setType(result)
   of nsnInterpolated:
     for part in n.sons:
       if part.kind == nsnInterpHole:
@@ -1019,8 +1143,12 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
 # --- statements -------------------------------------------------------------
 
 proc walkStmts(ctx: var NsCheckContext; stmts: seq[NsNode]) =
-  ## A sequence of statements in its own name scope.
+  ## A sequence of statements in its own name scope. A local function may be called
+  ## before its declaration, so the block's local functions are declared first.
   ctx.pushScope()
+  for s in stmts:
+    if s != nil and s.kind == nsnLocalFunc:
+      ctx.declare(s.name, tkDelegate, NsLocalFuncMark, s)
   for s in stmts: ctx.walkStmt(s)
   ctx.popScope()
 
@@ -1030,6 +1158,9 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   ## type makes the initialiser a conversion C# may refuse.
   ctx.checkLibraryInterfaceValue(n.typ)
   var kind = ctx.classifyType(n.typ)
+  if n.body != nil and n.body.kind == nsnLambda and n.typ != nil:
+    ## `Func<int, int> f = x => ...;`: the declared delegate types the lambda.
+    applySig(n.body, delegateSig(ctx.scope, ctx.surface, n.typ))
   if n.body != nil:
     let initKind = ctx.walkExpr(n.body)
     if n.typ == nil: kind = initKind
@@ -1109,9 +1240,28 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
   case n.kind
   of nsnBlock: walkBody(ctx, n)
   of nsnLocalDecl: ctx.walkDecl(n)
+  of nsnMultiDecl:
+    for d in n.sons: ctx.walkDecl(d)
+  of nsnLocalFunc:
+    ## A local function's body, like a method's, sees the enclosing locals.
+    let savedRet = ctx.retType
+    let savedTps = ctx.typeParams
+    for t in n.typeParams: ctx.typeParams.add t.name
+    ctx.retType = n.typ
+    ctx.pushScope()
+    for p in n.params: ctx.walkDecl(p)
+    if n.body != nil:
+      for s in n.body.sons: ctx.walkStmt(s)
+    ctx.popScope()
+    ctx.retType = savedRet
+    ctx.typeParams = savedTps
   of nsnExprStmt: discard ctx.walkExpr(n.body)
   of nsnAssign:
-    for s in n.sons: discard ctx.walkExpr(s)
+    discard ctx.walkExpr(n.sons[0])
+    if n.sons.len > 1 and n.sons[1] != nil and n.sons[1].kind == nsnLambda:
+      ## `f = x => ...;`: the target's delegate type types the lambda.
+      applySig(n.sons[1], delegateSig(ctx.scope, ctx.surface, n.sons[0].rtype))
+    for i in 1 ..< n.sons.len: discard ctx.walkExpr(n.sons[i])
     ctx.checkAssignable(n.sons[0])
     ## A plain `x = y` is a conversion C# may refuse; a compound one (`x += y`) is
     ## not, because C# lets the operator's own result narrow back.
@@ -1252,6 +1402,8 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     ## A field initialiser is a conversion to the field's type, like a local's.
     if m.body != nil:
       ctx.isStaticCtx = m.attrs.isStatic
+      if m.body.kind == nsnLambda:
+        applySig(m.body, delegateSig(ctx.scope, ctx.surface, m.typ))
       discard ctx.walkExpr(m.body)
       ctx.checkConvertible(m.body, ctx.targetOfType(m.typ), m.body.info)
       ctx.coerce(m.body, declTypeName(m.typ), m.body.info)

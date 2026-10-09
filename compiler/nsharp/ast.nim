@@ -140,6 +140,11 @@ type
     nsnIs              # typ = type, body = operand           (from `x is T`)
     nsnAs              # typ = type, body = operand           (from `x as T`)
     nsnDefault         # typ = type                           (from `default(T)`)
+    nsnNamedArg        # name, body = value                   (from `f(name: v)`)
+    nsnRefArg          # name = "ref" / "out" / "in", body = the variable
+    nsnOutDecl         # typ (nil for `var`), name            (from `f(out int x)`)
+    nsnLocalFunc       # a nsnMethodDecl declared inside a body (C# 7 local function)
+    nsnMultiDecl       # sons = nsnLocalDecl, one per declarator (`int a = 1, b = 2;`)
     nsnInterpolated    # sons = nsnStrLit / nsnInterpHole parts  (from `$"..."`)
     nsnInterpHole      # body = value, sons = [alignment] (optional), strVal = format
 
@@ -166,6 +171,9 @@ type
     constraints*: seq[NsNode] ## its `where` clauses, as nsnWhere
     typeArgs*: seq[NsNode]    ## nsnIdent / nsnMember: `M<int>` written at a call
     explicitIface*: string    ## a member written `I.M`: the interface it implements
+    paramMod*: string         ## nsnParam: "ref", "out", "in", "params", "this" or ""
+    argParam*: NsNode         ## a call argument: the parameter it fills (set by sema)
+    argElement*: bool         ## ... as one element of a `params` array
     typeKind*: NsTypeKind     ## set by `sema.nim` on expressions
     typeName*: string         ## the resolved type name behind `typeKind`
     argConv*: NsArgConv       ## `nsnCall`/`nsnNew` argument: C#'s implicit conversion

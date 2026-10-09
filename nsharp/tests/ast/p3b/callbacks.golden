@@ -367,8 +367,10 @@ nkStmtList
                 nkIdent 'WriteLine'
                 nkIdent 's'
       nkCall
-        nkIdent 'shout'
-        nkStrLit "hi"
+        nkIdent 'nsStmt'
+        nkCall
+          nkIdent 'shout'
+          nkStrLit "hi"
       nkVarSection
         nkIdentDefs
           nkIdent 'blocky'

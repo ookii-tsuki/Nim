@@ -8,8 +8,6 @@ nkStmtList
       nkIdent 'off'
   nkImportStmt
     nkStrLit "System"
-  nkImportStmt
-    nkStrLit "System/Collections/Generic"
   nkTypeSection
     nkTypeDef
       nkPostfix
@@ -34,6 +32,33 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'F'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'a'
+        nkIdent 'int32'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'b'
+        nkIdent 'int32'
+        nkIntLit 2
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'int32'
+        nkIntLit 3
     nkEmpty
     nkEmpty
     nkEmpty
@@ -107,6 +132,41 @@ nkStmtList
     nkStmtList
       nkStrLit "Demo.Program"
   nkProcDef
+    nkIdent 'F'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'a'
+        nkIdent 'int32'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'b'
+        nkIdent 'int32'
+        nkIntLit 2
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'int32'
+        nkIntLit 3
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkIdent 'a'
+            nkIdent 'b'
+          nkIdent 'c'
+  nkProcDef
     nkIdent 'Main'
     nkEmpty
     nkEmpty
@@ -115,49 +175,14 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'xs'
-          nkBracketExpr
-            nkIdent 'List'
-            nkIdent 'int32'
-          nkCall
-            nkBracketExpr
-              nkIdent 'newList'
-              nkIdent 'int32'
-      nkCall
-        nkDotExpr
-          nkIdent 'xs'
-          nkIdent 'Add'
-        nkIntLit 1
-      nkCall
-        nkDotExpr
-          nkIdent 'xs'
-          nkIdent 'Add'
-        nkIntLit 2
       nkCall
         nkIdent 'WriteLine'
         nkCall
-          nkDotExpr
-            nkIdent 'xs'
-            nkIdent 'Find'
-          nkLambda
-            nkEmpty
-            nkEmpty
-            nkEmpty
-            nkFormalParams
-              nkIdent 'bool'
-              nkIdentDefs
-                nkIdent 'x'
-                nkIdent 'int32'
-                nkEmpty
-            nkEmpty
-            nkEmpty
-            nkStmtList
-              nkInfix
-                nkIdent '>'
-                nkIdent 'x'
-                nkIntLit 1
+          nkIdent 'F'
+          nkIdent 'Program'
+          nkExprEqExpr
+            nkIdent 'b'
+            nkIntLit 5
   nkProcDef
     nkPostfix
       nkIdent '*'

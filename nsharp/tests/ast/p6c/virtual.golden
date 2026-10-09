@@ -1465,14 +1465,20 @@ nkStmtList
             nkIdent '@'
             nkBracket
               nkCall
-                nkIdent 'newDog'
-                nkStrLit "rex"
+                nkIdent 'Animal'
+                nkCall
+                  nkIdent 'newDog'
+                  nkStrLit "rex"
               nkCall
-                nkIdent 'newBird'
-                nkStrLit "tweety"
+                nkIdent 'Animal'
+                nkCall
+                  nkIdent 'newBird'
+                  nkStrLit "tweety"
               nkCall
-                nkIdent 'newPuppy'
-                nkStrLit "bit"
+                nkIdent 'Animal'
+                nkCall
+                  nkIdent 'newPuppy'
+                  nkStrLit "bit"
       nkForStmt
         nkIdent 'a'
         nkIdent 'zoo'

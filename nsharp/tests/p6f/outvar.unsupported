@@ -1,0 +1,2 @@
+Valid C# that N# rejects: 'out var' on a library method.
+code: NS9999
