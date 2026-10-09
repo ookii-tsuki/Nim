@@ -1747,7 +1747,9 @@ nkStmtList
           nkPrefix
             nkIdent '@'
             nkBracket
-              nkStrLit "z"
+              nkCall
+                nkIdent 'string'
+                nkStrLit "z"
       nkCall
         nkIdent 'WriteLine'
         nkCall

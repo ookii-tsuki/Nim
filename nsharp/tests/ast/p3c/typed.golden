@@ -338,9 +338,15 @@ nkStmtList
           nkPrefix
             nkIdent '@'
             nkBracket
-              nkIntLit 10
-              nkIntLit 20
-              nkIntLit 30
+              nkCall
+                nkIdent 'int32'
+                nkIntLit 10
+              nkCall
+                nkIdent 'int32'
+                nkIntLit 20
+              nkCall
+                nkIdent 'int32'
+                nkIntLit 30
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr

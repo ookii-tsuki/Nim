@@ -2595,11 +2595,17 @@ nkStmtList
           nkPrefix
             nkIdent '@'
             nkBracket
-              nkIdent 'a'
-              nkIdent 'b'
               nkCall
-                nkIdent 'newCircle'
-                nkIntLit 2
+                nkIdent 'IShape'
+                nkIdent 'a'
+              nkCall
+                nkIdent 'IShape'
+                nkIdent 'b'
+              nkCall
+                nkIdent 'IShape'
+                nkCall
+                  nkIdent 'newCircle'
+                  nkIntLit 2
       nkVarSection
         nkIdentDefs
           nkIdent 'list'

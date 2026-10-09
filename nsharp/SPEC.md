@@ -459,7 +459,7 @@ v2.
 | `checked { }` / `unchecked { }` | ovf checks | ✅ v1 | desugar (→ `{.push overflowChecks.}`, §7.3) |
 | `unsafe { }` blocks (pointers, `&`, `*`) | unsafe | ✅ v1 | front |
 | `fixed`, `stackalloc` | stack-only | 🚫 out | front |
-| Local functions | nested funcs | ✅ v1 | desugar (→ nested proc) |
+| Local functions | nested funcs | ✅ v1 | desugar (→ nested proc, a closure over what it names; callable before its declaration in sema) |
 | `defer { }` | - | ➕ ext | front |
 | Statements as expressions (`if`/`switch` value) | C# 8 | 🔜 later | desugar |
 
@@ -610,9 +610,9 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Boxing/unboxing (value↔`object`) | implicit | 🔜 later | sem |
 | Operator overloading | `operator +` | ✅ v1 | front |
 | Method overloading | same name, diff sig | ✅ v1 | sem (Nim overloads) |
-| Named/optional/default args | `M(x: 1)` | ✅ v1 | free |
-| `params` arrays | variadic | ✅ v1 | front (→ `varargs`) |
-| `ref` / `out` / `in` params | by-ref | ✅ v1 | front (→ `var`/`lent`) |
+| Named/optional/default args | `M(x: 1)` | ✅ v1 | sem (arguments mapped to parameters for overload matching, NS7036 for a missing one) + desugar (Nim's own named and default arguments) |
+| `params` arrays | variadic | ✅ v1 | desugar (→ `varargs[T]`, which takes elements or one array) |
+| `ref` / `out` / `in` params | by-ref | ✅ v1 | desugar (`ref`/`out` → `var T`, `in` → a plain parameter; `out T x` at a call is declared before the statement; `out var x` takes the parameter's type, NS9999 when the method is the library's) |
 | Extension methods | `static void M(this T)` | ✅ v1 (ext) | free (UFCS) |
 | `IDisposable` / `using` | deterministic cleanup | ✅ v1 | desugar/lib |
 | `IEnumerable<T>` / `foreach` | iteration protocol | ✅ v1 | sem/lib |
@@ -691,10 +691,10 @@ map directly. The cost is in **constraints**, which map to Nim
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
 | `delegate R D(args);` | named type | ✅ v1 (3b) | front (→ `proc` type, `{.closure.}`) |
-| `Func<...>` / `Action<...>` | built-in delegates | 🔜 3d (needs generics) | lib |
-| Lambda expressions | `x => e` | ✅ v1 (3b) | front |
+| `Func<...>` / `Action<...>` | built-in delegates | ✅ v1 | lib (`Func2[T, R]` ... `Action4`, picked by arity) |
+| Lambda expressions | `x => e` | ✅ v1 | desugar (typed from the delegate it converts to: a declared local's type, or the parameter it is passed for, with the method's and class's type arguments substituted; for a library member the declaration's Nim parameter types, bound by the receiver's) |
 | Closures (capture) | - | ✅ v1 (3b) | free (Nim closures) |
-| Method group → delegate | `D d = M;` | ✅ v1 (3b) | free |
+| Method group → delegate | `D d = M;` | ✅ v1 | desugar (a closure: `M(C, ...)` for a static method, the receiver read once for an instance one) |
 | Multicas (combine) `+=` / `-=` | invocation list | 🔜 later | lib |
 | `event D E;` | pub/sub member | 🔜 later | lib |
 | `event` add/remove accessors | custom | 🔜 later | lib |
@@ -705,10 +705,9 @@ map directly. The cost is in **constraints**, which map to Nim
 **Note:** Nim closures (`{.closure.}` procs) cover the 95% case (single-target
 delegates). Multicast delegates and `event` become a small `lib` library type.
 
-**Known gap:** a lambda written *directly* as an argument still needs its parameter
-types from the delegate the parameter declares, which lowering does not yet copy in
-from the call site; bind it to a local of the delegate type first
-(`IntFn dbl = x => x * 2;`), then pass the local.
+A lambda passed directly as an argument is typed from the parameter it is passed
+for (`xs.Find(x => x > 4)`, `Apply(x => x * 3, 5)`); a delegate call used as a
+statement drops its result through the intrinsics' `nsStmt`.
 
 ---
 
@@ -893,14 +892,6 @@ any of these collections. Only these members exist:
 
 Deliberately deferred, with the reason recorded:
 
-* **Lambdas for the predicate members.** `Find`, `FindAll`, `Exists`, `RemoveAll`,
-  `ForEach`, `Sort(comparison)`, ... exist and take a delegate, so a method group
-  works (`Predicate<int> p = IsEven; xs.Find(p)`). A lambda does not yet, neither
-  as the argument (`xs.Find(x => x > 1)`, `p3b/genlambda.unsupported`) nor as a
-  local of a *library* delegate type (`Predicate<int> p = x => ...`):
-  `annotateLambda` types lambdas only from delegates the program declares, and
-  typing one from a member's parameter needs generic substitution in the
-  frontend.
 * **Overloads that differ only in argument type** are told apart by Nim, not by
   the frontend, which reads the first declaration of a name. The sema gate would
   therefore see `LinkedList<T>.Remove(node)` as returning `bool`, like

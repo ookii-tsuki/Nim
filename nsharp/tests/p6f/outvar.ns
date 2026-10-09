@@ -1,0 +1,14 @@
+// Valid C# that N# rejects: `out var` needs the parameter's type, which N# cannot
+// see for a library method it has no declaration of.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            if (int.TryParse("12", out var n)) Console.WriteLine(n);
+        }
+    }
+}

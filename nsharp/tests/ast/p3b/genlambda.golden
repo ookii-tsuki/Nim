@@ -146,10 +146,10 @@ nkStmtList
             nkEmpty
             nkEmpty
             nkFormalParams
-              nkEmpty
+              nkIdent 'bool'
               nkIdentDefs
                 nkIdent 'x'
-                nkEmpty
+                nkIdent 'int32'
                 nkEmpty
             nkEmpty
             nkEmpty

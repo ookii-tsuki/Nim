@@ -136,3 +136,9 @@ proc nsCreate*[T: not ref](t: typedesc[T]): T =
   ## `new T()` for a value type: its default. A class declares its own `nsCreate`,
   ## which calls its parameterless constructor.
   default(T)
+
+template nsStmt*(x: untyped) =
+  ## A delegate call used as a statement: C# drops its result, and a Nim proc value
+  ## cannot be `{.discardable.}`, so a result is discarded here.
+  when typeof(x) is void: x
+  else: discard x

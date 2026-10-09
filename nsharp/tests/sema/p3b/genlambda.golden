@@ -1,0 +1,5 @@
+using System
+using System.Collections.Generic
+member Console.WriteLine = System | void
+member List.Add = System.Collections.Generic | void
+member List.Add = System.Collections.Generic | void

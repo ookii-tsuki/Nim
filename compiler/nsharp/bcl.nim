@@ -21,6 +21,8 @@ type
     base*: string         ## declared base type
     kind*: NsTypeKind     ## own kind, when neither of the above
     isInterface*: bool    ## declared `{.nsInterface.}`: a C# interface
+    genParams*: seq[string] ## its generic parameters
+    sig*: PNode           ## a delegate (proc type): its formal parameters
 
   NsBclMember* = object
     ## A prelude proc seen as a member; the receiver is its first parameter.
@@ -31,6 +33,8 @@ type
     isStatic*: bool       ## declared over `typedesc[...]`: `int.MaxValue`
     retIsParam*: bool     ## the result is one of the declaration's own parameters
     isVirtual*: bool      ## declared as a Nim `method`: a C# `virtual` member
+    genParams*: seq[string] ## the declaration's generic parameters
+    paramTypes*: seq[PNode] ## every parameter's type, the receiver's first
 
   NsStaticDecl* = tuple[typ, member, module: string]
     ## A `{.nsStatic: "T".}` pragma: the qualifier, the proc, and its module.
@@ -313,7 +317,13 @@ proc loadTypes(s: var NsBclSurface; n: PNode) =
       nameNode = nameNode[0]
     var t = NsBclType(name: declaredName(nameNode), isInterface: isIface)
     if t.name.len == 0: continue
+    if d[1] != nil and d[1].kind == nkGenericParams:
+      for gp in d[1]:
+        if gp.kind == nkIdentDefs:
+          for k in 0 ..< gp.len - 2: t.genParams.add declaredName(gp[k])
     let body = d[2]
+    if body != nil and body.kind == nkProcTy and body.len > 0:
+      t.sig = body[0]
     if body != nil:
       case body.kind
       of nkObjectTy, nkRefTy, nkPtrTy:
@@ -349,7 +359,9 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
     for i in 0 ..< n[2].len:
       let gp = n[2][i]
       if gp == nil or gp.kind != nkIdentDefs or gp.len < 3: continue
-      constraints[declaredName(gp[0])] = constraintSpelling(gp[1])
+      ## `[K, V]` is one IdentDefs with two names; the constraint is its type.
+      for k in 0 ..< gp.len - 2:
+        constraints[declaredName(gp[k])] = constraintSpelling(gp[gp.len - 2])
   let fp = n[3]
   if fp == nil or fp.kind != nkFormalParams or fp.len < 2: return
   let ret = headSpelling(fp[0])
@@ -368,10 +380,18 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
     ## An unconstrained type parameter names no type; `nsStatic` gives it one.
     let c = constraints[recv]
     recv = (if c.len > 0: c else: "#param")
+  var ptypes: seq[PNode] = @[]
+  for i in 1 ..< fp.len:
+    let defs = fp[i]
+    if defs.kind != nkIdentDefs: continue
+    for k in 0 ..< defs.len - 2: ptypes.add defs[defs.len - 2]
+  var gps: seq[string] = @[]
+  for k in constraints.keys: gps.add k
   s.noteMember NsBclMember(name: name, path: module, recv: typeClassKeyOf(recv),
                            ret: ret, isStatic: isStatic,
                            retIsParam: ret.len > 0 and constraints.hasKey(ret),
-                           isVirtual: n.kind == nkMethodDef)
+                           isVirtual: n.kind == nkMethodDef,
+                           genParams: gps, paramTypes: ptypes)
   let qualifier = nsStaticOf(n)
   if qualifier.len > 0:
     ## Queued for `applyStatics`, which runs once every file has been read.
