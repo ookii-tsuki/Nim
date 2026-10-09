@@ -1,0 +1,15 @@
+// C# refuses to narrow a numeric value implicitly: CS0266.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            long l = 10;
+            int i = l;
+            Console.WriteLine(i);
+        }
+    }
+}

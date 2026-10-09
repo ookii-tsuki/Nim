@@ -1,0 +1,11 @@
+// A const is not a variable, so it cannot be assigned.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        const int Max = 3;
+        static void Main() { Max = 4; Console.WriteLine(Max); }
+    }
+}

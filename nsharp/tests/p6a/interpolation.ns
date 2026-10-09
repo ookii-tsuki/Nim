@@ -1,0 +1,28 @@
+// Interpolated, verbatim and raw strings, C# escapes, and format specs.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            int x = 3;
+            double d = 2.5;
+            string name = "Ann";
+            Console.WriteLine($"x={x} d={d:F2} [{name,6}] [{name,-6}] {{lit}} {x * 2}");
+            Console.WriteLine($"{1234567.891:N2} {255:X} {255:x4} {42:D5} {0.125:P1}");
+            Console.WriteLine($"{3.14159:E2} {1.5:G} {1e20:G} {-7:D3} {1234:N0}");
+            Console.WriteLine($"{12.3456:0.00} {7:000} {1234.5:#,##0.0} {(x > 2 ? "big" : "small")}");
+            Console.WriteLine($"{name.Length} chars, upper {name.ToUpper()}");
+            Console.WriteLine(@"c:\dir ""q""");
+            Console.WriteLine($@"{name}\n");
+            Console.WriteLine("\u0041\x42\t|\\");
+            Console.WriteLine("""
+                raw "text"
+                  indented
+                """);
+            Console.WriteLine($"");
+        }
+    }
+}

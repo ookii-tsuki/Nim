@@ -1,0 +1,13 @@
+// An override needs a virtual member to override.
+using System;
+
+namespace Demo
+{
+    class Base { public void Run() { } }
+    class Derived : Base { public override void Run() { } }
+
+    class Program
+    {
+        static void Main() { new Derived().Run(); Console.WriteLine("x"); }
+    }
+}

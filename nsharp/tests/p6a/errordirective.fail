@@ -1,0 +1,2 @@
+This test must fail to compile: an #error directive.
+code: NS1029

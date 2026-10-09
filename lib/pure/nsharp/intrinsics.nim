@@ -7,8 +7,23 @@
 # its type, so a class reads as its fields. A primitive keeps Nim's own rendering,
 # which is why a bool reads `true` here and `True` in C#.
 
-proc `$`*[T: ref object](x: T): string = $x[]
-proc ToString*[T: ref object](x: T): string = $x[]
+import format
+export format
+
+method ToString*(x: RootRef): string {.base.} =
+  ## C#'s `object.ToString()`. Every class N# compiles overrides it with its own
+  ## name, or with the user's override, so this is reached only by a class the
+  ## compiler did not see.
+  "System.Object"
+
+proc ToString*[T: not RootRef](x: T): string = $x
+  ## A value's `ToString()` is its `$`.
+
+proc `$`*[T: RootRef](x: T): string =
+  ## Printing a class asks it, so an override is what `Console.WriteLine` shows.
+  if x == nil: "" else: x.ToString()
+
+proc `$`*[T: ref object and not RootRef](x: T): string = $x[]
 
 proc `+`*(a, b: string): string = a & b
 proc `+`*[T](a: string, b: T): string = a & $b

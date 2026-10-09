@@ -227,3 +227,16 @@ alternative, recorded here rather than quietly skipped.
   leaking into user-visible semantics.
 - No parser-level tests (only end-to-end stdout), now partly addressed by Stage 0a.
 - Stale file header ("Phase 0 scaffold", "skipped tolerantly").
+
+## 6. Debt paid after stage 4
+
+* **"Members must be defined in source order" is gone.** `lowerModule` now emits
+  imports, then every type, storage and accessor declaration, then a forward
+  declaration of every routine, then the bodies in source order. A member may call
+  one declared after it and a derived class may precede its base, as in C#. `nsgen`
+  relied on its own forward declarations for the same reason; it now uses these.
+* **`NsDiagText` is keyed by `NsDiag`.** The table was positional, so a code added
+  out of order printed the wrong number; each entry now names its diagnostic.
+* **Literals are lexed properly.** Hex/binary literals and suffixed ones used to
+  parse as `0`, and `$`/unknown characters were skipped silently. Unknown
+  characters are now NS1056.

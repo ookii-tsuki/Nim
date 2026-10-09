@@ -4,8 +4,8 @@ namespace Demo
 {
     class Base
     {
-        // Valid C#: `virtual` on a non-sealed instance method. N# rejects the
-        // modifier rather than silently emitting a plain (non-virtual) method.
+        // `virtual` on an instance method: a dispatch slot, lowered to a Nim
+        // `method {.base.}`.
         public virtual void Speak()
         {
             Console.WriteLine("base");

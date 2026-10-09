@@ -19,9 +19,9 @@
 # enum, a `T?` whose element is unclear all count as compatible, so an unspotted
 # mistake stays Nim's to report rather than becoming a wrong N# error.
 
-import std/[tables, sets]
+import std/[tables, sets, strutils]
 import ../lineinfos, ../options
-import ast, bcl, diagnostics, symbols
+import ast, bcl, diagnostics, numeric, symbols
 
 type
   NsTypeInfo* = object
@@ -35,6 +35,9 @@ type
     clsName: string                            ## enclosing class, "" outside one
     members: seq[string]                       ## names reachable from it
     retType: NsNode                            ## enclosing member's return type
+    isStaticCtx: bool                          ## inside a static member: no `this`
+    inCtor: bool                               ## inside a constructor of `clsName`
+    ctorIsStatic: bool                         ## ... and it is the static one
     types: TableRef[string, NsTypeInfo]        ## locals, params, loop variables
     undo: seq[seq[(string, NsTypeInfo, bool)]] ## one frame per open scope
 
@@ -68,6 +71,9 @@ proc declTypeName(t: NsNode): string =
   ## `T?` it is the inner name, which is what `x.Value` needs.
   if t == nil: ""
   elif t.kind == nsnNullableType: declTypeName(t.typ)
+  elif t.kind == nsnArrayType:
+    ## `int[]`: the element's name with the brackets, so indexing can recover it.
+    (if t.typ != nil: declTypeName(t.typ) & "[]" else: "")
   else: canonicalTypeName(t.name)
 
 # --- type classification ----------------------------------------------------
@@ -168,6 +174,64 @@ proc memberKindOfSurface(ctx: NsCheckContext; rk: NsTypeKind; recv, name: string
   if rk == tkNullable: return ctx.classifyName(recv)
   if m.isStatic: return rk
   tkUnknown
+
+# --- numeric conversions ----------------------------------------------------
+#
+# C# promotes the operands of an arithmetic operator to a common type and converts a
+# value implicitly where a wider numeric type is expected; Nim does neither for
+# `int` to `float`, nor for `char`. The conversion an operand or a value needs is
+# recorded on it (`conv`), and only when both types are known exactly, so an
+# expression the frontend cannot type is left to Nim as before.
+
+proc numName(n: NsNode): string =
+  ## The C# numeric type of an expression, or "" when it is not known exactly.
+  if n == nil: return ""
+  case n.kind
+  of nsnIntLit: return (if n.typeName.len > 0: n.typeName else: "int")
+  of nsnCharLit: return "char"
+  of nsnFloatLit: return (if n.typeName.len > 0: n.typeName else: "double")
+  else: discard
+  case n.typeKind
+  of tkInt, tkFloat: numericOfSpelling(n.typeName)
+  of tkChar: "char"
+  else: ""
+
+proc isConstantLit(n: NsNode): bool =
+  ## A literal, or a negated one: C# lets an in-range constant narrow implicitly.
+  n != nil and (n.kind == nsnIntLit or
+                (n.kind == nsnUnary and n.name == "-" and n.body != nil and
+                 n.body.kind == nsnIntLit))
+
+proc constValue(n: NsNode): BiggestInt =
+  if n.kind == nsnIntLit: n.intVal else: -n.body.intVal
+
+proc kindOfNumeric(s: string): NsTypeKind =
+  if isFloating(s): tkFloat elif s == "char": tkChar else: tkInt
+
+proc needConv(n: NsNode; to: string) =
+  ## Records that `n` is converted to `to` where it is used.
+  if n == nil or to.len == 0: return
+  if isConstantLit(n) and n.typeName.len == 0 and fitsLiteral(constValue(n), to):
+    ## An untyped Nim literal takes the type its context asks for.
+    return
+  if numName(n) != to: n.conv = to
+
+proc coerce(ctx: NsCheckContext; value: NsNode; target: string; info: TLineInfo) =
+  ## The implicit numeric conversion C# applies where a value of one numeric type is
+  ## used as another: recorded when C# allows it, CS0266 when only a cast would.
+  let dst = numericOfSpelling(target)
+  if value == nil or dst.len == 0: return
+  let src = numName(value)
+  if src.len == 0 or src == dst: return
+  if isConstantLit(value) and src != "char" and not isFloating(src) and
+     fitsLiteral(constValue(value), dst):
+    ## `byte b = 5;`, `double d = 1;`: an in-range constant, which Nim's untyped
+    ## literal already adapts to.
+    return
+  if implicitlyConvertible(src, dst):
+    value.conv = dst
+  else:
+    nsError(ctx.config, info, ndCannotConvertExplicit, src, dst)
 
 # --- type checking ----------------------------------------------------------
 #
@@ -379,6 +443,8 @@ proc checkCallArgs(ctx: NsCheckContext; cands: seq[seq[NsNode]];
         args[j].argConv = conv
         args[j].argConvType =
           declTypeName(if pt.kind == nsnNullableType: pt.typ else: pt)
+      elif pt != nil:
+        ctx.coerce(args[j], declTypeName(pt), args[j].info)
     return
   var exact = -1
   for i in 0 ..< cands.len:
@@ -474,10 +540,19 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## is rewritten in place into `this.name` and then resolved as a member, which
   ## is the behaviour the parse-time rewrite used to have. `value` is exempt: it
   ## is the implicit setter parameter.
-  if ctx.clsName.len > 0 and n.name != "value" and n.name in ctx.members:
-    n.kind = nsnMember
-    n.body = nsn(nsnThis, n.info)
-    return ctx.walkExpr(n)
+  if ctx.clsName.len > 0 and n.name != "value" and n.name in ctx.members and
+     not ctx.types.hasKey(n.name):
+    let m = ctx.scope.findMemberInfo(ctx.clsName, n.name)
+    if m.isStatic:
+      ## A static member is reached through its class, in any member.
+      n.kind = nsnMember
+      n.body = nsnIdent(m.owner, n.info)
+      n.body.setType(tkType, m.owner)
+      return ctx.walkExpr(n)
+    if not ctx.isStaticCtx:
+      n.kind = nsnMember
+      n.body = nsn(nsnThis, n.info)
+      return ctx.walkExpr(n)
   if ctx.types.hasKey(n.name):
     let info = ctx.types[n.name]
     n.setType(info.kind, info.name)
@@ -515,10 +590,13 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of tkClass:
     ctx.checkMemberAccess(n)
     kind = ctx.memberKind(n.body.typeName, n.name)
+    if ctx.scope.findMemberInfo(n.body.typeName, n.name).isMethod:
+      ## A method named without a call is a method group: a delegate value.
+      kind = tkDelegate
     if kind != tkUnknown:
-      if kind in {tkNullable, tkClass, tkException}:
-        ## The member's declared type name, which lowering needs for a `T?` and the
-        ## assignment check needs to walk a class chain.
+      if kind in {tkNullable, tkClass, tkException, tkInt, tkFloat, tkChar}:
+        ## The member's declared type name, which lowering needs for a `T?`, the
+        ## assignment check to walk a class chain, and promotion to know the width.
         tname = ctx.memberTypeName(n.body.typeName, n.name)
     else:
       ## Not a member this module declares: the prelude may declare one
@@ -532,8 +610,16 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## `int.MaxValue`, `Array.IndexOf`).
     if n.body != nil:
       let recv = n.body.typeName
-      kind = ctx.memberKindOfSurface(ctx.surface.kindOfName(recv), recv, n.name,
-                                     tname)
+      if ctx.scope.classes.hasKey(recv) and
+         ctx.scope.findMemberInfo(recv, n.name).name.len > 0:
+        ## A static member of a class this compilation declares.
+        kind = ctx.memberKind(recv, n.name)
+        if ctx.scope.findMemberInfo(recv, n.name).isMethod: kind = tkDelegate
+        if kind in {tkNullable, tkClass, tkException, tkInt, tkFloat, tkChar}:
+          tname = ctx.memberTypeName(recv, n.name)
+      else:
+        kind = ctx.memberKindOfSurface(ctx.surface.kindOfName(recv), recv, n.name,
+                                       tname)
     if kind == tkUnknown: kind = tkType
   else: discard
   n.setType(kind, tname)
@@ -545,6 +631,17 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   var owner = ""
   var tn = ""
   let callee = n.body
+  if callee != nil and callee.kind == nsnIdent and ctx.clsName.len > 0 and
+     not ctx.types.hasKey(callee.name) and callee.name in ctx.members:
+    ## `M(args)` naming a member of the enclosing class is `C.M(args)` for a static
+    ## one and `this.M(args)` for an instance one, which is resolved as such below.
+    let m = ctx.scope.findMemberInfo(ctx.clsName, callee.name)
+    if m.isStatic:
+      callee.kind = nsnMember
+      callee.body = nsnIdent(m.owner, callee.info)
+    elif not ctx.isStaticCtx:
+      callee.kind = nsnMember
+      callee.body = nsn(nsnThis, callee.info)
   if callee != nil and callee.kind == nsnMember:
     let rk = ctx.walkExpr(callee.body)
     if rk == tkType:
@@ -591,8 +688,32 @@ proc markCoalesced(n: NsNode) =
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if n == nil: return tkUnknown
   case n.kind
-  of nsnIntLit: n.setType(tkInt); result = tkInt
-  of nsnFloatLit: n.setType(tkFloat); result = tkFloat
+  of nsnIntLit:
+    ## C# types an unsuffixed literal as the first of int, uint, long, ulong that
+    ## holds it, and a suffix narrows that list.
+    let v = n.intVal
+    let name =
+      case n.strVal
+      of "u": (if v >= 0 and v <= 0xFFFF_FFFF: "uint" else: "ulong")
+      of "l": (if v >= 0: "long" else: "ulong")
+      of "ul": "ulong"
+      else:
+        if v >= low(int32) and v <= high(int32): ""
+        elif v >= 0 and v <= 0xFFFF_FFFF: "uint"
+        elif v >= 0: "long"
+        else: "ulong"
+    n.setType(tkInt, name)
+    result = tkInt
+  of nsnFloatLit:
+    n.setType(tkFloat, (if n.strVal == "f": "float" else: ""))
+    result = tkFloat
+  of nsnInterpolated:
+    for part in n.sons:
+      if part.kind == nsnInterpHole:
+        discard ctx.walkExpr(part.body)
+        for a in part.sons: discard ctx.walkExpr(a)
+    n.setType(tkString)
+    result = tkString
   of nsnStrLit: n.setType(tkString); result = tkString
   of nsnCharLit: n.setType(tkChar); result = tkChar
   of nsnBoolLit: n.setType(tkBool); result = tkBool
@@ -600,6 +721,12 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnThis:
     n.setType(tkClass, ctx.clsName)
     result = tkClass
+  of nsnBase:
+    ## `base` is `this`, seen as the base class.
+    let b = (if ctx.scope.classes.hasKey(ctx.clsName): ctx.scope.classes[ctx.clsName].base
+             else: "")
+    n.setType((if ctx.scope.classes.hasKey(b): tkClass else: tkUnknown), b)
+    result = n.typeKind
   of nsnIdent: result = ctx.walkIdent(n)
   of nsnMember: result = ctx.walkMember(n)
   of nsnCall: result = ctx.walkCall(n)
@@ -612,6 +739,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ## same way a method call's parameter lists are. A BCL type has none here.
       let cn = unqualified(n.typ.name)
       if ctx.scope.classes.hasKey(cn):
+        if ctx.scope.classes[cn].isAbstract or
+           ctx.scope.classes[cn].classKind == ckInterface:
+          nsError(ctx.config, n.info, ndAbstractInstance, cn)
         ctx.checkCallArgs(ctx.scope.ctorOverloads(cn), n.sons, cn, cn, true, n.info)
     result = k
   of nsnNewArray, nsnArrayLit:
@@ -621,8 +751,18 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnIndex:
     discard ctx.walkExpr(n.body)
     for a in n.sons: discard ctx.walkExpr(a)
-    n.setType(tkUnknown)
     result = tkUnknown
+    let rn = (if n.body != nil: n.body.typeName else: "")
+    if n.body != nil and n.body.typeKind == tkSequence and rn.endsWith("[]"):
+      ## An array element has the array's element type.
+      let elem = rn[0 ..< rn.len - 2]
+      result = (if elem.endsWith("[]"): tkSequence else: ctx.classifyName(elem))
+      n.setType(result, elem)
+    elif n.body != nil and n.body.typeKind == tkString:
+      result = tkChar
+      n.setType(tkChar, "char")
+    else:
+      n.setType(tkUnknown)
   of nsnUnary:
     result = ctx.walkExpr(n.body)
     n.setType(result)
@@ -657,9 +797,30 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     result = ctx.classifyType(n.typ)
     n.setType(result)
   of nsnBinary:
-    let lk = ctx.walkExpr(n.sons[0])
-    let rk = ctx.walkExpr(n.sons[1])
+    var lk = ctx.walkExpr(n.sons[0])
+    var rk = ctx.walkExpr(n.sons[1])
     result = tkUnknown
+    let ln = numName(n.sons[0])
+    let rn = numName(n.sons[1])
+    var numResult = ""
+    if ln.len > 0 and rn.len > 0:
+      if n.name in ["shl", "shr"]:
+        ## The count is an `int`; the result is the promoted left operand.
+        numResult = unaryPromoted(ln)
+        needConv(n.sons[0], numResult)
+      elif n.name in ["==", "!=", "<", ">", "<=", ">="] and ln == "char" and rn == "char":
+        discard
+      else:
+        let p = promoted(ln, rn)
+        if p.len > 0:
+          needConv(n.sons[0], p)
+          needConv(n.sons[1], p)
+          if n.name notin ["==", "!=", "<", ">", "<=", ">="]:
+            numResult = p
+            ## The operands now have the promoted type, which is what the integer
+            ## division rule below asks about.
+            lk = kindOfNumeric(p)
+            rk = lk
     case n.name
     of "==", "!=", "<", ">", "<=", ">=":
       result = tkBool
@@ -696,7 +857,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       if lk == tkNullable or rk == tkNullable: result = tkNullable
       elif lk == tkFloat or rk == tkFloat: result = tkFloat
       elif lk == tkInt: result = tkInt
-    n.setType(result)
+    if numResult.len > 0 and result in {tkInt, tkFloat}:
+      n.setType(kindOfNumeric(numResult), numResult)
+    else:
+      n.setType(result)
   of nsnNullDot:
     ## `a?.B`: the guarded value goes back where the marker stood, so the tail is
     ## checked like any other expression. C# makes a value-typed result `T?`, which
@@ -728,9 +892,23 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     n.setType(result)
   of nsnTernary:
     discard ctx.walkExpr(n.sons[0])
-    discard ctx.walkExpr(n.sons[1])
+    let a = ctx.walkExpr(n.sons[1])
     result = ctx.walkExpr(n.sons[2])
-    n.setType(result)
+    let an = numName(n.sons[1])
+    let bn = numName(n.sons[2])
+    if an.len > 0 and bn.len > 0 and an != bn:
+      ## `c ? 1 : 2.5` is a `double`: the branches meet at the wider type.
+      let p = (if implicitlyConvertible(an, bn): bn
+               elif implicitlyConvertible(bn, an): an
+               else: "")
+      if p.len > 0:
+        needConv(n.sons[1], p)
+        needConv(n.sons[2], p)
+        n.setType(kindOfNumeric(p), p)
+        return kindOfNumeric(p)
+    if result == tkUnknown: result = a
+    n.setType(result, (if n.sons[2].typeName.len > 0: n.sons[2].typeName
+                       else: n.sons[1].typeName))
   of nsnLambda:
     ## Parameters start untyped (they are filled in from the declared delegate
     ## type during lowering) but the body must still be walked, otherwise names
@@ -767,17 +945,23 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   if n.body != nil:
     let initKind = ctx.walkExpr(n.body)
     if n.typ == nil: kind = initKind
-    else: ctx.checkConvertible(n.body, ctx.targetOfType(n.typ), n.body.info)
+    else:
+      ctx.checkConvertible(n.body, ctx.targetOfType(n.typ), n.body.info)
+      ctx.coerce(n.body, declTypeName(n.typ), n.body.info)
   ## An inferred local (`var x = ...`) takes its type name from its initialiser,
   ## exactly as a `foreach` variable takes it from the collection it walks.
   ctx.declare(n.name, kind, (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName))
 
 proc walkForeach(ctx: var NsCheckContext; n: NsNode) =
-  let elemKind = ctx.classifyType(n.typ)
+  var elemKind = ctx.classifyType(n.typ)
   discard ctx.walkExpr(n.body)
+  var elemName = (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName)
+  if n.typ == nil and n.body.typeKind == tkSequence and elemName.endsWith("[]"):
+    ## `foreach (var x in xs)` over an array: `x` has the element type.
+    elemName = elemName[0 ..< elemName.len - 2]
+    elemKind = (if elemName.endsWith("[]"): tkSequence else: ctx.classifyName(elemName))
   ctx.pushScope()
-  ctx.declare(n.name, elemKind,
-              (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName))
+  ctx.declare(n.name, elemKind, elemName)
   for s in n.sons: ctx.walkStmt(s)
   ctx.popScope()
 
@@ -812,6 +996,25 @@ proc walkSwitch(ctx: var NsCheckContext; n: NsNode) =
     for lab in sec.sons: discard ctx.walkExpr(lab)
     walkBody(ctx, sec.body)
 
+proc checkAssignable(ctx: NsCheckContext; target: NsNode) =
+  ## A `const` is never assigned (CS0131); a `readonly` field only by its own class's
+  ## constructors -- the static one, for a static field (CS0191 / CS0198).
+  if target == nil or target.kind != nsnMember or target.body == nil: return
+  var owner = ""
+  if target.body.kind == nsnThis: owner = ctx.clsName
+  elif target.body.typeKind == tkType: owner = target.body.typeName
+  elif target.body.typeKind == tkClass: owner = target.body.typeName
+  if owner.len == 0 or not ctx.scope.classes.hasKey(owner): return
+  let m = ctx.scope.findMemberInfo(owner, target.name)
+  if m.name.len == 0: return
+  if m.isConst:
+    nsError(ctx.config, target.info, ndNotAssignable)
+  elif m.isReadonly:
+    let ok = ctx.inCtor and m.owner == ctx.clsName and ctx.ctorIsStatic == m.isStatic
+    if not ok:
+      nsError(ctx.config, target.info,
+              (if m.isStatic: ndStaticReadonlyAssigned else: ndReadonlyAssigned))
+
 proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
   if n == nil: return
   case n.kind
@@ -820,10 +1023,26 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
   of nsnExprStmt: discard ctx.walkExpr(n.body)
   of nsnAssign:
     for s in n.sons: discard ctx.walkExpr(s)
+    ctx.checkAssignable(n.sons[0])
     ## A plain `x = y` is a conversion C# may refuse; a compound one (`x += y`) is
     ## not, because C# lets the operator's own result narrow back.
     if n.name.len == 0 and n.sons.len == 2:
       ctx.checkConvertible(n.sons[1], targetOfExpr(ctx, n.sons[0]), n.info)
+      if n.sons[0].typeKind != tkNullable:
+        ctx.coerce(n.sons[1], numName(n.sons[0]), n.info)
+    elif n.sons.len == 2 and n.name in ["+", "-", "*", "/", "mod", "and", "or", "xor",
+                                        "shl", "shr"]:
+      ## `x op= y` is `x = (T)(x op y)`: the operands are promoted as for `x op y`,
+      ## and the result is cast back to `x`'s type, which C# does implicitly here.
+      let ln = numName(n.sons[0])
+      let rn = numName(n.sons[1])
+      if ln.len > 0 and rn.len > 0 and n.sons[0].typeKind != tkNullable:
+        let p = (if n.name in ["shl", "shr"]: unaryPromoted(ln) else: promoted(ln, rn))
+        if p.len > 0:
+          if n.name notin ["shl", "shr"]: needConv(n.sons[1], p)
+          n.strVal = (if p != ln: p else: "")
+          n.typeName = ln
+          n.typeKind = kindOfNumeric(p)
   of nsnIf:
     for b in n.sons:
       if b.kind == nsnIfBranch:
@@ -853,6 +1072,8 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
         ## The declared return type is the conversion C# applies to `return`.
         if ctx.retType != nil:
           ctx.checkConvertible(n.body, ctx.targetOfType(ctx.retType), n.body.info)
+          if ctx.retType.kind != nsnNullableType:
+            ctx.coerce(n.body, declTypeName(ctx.retType), n.body.info)
       else:
         ctx.checkThrow(n)
   else:
@@ -889,7 +1110,8 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     ## not, matching the parse-time rewrite this pass replaces.
     let saved = ctx.members
     let savedRet = ctx.retType
-    if m.attrs.isStatic: ctx.members = @[]
+    let savedStatic = ctx.isStaticCtx
+    ctx.isStaticCtx = m.attrs.isStatic
     ctx.retType = m.typ
     ctx.pushScope()
     for p in m.params: ctx.walkDecl(p)
@@ -898,19 +1120,32 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     ctx.popScope()
     ctx.members = saved
     ctx.retType = savedRet
+    ctx.isStaticCtx = savedStatic
   of nsnCtorDecl:
     let savedRet = ctx.retType
     ctx.retType = nil
+    ctx.inCtor = true
+    ctx.ctorIsStatic = m.attrs.isStatic
+    ctx.isStaticCtx = m.attrs.isStatic
     ctx.pushScope()
     for p in m.params: ctx.walkDecl(p)
     for a in m.initArgs: discard ctx.walkExpr(a)
     if m.body != nil:
       for s in m.body.sons: ctx.walkStmt(s)
     ctx.popScope()
+    ctx.inCtor = false
+    ctx.ctorIsStatic = false
+    ctx.isStaticCtx = false
     ctx.retType = savedRet
   of nsnPropertyDecl:
     let savedRet = ctx.retType
     ctx.retType = m.typ
+    ctx.isStaticCtx = m.attrs.isStatic
+    if m.body != nil:
+      ## `{ get; set; } = value;`, converted like a field initialiser.
+      discard ctx.walkExpr(m.body)
+      ctx.checkConvertible(m.body, ctx.targetOfType(m.typ), m.body.info)
+      ctx.coerce(m.body, declTypeName(m.typ), m.body.info)
     for i in 0 ..< m.params.len:
       let acc = m.params[i]
       if acc == nil or acc.kind == nsnEmpty: continue
@@ -920,10 +1155,17 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
       for s in acc.sons: ctx.walkStmt(s)
       ctx.popScope()
     ctx.retType = savedRet
+    ctx.isStaticCtx = false
   of nsnFieldDecl:
-    ## Field initialisers are parsed but not lowered yet; they are still resolved
-    ## so a problem in one is reported instead of silently hidden.
-    if m.body != nil: discard ctx.walkExpr(m.body)
+    ## A field initialiser is a conversion to the field's type, like a local's.
+    if m.body != nil:
+      ctx.isStaticCtx = m.attrs.isStatic
+      discard ctx.walkExpr(m.body)
+      ctx.checkConvertible(m.body, ctx.targetOfType(m.typ), m.body.info)
+      ctx.coerce(m.body, declTypeName(m.typ), m.body.info)
+      ctx.isStaticCtx = false
+    elif m.attrs.isConst:
+      nsError(ctx.config, m.info, ndConstNeedsValue)
   else: discard
 
 proc checkSupported(ctx: NsCheckContext; cls: NsNode) =
@@ -932,18 +1174,78 @@ proc checkSupported(ctx: NsCheckContext; cls: NsNode) =
   ## programs that looked like they worked.
   if cls.classKind == ckInterface:
     nsError(ctx.config, cls.info, ndUnsupported, "'interface'")
+
+
+proc signatureOf(cls: string; m: NsNode): string =
+  ## `Shape.Area()`, as C# names a member in a diagnostic.
+  result = cls & "." & m.name
+  if m.kind == nsnMethodDecl: result = signature(result, m.params)
+
+proc checkInheritance(ctx: NsCheckContext; cls: NsNode) =
+  ## The rules `virtual`/`override`/`abstract`/`sealed` carry: a sealed base cannot
+  ## be derived from (CS0509), an `override` needs a slot (CS0115) that is not sealed
+  ## (CS0239), an abstract member needs an abstract class (CS0513) and no body
+  ## (CS0500), a non-abstract one a body (CS0501), and a concrete class must fill
+  ## every abstract slot it inherits (CS0534).
+  if cls.classKind == ckInterface: return
+  if cls.typ != nil and cls.typ.kind == nsnTypeName:
+    let b = canonicalTypeName(cls.typ.name)
+    if ctx.scope.classes.hasKey(b) and ctx.scope.classes[b].isSealed:
+      nsError(ctx.config, cls.info, ndSealedBase, cls.name, b)
   for m in cls.sons:
-    case m.kind
-    of nsnPropertyDecl:
-      if m.attrs.isStatic:
-        nsError(ctx.config, m.info, ndUnsupported, "a static property")
-    of nsnFieldDecl:
-      if m.body != nil:
-        nsError(ctx.config, m.info, ndUnsupported, "a field initialiser")
-    else: discard
+    if m.kind notin {nsnMethodDecl, nsnPropertyDecl}: continue
+    let a = m.attrs
+    if a.isOverride:
+      let slot = ctx.scope.baseSlot(cls.name, m.name)
+      let ch = ctx.scope.chain(cls.name)
+      let outside = ctx.scope.classes[ch[^1]].base
+      if slot.name.len == 0 and outside.len > 0:
+        ## The chain leaves this compilation (an exception base, a library class):
+        ## the slot may be there, and Nim checks the override.
+        discard
+      elif slot.name.len == 0 and ctx.surface.member("object", tkClass, m.name).isVirtual:
+        ## `ToString`, `Equals`, `GetHashCode`: the slots `object` declares.
+        discard
+      elif slot.name.len == 0:
+        ## A base member of that name that is not virtual is CS0506; none is CS0115.
+        var hidden = ""
+        for i in 1 ..< ch.len:
+          for bm in ctx.scope.classes[ch[i]].members:
+            if bm.name == m.name and hidden.len == 0: hidden = ch[i] & "." & m.name
+        if hidden.len > 0:
+          nsError(ctx.config, m.info, ndOverrideNotVirtual, signatureOf(cls.name, m),
+                  hidden)
+        else:
+          nsError(ctx.config, m.info, ndNoOverrideSlot, signatureOf(cls.name, m))
+      elif slot.isSealed:
+        nsError(ctx.config, m.info, ndOverrideSealed, signatureOf(cls.name, m),
+                slot.owner & "." & m.name)
+    if a.isAbstract and not cls.attrs.isAbstract:
+      nsError(ctx.config, m.info, ndAbstractInConcrete, signatureOf(cls.name, m),
+              cls.name)
+    if m.kind == nsnMethodDecl:
+      if a.isAbstract and m.body != nil:
+        nsError(ctx.config, m.info, ndAbstractHasBody, signatureOf(cls.name, m))
+      elif not a.isAbstract and m.body == nil:
+        nsError(ctx.config, m.info, ndMissingBody, signatureOf(cls.name, m))
+    if a.isSealed and not a.isOverride:
+      nsError(ctx.config, m.info, ndSealedNotOverride, signatureOf(cls.name, m))
+  if not cls.attrs.isAbstract:
+    ## Every abstract slot along the chain must be filled by the nearest override.
+    let ch = ctx.scope.chain(cls.name)
+    var filled: seq[string] = @[]
+    for c in ch:
+      for m in ctx.scope.classes[c].members:
+        if m.isAbstract and m.name notin filled:
+          nsError(ctx.config, cls.info, ndAbstractNotImplemented, cls.name,
+                  c & "." & m.name)
+          filled.add m.name
+        elif not m.isAbstract and (m.isOverride or m.isVirtual):
+          filled.add m.name
 
 proc walkClass(ctx: var NsCheckContext; cls: NsNode) =
   ctx.checkSupported(cls)
+  ctx.checkInheritance(cls)
   let savedCls = ctx.clsName
   let savedMembers = ctx.members
   ctx.clsName = cls.name

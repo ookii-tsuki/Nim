@@ -1,0 +1,12 @@
+// An abstract class cannot be instantiated.
+using System;
+
+namespace Demo
+{
+    abstract class Shape { public abstract double Area(); }
+
+    class Program
+    {
+        static void Main() { Shape s = new Shape(); Console.WriteLine(s.Area()); }
+    }
+}

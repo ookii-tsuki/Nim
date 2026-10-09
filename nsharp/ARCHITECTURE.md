@@ -194,9 +194,18 @@ Delivered in 2b: properties and inheritance. `R P { get; set; }` (auto),
 `{ get { } set { } }` (computed), and `R P => expr` (expression-bodied) become a
 backing field (for auto) plus getter/setter procs; the write path uses Nim's
 `propertyWriteAccess` and needs no `sem` change. `class D : B` emits
-`ref object of B` (classes default to `of RootObj`). Instance members are emitted
+`ref object of B` (classes default to `of RootObj`). Members were first emitted
 in source order, because Nim resolves `self.Prop` (a dot-call to a getter) only
-when the getter is already defined.
+when the getter is already declared; `lowerModule` now forward declares every
+routine after the type and storage declarations, so source order no longer
+matters (see the module layout note in `desugar.lowerModule`).
+
+Delivered in 6a-6c: the lexical layer (interpolated, verbatim and raw strings,
+typed numeric literals, a lexical C# preprocessor), C#'s numeric promotion and
+implicit conversions (`compiler/nsharp/numeric.nim`, recorded by `sema` as a
+`conv` on the node, spelled by `desugar`), static/const/readonly members, field
+initialisers and static constructors, and `virtual`/`override`/`abstract`/
+`sealed`/`new` lowered to Nim `method`s with `{.base.}` and `procCall`.
 
 Delivered in 2c: C# access modifiers. A module-level pre-scan builds a class
 table (name, base, member accesses) before any body is parsed; the frontend then

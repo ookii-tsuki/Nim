@@ -24,6 +24,13 @@ type
     ## Visibility and the one storage modifier that currently changes lowering.
     access*: NsAccess
     isStatic*: bool
+    isConst*: bool          ## a `const` field: static, compile-time
+    isReadonly*: bool       ## a `readonly` field: assigned only by an initializer or a ctor
+    isVirtual*: bool        ## `virtual`: opens a dispatch slot
+    isOverride*: bool       ## `override`: fills a base's slot
+    isAbstract*: bool       ## `abstract`: a slot (or a class) with no implementation
+    isSealed*: bool         ## `sealed`: closes a slot or a class
+    isNew*: bool            ## `new`: hides a base member instead of overriding it
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.
@@ -112,6 +119,7 @@ type
     nsnCharLit         # intVal (codepoint)
     nsnBoolLit         # intVal (0/1)
     nsnThis
+    nsnBase            # `base`, the receiver of `base.M()`
     nsnNull
     nsnCall            # body = callee, sons = arguments
     nsnMember          # body = receiver, name
@@ -130,6 +138,8 @@ type
     nsnIs              # typ = type, body = operand           (from `x is T`)
     nsnAs              # typ = type, body = operand           (from `x as T`)
     nsnDefault         # typ = type                           (from `default(T)`)
+    nsnInterpolated    # sons = nsnStrLit / nsnInterpHole parts  (from `$"..."`)
+    nsnInterpHole      # body = value, sons = [alignment] (optional), strVal = format
 
   NsNode* = ref NsNodeObj
   NsNodeObj* = object
@@ -153,6 +163,8 @@ type
     typeName*: string         ## the resolved type name behind `typeKind`
     argConv*: NsArgConv       ## `nsnCall`/`nsnNew` argument: C#'s implicit conversion
     argConvType*: string      ## ... and the element type name it is spelled with
+    conv*: string             ## set by `sema.nim`: the C# numeric type this value is
+                              ## implicitly converted to where it is used ("" = none)
 
 # --- constructors -----------------------------------------------------------
 #
@@ -233,9 +245,14 @@ proc describe*(n: NsNode): string =
     if n.kind == nsnUsing and n.alias.len > 0:
       ## `using P = A.B;`, spelled the way it was written.
       result.add " (as " & n.alias & ")"
-  of nsnIntLit, nsnCharLit, nsnBoolLit: result.add " " & $n.intVal
+  of nsnIntLit, nsnCharLit, nsnBoolLit:
+    result.add " " & $n.intVal
+    if n.strVal.len > 0: result.add " " & n.strVal
   of nsnFloatLit:
     result.add " " & formatFloat(float(n.floatVal), ffDefault, 0)
+    if n.strVal.len > 0: result.add " " & n.strVal
+  of nsnInterpHole:
+    if n.strVal.len > 0: result.add " :" & n.strVal
   of nsnStrLit: result.add " " & escape(n.strVal)
   else: discard
 
