@@ -28,7 +28,6 @@ nkStmtList
                 nkIdent 'Option'
                 nkIdent 'int32'
               nkEmpty
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'

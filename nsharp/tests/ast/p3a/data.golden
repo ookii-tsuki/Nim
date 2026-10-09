@@ -19,7 +19,6 @@ nkStmtList
         nkIdent 'Red'
         nkIdent 'Green'
         nkIdent 'Blue'
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'

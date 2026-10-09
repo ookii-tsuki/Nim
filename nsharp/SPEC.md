@@ -218,7 +218,7 @@ are excluded: N# has no `void` type and no decimal.
 |---|---|---|---|
 | `class` | reference type | ✅ v1 | `ref object` |
 | `struct` | value type | ✅ v1 | `object` |
-| `interface` | contract | ✅ v1 (static) | `concept` (see §8) |
+| `interface` | contract | ✅ v1 (values and dispatch) | fat value: object + static table (see §8) |
 | `enum` | named int constants | ✅ v1 | Nim `enum` (int-backed 🟡) |
 | `[Flags] enum` | bit flags | 🔜 later | `set` |
 | `delegate` declaration | named function type | ✅ v1 | `proc` type alias |
@@ -353,7 +353,7 @@ and the namespaces must be merged or layered.
 |---|---|---|---|
 | `class C : Base, IFoo { }` | class decl | ✅ v1 | front |
 | `struct S { }` | value type | ✅ v1 | front |
-| `interface I { }` | contract | ✅ v1 (static) | desugar → `concept` (see §8) |
+| `interface I { }` | contract | ✅ v1 | desugar → fat interface value (see §8) |
 | `enum E { A, B }` | enum | ✅ v1 | front |
 | `delegate R D(args);` | func type | ✅ v1 | front |
 | `record`, `record struct` | data classes | 🔜 later | desugar |
@@ -411,7 +411,7 @@ and the namespaces must be merged or layered.
 | Static properties | type-level | ✅ v1 | desugar (getter/setter over `typedesc[C]`, backing in a module global) |
 | Accessor visibility `{ get; private set; }` | per-accessor | ✅ v1 | desugar |
 | Abstract/virtual properties | dispatch | ✅ v1 | sem |
-| Interface properties | contract | ✅ v1 (static) | desugar → concept |
+| Interface properties | contract | ✅ v1 | desugar (getter/setter table entries) |
 
 ### 5.5 Access modifiers
 
@@ -597,7 +597,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
 | Single inheritance `class C : B` | one base | ✅ v1 | front (→ Nim `object of`) |
-| Multiple interfaces | many contracts | ✅ v1 (static concepts) | sem |
+| Multiple interfaces | many contracts | ✅ v1 | desugar (one table, converter and `nsAs<I>` override per class and interface; NS0535 for a missing member) |
 | `virtual` methods | overridable | ✅ v1 | sem (`method`) |
 | `override` | replace base | ✅ v1 | sem (`{.override.}`) |
 | `abstract` methods/classes | no impl | ✅ v1 | sem |
@@ -620,30 +620,34 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `static class` | container | 🔜 later | front |
 | Object/collection `ToString` | `$` | ✅ v1 | desugar |
 
-**Interface model (D2, decided): static interfaces = concepts (v1).**
-`interface I { R M(P); }` desugars to a Nim `concept`:
+**Interface model (D2, revised): interface values with dynamic dispatch.**
+The first plan made an interface a Nim `concept`, which gives `where T : I` but no
+interface-typed values -- and `IShape s = ...`, `List<IShape>` and casting to an
+interface are what C# code mostly does with one. Nim's single inheritance cannot
+make an interface a second base type, so an interface value is a fat pointer:
 
 ```nim
-# N#:
-#   interface IMovable { void Move(float dt); }
-#
-# desugars to:
-type IMovable = concept e
-  e.Move(float)
-
-# so generic constraints read naturally (N#):
-void Tick<T>(T e, float dt) where T : IMovable { e.Move(dt); }
-
-# anonymous interfaces synthesize a concept (N#):
-void Tick<T>(T e, float dt) where T : { void T.Move(float dt) } { e.Move(dt); }
+type
+  nsVT_IShape = object                  # one entry per member, over a RootRef
+    nsReady*: bool
+    f0*: proc (self: RootRef): float64 {.nimcall.}
+  IShape = object
+    nsObj*: RootRef                     # the object
+    nsVt*: ptr nsVT_IShape              # its class's table for IShape
+proc Area*(self: IShape): float64 = (self.nsVt.f0)(nsCheckNil(self.nsObj))
+method nsAsIShape*(x: RootRef): IShape {.base.} = default(IShape)
 ```
 
-A class `Foo : I` is *structural*: `Foo` satisfies `I` iff it defines the
-methods. The nominal link is still recorded (for docs/LSP) and guarded with
-`static: doAssert Foo is I`. **Ceiling:** concepts are compile-time only, so they
-give `where T : I` but **not** interface-typed *values* (`I x = …`, `List<I>`,
-heterogeneous dispatch). Dynamic interface dispatch is **staged to v2** (needs an
-abstract-base + vtable scheme).
+Each class naming `IShape` gets a lazily filled table whose entries call its own
+members (so a `virtual` member dispatches further), a `converter nsToIShape`, which
+is what lets a class value be passed, assigned, added to a `List<IShape>` or put in
+an `IShape[]`, and an override of `nsAsIShape`, which is how `is`, `as` and casts
+ask the *dynamic* type. An interface value converts to the interfaces it extends the
+same way. A struct is boxed into `nsBox_S` (a copy, as C#'s box is), and
+`(S)iface` unboxes. `null` is the empty value; `==` compares the objects. `R I.M()`
+explicit implementations are reachable only through the table. Deferred: default
+interface methods and static interface members (NS9999), and generic interfaces
+(with generics, §9).
 
 ---
 
@@ -979,6 +983,8 @@ code:
 | `NS0500` | CS0500 | an abstract member with a body |
 | `NS0501` | CS0501 | a non-abstract method without a body |
 | `NS0509` | CS0509 | deriving from a `sealed` class |
+| `NS0535` | CS0535 | a class leaves an interface member unimplemented |
+| `NS0506` | CS0506 | `override` of a member that is not virtual |
 | `NS0513` | CS0513 | an abstract member in a non-abstract class |
 | `NS0534` | CS0534 | a concrete class leaves an inherited abstract member unimplemented |
 | `NS0266` | CS0266 | a numeric value would narrow implicitly; a cast is needed |

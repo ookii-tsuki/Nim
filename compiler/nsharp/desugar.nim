@@ -152,6 +152,7 @@ proc baseCall(l: Lowerer; name: string; args: seq[PNode]; info: TLineInfo): PNod
   for a in args: call.add a
   result = newTree(nkCommand, info, l.id("procCall", info), call)
 
+# (interfaces: see below)
 # --- types ------------------------------------------------------------------
 
 proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
@@ -275,6 +276,16 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
   else:
     result.add l.expr(callee)
   for a in n.sons: result.add l.wrappedArg(a)
+
+proc castToNim(l: Lowerer; n: NsNode): PNode =
+  ## `(T)x` is a Nim conversion, and also how a ref object is downcast. A `T?`
+  ## operand is unwrapped first, since the conversion applies to the value.
+  result = newNodeI(nkCall, n.info)
+  result.add l.typeToNim(n.typ, n.info)
+  if n.body != nil and n.body.typeKind == tkNullable:
+    result.add l.presentOf(n.body, n.info)
+  else:
+    result.add l.expr(n.body)
 
 proc asToNim(l: Lowerer; n: NsNode): PNode =
   ## `x as T` yields nil instead of raising, and reads its operand once. The block
@@ -449,6 +460,10 @@ proc interpolatedToNim(l: Lowerer; n: NsNode): PNode =
               else: newTree(nkInfix, part.info, l.id("&", part.info), result, piece))
   if result == nil: result = newAtom(nkStrLit, "", n.info)
 
+proc ifaceTypeOp(l: Lowerer; n: NsNode): PNode
+proc isIfaceValue(l: Lowerer; e: NsNode): bool
+proc objOf(l: Lowerer; e: NsNode): PNode
+
 proc expr(l: Lowerer; n: NsNode): PNode =
   if n == nil: return newNodeI(nkEmpty, unknownLineInfo)
   case n.kind
@@ -457,7 +472,12 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnThis:
     result = l.id(if l.thisName.len > 0: l.thisName else: "this", n.info)
   of nsnBase: result = l.baseConv(n.info)
-  of nsnNull: result = newNodeI(nkNilLit, n.info)
+  of nsnNull:
+    if n.typeName.len > 0 and l.scope.isInterface(n.typeName):
+      ## The empty interface value.
+      result = newTree(nkCall, n.info, l.id("default", n.info), l.id(n.typeName, n.info))
+    else:
+      result = newNodeI(nkNilLit, n.info)
   of nsnIntLit:
     ## The literal's C# type, chosen by `sema.nim`, picks the typed Nim literal; an
     ## `int` one stays untyped so it adapts to its context the way C#'s does.
@@ -499,32 +519,41 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     result.add typ
     result.add l.expr(n.sons[0])
   of nsnArrayLit:
+    ## `new T[] { a, b }`: each element converted to `T`, as C# converts it, which
+    ## for an interface is its converter and for a base class an upcast.
     let br = newNodeI(nkBracket, n.info)
-    for e in n.sons: br.add l.expr(e)
+    for e in n.sons:
+      if n.typ != nil and n.typ.kind == nsnTypeName and e.kind != nsnNull:
+        br.add newTree(nkCall, e.info, l.typeToNim(n.typ, e.info), l.expr(e))
+      else:
+        br.add l.expr(e)
     result = newTree(nkPrefix, n.info, l.id("@", n.info), br)
   of nsnUnary:
     result = newTree(nkPrefix, n.info, l.id(n.name, n.info), l.expr(n.body))
   of nsnIncDec:
     result = newTree(nkCommand, n.info, l.id(n.name, n.info), l.expr(n.body))
-  of nsnCast:
-    ## `(T)x` is a Nim conversion, and also how a ref object is downcast. A `T?`
-    ## operand is unwrapped first, since the conversion applies to the value.
-    result = newNodeI(nkCall, n.info)
-    result.add l.typeToNim(n.typ, n.info)
-    if n.body != nil and n.body.typeKind == tkNullable:
-      result.add l.presentOf(n.body, n.info)
+  of nsnCast, nsnIs, nsnAs:
+    result = l.ifaceTypeOp(n)
+    if result != nil: discard
+    elif n.kind == nsnIs:
+      result = newTree(nkInfix, n.info, l.id(n.name, n.info), l.expr(n.body),
+                       l.typeToNim(n.typ, n.info))
+    elif n.kind == nsnAs: result = l.asToNim(n)
     else:
-      result.add l.expr(n.body)
-  of nsnIs:
-    result = newTree(nkInfix, n.info, l.id(n.name, n.info), l.expr(n.body),
-                     l.typeToNim(n.typ, n.info))
-  of nsnAs: result = l.asToNim(n)
+      result = l.castToNim(n)
   of nsnDefault:
     result = newNodeI(nkCall, n.info)
     result.add l.id("default", n.info)
     result.add l.typeToNim(n.typ, n.info)
   of nsnBinary:
-    if n.name in ["==", "!="] and
+    if n.name in ["==", "!="] and (l.isIfaceValue(n.sons[0]) or l.isIfaceValue(n.sons[1])):
+      ## An interface value is equal to another, or to null, by its object.
+      let side = proc (e: NsNode): PNode =
+        if e.kind == nsnNull: newNodeI(nkNilLit, e.info)
+        else: newTree(nkCall, e.info, l.id("RootRef", e.info), l.objOf(e))
+      result = newTree(nkInfix, n.info, l.id(n.name, n.info), side(n.sons[0]),
+                       side(n.sons[1]))
+    elif n.name in ["==", "!="] and
        ((n.sons[0] != nil and n.sons[0].typeKind == tkNullable and
          n.sons[1] != nil and n.sons[1].kind == nsnNull) or
         (n.sons[1] != nil and n.sons[1].typeKind == tkNullable and
@@ -1119,6 +1148,321 @@ proc lowerAllocator(l: Lowerer; cls, m: NsNode; isException: bool): PNode =
   result = l.mkProc(l.exportedName(m.attrs, "new" & cls.name, m.info), ap, abody,
                     m.info, withPragmas = true)
 
+# --- interfaces --------------------------------------------------------------
+#
+# An interface value is a fat pointer: the object, as a `RootRef`, and a static
+# table of procs for that object's class. C# lets a class name a base class *and*
+# interfaces, which Nim's single inheritance cannot express, so an interface is not a
+# base type; it is this pair:
+#
+#   type
+#     nsVT_IShape = object               # one proc per member, over a `RootRef`
+#       nsReady*: bool
+#       f0*: proc (self: RootRef): float64 {.nimcall.}
+#     IShape = object
+#       nsObj*: RootRef
+#       nsVt*: ptr nsVT_IShape
+#   proc Area*(self: IShape): float64 = (self.nsVt.f0)(nsCheckNil(self.nsObj))
+#
+# A class that implements it gets a table whose entries call its own members --
+# which dispatch further when they are virtual -- a `converter` from the class, so a
+# class value is accepted wherever the interface is, and an override of the
+# dispatched `nsAsIShape(RootRef)`, which is how `is`, `as` and casts ask the
+# *dynamic* type. A struct is boxed into a `ref` first, as C# boxes it.
+
+proc ifaceMembers(l: Lowerer; iface: string): seq[NsNode] =
+  ## The members an interface value exposes: its own, then the ones it inherits.
+  result = @[]
+  var names: seq[string] = @[iface]
+  for i in l.scope.interfaceClosure(iface):
+    if i notin names: names.add i
+  for i in names:
+    if not l.scope.classes.hasKey(i): continue
+    let d = l.scope.classes[i].decl
+    if d == nil: continue
+    for m in d.sons:
+      if m.kind in {nsnMethodDecl, nsnPropertyDecl} and not m.attrs.isStatic:
+        result.add m
+
+proc vtSlots(l: Lowerer; iface: string): seq[tuple[m: NsNode, setter: bool]] =
+  ## The table's entries, in order: one per method, one per property accessor.
+  result = @[]
+  for m in l.ifaceMembers(iface):
+    if m.kind == nsnMethodDecl: result.add (m: m, setter: false)
+    else:
+      if m.params.len > 0 and m.params[0] != nil: result.add (m: m, setter: false)
+      if m.params.len > 1 and m.params[1] != nil: result.add (m: m, setter: true)
+
+proc identDefs(l: Lowerer; name: string; typ: PNode; info: TLineInfo): PNode =
+  result = newTree(nkIdentDefs, info, l.id(name, info), typ, empty(info))
+
+proc exportId(l: Lowerer; name: string; info: TLineInfo): PNode =
+  newTree(nkPostfix, info, l.id("*", info), l.id(name, info))
+
+proc slotProcTy(l: Lowerer; slot: tuple[m: NsNode, setter: bool]; info: TLineInfo): PNode =
+  ## `proc (self: RootRef, params): R {.nimcall.}`
+  let fp = newNodeI(nkFormalParams, info)
+  let m = slot.m
+  if slot.setter: fp.add empty(info)
+  else: fp.add l.typeToNim(m.typ, info)
+  fp.add l.identDefs("self", l.id("RootRef", info), info)
+  if m.kind == nsnMethodDecl:
+    for p in m.params: fp.add l.paramDef(p)
+  elif slot.setter:
+    fp.add l.identDefs("value", l.typeToNim(m.typ, info), info)
+  result = newTree(nkProcTy, info, fp,
+                   newTree(nkPragma, info, l.id("nimcall", info)))
+
+proc lowerInterface(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
+  let info = n.info
+  let vtName = "nsVT_" & n.name
+  let slots = l.vtSlots(n.name)
+  # the table type and the value type
+  let vtRec = newNodeI(nkRecList, info)
+  vtRec.add l.identDefs("nsReady", l.id("bool", info), info)
+  vtRec[0][0] = l.exportId("nsReady", info)
+  for k, slot in slots:
+    let d = l.identDefs("f" & $k, l.slotProcTy(slot, info), info)
+    d[0] = l.exportId("f" & $k, info)
+    vtRec.add d
+  let vtObj = newTree(nkObjectTy, info, empty(info), empty(info), vtRec)
+  let valRec = newNodeI(nkRecList, info)
+  let o = l.identDefs("nsObj", l.id("RootRef", info), info)
+  o[0] = l.exportId("nsObj", info)
+  valRec.add o
+  let v = l.identDefs("nsVt", newTree(nkPtrTy, info, l.id(vtName, info)), info)
+  v[0] = l.exportId("nsVt", info)
+  valRec.add v
+  let valObj = newTree(nkObjectTy, info, empty(info), empty(info), valRec)
+  let sec = newNodeI(nkTypeSection, info)
+  sec.add newTree(nkTypeDef, info, l.exportId(vtName, info), empty(info), vtObj)
+  sec.add newTree(nkTypeDef, info, l.exportedName(n.attrs, n.name, info), empty(info),
+                  valObj)
+  into.add sec
+  let selfDefs = l.identDefs("self", l.id(n.name, info), info)
+  # one dispatching proc per slot: `(self.nsVt.fK)(nsCheckNil(self.nsObj), args)`
+  for k, slot in slots:
+    let m = slot.m
+    let fp = newNodeI(nkFormalParams, info)
+    if slot.setter: fp.add empty(info)
+    else: fp.add l.typeToNim(m.typ, info)
+    fp.add copyTree(selfDefs)
+    let call = newNodeI(nkCall, info)
+    call.add newTree(nkPar, info, newTree(nkDotExpr, info,
+                     newTree(nkDotExpr, info, l.id("self", info), l.id("nsVt", info)),
+                     l.id("f" & $k, info)))
+    call.add newTree(nkCall, info, l.id("nsCheckNil", info),
+                     newTree(nkDotExpr, info, l.id("self", info), l.id("nsObj", info)))
+    if m.kind == nsnMethodDecl:
+      for p in m.params:
+        fp.add l.paramDef(p)
+        call.add l.id(p.name, info)
+    elif slot.setter:
+      fp.add l.identDefs("value", l.typeToNim(m.typ, info), info)
+      call.add l.id("value", info)
+    let name = (if slot.setter: m.name & "=" else: m.name)
+    into.add l.mkProc(l.exportId(name, info), fp, newTree(nkStmtList, info, call), info)
+  # printing, and the dynamic test
+  for nm in ["$", "ToString"]:
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add l.id("string", info)
+    fp.add copyTree(selfDefs)
+    into.add l.mkProc(l.exportId(nm, info), fp, newTree(nkStmtList, info,
+      newTree(nkPrefix, info, l.id("$", info),
+              newTree(nkDotExpr, info, l.id("self", info), l.id("nsObj", info)))), info)
+  block:
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add l.id(n.name, info)
+    fp.add l.identDefs("x", l.id("RootRef", info), info)
+    let body = newTree(nkStmtList, info, newTree(nkCall, info, l.id("default", info),
+                                                  l.id(n.name, info)))
+    let pr = newTree(nkPragma, info, l.id("base", info))
+    let md = l.mkProc(l.exportId("nsAs" & n.name, info), fp, body, info,
+                      kind = nkMethodDef)
+    md[4] = pr
+    into.add md
+  # an interface value converts to each interface it extends, by asking the object
+  for b in l.scope.interfaceClosure(n.name):
+    if not l.scope.classes.hasKey(b): continue
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add l.id(b, info)
+    fp.add l.identDefs("x", l.id(n.name, info), info)
+    into.add l.mkProc(l.exportId("nsTo" & b, info), fp, newTree(nkStmtList, info,
+      newTree(nkCall, info, l.id("nsAs" & b, info),
+              newTree(nkDotExpr, info, l.id("x", info), l.id("nsObj", info)))), info,
+      kind = nkConverterDef)
+
+proc implementerFor(l: Lowerer; cls, m: NsNode; iface: string): string =
+  ## The proc a table entry calls: the class's member, or its explicit `I.M`.
+  for c in cls.sons:
+    if c.name == m.name and c.explicitIface == iface: return "ns" & iface & "_" & m.name
+  m.name
+
+proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
+                          into: var seq[PNode]) =
+  ## For each interface the class names: a lazily filled table, a converter, and the
+  ## `nsAs<I>` override. A struct is boxed: `nsBox_S` holds a copy, as C#'s box does.
+  let info = n.info
+  let ifaces = l.scope.directInterfaces(n.name)
+  if ifaces.len == 0: return
+  let isStruct = n.classKind == ckStruct
+  let boxName = "nsBox_" & n.name
+  if isStruct:
+    let rec = newNodeI(nkRecList, info)
+    let vd = l.identDefs("v", l.id(n.name, info), info)
+    vd[0] = l.exportId("v", info)
+    rec.add vd
+    let obj = newTree(nkObjectTy, info, empty(info),
+                      newTree(nkOfInherit, info, l.id("RootObj", info)), rec)
+    into.add newTree(nkTypeSection, info, newTree(nkTypeDef, info,
+      l.exportId(boxName, info), empty(info), newTree(nkRefTy, info, obj)))
+    # a boxed struct prints as the struct does
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add l.id("string", info)
+    fp.add l.identDefs("self", l.id(boxName, info), info)
+    into.add l.mkProc(l.exportId("ToString", info), fp, newTree(nkStmtList, info,
+      newTree(nkPrefix, info, l.id("$", info),
+              newTree(nkDotExpr, info, l.id("self", info), l.id("v", info)))), info,
+      kind = nkMethodDef)
+  let recvType = (if isStruct: l.id(boxName, info)
+                  elif isException: newTree(nkRefTy, info, l.id(n.name, info))
+                  else: l.id(n.name, info))
+  for iface in ifaces:
+    if not l.scope.classes.hasKey(iface): continue
+    let vtName = "nsVT_" & iface
+    let store = "nsVt_" & n.name & "_" & iface
+    into.add newTree(nkVarSection, info, l.identDefs(store, l.id(vtName, info), info))
+    # proc nsVtGet_C_I(): ptr nsVT_I = (fill once); addr store
+    let fill = newTree(nkObjConstr, info, l.id(vtName, info))
+    fill.add newTree(nkExprColonExpr, info, l.id("nsReady", info), l.id("true", info))
+    for k, slot in l.vtSlots(iface):
+      let m = slot.m
+      let pt = l.slotProcTy(slot, info)
+      let lam = newNodeI(nkLambda, info, 7)
+      for i in 0 .. 6: lam[i] = empty(info)
+      lam[3] = copyTree(pt[0])
+      lam[4] = copyTree(pt[1])
+      let me = (if isStruct:
+                  newTree(nkDotExpr, info, newTree(nkCall, info, l.id(boxName, info),
+                                                   l.id("self", info)), l.id("v", info))
+                else: newTree(nkCall, info, (if isException: newTree(nkPar, info,
+                                                copyTree(recvType)) else: copyTree(recvType)),
+                              l.id("self", info)))
+      let target = l.implementerFor(n, m, iface)
+      var body: PNode
+      if slot.setter:
+        body = newTree(nkAsgn, info, newTree(nkDotExpr, info, me, l.id(m.name, info)),
+                       l.id("value", info))
+      else:
+        let call = newNodeI(nkCall, info)
+        call.add l.id(target, info)
+        call.add me
+        if m.kind == nsnMethodDecl:
+          for p in m.params: call.add l.id(p.name, info)
+        body = call
+      lam[6] = newTree(nkStmtList, info, body)
+      fill.add newTree(nkExprColonExpr, info, l.id("f" & $k, info), lam)
+    let getFp = newNodeI(nkFormalParams, info)
+    getFp.add newTree(nkPtrTy, info, l.id(vtName, info))
+    let getBody = newTree(nkStmtList, info,
+      newTree(nkIfStmt, info, newTree(nkElifBranch, info,
+        newTree(nkPrefix, info, l.id("not", info),
+                newTree(nkDotExpr, info, l.id(store, info), l.id("nsReady", info))),
+        newTree(nkStmtList, info, newTree(nkAsgn, info, l.id(store, info), fill)))),
+      newTree(nkCall, info, l.id("addr", info), l.id(store, info)))
+    let getName = "nsVtGet_" & n.name & "_" & iface
+    into.add l.mkProc(l.id(getName, info), getFp, getBody, info)
+    # converter nsTo<I>*(x: C): I
+    let cfp = newNodeI(nkFormalParams, info)
+    cfp.add l.id(iface, info)
+    cfp.add l.identDefs("x", (if isException: newTree(nkRefTy, info, l.id(n.name, info))
+                              else: l.id(n.name, info)), info)
+    let objExpr = (if isStruct: newTree(nkObjConstr, info, l.id(boxName, info),
+                                        newTree(nkExprColonExpr, info, l.id("v", info),
+                                                l.id("x", info)))
+                   else: l.id("x", info))
+    let make = newTree(nkObjConstr, info, l.id(iface, info),
+      newTree(nkExprColonExpr, info, l.id("nsObj", info), objExpr),
+      newTree(nkExprColonExpr, info, l.id("nsVt", info),
+              newTree(nkCall, info, l.id(getName, info))))
+    var cbody: PNode
+    if isStruct:
+      cbody = newTree(nkStmtList, info, make)
+    else:
+      cbody = newTree(nkStmtList, info, newTree(nkIfExpr, info,
+        newTree(nkElifExpr, info, newTree(nkCall, info, l.id("isNil", info), l.id("x", info)),
+                newTree(nkCall, info, l.id("default", info), l.id(iface, info))),
+        newTree(nkElseExpr, info, make)))
+    into.add l.mkProc(l.exportId("nsTo" & iface, info), cfp, cbody, info,
+                      kind = nkConverterDef)
+    # method nsAs<I>*(x: C): I
+    let afp = newNodeI(nkFormalParams, info)
+    afp.add l.id(iface, info)
+    afp.add l.identDefs("x", copyTree(recvType), info)
+    let abody =
+      if isStruct:
+        newTree(nkStmtList, info, newTree(nkObjConstr, info, l.id(iface, info),
+          newTree(nkExprColonExpr, info, l.id("nsObj", info), l.id("x", info)),
+          newTree(nkExprColonExpr, info, l.id("nsVt", info),
+                  newTree(nkCall, info, l.id(getName, info)))))
+      else:
+        newTree(nkStmtList, info, newTree(nkCall, info, l.id("nsTo" & iface, info),
+                                          l.id("x", info)))
+    into.add l.mkProc(l.exportId("nsAs" & iface, info), afp, abody, info,
+                      kind = nkMethodDef)
+
+proc isIfaceType(l: Lowerer; t: NsNode): bool =
+  t != nil and t.kind == nsnTypeName and l.scope.isInterface(canonicalTypeName(t.name))
+
+proc isIfaceValue(l: Lowerer; e: NsNode): bool =
+  e != nil and e.typeKind == tkClass and l.scope.isInterface(e.typeName)
+
+proc objOf(l: Lowerer; e: NsNode): PNode =
+  ## The object behind a value: `x.nsObj` for an interface value, `x` otherwise.
+  result = l.expr(e)
+  if l.isIfaceValue(e):
+    result = newTree(nkDotExpr, e.info, result, l.id("nsObj", e.info))
+
+proc ifaceTypeOp(l: Lowerer; n: NsNode): PNode =
+  ## `is`, `as` and casts that involve an interface, or `nil` when none does. The
+  ## dynamic type answers: `nsAs<I>(obj)` is empty when it does not implement `I`.
+  result = nil
+  let info = n.info
+  if l.isIfaceType(n.typ):
+    let iface = canonicalTypeName(n.typ.name)
+    let probe = newTree(nkCall, info, l.id("nsAs" & iface, info), l.id("nsSrc", info))
+    var value: PNode
+    case n.kind
+    of nsnIs:
+      value = newTree(nkInfix, info, l.id("!=", info),
+                      newTree(nkDotExpr, info, probe, l.id("nsObj", info)),
+                      newNodeI(nkNilLit, info))
+    of nsnAs: value = probe
+    else:
+      value = newTree(nkCall, info, l.id("nsIfaceCast", info), probe, l.id("nsSrc", info))
+    let defs = l.identDefs("nsSrc", empty(info), info)
+    defs[2] = newTree(nkCall, info, l.id("RootRef", info), l.objOf(n.body))
+    result = newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
+      newTree(nkLetSection, info, defs), value))
+  elif l.isIfaceValue(n.body):
+    ## From an interface value to a class: the object is tested or converted.
+    let obj = l.objOf(n.body)
+    let target = canonicalTypeName(if n.typ != nil: n.typ.name else: "")
+    let isStruct = l.scope.classes.hasKey(target) and
+                   l.scope.classes[target].classKind == ckStruct
+    case n.kind
+    of nsnIs:
+      result = newTree(nkInfix, info, l.id("of", info), obj,
+                       l.id((if isStruct: "nsBox_" & target else: nimTypeName(target)),
+                            info))
+    of nsnCast:
+      if isStruct:
+        result = newTree(nkDotExpr, info, newTree(nkCall, info,
+                         l.id("nsBox_" & target, info), obj), l.id("v", info))
+      else:
+        result = newTree(nkCall, info, l.typeToNim(n.typ, info), obj)
+    else: discard
+
 # --- classes ----------------------------------------------------------------
 
 proc alwaysExported(l: Lowerer; name: string; info: TLineInfo): PNode =
@@ -1169,6 +1513,7 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   l.curIsException = isException
   if not isException:
     for p in l.objectToString(n, isClass): into.add p
+  l.lowerImplementations(n, isException, into)
 
   # 1. the type: `C = ref object` for a class, a plain `object` for a struct and
   #    for an exception class (which is raised as `ref C`).
@@ -1262,8 +1607,13 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         np.add l.selfDefs(n.name, isException, m.info)
         for i in 1 ..< params.len: np.add params[i]
         params = np
-      let pd = l.asMethod(n, m, inner.mkProc(l.exportedName(m.attrs, m.name, m.info),
-                                             params, inner.stmtSeq(m.body), m.info))
+      ## `R I.M()` is reachable only through `I`, so it gets a name of its own that
+      ## only the interface table uses.
+      let nameNode =
+        if m.explicitIface.len > 0: l.id("ns" & m.explicitIface & "_" & m.name, m.info)
+        else: l.exportedName(m.attrs, m.name, m.info)
+      let pd = l.asMethod(n, m, inner.mkProc(nameNode, params, inner.stmtSeq(m.body),
+                                             m.info))
       into.add pd
       if m.name == "Main" and l.entryPoint == nil: l.entryPoint = pd
     of nsnPropertyDecl:
@@ -1347,8 +1697,8 @@ proc lowerDecl(l: var Lowerer; d: NsNode; into: var seq[PNode]) =
       for x in d.body.sons: lowerDecl(l, x, into)
     l.curNamespace = saved
   of nsnClassDecl:
-    if d.classKind == ckInterface: return   # interfaces are not supported yet
-    lowerClass(l, d, into)
+    if d.classKind == ckInterface: lowerInterface(l, d, into)
+    else: lowerClass(l, d, into)
   of nsnEnumDecl: into.add l.lowerEnum(d)
   of nsnDelegateDecl: into.add l.lowerDelegate(d)
   else: into.add l.stmt(d)
@@ -1415,12 +1765,19 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
                      nkImportStmt, nkImportExceptStmt, nkFromStmt}
   for s in stmts:
     if isImportStmt(s): result.add s
+  ## One type section: Nim resolves a type that names a later one only within a
+  ## section, and C# types name each other in any order.
+  let types = newNodeI(nkTypeSection, module.info)
   for s in stmts:
-    if s.kind in declKinds and not isImportStmt(s):
+    if s.kind == nkTypeSection:
+      for t in s: types.add t
+  if types.len > 0: result.add types
+  for s in stmts:
+    if s.kind in declKinds and s.kind != nkTypeSection and not isImportStmt(s):
       result.add s
   for p in l.staticInits: routines.add p
   for s in stmts:
-    if s.kind in {nkProcDef, nkMethodDef}: routines.add s
+    if s.kind in {nkProcDef, nkMethodDef, nkConverterDef}: routines.add s
   for r in routines:
     let fwd = copyTree(r)
     fwd[6] = newNodeI(nkEmpty, r.info)

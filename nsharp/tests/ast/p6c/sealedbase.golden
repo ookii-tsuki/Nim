@@ -20,7 +20,6 @@ nkStmtList
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -32,7 +31,6 @@ nkStmtList
           nkOfInherit
             nkIdent 'Leaf'
           nkRecList
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'

@@ -1,0 +1,44 @@
+// Explicit interface implementations, structs boxed into interfaces, and an
+// interface used as a parameter and a return type.
+using System;
+
+namespace Demo
+{
+    interface IGreeter { string Greet(string who); }
+    interface ICounter { int Next(); }
+
+    class Polite : IGreeter
+    {
+        string IGreeter.Greet(string who) { return "Good day, " + who; }
+        public string Greet(string who) { return "hi " + who; }
+    }
+
+    struct Ticker : ICounter
+    {
+        public int Count;
+        public int Next() { return Count + 1; }
+    }
+
+    class Program
+    {
+        static IGreeter Make() { return new Polite(); }
+        static void Show(ICounter c) { Console.WriteLine(c.Next()); }
+
+        static void Main()
+        {
+            Polite p = new Polite();
+            Console.WriteLine(p.Greet("ann"));
+            IGreeter g = Make();
+            Console.WriteLine(g.Greet("bob"));
+            Ticker t = new Ticker();
+            t.Count = 41;
+            Show(t);
+            ICounter boxed = t;
+            t.Count = 0;
+            Console.WriteLine(boxed.Next());
+            Ticker back = (Ticker)boxed;
+            Console.WriteLine(back.Count);
+            Console.WriteLine(boxed is Ticker);
+        }
+    }
+}

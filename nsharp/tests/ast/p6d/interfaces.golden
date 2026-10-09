@@ -1,0 +1,2713 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsVT_INamed'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsReady'
+            nkIdent 'bool'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'f0'
+            nkProcTy
+              nkFormalParams
+                nkIdent 'string'
+                nkIdentDefs
+                  nkIdent 'self'
+                  nkIdent 'RootRef'
+                  nkEmpty
+              nkPragma
+                nkIdent 'nimcall'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'INamed'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsObj'
+            nkIdent 'RootRef'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsVt'
+            nkPtrTy
+              nkIdent 'nsVT_INamed'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsVT_IShape'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsReady'
+            nkIdent 'bool'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'f0'
+            nkProcTy
+              nkFormalParams
+                nkIdent 'float64'
+                nkIdentDefs
+                  nkIdent 'self'
+                  nkIdent 'RootRef'
+                  nkEmpty
+              nkPragma
+                nkIdent 'nimcall'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'f1'
+            nkProcTy
+              nkFormalParams
+                nkIdent 'string'
+                nkIdentDefs
+                  nkIdent 'self'
+                  nkIdent 'RootRef'
+                  nkEmpty
+                nkIdentDefs
+                  nkIdent 'precision'
+                  nkIdent 'int32'
+                  nkEmpty
+              nkPragma
+                nkIdent 'nimcall'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'f2'
+            nkProcTy
+              nkFormalParams
+                nkIdent 'string'
+                nkIdentDefs
+                  nkIdent 'self'
+                  nkIdent 'RootRef'
+                  nkEmpty
+              nkPragma
+                nkIdent 'nimcall'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'IShape'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsObj'
+            nkIdent 'RootRef'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsVt'
+            nkPtrTy
+              nkIdent 'nsVT_IShape'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsVT_IScalable'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsReady'
+            nkIdent 'bool'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'f0'
+            nkProcTy
+              nkFormalParams
+                nkEmpty
+                nkIdentDefs
+                  nkIdent 'self'
+                  nkIdent 'RootRef'
+                  nkEmpty
+                nkIdentDefs
+                  nkIdent 'factor'
+                  nkIdent 'float64'
+                  nkEmpty
+              nkPragma
+                nkIdent 'nimcall'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'IScalable'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsObj'
+            nkIdent 'RootRef'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsVt'
+            nkPtrTy
+              nkIdent 'nsVT_IScalable'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Shape'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Circle'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'Shape'
+          nkRecList
+            nkIdentDefs
+              nkIdent 'r'
+              nkIdent 'float64'
+              nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Square'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'Shape'
+          nkRecList
+            nkIdentDefs
+              nkIdent 's'
+              nkIdent 'float64'
+              nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Label'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+            nkIdentDefs
+              nkIdent 'NameBacking'
+              nkIdent 'string'
+              nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsVt_Shape_IShape'
+      nkIdent 'nsVT_IShape'
+      nkEmpty
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsVt_Shape_INamed'
+      nkIdent 'nsVT_INamed'
+      nkEmpty
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsVt_Circle_IScalable'
+      nkIdent 'nsVT_IScalable'
+      nkEmpty
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsVt_Label_INamed'
+      nkIdent 'nsVT_INamed'
+      nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'INamed'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent '$'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'INamed'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'INamed'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'RootRef'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Describe'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IShape'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'precision'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent '$'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IShape'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'RootRef'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Scale'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScalable'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'factor'
+        nkIdent 'float64'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent '$'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScalable'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScalable'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIScalable'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScalable'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'RootRef'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsVtGet_Shape_IShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IShape'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToIShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IShape'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IShape'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsVtGet_Shape_INamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_INamed'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shape'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shape'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Describe'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shape'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'precision'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Shape'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsVtGet_Circle_IScalable'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IScalable'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToIScalable'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScalable'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIScalable'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScalable'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initCircle'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'r'
+        nkIdent 'float64'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newCircle'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Circle'
+      nkIdentDefs
+        nkIdent 'r'
+        nkIdent 'float64'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Scale'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'factor'
+        nkIdent 'float64'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Square'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initSquare'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Square'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'float64'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newSquare'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Square'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'float64'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Square'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsVtGet_Label_INamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_INamed'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Label'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initLabel'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newLabel'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Label'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Total'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'shapes'
+        nkBracketExpr
+          nkIdent 'seq'
+          nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Print'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'n'
+        nkIdent 'INamed'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'INamed'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkPar
+          nkDotExpr
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'nsVt'
+            nkIdent 'f0'
+        nkCall
+          nkIdent 'nsCheckNil'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'nsObj'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent '$'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'INamed'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '$'
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'nsObj'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'INamed'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '$'
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'nsObj'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'RootRef'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'default'
+        nkIdent 'INamed'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkPar
+          nkDotExpr
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'nsVt'
+            nkIdent 'f0'
+        nkCall
+          nkIdent 'nsCheckNil'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'nsObj'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Describe'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IShape'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'precision'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkPar
+          nkDotExpr
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'nsVt'
+            nkIdent 'f1'
+        nkCall
+          nkIdent 'nsCheckNil'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'nsObj'
+        nkIdent 'precision'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkPar
+          nkDotExpr
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'nsVt'
+            nkIdent 'f2'
+        nkCall
+          nkIdent 'nsCheckNil'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'nsObj'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent '$'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '$'
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'nsObj'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '$'
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'nsObj'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IShape'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'RootRef'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'default'
+        nkIdent 'IShape'
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsAsINamed'
+        nkDotExpr
+          nkIdent 'x'
+          nkIdent 'nsObj'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Scale'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScalable'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'factor'
+        nkIdent 'float64'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkPar
+          nkDotExpr
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'nsVt'
+            nkIdent 'f0'
+        nkCall
+          nkIdent 'nsCheckNil'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'nsObj'
+        nkIdent 'factor'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent '$'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScalable'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '$'
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'nsObj'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScalable'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '$'
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'nsObj'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIScalable'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScalable'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'RootRef'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'default'
+        nkIdent 'IScalable'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Shapes.Shape"
+  nkProcDef
+    nkIdent 'nsVtGet_Shape_IShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IShape'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfStmt
+        nkElifBranch
+          nkPrefix
+            nkIdent 'not'
+            nkDotExpr
+              nkIdent 'nsVt_Shape_IShape'
+              nkIdent 'nsReady'
+          nkStmtList
+            nkAsgn
+              nkIdent 'nsVt_Shape_IShape'
+              nkObjConstr
+                nkIdent 'nsVT_IShape'
+                nkExprColonExpr
+                  nkIdent 'nsReady'
+                  nkIdent 'true'
+                nkExprColonExpr
+                  nkIdent 'f0'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkIdent 'float64'
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Area'
+                        nkCall
+                          nkIdent 'Shape'
+                          nkIdent 'self'
+                nkExprColonExpr
+                  nkIdent 'f1'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkIdent 'string'
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                      nkIdentDefs
+                        nkIdent 'precision'
+                        nkIdent 'int32'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Describe'
+                        nkCall
+                          nkIdent 'Shape'
+                          nkIdent 'self'
+                        nkIdent 'precision'
+                nkExprColonExpr
+                  nkIdent 'f2'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkIdent 'string'
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Name'
+                        nkCall
+                          nkIdent 'Shape'
+                          nkIdent 'self'
+      nkCall
+        nkIdent 'addr'
+        nkIdent 'nsVt_Shape_IShape'
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToIShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IShape'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfExpr
+        nkElifExpr
+          nkCall
+            nkIdent 'isNil'
+            nkIdent 'x'
+          nkCall
+            nkIdent 'default'
+            nkIdent 'IShape'
+        nkElseExpr
+          nkObjConstr
+            nkIdent 'IShape'
+            nkExprColonExpr
+              nkIdent 'nsObj'
+              nkIdent 'x'
+            nkExprColonExpr
+              nkIdent 'nsVt'
+              nkCall
+                nkIdent 'nsVtGet_Shape_IShape'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IShape'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsToIShape'
+        nkIdent 'x'
+  nkProcDef
+    nkIdent 'nsVtGet_Shape_INamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_INamed'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfStmt
+        nkElifBranch
+          nkPrefix
+            nkIdent 'not'
+            nkDotExpr
+              nkIdent 'nsVt_Shape_INamed'
+              nkIdent 'nsReady'
+          nkStmtList
+            nkAsgn
+              nkIdent 'nsVt_Shape_INamed'
+              nkObjConstr
+                nkIdent 'nsVT_INamed'
+                nkExprColonExpr
+                  nkIdent 'nsReady'
+                  nkIdent 'true'
+                nkExprColonExpr
+                  nkIdent 'f0'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkIdent 'string'
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Name'
+                        nkCall
+                          nkIdent 'Shape'
+                          nkIdent 'self'
+      nkCall
+        nkIdent 'addr'
+        nkIdent 'nsVt_Shape_INamed'
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfExpr
+        nkElifExpr
+          nkCall
+            nkIdent 'isNil'
+            nkIdent 'x'
+          nkCall
+            nkIdent 'default'
+            nkIdent 'INamed'
+        nkElseExpr
+          nkObjConstr
+            nkIdent 'INamed'
+            nkExprColonExpr
+              nkIdent 'nsObj'
+              nkIdent 'x'
+            nkExprColonExpr
+              nkIdent 'nsVt'
+              nkCall
+                nkIdent 'nsVtGet_Shape_INamed'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsToINamed'
+        nkIdent 'x'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shape'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkRaiseStmt
+        nkCall
+          nkIdent 'newException'
+          nkIdent 'Defect'
+          nkStrLit "abstract member called: Area"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shape'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkStrLit "shape"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Describe'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shape'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'precision'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'Name'
+            nkStrLit " "
+          nkIfExpr
+            nkElifExpr
+              nkInfix
+                nkIdent '>'
+                nkIdent 'precision'
+                nkIntLit 0
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'self'
+                    nkIdent 'Area'
+                nkStrLit "F1"
+            nkElseExpr
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'self'
+                    nkIdent 'Area'
+                nkStrLit "F0"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Shape'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initShape'
+        nkIdent 'result'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Shapes.Circle"
+  nkProcDef
+    nkIdent 'nsVtGet_Circle_IScalable'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IScalable'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfStmt
+        nkElifBranch
+          nkPrefix
+            nkIdent 'not'
+            nkDotExpr
+              nkIdent 'nsVt_Circle_IScalable'
+              nkIdent 'nsReady'
+          nkStmtList
+            nkAsgn
+              nkIdent 'nsVt_Circle_IScalable'
+              nkObjConstr
+                nkIdent 'nsVT_IScalable'
+                nkExprColonExpr
+                  nkIdent 'nsReady'
+                  nkIdent 'true'
+                nkExprColonExpr
+                  nkIdent 'f0'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkEmpty
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                      nkIdentDefs
+                        nkIdent 'factor'
+                        nkIdent 'float64'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Scale'
+                        nkCall
+                          nkIdent 'Circle'
+                          nkIdent 'self'
+                        nkIdent 'factor'
+      nkCall
+        nkIdent 'addr'
+        nkIdent 'nsVt_Circle_IScalable'
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToIScalable'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScalable'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfExpr
+        nkElifExpr
+          nkCall
+            nkIdent 'isNil'
+            nkIdent 'x'
+          nkCall
+            nkIdent 'default'
+            nkIdent 'IScalable'
+        nkElseExpr
+          nkObjConstr
+            nkIdent 'IScalable'
+            nkExprColonExpr
+              nkIdent 'nsObj'
+              nkIdent 'x'
+            nkExprColonExpr
+              nkIdent 'nsVt'
+              nkCall
+                nkIdent 'nsVtGet_Circle_IScalable'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIScalable'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScalable'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsToIScalable'
+        nkIdent 'x'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initCircle'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'r'
+        nkIdent 'float64'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'initShape'
+        nkIdent 'self'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'r'
+        nkIdent 'r'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newCircle'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Circle'
+      nkIdentDefs
+        nkIdent 'r'
+        nkIdent 'float64'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initCircle'
+        nkIdent 'result'
+        nkIdent 'r'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '*'
+          nkInfix
+            nkIdent '*'
+            nkFloatLit 3.0
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'r'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'r'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkStrLit "circle"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Scale'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'factor'
+        nkIdent 'float64'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'r'
+        nkInfix
+          nkIdent '*'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'r'
+          nkIdent 'factor'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Square'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Shapes.Square"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initSquare'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Square'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'float64'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'initShape'
+        nkIdent 'self'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 's'
+        nkIdent 's'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newSquare'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Square'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'float64'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initSquare'
+        nkIdent 'result'
+        nkIdent 's'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Square'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '*'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 's'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 's'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Shapes.Label"
+  nkProcDef
+    nkIdent 'nsVtGet_Label_INamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_INamed'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfStmt
+        nkElifBranch
+          nkPrefix
+            nkIdent 'not'
+            nkDotExpr
+              nkIdent 'nsVt_Label_INamed'
+              nkIdent 'nsReady'
+          nkStmtList
+            nkAsgn
+              nkIdent 'nsVt_Label_INamed'
+              nkObjConstr
+                nkIdent 'nsVT_INamed'
+                nkExprColonExpr
+                  nkIdent 'nsReady'
+                  nkIdent 'true'
+                nkExprColonExpr
+                  nkIdent 'f0'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkIdent 'string'
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Name'
+                        nkCall
+                          nkIdent 'Label'
+                          nkIdent 'self'
+      nkCall
+        nkIdent 'addr'
+        nkIdent 'nsVt_Label_INamed'
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfExpr
+        nkElifExpr
+          nkCall
+            nkIdent 'isNil'
+            nkIdent 'x'
+          nkCall
+            nkIdent 'default'
+            nkIdent 'INamed'
+        nkElseExpr
+          nkObjConstr
+            nkIdent 'INamed'
+            nkExprColonExpr
+              nkIdent 'nsObj'
+              nkIdent 'x'
+            nkExprColonExpr
+              nkIdent 'nsVt'
+              nkCall
+                nkIdent 'nsVtGet_Label_INamed'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsINamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'INamed'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsToINamed'
+        nkIdent 'x'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkDotExpr
+      nkIdent 'self'
+      nkIdent 'NameBacking'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Label'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkAsgn
+      nkDotExpr
+        nkIdent 'self'
+        nkIdent 'NameBacking'
+      nkIdent 'value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initLabel'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newLabel'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Label'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initLabel'
+        nkIdent 'result'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Shapes.Program"
+  nkProcDef
+    nkIdent 'Total'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'shapes'
+        nkBracketExpr
+          nkIdent 'seq'
+          nkIdent 'IShape'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 't'
+          nkIdent 'float64'
+          nkIntLit 0
+      nkForStmt
+        nkIdent 's'
+        nkIdent 'shapes'
+        nkStmtList
+          nkAsgn
+            nkIdent 't'
+            nkInfix
+              nkIdent '+'
+              nkIdent 't'
+              nkCall
+                nkDotExpr
+                  nkIdent 's'
+                  nkIdent 'Area'
+      nkReturnStmt
+        nkIdent 't'
+  nkProcDef
+    nkIdent 'Print'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'n'
+        nkIdent 'INamed'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkStrLit "named "
+          nkDotExpr
+            nkIdent 'n'
+            nkIdent 'Name'
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'a'
+          nkIdent 'IShape'
+          nkCall
+            nkIdent 'newCircle'
+            nkIntLit 1
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'b'
+          nkIdent 'IShape'
+          nkCall
+            nkIdent 'newSquare'
+            nkIntLit 2
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'a'
+            nkIdent 'Describe'
+          nkIntLit 1
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'b'
+            nkIdent 'Describe'
+          nkIntLit 0
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Total'
+          nkPrefix
+            nkIdent '@'
+            nkBracket
+              nkIdent 'a'
+              nkIdent 'b'
+              nkCall
+                nkIdent 'newCircle'
+                nkIntLit 2
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'list'
+          nkBracketExpr
+            nkIdent 'List'
+            nkIdent 'IShape'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newList'
+              nkIdent 'IShape'
+      nkCall
+        nkDotExpr
+          nkIdent 'list'
+          nkIdent 'Add'
+        nkIdent 'a'
+      nkCall
+        nkDotExpr
+          nkIdent 'list'
+          nkIdent 'Add'
+        nkCall
+          nkIdent 'newSquare'
+          nkIntLit 3
+      nkForStmt
+        nkIdent 's'
+        nkIdent 'list'
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkDotExpr
+              nkIdent 's'
+              nkIdent 'Name'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'a'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'lab'
+          nkIdent 'Label'
+          nkCall
+            nkIdent 'newLabel'
+      nkStmtList
+        nkDiscardStmt
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'lab'
+        nkAsgn
+          nkDotExpr
+            nkIdent 'lab'
+            nkIdent 'Name'
+          nkStrLit "tag"
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'lab'
+      nkIfStmt
+        nkElifBranch
+          nkBlockExpr
+            nkEmpty
+            nkStmtList
+              nkLetSection
+                nkIdentDefs
+                  nkIdent 'nsSrc'
+                  nkEmpty
+                  nkCall
+                    nkIdent 'RootRef'
+                    nkDotExpr
+                      nkIdent 'a'
+                      nkIdent 'nsObj'
+              nkInfix
+                nkIdent '!='
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsAsIScalable'
+                    nkIdent 'nsSrc'
+                  nkIdent 'nsObj'
+                nkNilLit
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'sc'
+                nkIdent 'IScalable'
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkLetSection
+                      nkIdentDefs
+                        nkIdent 'nsSrc'
+                        nkEmpty
+                        nkCall
+                          nkIdent 'RootRef'
+                          nkDotExpr
+                            nkIdent 'a'
+                            nkIdent 'nsObj'
+                    nkCall
+                      nkIdent 'nsIfaceCast'
+                      nkCall
+                        nkIdent 'nsAsIScalable'
+                        nkIdent 'nsSrc'
+                      nkIdent 'nsSrc'
+            nkCall
+              nkDotExpr
+                nkIdent 'sc'
+                nkIdent 'Scale'
+              nkIntLit 2
+            nkCall
+              nkIdent 'WriteLine'
+              nkCall
+                nkDotExpr
+                  nkIdent 'a'
+                  nkIdent 'Area'
+      nkCall
+        nkIdent 'WriteLine'
+        nkBlockExpr
+          nkEmpty
+          nkStmtList
+            nkLetSection
+              nkIdentDefs
+                nkIdent 'nsSrc'
+                nkEmpty
+                nkCall
+                  nkIdent 'RootRef'
+                  nkDotExpr
+                    nkIdent 'b'
+                    nkIdent 'nsObj'
+            nkInfix
+              nkIdent '!='
+              nkDotExpr
+                nkCall
+                  nkIdent 'nsAsIScalable'
+                  nkIdent 'nsSrc'
+                nkIdent 'nsObj'
+              nkNilLit
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'maybe'
+          nkIdent 'IScalable'
+          nkBlockExpr
+            nkEmpty
+            nkStmtList
+              nkLetSection
+                nkIdentDefs
+                  nkIdent 'nsSrc'
+                  nkEmpty
+                  nkCall
+                    nkIdent 'RootRef'
+                    nkDotExpr
+                      nkIdent 'b'
+                      nkIdent 'nsObj'
+              nkCall
+                nkIdent 'nsAsIScalable'
+                nkIdent 'nsSrc'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '=='
+          nkCall
+            nkIdent 'RootRef'
+            nkDotExpr
+              nkIdent 'maybe'
+              nkIdent 'nsObj'
+          nkNilLit
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'c'
+          nkIdent 'Circle'
+          nkCall
+            nkIdent 'Circle'
+            nkDotExpr
+              nkIdent 'a'
+              nkIdent 'nsObj'
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkCall
+              nkIdent 'nsCheckNil'
+              nkIdent 'c'
+            nkIdent 'Area'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'n'
+          nkIdent 'INamed'
+          nkIdent 'a'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'n'
+          nkIdent 'Name'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'none'
+          nkIdent 'IShape'
+          nkCall
+            nkIdent 'default'
+            nkIdent 'IShape'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '=='
+          nkCall
+            nkIdent 'RootRef'
+            nkDotExpr
+              nkIdent 'none'
+              nkIdent 'nsObj'
+          nkNilLit
+      nkCall
+        nkIdent 'WriteLine'
+        nkIdent 'a'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

@@ -227,6 +227,7 @@ proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
       for e in s.enums: result.enums.incl e
       for q in s.namespaces: result.namespaces.incl q
       for u in s.usings: pending.add u
+  result.resolveBases()
 
 proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: string;
                        files: seq[NsNode]) =

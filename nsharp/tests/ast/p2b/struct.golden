@@ -31,7 +31,6 @@ nkStmtList
               nkIdent 'Y'
             nkIdent 'int32'
             nkEmpty
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'

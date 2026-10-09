@@ -19,7 +19,6 @@ nkStmtList
         nkOfInherit
           nkIdent 'Exception'
         nkRecList
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'

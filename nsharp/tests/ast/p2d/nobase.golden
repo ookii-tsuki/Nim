@@ -24,7 +24,6 @@ nkStmtList
               nkIdent 'secret'
               nkIdent 'int32'
               nkEmpty
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -36,7 +35,6 @@ nkStmtList
           nkOfInherit
             nkIdent 'Base'
           nkRecList
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'

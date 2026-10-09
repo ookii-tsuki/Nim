@@ -123,3 +123,11 @@ proc nsCheckNil*[T: ref object](x: T): T {.inline.} =
   ## is evaluated once, here.
   if x == nil: raise newException(NilAccessDefect, "attempt to access a nil address")
   x
+
+proc nsIfaceCast*[T](v: T; src: RootRef): T =
+  ## `(I)x` for an interface `I`: `v` is what the object's class answered for `I`,
+  ## empty when it does not implement it. C# throws `InvalidCastException` then,
+  ## unless `x` was null, which casts to the null interface value.
+  if src != nil and v.nsObj == nil:
+    raise newException(ObjectConversionDefect, "Specified cast is not valid.")
+  v

@@ -374,7 +374,7 @@ proc incompatible(ctx: NsCheckContext; arg: NsNode; t: NsTarget): bool =
     if a.len == 0 or b.len == 0: return
     if not ctx.scope.classes.hasKey(a) or not ctx.scope.classes.hasKey(b):
       return                                  ## declared elsewhere: stay quiet
-    result = b notin ctx.scope.chain(a)
+    result = not ctx.scope.implements(a, b)
   of tkException:
     result = t.kind != tkException and t.kind != tkClass
   of tkDelegate: result = t.kind != tkDelegate
@@ -412,6 +412,12 @@ proc resolveOverload(ctx: NsCheckContext; cands: seq[seq[NsNode]];
     if fits and score < result.score:
       result = (ok: true, idx: i, score: score)
 
+proc markNull(ctx: NsCheckContext; value: NsNode; target: string) =
+  ## `null` for an interface is the empty interface value, which lowering spells
+  ## `default(I)`, so the target is recorded on the literal.
+  if value != nil and value.kind == nsnNull and ctx.scope.isInterface(target):
+    value.setType(tkClass, target)
+
 proc checkConvertible(ctx: NsCheckContext; value: NsNode; t: NsTarget;
                       info: TLineInfo) =
   ## The one rule the initialiser, the assignment and `return` share: CS0029 for a
@@ -420,6 +426,7 @@ proc checkConvertible(ctx: NsCheckContext; value: NsNode; t: NsTarget;
   if value.kind == nsnNull:
     if not t.isNullOk:
       nsError(ctx.config, info, ndCannotConvertNull, t.spelling)
+    ctx.markNull(value, t.name)
     return
   if ctx.incompatible(value, t):
     nsError(ctx.config, info, ndCannotConvert, valueSpelling(value), t.spelling)
@@ -445,6 +452,7 @@ proc checkCallArgs(ctx: NsCheckContext; cands: seq[seq[NsNode]];
           declTypeName(if pt.kind == nsnNullableType: pt.typ else: pt)
       elif pt != nil:
         ctx.coerce(args[j], declTypeName(pt), args[j].info)
+        ctx.markNull(args[j], declTypeName(pt))
     return
   var exact = -1
   for i in 0 ..< cands.len:
@@ -1172,8 +1180,6 @@ proc checkSupported(ctx: NsCheckContext; cls: NsNode) =
   ## Features the frontend can parse but does not lower are rejected loudly
   ## rather than dropped silently; ignoring `interface` or `override` produced
   ## programs that looked like they worked.
-  if cls.classKind == ckInterface:
-    nsError(ctx.config, cls.info, ndUnsupported, "'interface'")
 
 
 proc signatureOf(cls: string; m: NsNode): string =
@@ -1243,9 +1249,38 @@ proc checkInheritance(ctx: NsCheckContext; cls: NsNode) =
         elif not m.isAbstract and (m.isOverride or m.isVirtual):
           filled.add m.name
 
+proc checkInterfaces(ctx: NsCheckContext; cls: NsNode) =
+  ## A class or struct must implement every member of every interface it names
+  ## (CS0535), implicitly by an instance member of that name or explicitly as `I.M`.
+  ## An interface's own members have no body (a default implementation is C# 8,
+  ## which N# does not lower yet).
+  if cls.classKind == ckInterface:
+    for m in cls.sons:
+      if m.kind == nsnMethodDecl and m.body != nil:
+        nsError(ctx.config, m.info, ndUnsupported, "a default interface method")
+      elif m.attrs.isStatic:
+        nsError(ctx.config, m.info, ndUnsupported, "a static interface member")
+    return
+  for i in ctx.scope.interfaceClosure(cls.name):
+    if not ctx.scope.classes.hasKey(i): continue
+    for im in ctx.scope.classes[i].members:
+      var found = false
+      for c in ctx.scope.chain(cls.name):
+        for m in ctx.scope.classes[c].members:
+          if m.name == im.name and not m.isStatic: found = true
+        if found: break
+      if not found:
+        for m in cls.sons:
+          if m.name == im.name and m.explicitIface == i: found = true
+      if not found:
+        let what = (if im.isMethod: signature(i & "." & im.name, im.params)
+                    else: i & "." & im.name)
+        nsError(ctx.config, cls.info, ndInterfaceNotImplemented, cls.name, what)
+
 proc walkClass(ctx: var NsCheckContext; cls: NsNode) =
   ctx.checkSupported(cls)
   ctx.checkInheritance(cls)
+  ctx.checkInterfaces(cls)
   let savedCls = ctx.clsName
   let savedMembers = ctx.members
   ctx.clsName = cls.name

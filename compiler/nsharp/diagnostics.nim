@@ -54,6 +54,7 @@ type
     ndMissingBody
     ndSealedNotOverride
     ndAbstractNotImplemented
+    ndInterfaceNotImplemented
     ndErrorDirective
     ndWarningDirective
     ndUnsupported
@@ -127,6 +128,8 @@ const
                         " extern, or partial"),
     ndSealedNotOverride: (code: "0238", msg: "'$1' cannot be sealed because it is not an override"),
     ndAbstractNotImplemented: (code: "0534", msg: "'$1' does not implement inherited abstract member '$2'"),
+    ndInterfaceNotImplemented: (code: "0535", msg: "'$1' does not implement interface" &
+                        " member '$2'"),
     ndErrorDirective: (code: "1029", msg: "#error: '$1'"),
     ndWarningDirective: (code: "1030", msg: "#warning: '$1'"),
     ndUnsupported: (code: "9999", msg: "$1 is currently unsupported"),

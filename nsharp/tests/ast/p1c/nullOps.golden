@@ -32,7 +32,6 @@ nkStmtList
                 nkIdent 'Next'
               nkIdent 'Node'
               nkEmpty
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'

@@ -26,7 +26,6 @@ nkStmtList
                 nkIdent 'Legs'
               nkIdent 'int32'
               nkEmpty
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -44,7 +43,6 @@ nkStmtList
                 nkIdent 'Name'
               nkIdent 'string'
               nkEmpty
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -58,7 +56,6 @@ nkStmtList
         nkEnumFieldDef
           nkIdent 'Blue'
           nkIntLit 2
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'
