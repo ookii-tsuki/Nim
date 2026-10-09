@@ -1,0 +1,82 @@
+// Generic classes, generic methods with inferred and explicit type arguments,
+// constraints, and generic library delegates.
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    interface IHasName { string Name(); }
+
+    class Box<T>
+    {
+        T value;
+        public static int Made = 0;
+        public Box(T v) { value = v; Made++; }
+        public T Get() { return value; }
+        public void Set(T v) { value = v; }
+        public Box<U> Map<U>(Func<T, U> f) { return new Box<U>(f(value)); }
+        public override string ToString() { return "Box(" + value + ")"; }
+    }
+
+    class Pair<K, V>
+    {
+        public K Key;
+        public V Val;
+        public Pair(K k, V v) { Key = k; Val = v; }
+    }
+
+    class Item : IHasName
+    {
+        string n;
+        public Item(string n) { this.n = n; }
+        public string Name() { return n; }
+    }
+
+    class Program
+    {
+        static T Max<T>(T a, T b) where T : IComparable<T>
+        {
+            return a.CompareTo(b) > 0 ? a : b;
+        }
+
+        static void Swap<T>(List<T> xs, int i, int j)
+        {
+            T t = xs[i];
+            xs[i] = xs[j];
+            xs[j] = t;
+        }
+
+        static string Names<T>(List<T> items) where T : IHasName
+        {
+            string s = "";
+            foreach (T it in items) s += it.Name() + ";";
+            return s;
+        }
+
+        static T First<T>(T[] xs) { return xs[0]; }
+
+        static void Main()
+        {
+            Box<int> b = new Box<int>(41);
+            b.Set(b.Get() + 1);
+            Console.WriteLine(b.Get());
+            Box<string> s = new Box<string>("hi");
+            Console.WriteLine(s.Get().Length);
+            Console.WriteLine(b);
+            Pair<string, int> p = new Pair<string, int>("a", 1);
+            Console.WriteLine(p.Key + p.Val);
+            Console.WriteLine(Max(3, 7));
+            Console.WriteLine(Max<string>("pear", "apple"));
+            List<int> xs = new List<int>();
+            xs.Add(1); xs.Add(2); xs.Add(3);
+            Swap(xs, 0, 2);
+            Console.WriteLine(xs[0]);
+            List<Item> items = new List<Item>();
+            items.Add(new Item("x"));
+            items.Add(new Item("y"));
+            Console.WriteLine(Names(items));
+            Console.WriteLine(First(new string[] { "z" }));
+            Console.WriteLine(default(int));
+        }
+    }
+}

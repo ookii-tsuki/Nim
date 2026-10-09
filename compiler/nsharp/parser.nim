@@ -20,6 +20,7 @@ type
     fileIdx: FileIndex
     condSeq: int            ## counts `?.` markers, so each chain link gets its own
     surface: NsBclSurface   ## the library's declarations, for telling a cast apart
+    typeParams: seq[string]  ## the type parameters in scope, which are type names
     aliases: HashSet[string]
       ## The namespace aliases this file's own `using` directives introduce. A type
       ## reached through one (`(P.Gadget)x`) is a cast, not a parenthesised
@@ -147,6 +148,73 @@ proc parseType(p: var NsParser): NsNode =
     discard p.advance
     result = nsnArrayType(result, p.infoOf(t))
 
+proc parseTypeParams(p: var NsParser): seq[NsNode] =
+  ## `<T, U>` after a declared name. C#'s variance markers (`in T`, `out T`) are
+  ## valid only on interfaces and delegates, and N# does not model variance.
+  result = @[]
+  if not p.at(nsLt): return
+  discard p.advance
+  while not atGtClose(p) and not p.at(nsEof):
+    if p.at(nsIdent) and p.peek.text in ["in", "out"] and
+       p.peekAhead(1).kind == nsIdent:
+      p.err(p.peek, ndUnsupported, "variance ('" & p.peek.text & "')")
+      discard p.advance
+    if p.peek.kind != nsIdent:
+      p.err(p.peek, ndIdentifierExpected)
+      break
+    let t = p.advance
+    result.add nsnTypeName(t.text, p.infoOf(t))
+    if p.at(nsComma): discard p.advance else: break
+  p.expectGt()
+
+proc parseWhereClauses(p: var NsParser): seq[NsNode] =
+  ## `where T : class, IFoo, new()` clauses, one node per type parameter.
+  result = @[]
+  while p.at(nsIdent) and p.peek.text == "where" and p.peekAhead(1).kind == nsIdent:
+    let info = p.here()
+    discard p.advance
+    let w = nsn(nsnWhere, info)
+    w.name = p.advance.text
+    discard p.expect(nsColon)
+    while not p.at(nsEof):
+      if p.at(nsIdent) and p.peek.text in ["class", "struct", "notnull", "unmanaged",
+                                           "default"]:
+        let t = p.advance
+        w.add nsnIdent(t.text, p.infoOf(t))
+        if p.at(nsQuestion): discard p.advance   # `class?`
+      elif p.at(nsIdent) and p.peek.text == "new" and p.peekAhead(1).kind == nsLParen:
+        let t = p.advance
+        discard p.expect(nsLParen)
+        discard p.expect(nsRParen)
+        w.add nsnIdent("new", p.infoOf(t))
+      else:
+        w.add p.parseType()
+      if p.at(nsComma): discard p.advance else: break
+    result.add w
+
+proc looksLikeTypeArgs(p: NsParser): bool =
+  ## `M<int>(x)` against `a < b`: C#'s rule (ECMA-334 6.2.5). The tokens up to the
+  ## matching `>` must be a type argument list, and the token after it one that
+  ## cannot continue a relational expression.
+  if not p.at(nsLt): return false
+  let close = skipBalancedGt(p, 0)
+  if close < 0: return false
+  for k in 1 ..< close - 1:
+    if p.peekAhead(k).kind notin {nsIdent, nsComma, nsDot, nsLt, nsGt, nsShr,
+                                  nsLBracket, nsRBracket, nsQuestion}:
+      return false
+  p.peekAhead(close).kind in {nsLParen, nsRParen, nsRBracket, nsRBrace, nsColon,
+                              nsSemi, nsComma, nsDot, nsQuestion, nsEqEq, nsNotEq,
+                              nsEof}
+
+proc parseTypeArgs(p: var NsParser): seq[NsNode] =
+  result = @[]
+  discard p.advance   # '<'
+  while not atGtClose(p) and not p.at(nsEof):
+    result.add p.parseType()
+    if p.at(nsComma): discard p.advance else: break
+  p.expectGt()
+
 # --- expressions ------------------------------------------------------------
 
 proc parseExpr(p: var NsParser): NsNode
@@ -205,7 +273,7 @@ proc isTypeName(p: NsParser; name: string): bool =
   ## a type or namespace this compilation declares, or a namespace alias this file
   ## introduces. The grammar has to tell a cast from a parenthesised expression, and
   ## this is the symbol table it reaches that through.
-  p.surface.isKnownTypeName(name) or p.aliases.contains(name)
+  p.surface.isKnownTypeName(name) or p.aliases.contains(name) or name in p.typeParams
 
 proc looksLikeCast(p: NsParser): bool =
   ## `(T)x` against `(x)`. The parenthesised name must be a type -- C#'s, the
@@ -401,6 +469,8 @@ proc parsePostfixTail(p: var NsParser; start: NsNode): NsNode =
       if nameTok.kind != nsIdent: break
       discard p.advance
       result = nsnMember(result, nameTok.text, p.infoOf(nameTok))
+      if p.looksLikeTypeArgs():
+        result.typeArgs = p.parseTypeArgs()
     elif p.at(nsQuestionDot):
       let opTok = p.advance
       let nameTok = p.peek
@@ -460,6 +530,8 @@ proc parsePostfixTail(p: var NsParser; start: NsNode): NsNode =
 proc parsePostfix(p: var NsParser): NsNode =
   result = p.parsePrimary()
   if result == nil: return
+  if result.kind == nsnIdent and p.looksLikeTypeArgs():
+    result.typeArgs = p.parseTypeArgs()
   result = p.parsePostfixTail(result)
 
 proc parseUnary(p: var NsParser): NsNode =
@@ -1068,13 +1140,18 @@ proc parseClassMember(p: var NsParser; clsName: string;
     nameTok = p.advance
   let info = p.infoOf(nameTok)
 
-  if p.at(nsLParen):
+  if p.at(nsLParen) or p.at(nsLt):
     result = nsn(nsnMethodDecl, info)
     result.name = nameTok.text
     result.explicitIface = explicitIface
     result.typ = ty
     result.attrs = attrs
+    result.typeParams = p.parseTypeParams()
+    let savedTps = p.typeParams
+    for t in result.typeParams: p.typeParams.add t.name
     result.params = p.parseParams()
+    result.constraints = p.parseWhereClauses()
+    defer: p.typeParams = savedTps
     if p.at(nsSemi):
       ## An interface or `abstract` member has no body; `sema.nim` reports one that
       ## should have had one.
@@ -1106,9 +1183,12 @@ proc parseClassMember(p: var NsParser; clsName: string;
     var getter: NsNode = nil
     var setter: NsNode = nil
     if p.at(nsArrow):
+      ## `R P => e;` is `R P { get { return e; } }`.
       discard p.advance
       let g = nsn(nsnBlock, info)
-      g.add p.parseExpr()
+      let r = nsn(nsnReturn, info)
+      r.body = p.parseExpr()
+      g.add r
       getter = g
       if p.at(nsSemi): discard p.advance
     else:
@@ -1165,6 +1245,9 @@ proc parseTypeDecl(p: var NsParser): NsNode =
   result = nsn(nsnClassDecl, p.infoOf(nameTok))
   result.name = nameTok.text
   result.classKind = ckind
+  result.typeParams = p.parseTypeParams()
+  let savedTps = p.typeParams
+  for t in result.typeParams: p.typeParams.add t.name
   result.attrs = NsAttrs(access: accessOfTopLevel(mods), isAbstract: "abstract" in mods,
                          isSealed: "sealed" in mods)
   if p.at(nsColon):
@@ -1176,6 +1259,7 @@ proc parseTypeDecl(p: var NsParser): NsNode =
       discard p.advance
       result.bases.add p.parseType()
     result.typ = result.bases[0]
+  result.constraints = p.parseWhereClauses()
   if not p.at(nsLBrace):
     p.err(p.peek, ndOpenBraceExpectedBody, nameTok.text)
     ## Error recovery, after the diagnostic above: skip to the body or the end.
@@ -1193,6 +1277,7 @@ proc parseTypeDecl(p: var NsParser): NsNode =
     let m = p.parseClassMember(nameTok.text, ckind == ckInterface)
     if m != nil: result.add m
   discard p.expect(nsRBrace)
+  p.typeParams = savedTps
 
 proc parseEnumDecl(p: var NsParser): NsNode =
   let info = p.here()
@@ -1234,7 +1319,9 @@ proc parseDelegateDecl(p: var NsParser): NsNode =
   result.name = nameTok.text
   result.typ = ret
   result.attrs = NsAttrs(access: accessOfTopLevel(mods))
+  result.typeParams = p.parseTypeParams()
   result.params = p.parseParams()
+  result.constraints = p.parseWhereClauses()
   if p.at(nsSemi): discard p.advance
 
 proc parseUsing(p: var NsParser): NsNode =

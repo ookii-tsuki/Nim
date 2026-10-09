@@ -46,6 +46,19 @@ type
   Converter*[T, U] = proc (x: T): U
   Action*[T] = proc (x: T)
 
+  # `Func<...>` and `Action<...>` are one name per arity in C#; Nim names a type
+  # once, so each arity is declared with its count, and the frontend picks the
+  # declaration whose suffix is the number of type arguments written.
+  Action0* = proc ()
+  Action2*[T1, T2] = proc (a: T1, b: T2)
+  Action3*[T1, T2, T3] = proc (a: T1, b: T2, c: T3)
+  Action4*[T1, T2, T3, T4] = proc (a: T1, b: T2, c: T3, d: T4)
+  Func1*[R] = proc (): R
+  Func2*[T, R] = proc (a: T): R
+  Func3*[T1, T2, R] = proc (a: T1, b: T2): R
+  Func4*[T1, T2, T3, R] = proc (a: T1, b: T2, c: T3): R
+  Func5*[T1, T2, T3, T4, R] = proc (a: T1, b: T2, c: T3, d: T4): R
+
   Console* = object
     ## Declared so the frontend resolves the name as a type; nothing is ever an
     ## instance of it.
@@ -78,6 +91,9 @@ template NaN*(t: typedesc[float32]): float32 = float32(system.NaN)
 template NaN*(t: typedesc[float64]): float64 = system.NaN
 template PositiveInfinity*[T: SomeFloat](t: typedesc[T]): T = T(system.Inf)
 template NegativeInfinity*[T: SomeFloat](t: typedesc[T]): T = T(system.NegInf)
+
+# `IComparable<T>.CompareTo` on the built-in types.
+proc CompareTo*[T: SomeNumber | char | bool](a, b: T): int32 = int32(cmp(a, b))
 
 # --- System.Object ----------------------------------------------------------
 #

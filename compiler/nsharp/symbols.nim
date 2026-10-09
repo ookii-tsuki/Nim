@@ -21,6 +21,7 @@ type
     isAbstract*: bool
     isSealed*: bool
     owner*: string            ## the class that declares it
+    typeParams*: seq[string]  ## a generic method's own `<T>`
     typ*: NsNode              ## declared type of a field, or a method's return type
     params*: seq[NsNode]      ## a method's declared parameter list
 
@@ -31,6 +32,7 @@ type
     isAbstract*: bool
     isSealed*: bool
     interfaces*: seq[string]       ## the interfaces it names directly
+    typeParams*: seq[string]       ## a generic class's `<T, U>`
     written*: seq[string]          ## its base list as written, before resolution
     decl*: NsNode                  ## its declaration
     members*: seq[NsMemberSymbol]
@@ -66,6 +68,10 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
     isAbstract: m.attrs.isAbstract,
     isSealed: m.attrs.isSealed,
     owner: c.name,
+    typeParams: (block:
+      var tps: seq[string] = @[]
+      for t in m.typeParams: tps.add t.name
+      tps),
     typ: m.typ,              ## field/property type, or a method's return type
     params: (if m.kind == nsnMethodDecl: m.params else: @[]))
 
@@ -73,6 +79,7 @@ proc collectClass(scope: NsModuleScope; cls: NsNode) =
   var sym = NsClassSymbol(name: cls.name, classKind: cls.classKind,
                           isAbstract: cls.attrs.isAbstract, isSealed: cls.attrs.isSealed,
                           decl: cls)
+  for t in cls.typeParams: sym.typeParams.add t.name
   for b in cls.bases:
     if b.kind == nsnTypeName: sym.written.add b.name
   if cls.typ != nil and cls.typ.kind == nsnTypeName:

@@ -267,26 +267,6 @@ nkStmtList
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
-  nkVarSection
-    nkIdentDefs
-      nkIdent 'nsVt_Shape_IShape'
-      nkIdent 'nsVT_IShape'
-      nkEmpty
-  nkVarSection
-    nkIdentDefs
-      nkIdent 'nsVt_Shape_INamed'
-      nkIdent 'nsVT_INamed'
-      nkEmpty
-  nkVarSection
-    nkIdentDefs
-      nkIdent 'nsVt_Circle_IScalable'
-      nkIdent 'nsVT_IScalable'
-      nkEmpty
-  nkVarSection
-    nkIdentDefs
-      nkIdent 'nsVt_Label_INamed'
-      nkIdent 'nsVT_INamed'
-      nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -992,6 +972,23 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Label'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initLabel'
     nkEmpty
     nkEmpty
@@ -1038,6 +1035,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'float64'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'shapes'
         nkBracketExpr
           nkIdent 'seq'
@@ -1053,6 +1056,12 @@ nkStmtList
     nkFormalParams
       nkEmpty
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'n'
         nkIdent 'INamed'
         nkEmpty
@@ -1065,6 +1074,23 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -1463,16 +1489,24 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsStore'
+            nkPragma
+              nkIdent 'global'
+          nkIdent 'nsVT_IShape'
+          nkEmpty
       nkIfStmt
         nkElifBranch
           nkPrefix
             nkIdent 'not'
             nkDotExpr
-              nkIdent 'nsVt_Shape_IShape'
+              nkIdent 'nsStore'
               nkIdent 'nsReady'
           nkStmtList
             nkAsgn
-              nkIdent 'nsVt_Shape_IShape'
+              nkIdent 'nsStore'
               nkObjConstr
                 nkIdent 'nsVT_IShape'
                 nkExprColonExpr
@@ -1548,7 +1582,7 @@ nkStmtList
                           nkIdent 'self'
       nkCall
         nkIdent 'addr'
-        nkIdent 'nsVt_Shape_IShape'
+        nkIdent 'nsStore'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1610,16 +1644,24 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsStore'
+            nkPragma
+              nkIdent 'global'
+          nkIdent 'nsVT_INamed'
+          nkEmpty
       nkIfStmt
         nkElifBranch
           nkPrefix
             nkIdent 'not'
             nkDotExpr
-              nkIdent 'nsVt_Shape_INamed'
+              nkIdent 'nsStore'
               nkIdent 'nsReady'
           nkStmtList
             nkAsgn
-              nkIdent 'nsVt_Shape_INamed'
+              nkIdent 'nsStore'
               nkObjConstr
                 nkIdent 'nsVT_INamed'
                 nkExprColonExpr
@@ -1648,7 +1690,7 @@ nkStmtList
                           nkIdent 'self'
       nkCall
         nkIdent 'addr'
-        nkIdent 'nsVt_Shape_INamed'
+        nkIdent 'nsStore'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1847,16 +1889,24 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsStore'
+            nkPragma
+              nkIdent 'global'
+          nkIdent 'nsVT_IScalable'
+          nkEmpty
       nkIfStmt
         nkElifBranch
           nkPrefix
             nkIdent 'not'
             nkDotExpr
-              nkIdent 'nsVt_Circle_IScalable'
+              nkIdent 'nsStore'
               nkIdent 'nsReady'
           nkStmtList
             nkAsgn
-              nkIdent 'nsVt_Circle_IScalable'
+              nkIdent 'nsStore'
               nkObjConstr
                 nkIdent 'nsVT_IScalable'
                 nkExprColonExpr
@@ -1890,7 +1940,7 @@ nkStmtList
                         nkIdent 'factor'
       nkCall
         nkIdent 'addr'
-        nkIdent 'nsVt_Circle_IScalable'
+        nkIdent 'nsStore'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -2181,16 +2231,24 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsStore'
+            nkPragma
+              nkIdent 'global'
+          nkIdent 'nsVT_INamed'
+          nkEmpty
       nkIfStmt
         nkElifBranch
           nkPrefix
             nkIdent 'not'
             nkDotExpr
-              nkIdent 'nsVt_Label_INamed'
+              nkIdent 'nsStore'
               nkIdent 'nsReady'
           nkStmtList
             nkAsgn
-              nkIdent 'nsVt_Label_INamed'
+              nkIdent 'nsStore'
               nkObjConstr
                 nkIdent 'nsVT_INamed'
                 nkExprColonExpr
@@ -2219,7 +2277,7 @@ nkStmtList
                           nkIdent 'self'
       nkCall
         nkIdent 'addr'
-        nkIdent 'nsVt_Label_INamed'
+        nkIdent 'nsStore'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -2314,6 +2372,25 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Label'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Label'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newLabel'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initLabel'
     nkEmpty
     nkEmpty
@@ -2367,6 +2444,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'float64'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'shapes'
         nkBracketExpr
           nkIdent 'seq'
@@ -2401,6 +2484,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
       nkIdentDefs
         nkIdent 'n'
         nkIdent 'INamed'
@@ -2457,6 +2546,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Total'
+          nkIdent 'Program'
           nkPrefix
             nkIdent '@'
             nkBracket
@@ -2498,6 +2588,7 @@ nkStmtList
               nkIdent 'Name'
       nkCall
         nkIdent 'Print'
+        nkIdent 'Program'
         nkIdent 'a'
       nkVarSection
         nkIdentDefs
@@ -2517,6 +2608,7 @@ nkStmtList
           nkStrLit "tag"
       nkCall
         nkIdent 'Print'
+        nkIdent 'Program'
         nkIdent 'lab'
       nkIfStmt
         nkElifBranch
@@ -2672,6 +2764,25 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkIdent 'a'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
   nkProcDef
     nkPostfix
       nkIdent '*'

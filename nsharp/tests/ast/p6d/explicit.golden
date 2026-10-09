@@ -170,16 +170,6 @@ nkStmtList
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
-  nkVarSection
-    nkIdentDefs
-      nkIdent 'nsVt_Polite_IGreeter'
-      nkIdent 'nsVT_IGreeter'
-      nkEmpty
-  nkVarSection
-    nkIdentDefs
-      nkIdent 'nsVt_Ticker_ICounter'
-      nkIdent 'nsVT_ICounter'
-      nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -400,6 +390,23 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Polite'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Polite'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initPolite'
     nkEmpty
     nkEmpty
@@ -527,6 +534,23 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Ticker'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Ticker'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initTicker'
     nkEmpty
     nkEmpty
@@ -572,6 +596,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'IGreeter'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -581,6 +611,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
       nkIdentDefs
         nkIdent 'c'
         nkIdent 'ICounter'
@@ -594,6 +630,23 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -827,16 +880,24 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsStore'
+            nkPragma
+              nkIdent 'global'
+          nkIdent 'nsVT_IGreeter'
+          nkEmpty
       nkIfStmt
         nkElifBranch
           nkPrefix
             nkIdent 'not'
             nkDotExpr
-              nkIdent 'nsVt_Polite_IGreeter'
+              nkIdent 'nsStore'
               nkIdent 'nsReady'
           nkStmtList
             nkAsgn
-              nkIdent 'nsVt_Polite_IGreeter'
+              nkIdent 'nsStore'
               nkObjConstr
                 nkIdent 'nsVT_IGreeter'
                 nkExprColonExpr
@@ -870,7 +931,7 @@ nkStmtList
                         nkIdent 'who'
       nkCall
         nkIdent 'addr'
-        nkIdent 'nsVt_Polite_IGreeter'
+        nkIdent 'nsStore'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -971,6 +1032,25 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Polite'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Polite'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newPolite'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initPolite'
     nkEmpty
     nkEmpty
@@ -1065,16 +1145,24 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsStore'
+            nkPragma
+              nkIdent 'global'
+          nkIdent 'nsVT_ICounter'
+          nkEmpty
       nkIfStmt
         nkElifBranch
           nkPrefix
             nkIdent 'not'
             nkDotExpr
-              nkIdent 'nsVt_Ticker_ICounter'
+              nkIdent 'nsStore'
               nkIdent 'nsReady'
           nkStmtList
             nkAsgn
-              nkIdent 'nsVt_Ticker_ICounter'
+              nkIdent 'nsStore'
               nkObjConstr
                 nkIdent 'nsVT_ICounter'
                 nkExprColonExpr
@@ -1105,7 +1193,7 @@ nkStmtList
                           nkIdent 'v'
       nkCall
         nkIdent 'addr'
-        nkIdent 'nsVt_Ticker_ICounter'
+        nkIdent 'nsStore'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1183,6 +1271,25 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Ticker'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Ticker'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newTicker'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initTicker'
     nkEmpty
     nkEmpty
@@ -1232,6 +1339,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'IGreeter'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
@@ -1244,6 +1357,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
       nkIdentDefs
         nkIdent 'c'
         nkIdent 'ICounter'
@@ -1287,6 +1406,7 @@ nkStmtList
           nkIdent 'IGreeter'
           nkCall
             nkIdent 'Make'
+            nkIdent 'Program'
       nkCall
         nkIdent 'WriteLine'
         nkCall
@@ -1307,6 +1427,7 @@ nkStmtList
         nkIntLit 41
       nkCall
         nkIdent 'Show'
+        nkIdent 'Program'
         nkIdent 't'
       nkVarSection
         nkIdentDefs
@@ -1348,6 +1469,25 @@ nkStmtList
             nkIdent 'boxed'
             nkIdent 'nsObj'
           nkIdent 'nsBox_Ticker'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
   nkProcDef
     nkPostfix
       nkIdent '*'

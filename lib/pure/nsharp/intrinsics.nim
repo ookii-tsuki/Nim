@@ -131,3 +131,8 @@ proc nsIfaceCast*[T](v: T; src: RootRef): T =
   if src != nil and v.nsObj == nil:
     raise newException(ObjectConversionDefect, "Specified cast is not valid.")
   v
+
+proc nsCreate*[T: not ref](t: typedesc[T]): T =
+  ## `new T()` for a value type: its default. A class declares its own `nsCreate`,
+  ## which calls its parameterless constructor.
+  default(T)

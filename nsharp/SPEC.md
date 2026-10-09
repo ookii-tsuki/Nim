@@ -374,7 +374,7 @@ and the namespaces must be merged or layered.
 | `static readonly` | type-level const | ✅ v1 | desugar |
 | **Methods** `R M(P a) { }` | method | ✅ v1 | front (→ `proc`) |
 | Expression-bodied method `=> e;` | `R M() => e;` | ✅ v1 | desugar |
-| `static` methods | type-level | ✅ v1 | front |
+| `static` methods | type-level | ✅ v1 | desugar (`proc M(t: typedesc[C], ...)`, called `M(C, ...)`, so a static method never competes with an instance member through Nim's dot-call) |
 | `virtual` / `override` / `abstract` | dispatch | ✅ v1 | desugar (`virtual`/`abstract` → `method {.base.}`, `override` → `method`; an override without a slot is NS0115) |
 | `sealed override` | stop override | ✅ v1 | sem (overriding it again is NS0239) |
 | `new` (hide) | shadow base | ✅ v1 | desugar (a plain proc beside the base's `method`, so static type decides, as in C#) |
@@ -655,20 +655,20 @@ interface methods and static interface members (NS9999), and generic interfaces
 
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
-| Generic classes `Box<T>` | parameterised type | ✅ v1 | free (Nim generics) |
-| Generic methods `T F<T>(T x)` | - | ✅ v1 | free |
+| Generic classes `Box<T>` | parameterised type | ✅ v1 | desugar (Nim generic object; members take the class's parameters first) |
+| Generic methods `T F<T>(T x)` | - | ✅ v1 | desugar (explicit `F<int>(x)` parsed by C#'s type-argument rule; on an instance of a generic class the receiver's arguments are written too, since Nim infers none once any is given) |
 | Multiple type params `Map<K,V>` | - | ✅ v1 | free |
 | Type inference at call site | - | ✅ v1 | free |
-| `where T : class` / `struct` | constraint | ✅ v1 | sem (typeclass) |
-| `where T : new()` | ctor constraint | ✅ v1 | sem |
+| `where T : class` / `struct` | constraint | ✅ v1 (parsed; checked per instantiation by Nim) | desugar |
+| `where T : new()` | ctor constraint | ✅ v1 | desugar (`new T()` → `nsCreate(T)`, which every class with a parameterless constructor declares) |
 | `where T : Base` | base constraint | ✅ v1 | sem (typeclass) |
 | `where T : IComparable` | interface constraint | ✅ v1 (concept) | sem |
 | `where K : notnull` | nullness constraint | 🔜 later | sem |
 | Multiple constraints | `where T : A, B` | ✅ v1 | sem |
-| Generic delegates | `Func<T,R>` | ✅ v1 | free |
+| Generic delegates | `Func<T,R>` | ✅ v1 | lib + desugar (C# overloads `Func`/`Action` by arity; the library declares `Func2[T, R]` etc. and lowering picks the suffix matching the argument count) |
 | Generic interfaces | `IEnumerable<T>` | ✅ v1 (static) | sem |
 | `default(T)` | default value | ✅ v1 | lib |
-| Static members of generics | per-instantiation | 🔜 later | sem |
+| Static members of generics | per-instantiation | ✅ v1 | desugar (a `{.global.}` inside a generic storage proc, initialised on first use); a static constructor in a generic class is NS9999 |
 | Variance `in`/`out` | - | 🔜 later | sem |
 | Generic nested types | - | 🔜 later | sem |
 

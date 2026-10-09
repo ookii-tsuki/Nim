@@ -314,6 +314,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Counter'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -328,6 +334,23 @@ nkStmtList
       nkIdentDefs
         nkIdent 'self'
         nkIdent 'Counter'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Counter'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Counter'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -353,6 +376,23 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -609,6 +649,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Counter'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
@@ -662,6 +708,25 @@ nkStmtList
               nkIdent 'Counter'
               nkIdent 'Tag'
           nkStrLit ")"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Counter'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Counter'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newCounter'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -737,6 +802,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Seed'
+          nkIdent 'Counter'
       nkCall
         nkIdent 'WriteLine'
         nkInfix
@@ -780,6 +846,25 @@ nkStmtList
           nkDotExpr
             nkIdent 'Counter'
             nkIdent 'Limit'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
   nkProcDef
     nkPostfix
       nkIdent '*'

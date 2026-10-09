@@ -42,6 +42,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Calc'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'a'
         nkIdent 'int32'
         nkEmpty
@@ -61,12 +67,35 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Calc'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'a'
         nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'b'
         nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Calc'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Calc'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -123,6 +152,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Calc'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'a'
         nkIdent 'int32'
         nkEmpty
@@ -147,6 +182,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Calc'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'a'
         nkIdent 'int32'
         nkEmpty
@@ -162,6 +203,25 @@ nkStmtList
           nkIdent '*'
           nkIdent 'a'
           nkIdent 'b'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Calc'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Calc'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newCalc'
   nkProcDef
     nkPostfix
       nkIdent '*'

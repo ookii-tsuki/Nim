@@ -85,6 +85,8 @@ type
     nsnPropertyDecl    # name, typ, params = [getBody, setBody], attrs
     nsnFieldDecl       # name, typ, body = initializer (or nil), attrs
     nsnParam           # name, typ, body = default value (or nil), attrs
+    nsnWhere           # name = type parameter, sons = constraints: types, or
+                       #   nsnIdent "class" / "struct" / "new" / "notnull" / "unmanaged"
     # --- statements ---
     nsnBlock           # sons = statements
     nsnBlockStmt       # sons = statements; a braced block used as a statement
@@ -160,11 +162,16 @@ type
     initKind*: string         ## nsnCtorDecl only: "", "base" or "this"
     initArgs*: seq[NsNode]    ## nsnCtorDecl only: initializer arguments
     bases*: seq[NsNode]       ## nsnClassDecl: every base type as written, in order
+    typeParams*: seq[NsNode]  ## a generic declaration's `<T, U>`, as nsnTypeName
+    constraints*: seq[NsNode] ## its `where` clauses, as nsnWhere
+    typeArgs*: seq[NsNode]    ## nsnIdent / nsnMember: `M<int>` written at a call
     explicitIface*: string    ## a member written `I.M`: the interface it implements
     typeKind*: NsTypeKind     ## set by `sema.nim` on expressions
     typeName*: string         ## the resolved type name behind `typeKind`
     argConv*: NsArgConv       ## `nsnCall`/`nsnNew` argument: C#'s implicit conversion
     argConvType*: string      ## ... and the element type name it is spelled with
+    rtype*: NsNode            ## set by `sema.nim`: the value's full type as written
+                              ## (`Stack2<string>`), when it is known
     conv*: string             ## set by `sema.nim`: the C# numeric type this value is
                               ## implicitly converted to where it is used ("" = none)
 
