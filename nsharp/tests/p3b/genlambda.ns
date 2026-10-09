@@ -1,0 +1,16 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            List<int> xs = new List<int>();
+            xs.Add(1);
+            xs.Add(2);
+            Console.WriteLine(xs.Find(x => x > 1));
+        }
+    }
+}

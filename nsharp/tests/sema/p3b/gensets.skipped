@@ -1,0 +1,3 @@
+SortedSet.Max = type-parameter
+SortedSet.Min = type-parameter
+SortedSet.Reverse = type-parameter

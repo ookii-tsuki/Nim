@@ -1,0 +1,6 @@
+List.ConvertAll = type-parameter
+List.Find = type-parameter
+List.FindAll = type-parameter
+List.FindLast = type-parameter
+List.GetRange = type-parameter
+List.ToArray = type-parameter

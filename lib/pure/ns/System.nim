@@ -37,6 +37,15 @@ type
   NotImplementedException* = object of SystemException
   ObjectDisposedException* = object of InvalidOperationException
 
+  # --- System delegates the collections take -------------------------------------
+  #
+  # `Predicate<T>` and friends are ordinary generic delegates, so they are proc
+  # types here, as a user's own `delegate bool P<T>(T x)` would be.
+  Predicate*[T] = proc (x: T): bool
+  Comparison*[T] = proc (x, y: T): int32
+  Converter*[T, U] = proc (x: T): U
+  Action*[T] = proc (x: T)
+
   Console* = object
     ## Declared so the frontend resolves the name as a type; nothing is ever an
     ## instance of it.

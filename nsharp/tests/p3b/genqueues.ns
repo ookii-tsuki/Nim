@@ -1,0 +1,103 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            Queue<string> q = new Queue<string>();
+            q.Enqueue("a");
+            q.Enqueue("b");
+            q.Enqueue("c");
+            Console.WriteLine(q.Peek());
+            Console.WriteLine(q.Dequeue());
+            foreach (string s in q)
+            {
+                Console.WriteLine(s);
+            }
+            Queue<string> qcopy = new Queue<string>(q);
+            q.Clear();
+            Console.WriteLine(qcopy.Count);
+            try
+            {
+                q.Dequeue();
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            Stack<int> st = new Stack<int>();
+            st.Push(1);
+            st.Push(2);
+            st.Push(3);
+            Console.WriteLine(st.Peek());
+            foreach (int x in st)
+            {
+                Console.WriteLine(x);
+            }
+            int[] top = st.ToArray();
+            Console.WriteLine(top[0]);
+            Console.WriteLine(st.Pop());
+            Console.WriteLine(st.Contains(3));
+            st.Clear();
+            try
+            {
+                st.Pop();
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            PriorityQueue<string, int> pq = new PriorityQueue<string, int>();
+            pq.Enqueue("low", 5);
+            pq.Enqueue("high", 1);
+            pq.Enqueue("mid", 3);
+            pq.Enqueue("mid2", 3);
+            pq.Enqueue("top", 0);
+            Console.WriteLine(pq.Count);
+            Console.WriteLine(pq.Peek());
+            Console.WriteLine(pq.EnqueueDequeue("first", -1));
+            while (pq.Count > 0)
+            {
+                Console.WriteLine(pq.Dequeue());
+            }
+
+            LinkedList<int> ll = new LinkedList<int>();
+            LinkedListNode<int> one = ll.AddLast(1);
+            ll.AddLast(3);
+            LinkedListNode<int> two = ll.AddAfter(one, 2);
+            ll.AddBefore(one, 0);
+            ll.AddFirst(-1);
+            Console.WriteLine(ll.Count);
+            Console.WriteLine(ll.First.Value);
+            Console.WriteLine(ll.Last.Value);
+            Console.WriteLine(two.Previous.Value);
+            Console.WriteLine(two.Next.Value);
+            Console.WriteLine(ll.First.Previous == null);
+
+            LinkedListNode<int> found = ll.Find(2);
+            found.Value = 20;
+            ll.Remove(1);
+            for (LinkedListNode<int> n = ll.First; n != null; n = n.Next)
+            {
+                Console.WriteLine(n.Value);
+            }
+            ll.RemoveFirst();
+            ll.RemoveLast();
+            Console.WriteLine(ll.Count);
+            ll.Clear();
+            try
+            {
+                ll.RemoveFirst();
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+    }
+}

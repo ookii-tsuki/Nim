@@ -808,11 +808,14 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | `string.RuneCount` / `.Runes` (char count) | ✅ v1 | `lib` (N# helper; `.Length` is bytes, §4.4) |
 | `int`/`double` `.ToString`, `.Parse`, `.TryParse` | ✅ v1 | `lib` (`parseInt`, `parseFloat`) |
 | `Math.*` | ✅ v1 | `lib` (Nim `math`) |
-| `List<T>` | ✅ v1 | `seq[T]` + N# procs (SS15.1) |
-| `Dictionary<K,V>` | ✅ v1 | `Table[K,V]` + N# procs (SS15.1) |
-| `HashSet<T>` | ✅ v1 | `HashSet[T]` + N# procs (SS15.1) |
-| `Queue<T>`, `Stack<T>` | ✅ v1 | wrappers over `Deque[T]` (SS15.1) |
-| `LinkedList<T>` | 🔜 later | `lib` |
+| `List<T>` | ✅ v1 | class over `seq[T]` (SS15.1) |
+| `Dictionary<K,V>`, `KeyValuePair<K,V>` | ✅ v1 | class over `OrderedTable[K,V]`; struct (SS15.1) |
+| `HashSet<T>` | ✅ v1 | class over `OrderedSet[T]` (SS15.1) |
+| `SortedSet<T>`, `SortedDictionary<K,V>`, `SortedList<K,V>` | ✅ v1 | classes over sorted `seq`s (SS15.1) |
+| `Queue<T>`, `Stack<T>` | ✅ v1 | classes over `Deque[T]` / `seq[T]` (SS15.1) |
+| `LinkedList<T>`, `LinkedListNode<T>` | ✅ v1 | doubly-linked `ref object` nodes (SS15.1) |
+| `PriorityQueue<TElement,TPriority>` | ✅ v1 | .NET's 4-ary min-heap (SS15.1) |
+| `Predicate<T>`, `Comparison<T>`, `Converter<T,U>`, `Action<T>` | ✅ v1 | `proc` types in `System` |
 | `Array` / `Sort` / `Reverse` | ✅ v1 | `lib` (`algorithm`) |
 | `StringBuilder` | ✅ v1 | `lib` (`strutils`) |
 | `Tuple<...>` | ✅ v1 | Nim tuple |
@@ -842,35 +845,64 @@ by the proc the prelude declares, and lowering reaches it through Nim's dot-call
 
 ### 15.1 Collections - pinned member surface (3b)
 
-`List<T>` is `seq[T]`, `Dictionary<K,V>` is `Table[K,V]`, `HashSet<T>` is
-`HashSet[T]`; `Queue<T>`/`Stack<T>` are small wrappers over `Deque[T]`. `Count` is
-C#'s name for what Nim spells `len`, so the library declares it on each collection
-(and on Nim's `HashSet`); the frontend resolves it there and lowering emits the
-call, reaching the declaring module by name when the use site has not imported
-that namespace -- the member is reachable wherever the type is, as in C#. The shim
-re-exports `tables`/`sets`, since Nim's `import` is not transitive and
-`Dictionary`/`HashSet` users need indexing, `in`, `keys`, `values`, ... Only these
-members exist:
+Every collection is a **class**, as in .NET: a `ref object` that owns its storage
+(`seq`, `OrderedTable`, `OrderedSet`, `Deque`) as a private field. So `var b = a;`
+aliases one collection, `null` is a valid value, and the prelude type is exactly
+what a user's own `class List<T>` would lower to. `KeyValuePair<K,V>` is the one
+struct. C# properties (`Count`, `First`, `Keys`) are procs taking only the
+receiver; the frontend resolves every member from these declarations, and nothing
+in it names a collection.
+
+Behaviour follows .NET where it is observable: `Dictionary`/`HashSet` enumerate in
+insertion order; `Stack` enumerates and `ToArray`s top first; mutating a collection
+inside its own `foreach` throws `InvalidOperationException`; a bad index throws
+`ArgumentOutOfRangeException`, a missing key `KeyNotFoundException`, an empty
+`Queue`/`Stack`/`LinkedList`/`PriorityQueue` `InvalidOperationException`, with
+.NET's messages; `PriorityQueue` is .NET's own 4-ary heap, so equal priorities
+leave in .NET's order. A parameter C# types as `IEnumerable<T>` takes an array or
+any of these collections. Only these members exist:
 
 | Type | Members (3b) |
 |---|---|
-| `List<T>` | `Add` `AddRange` `Clear` `Contains` `Count` `IndexOf` `Insert` `Remove` `RemoveAt` `Reverse` `Sort` `ToArray`, `[]`, `[]=` |
-| `Dictionary<K,V>` | `Add` `Clear` `ContainsKey` `ContainsValue` `Count` `Remove` `Keys` `Values`, `[]`, `[]=` |
-| `HashSet<T>` | `Add` `Clear` `Contains` `Count` `Remove` `ToArray` `UnionWith` `IntersectWith` `ExceptWith` |
-| `Queue<T>` | `Enqueue` `Dequeue` `Peek` `Count` `Contains` `Clear` `ToArray` |
-| `Stack<T>` | `Push` `Pop` `Peek` `Count` `Contains` `Clear` `ToArray` |
+| `List<T>` | `Add` `AddRange` `BinarySearch` `Clear` `Contains` `ConvertAll` `CopyTo` `Count` `Exists` `Find` `FindAll` `FindIndex` `FindLast` `FindLastIndex` `ForEach` `GetRange` `IndexOf` `Insert` `InsertRange` `LastIndexOf` `Remove` `RemoveAll` `RemoveAt` `RemoveRange` `Reverse` `Sort` `ToArray` `TrimExcess` `TrueForAll`, `[]`, `[]=` |
+| `Dictionary<K,V>` | `Add` `Clear` `ContainsKey` `ContainsValue` `Count` `GetValueOrDefault` `Keys` `Remove` `TryAdd` `Values`, `[]`, `[]=`, `foreach` over `KeyValuePair<K,V>` |
+| `KeyValuePair<K,V>` | `Key` `Value` |
+| `KeyCollection`, `ValueCollection` (from `Keys`/`Values`) | `Count` `CopyTo`, `foreach`; live views of the dictionary |
+| `HashSet<T>` | `Add` `Clear` `Contains` `Count` `ExceptWith` `IntersectWith` `IsProperSubsetOf` `IsProperSupersetOf` `IsSubsetOf` `IsSupersetOf` `Overlaps` `Remove` `RemoveWhere` `SetEquals` `SymmetricExceptWith` `ToArray` `UnionWith` |
+| `SortedSet<T>` | the `HashSet<T>` members, plus `Max` `Min` `Reverse` |
+| `SortedDictionary<K,V>` | the `Dictionary<K,V>` members, in key order |
+| `SortedList<K,V>` | the `SortedDictionary<K,V>` members, plus `GetKeyAtIndex` `GetValueAtIndex` `IndexOfKey` `IndexOfValue` `RemoveAt` |
+| `Queue<T>` | `Clear` `Contains` `CopyTo` `Count` `Dequeue` `Enqueue` `Peek` `ToArray` `TrimExcess` |
+| `Stack<T>` | `Clear` `Contains` `CopyTo` `Count` `Peek` `Pop` `Push` `ToArray` `TrimExcess` |
+| `LinkedList<T>` | `AddAfter` `AddBefore` `AddFirst` `AddLast` `Clear` `Contains` `CopyTo` `Count` `Find` `FindLast` `First` `Last` `Remove` `RemoveFirst` `RemoveLast` |
+| `LinkedListNode<T>` | `Next` `Previous` `Value` |
+| `PriorityQueue<E,P>` | `Clear` `Count` `Dequeue` `Enqueue` `EnqueueDequeue` `Peek` |
 
 Deliberately deferred, with the reason recorded:
 
-* **Predicate members** (`Find`, `FindAll`, `Exists`, `RemoveAll`, `ForEach`,
-  `Sort(comparison)`) need a lambda typed from a **method parameter**. 3b types
-  lambdas only from a declared local of delegate type (`annotateLambda`), so this
-  first needs method-signature plumbing.
-* **`TryGetValue(k, out v)`** needs `out` parameters, which the parser does not
-  parse yet.
-* **LINQ**, `Capacity`, `TrimExcess`, `CopyTo`, `GetRange`, `LastIndexOf`,
-  `InsertRange`, `RemoveRange`, `Keys`/`Values` as live views, `IComparer`
-  overloads: see the deferred list in SS19.
+* **Lambdas for the predicate members.** `Find`, `FindAll`, `Exists`, `RemoveAll`,
+  `ForEach`, `Sort(comparison)`, ... exist and take a delegate, so a method group
+  works (`Predicate<int> p = IsEven; xs.Find(p)`). A lambda does not yet, neither
+  as the argument (`xs.Find(x => x > 1)`, `p3b/genlambda.unsupported`) nor as a
+  local of a *library* delegate type (`Predicate<int> p = x => ...`):
+  `annotateLambda` types lambdas only from delegates the program declares, and
+  typing one from a member's parameter needs generic substitution in the
+  frontend.
+* **Overloads that differ only in argument type** are told apart by Nim, not by
+  the frontend, which reads the first declaration of a name. The sema gate would
+  therefore see `LinkedList<T>.Remove(node)` as returning `bool`, like
+  `Remove(value)`; it runs correctly.
+* **`LinkedListNode<T>.List`**: a Nim proc cannot share the name of the `List`
+  type.
+* **`TryGetValue(k, out v)`**, `TryDequeue`, `TryPeek`, `TryPop`,
+  `Remove(k, out v)` need `out` parameters, which the parser does not parse yet.
+* **The interfaces** (`IEnumerable<T>`, `ICollection<T>`, `IList<T>`,
+  `IDictionary<K,V>`, `ISet<T>`, `IComparer<T>`, `IEqualityComparer<T>`) and
+  `Comparer<T>`/`EqualityComparer<T>`: N# classes cannot implement an interface
+  yet (`p3c/interface.unsupported`).
+* **LINQ**, `Capacity`, `AsReadOnly`, collection initialisers, constructing a
+  collection from `Keys`/`Values`, `IComparer` overloads: see the deferred list in
+  SS19.
 
 ---
 

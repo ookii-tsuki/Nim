@@ -1,0 +1,8 @@
+Dictionary.GetValueOrDefault = type-parameter
+Dictionary.Keys = result:other
+Dictionary.Values = result:other
+KeyValuePair.Key = type-parameter
+KeyValuePair.Value = type-parameter
+SortedDictionary.Keys = result:other
+SortedList.GetKeyAtIndex = type-parameter
+SortedList.GetValueAtIndex = type-parameter

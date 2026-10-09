@@ -1,0 +1,103 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            Dictionary<string, int> ages = new Dictionary<string, int>();
+            ages.Add("ann", 30);
+            ages["bob"] = 25;
+            ages["bob"] += 1;
+            Console.WriteLine(ages["bob"]);
+            Console.WriteLine(ages.TryAdd("ann", 99));
+            Console.WriteLine(ages.TryAdd("cid", 40));
+            Console.WriteLine(ages.ContainsValue(40));
+            Console.WriteLine(ages.GetValueOrDefault("zed"));
+            Console.WriteLine(ages.GetValueOrDefault("zed", 7));
+
+            foreach (KeyValuePair<string, int> kv in ages)
+            {
+                Console.WriteLine(kv.Key + "=" + kv.Value);
+            }
+
+            int total = 0;
+            foreach (int v in ages.Values)
+            {
+                total += v;
+            }
+            Console.WriteLine(total);
+            Console.WriteLine(ages.Keys.Count);
+
+            // Keys is a live view of the dictionary, not a copy.
+            var names = ages.Keys;
+            ages["dan"] = 1;
+            Console.WriteLine(names.Count);
+            string[] keyArray = new string[4];
+            names.CopyTo(keyArray, 0);
+            Console.WriteLine(keyArray[3]);
+            ages.Remove("dan");
+
+            Dictionary<string, int> same = ages;
+            same.Remove("ann");
+            Console.WriteLine(ages.Count);
+
+            Dictionary<string, int> copy = new Dictionary<string, int>(ages);
+            copy.Clear();
+            Console.WriteLine(ages.Count);
+
+            try
+            {
+                ages.Add("bob", 1);
+            }
+            catch (ArgumentException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            try
+            {
+                Console.WriteLine(ages["nobody"]);
+            }
+            catch (KeyNotFoundException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            KeyValuePair<string, int> pair = new KeyValuePair<string, int>("x", 1);
+            Console.WriteLine(pair.Key + pair.Value);
+
+            SortedDictionary<string, int> sd = new SortedDictionary<string, int>();
+            sd["pear"] = 3;
+            sd["apple"] = 1;
+            sd.Add("fig", 2);
+            foreach (KeyValuePair<string, int> kv in sd)
+            {
+                Console.WriteLine(kv.Key);
+            }
+            Console.WriteLine(sd.ContainsKey("fig"));
+            Console.WriteLine(sd.Remove("fig"));
+            Console.WriteLine(sd.Count);
+            foreach (string k in sd.Keys)
+            {
+                Console.WriteLine(k);
+            }
+
+            SortedList<int, string> sl = new SortedList<int, string>();
+            sl.Add(30, "c");
+            sl.Add(10, "a");
+            sl[20] = "b";
+            Console.WriteLine(sl.IndexOfKey(20));
+            Console.WriteLine(sl.IndexOfValue("c"));
+            Console.WriteLine(sl.GetKeyAtIndex(0));
+            Console.WriteLine(sl.GetValueAtIndex(2));
+            sl.RemoveAt(0);
+            foreach (KeyValuePair<int, string> kv in sl)
+            {
+                Console.WriteLine(kv.Key + ":" + kv.Value);
+            }
+        }
+    }
+}

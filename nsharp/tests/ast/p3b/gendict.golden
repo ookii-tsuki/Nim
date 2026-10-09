@@ -1,0 +1,481 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'ages'
+          nkBracketExpr
+            nkIdent 'Dictionary'
+            nkIdent 'string'
+            nkIdent 'int32'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newDictionary'
+              nkIdent 'string'
+              nkIdent 'int32'
+      nkCall
+        nkDotExpr
+          nkIdent 'ages'
+          nkIdent 'Add'
+        nkStrLit "ann"
+        nkIntLit 30
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'ages'
+          nkStrLit "bob"
+        nkIntLit 25
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'ages'
+          nkStrLit "bob"
+        nkInfix
+          nkIdent '+'
+          nkBracketExpr
+            nkIdent 'ages'
+            nkStrLit "bob"
+          nkIntLit 1
+      nkCall
+        nkIdent 'WriteLine'
+        nkBracketExpr
+          nkIdent 'ages'
+          nkStrLit "bob"
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'ages'
+            nkIdent 'TryAdd'
+          nkStrLit "ann"
+          nkIntLit 99
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'ages'
+            nkIdent 'TryAdd'
+          nkStrLit "cid"
+          nkIntLit 40
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'ages'
+            nkIdent 'ContainsValue'
+          nkIntLit 40
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'ages'
+            nkIdent 'GetValueOrDefault'
+          nkStrLit "zed"
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'ages'
+            nkIdent 'GetValueOrDefault'
+          nkStrLit "zed"
+          nkIntLit 7
+      nkForStmt
+        nkIdent 'kv'
+        nkIdent 'ages'
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkDotExpr
+                  nkIdent 'kv'
+                  nkIdent 'Key'
+                nkStrLit "="
+              nkDotExpr
+                nkIdent 'kv'
+                nkIdent 'Value'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'total'
+          nkIdent 'int32'
+          nkIntLit 0
+      nkForStmt
+        nkIdent 'v'
+        nkDotExpr
+          nkIdent 'ages'
+          nkIdent 'Values'
+        nkStmtList
+          nkAsgn
+            nkIdent 'total'
+            nkInfix
+              nkIdent '+'
+              nkIdent 'total'
+              nkIdent 'v'
+      nkCall
+        nkIdent 'WriteLine'
+        nkIdent 'total'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkDotExpr
+            nkIdent 'ages'
+            nkIdent 'Keys'
+          nkIdent 'Count'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'names'
+          nkEmpty
+          nkDotExpr
+            nkIdent 'ages'
+            nkIdent 'Keys'
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'ages'
+          nkStrLit "dan"
+        nkIntLit 1
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'names'
+          nkIdent 'Count'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'keyArray'
+          nkBracketExpr
+            nkIdent 'seq'
+            nkIdent 'string'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newSeq'
+              nkIdent 'string'
+            nkIntLit 4
+      nkCall
+        nkDotExpr
+          nkIdent 'names'
+          nkIdent 'CopyTo'
+        nkIdent 'keyArray'
+        nkIntLit 0
+      nkCall
+        nkIdent 'WriteLine'
+        nkBracketExpr
+          nkIdent 'keyArray'
+          nkIntLit 3
+      nkCall
+        nkDotExpr
+          nkIdent 'ages'
+          nkIdent 'Remove'
+        nkStrLit "dan"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'same'
+          nkBracketExpr
+            nkIdent 'Dictionary'
+            nkIdent 'string'
+            nkIdent 'int32'
+          nkIdent 'ages'
+      nkCall
+        nkDotExpr
+          nkIdent 'same'
+          nkIdent 'Remove'
+        nkStrLit "ann"
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'ages'
+          nkIdent 'Count'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'copy'
+          nkBracketExpr
+            nkIdent 'Dictionary'
+            nkIdent 'string'
+            nkIdent 'int32'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newDictionary'
+              nkIdent 'string'
+              nkIdent 'int32'
+            nkIdent 'ages'
+      nkCall
+        nkDotExpr
+          nkIdent 'copy'
+          nkIdent 'Clear'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'ages'
+          nkIdent 'Count'
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkDotExpr
+              nkIdent 'ages'
+              nkIdent 'Add'
+            nkStrLit "bob"
+            nkIntLit 1
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'ArgumentException'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkDotExpr
+                nkIdent 'e'
+                nkIdent 'Message'
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkBracketExpr
+              nkIdent 'ages'
+              nkStrLit "nobody"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'KeyNotFoundException'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkDotExpr
+                nkIdent 'e'
+                nkIdent 'Message'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'pair'
+          nkBracketExpr
+            nkIdent 'KeyValuePair'
+            nkIdent 'string'
+            nkIdent 'int32'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newKeyValuePair'
+              nkIdent 'string'
+              nkIdent 'int32'
+            nkStrLit "x"
+            nkIntLit 1
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkDotExpr
+            nkIdent 'pair'
+            nkIdent 'Key'
+          nkDotExpr
+            nkIdent 'pair'
+            nkIdent 'Value'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'sd'
+          nkBracketExpr
+            nkIdent 'SortedDictionary'
+            nkIdent 'string'
+            nkIdent 'int32'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newSortedDictionary'
+              nkIdent 'string'
+              nkIdent 'int32'
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'sd'
+          nkStrLit "pear"
+        nkIntLit 3
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'sd'
+          nkStrLit "apple"
+        nkIntLit 1
+      nkCall
+        nkDotExpr
+          nkIdent 'sd'
+          nkIdent 'Add'
+        nkStrLit "fig"
+        nkIntLit 2
+      nkForStmt
+        nkIdent 'kv'
+        nkIdent 'sd'
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkDotExpr
+              nkIdent 'kv'
+              nkIdent 'Key'
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'sd'
+            nkIdent 'ContainsKey'
+          nkStrLit "fig"
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'sd'
+            nkIdent 'Remove'
+          nkStrLit "fig"
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'sd'
+          nkIdent 'Count'
+      nkForStmt
+        nkIdent 'k'
+        nkDotExpr
+          nkIdent 'sd'
+          nkIdent 'Keys'
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkIdent 'k'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'sl'
+          nkBracketExpr
+            nkIdent 'SortedList'
+            nkIdent 'int32'
+            nkIdent 'string'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newSortedList'
+              nkIdent 'int32'
+              nkIdent 'string'
+      nkCall
+        nkDotExpr
+          nkIdent 'sl'
+          nkIdent 'Add'
+        nkIntLit 30
+        nkStrLit "c"
+      nkCall
+        nkDotExpr
+          nkIdent 'sl'
+          nkIdent 'Add'
+        nkIntLit 10
+        nkStrLit "a"
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'sl'
+          nkIntLit 20
+        nkStrLit "b"
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'sl'
+            nkIdent 'IndexOfKey'
+          nkIntLit 20
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'sl'
+            nkIdent 'IndexOfValue'
+          nkStrLit "c"
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'sl'
+            nkIdent 'GetKeyAtIndex'
+          nkIntLit 0
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkIdent 'sl'
+            nkIdent 'GetValueAtIndex'
+          nkIntLit 2
+      nkCall
+        nkDotExpr
+          nkIdent 'sl'
+          nkIdent 'RemoveAt'
+        nkIntLit 0
+      nkForStmt
+        nkIdent 'kv'
+        nkIdent 'sl'
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkDotExpr
+                  nkIdent 'kv'
+                  nkIdent 'Key'
+                nkStrLit ":"
+              nkDotExpr
+                nkIdent 'kv'
+                nkIdent 'Value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

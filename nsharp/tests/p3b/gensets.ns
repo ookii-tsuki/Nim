@@ -1,0 +1,77 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Program
+    {
+        static bool IsOdd(int x)
+        {
+            return x % 2 == 1;
+        }
+
+        static void Main()
+        {
+            int[] some = new int[] { 1, 2, 3, 4 };
+            HashSet<int> a = new HashSet<int>(some);
+            List<int> other = new List<int>();
+            other.Add(3);
+            other.Add(4);
+            other.Add(5);
+
+            Console.WriteLine(a.Add(4));
+            Console.WriteLine(a.Count);
+            Console.WriteLine(a.Overlaps(other));
+            Console.WriteLine(a.IsSupersetOf(other));
+
+            HashSet<int> u = new HashSet<int>(a);
+            u.UnionWith(other);
+            Console.WriteLine(u.Count);
+
+            HashSet<int> i = new HashSet<int>(a);
+            i.IntersectWith(other);
+            foreach (int x in i)
+            {
+                Console.WriteLine(x);
+            }
+
+            HashSet<int> e = new HashSet<int>(a);
+            e.ExceptWith(other);
+            Console.WriteLine(e.Count);
+
+            HashSet<int> s = new HashSet<int>(a);
+            s.SymmetricExceptWith(other);
+            Console.WriteLine(s.Count);
+            Console.WriteLine(s.Contains(5));
+
+            Console.WriteLine(i.IsSubsetOf(a));
+            Console.WriteLine(i.IsProperSubsetOf(a));
+            Console.WriteLine(a.IsProperSupersetOf(i));
+            Console.WriteLine(i.SetEquals(other));
+
+            Predicate<int> odd = IsOdd;
+            Console.WriteLine(a.RemoveWhere(odd));
+            Console.WriteLine(a.Remove(2));
+            Console.WriteLine(a.Remove(2));
+            Console.WriteLine(a.Count);
+
+            SortedSet<int> sorted = new SortedSet<int>();
+            sorted.Add(5);
+            sorted.Add(1);
+            sorted.Add(3);
+            Console.WriteLine(sorted.Add(3));
+            foreach (int x in sorted)
+            {
+                Console.WriteLine(x);
+            }
+            Console.WriteLine(sorted.Min);
+            Console.WriteLine(sorted.Max);
+            sorted.UnionWith(other);
+            Console.WriteLine(sorted.Count);
+            foreach (int x in sorted.Reverse())
+            {
+                Console.WriteLine(x);
+            }
+        }
+    }
+}
