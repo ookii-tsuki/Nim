@@ -44,6 +44,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'bool'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'x'
         nkIdent 'int32'
         nkEmpty
@@ -56,6 +62,23 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -108,6 +131,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'bool'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
       nkIdentDefs
         nkIdent 'x'
         nkIdent 'int32'
@@ -334,7 +363,23 @@ nkStmtList
           nkBracketExpr
             nkIdent 'Predicate'
             nkIdent 'int32'
-          nkIdent 'IsOdd'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkIdent 'bool'
+              nkIdentDefs
+                nkIdent 'x'
+                nkIdent 'int32'
+                nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkCall
+                nkIdent 'IsOdd'
+                nkIdent 'Program'
+                nkIdent 'x'
       nkCall
         nkIdent 'WriteLine'
         nkCall
@@ -430,6 +475,25 @@ nkStmtList
           nkCall
             nkIdent 'WriteLine'
             nkIdent 'x'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
   nkProcDef
     nkPostfix
       nkIdent '*'

@@ -27,6 +27,7 @@ type
   NsTypeInfo* = object
     kind*: NsTypeKind
     name*: string              ## the type's name, when it has one
+    node*: NsNode              ## the type as written, generic arguments included
 
   NsCheckContext = object
     scope: NsModuleScope
@@ -36,6 +37,7 @@ type
     members: seq[string]                       ## names reachable from it
     retType: NsNode                            ## enclosing member's return type
     isStaticCtx: bool                          ## inside a static member: no `this`
+    typeParams: seq[string]                    ## the generic parameters in scope
     inCtor: bool                               ## inside a constructor of `clsName`
     ctorIsStatic: bool                         ## ... and it is the static one
     types: TableRef[string, NsTypeInfo]        ## locals, params, loop variables
@@ -58,12 +60,28 @@ proc popScope(ctx: var NsCheckContext) =
     else: ctx.types.del(d[0])
 
 proc declare(ctx: var NsCheckContext; name: string; kind: NsTypeKind;
-             typeName = "") =
+             typeName = ""; node: NsNode = nil) =
   if ctx.undo.len > 0:
     let had = ctx.types.hasKey(name)
     ctx.undo[^1].add (name, (if had: ctx.types[name]
                              else: NsTypeInfo(kind: tkUnknown)), had)
-  ctx.types[name] = NsTypeInfo(kind: kind, name: typeName)
+  ctx.types[name] = NsTypeInfo(kind: kind, name: typeName, node: node)
+
+proc substitute(t: NsNode; params: seq[string]; args: seq[NsNode]): NsNode =
+  ## `t` with each type parameter replaced by its argument: a member of
+  ## `Stack2<string>` declared `T` is a `string`.
+  if t == nil or params.len == 0 or params.len != args.len: return t
+  case t.kind
+  of nsnTypeName:
+    if t.sons.len == 0:
+      let k = params.find(t.name)
+      if k >= 0: return args[k]
+      return t
+    result = nsnTypeName(t.name, t.info)
+    for a in t.sons: result.add substitute(a, params, args)
+  of nsnArrayType: result = nsnArrayType(substitute(t.typ, params, args), t.info)
+  of nsnNullableType: result = nsnNullableType(substitute(t.typ, params, args), t.info)
+  else: result = t
 
 proc declTypeName(t: NsNode): string =
   ## The type name recorded for a local or parameter. Canonical, so a qualified
@@ -114,6 +132,10 @@ proc classifyName(ctx: NsCheckContext; name: string): NsTypeKind =
   ## C#'s own vocabulary and by this compilation's declarations. It is a lookup
   ## either way, not a guess.
   let canon = canonicalTypeName(name)
+  if canon in ctx.typeParams:
+    ## A type parameter stands for any type: nothing is known until instantiation,
+    ## which Nim checks.
+    return tkUnknown
   result = ctx.surface.kindOfName(canon)
   if result != tkUnknown: return
   if ctx.scope.delegates.hasKey(canon): return tkDelegate
@@ -150,6 +172,17 @@ proc memberKind(ctx: NsCheckContext; clsName, member: string): NsTypeKind =
   let info = ctx.scope.findMemberInfo(clsName, member)
   if info.name.len == 0: return tkUnknown
   ctx.classifyType(info.typ)
+
+proc memberTypeOf(ctx: NsCheckContext; recv: NsNode; clsName, member: string): NsNode =
+  ## A member's declared type -- a method's result -- as seen through the receiver:
+  ## the class's type parameters replaced by the receiver's type arguments.
+  let info = ctx.scope.findMemberInfo(clsName, member)
+  if info.name.len == 0: return nil
+  result = info.typ
+  if recv != nil and recv.rtype != nil and recv.rtype.kind == nsnTypeName and
+     ctx.scope.classes.hasKey(info.owner):
+    result = substitute(result, ctx.scope.classes[info.owner].typeParams,
+                        recv.rtype.sons)
 
 proc memberTypeName(ctx: NsCheckContext; clsName, member: string): string =
   ## A member's declared type name, which a nullable field needs so that lowering can
@@ -431,6 +464,11 @@ proc checkConvertible(ctx: NsCheckContext; value: NsNode; t: NsTarget;
   if ctx.incompatible(value, t):
     nsError(ctx.config, info, ndCannotConvert, valueSpelling(value), t.spelling)
 
+proc isTypeParamRef(ctx: NsCheckContext; t: NsNode): bool =
+  ## A parameter typed by a type parameter: a bare name no declaration answers for.
+  t != nil and t.kind == nsnTypeName and t.sons.len == 0 and '.' notin t.name and
+    not ctx.isTypeName(t.name)
+
 proc checkCallArgs(ctx: NsCheckContext; cands: seq[seq[NsNode]];
                    args: seq[NsNode]; displayName, recvName: string;
                    isCtor: bool; info: TLineInfo) =
@@ -453,6 +491,11 @@ proc checkCallArgs(ctx: NsCheckContext; cands: seq[seq[NsNode]];
       elif pt != nil:
         ctx.coerce(args[j], declTypeName(pt), args[j].info)
         ctx.markNull(args[j], declTypeName(pt))
+        if ctx.isTypeParamRef(pt) and args[j].kind in {nsnIntLit, nsnFloatLit} and
+           args[j].typeName.len == 0:
+          ## A literal for a type parameter fixes the type argument, and C# types
+          ## `3` as `int` where Nim would infer its own `int`.
+          args[j].conv = (if args[j].kind == nsnIntLit: "int" else: "double")
     return
   var exact = -1
   for i in 0 ..< cands.len:
@@ -543,19 +586,27 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind
 proc walkStmt(ctx: var NsCheckContext; n: NsNode)
 proc walkBody(ctx: var NsCheckContext; blk: NsNode)
 
+proc staticReceiver(ctx: NsCheckContext; owner: string; info: TLineInfo): NsNode =
+  ## `C`, or `C<T>` when `owner` is the generic class being checked.
+  result = nsnIdent(owner, info)
+  result.setType(tkType, owner)
+  if owner == ctx.clsName and ctx.scope.classes.hasKey(owner):
+    for t in ctx.scope.classes[owner].typeParams:
+      result.typeArgs.add nsnTypeName(t, info)
+
 proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## A bare name. Inside an instance member body, a name that is a class member
   ## is rewritten in place into `this.name` and then resolved as a member, which
   ## is the behaviour the parse-time rewrite used to have. `value` is exempt: it
   ## is the implicit setter parameter.
-  if ctx.clsName.len > 0 and n.name != "value" and n.name in ctx.members and
+  if ctx.clsName.len > 0 and n.name in ctx.members and
      not ctx.types.hasKey(n.name):
     let m = ctx.scope.findMemberInfo(ctx.clsName, n.name)
     if m.isStatic:
-      ## A static member is reached through its class, in any member.
+      ## A static member is reached through its class, in any member -- `C<T>` in
+      ## a generic class, whose statics belong to the instantiation.
       n.kind = nsnMember
-      n.body = nsnIdent(m.owner, n.info)
-      n.body.setType(tkType, m.owner)
+      n.body = ctx.staticReceiver(m.owner, n.info)
       return ctx.walkExpr(n)
     if not ctx.isStaticCtx:
       n.kind = nsnMember
@@ -564,6 +615,7 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if ctx.types.hasKey(n.name):
     let info = ctx.types[n.name]
     n.setType(info.kind, info.name)
+    n.rtype = info.node
     result = info.kind
   elif ctx.scope.delegates.hasKey(n.name):
     n.setType(tkDelegate, n.name)
@@ -610,6 +662,16 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ## Not a member this module declares: the prelude may declare one
       ## (`Equals`, `ToString`, `q.Count`), or nothing does.
       kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
+    if kind != tkDelegate:
+      ## A member of a generic class, seen through a receiver whose type arguments
+      ## are known, has the substituted type.
+      let mt = ctx.memberTypeOf(n.body, n.body.typeName, n.name)
+      if mt != nil:
+        n.rtype = mt
+        let k = ctx.classifyType(mt)
+        if k != tkUnknown:
+          kind = k
+          tname = declTypeName(mt)
   of tkSequence, tkString, tkException, tkNullable:
     kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
   of tkType:
@@ -629,6 +691,9 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         kind = ctx.memberKindOfSurface(ctx.surface.kindOfName(recv), recv, n.name,
                                        tname)
     if kind == tkUnknown: kind = tkType
+    if kind == tkType and tname.len == 0 and ctx.scope.classes.hasKey(n.name):
+      ## `Demo.Gadget`: the qualified name of a type this compilation declares.
+      tname = n.name
   else: discard
   n.setType(kind, tname)
   result = kind
@@ -646,7 +711,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     let m = ctx.scope.findMemberInfo(ctx.clsName, callee.name)
     if m.isStatic:
       callee.kind = nsnMember
-      callee.body = nsnIdent(m.owner, callee.info)
+      callee.body = ctx.staticReceiver(m.owner, callee.info)
     elif not ctx.isStaticCtx:
       callee.kind = nsnMember
       callee.body = nsn(nsnThis, callee.info)
@@ -664,6 +729,13 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     elif rk == tkClass:
       owner = callee.body.typeName
       kind = ctx.memberKind(owner, callee.name)
+      let mt = ctx.memberTypeOf(callee.body, owner, callee.name)
+      if mt != nil:
+        n.rtype = mt
+        let k = ctx.classifyType(mt)
+        if k != tkUnknown:
+          kind = k
+          tn = declTypeName(mt)
       if kind == tkUnknown:
         ## Likewise, a member of a class the prelude declares (`Queue.Dequeue`).
         kind = ctx.memberKindOfSurface(rk, owner, callee.name, tn)
@@ -740,6 +812,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnCall: result = ctx.walkCall(n)
   of nsnNew:
     for a in n.sons: discard ctx.walkExpr(a)
+    n.rtype = n.typ
     let k = ctx.classifyType(n.typ)
     n.setType(k, (if n.typ != nil: n.typ.name else: ""))
     if n.typ != nil and n.typ.kind == nsnTypeName:
@@ -923,7 +996,8 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## inside it are never resolved.
     ctx.pushScope()
     for p in n.params:
-      if p.typ != nil: ctx.declare(p.name, ctx.classifyType(p.typ), declTypeName(p.typ))
+      if p.typ != nil: ctx.declare(p.name, ctx.classifyType(p.typ), declTypeName(p.typ),
+                                   p.typ)
       else: ctx.declare(p.name, tkUnknown)
     if n.body != nil:
       for s in n.body.sons: ctx.walkStmt(s)
@@ -958,7 +1032,8 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
       ctx.coerce(n.body, declTypeName(n.typ), n.body.info)
   ## An inferred local (`var x = ...`) takes its type name from its initialiser,
   ## exactly as a `foreach` variable takes it from the collection it walks.
-  ctx.declare(n.name, kind, (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName))
+  ctx.declare(n.name, kind, (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName),
+              (if n.typ != nil: n.typ elif n.body != nil: n.body.rtype else: nil))
 
 proc walkForeach(ctx: var NsCheckContext; n: NsNode) =
   var elemKind = ctx.classifyType(n.typ)
@@ -991,7 +1066,7 @@ proc walkTry(ctx: var NsCheckContext; n: NsNode) =
       ctx.checkCatch(c)
       ctx.pushScope()
       if c.typ != nil:
-        ctx.declare(c.name, ctx.classifyType(c.typ), declTypeName(c.typ))
+        ctx.declare(c.name, ctx.classifyType(c.typ), declTypeName(c.typ), c.typ)
       if c.body != nil:
         for s in c.body.sons: ctx.walkStmt(s)
       ctx.popScope()
@@ -1119,6 +1194,8 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     let saved = ctx.members
     let savedRet = ctx.retType
     let savedStatic = ctx.isStaticCtx
+    let savedTps = ctx.typeParams
+    for t in m.typeParams: ctx.typeParams.add t.name
     ctx.isStaticCtx = m.attrs.isStatic
     ctx.retType = m.typ
     ctx.pushScope()
@@ -1129,6 +1206,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     ctx.members = saved
     ctx.retType = savedRet
     ctx.isStaticCtx = savedStatic
+    ctx.typeParams = savedTps
   of nsnCtorDecl:
     let savedRet = ctx.retType
     ctx.retType = nil
@@ -1180,7 +1258,12 @@ proc checkSupported(ctx: NsCheckContext; cls: NsNode) =
   ## Features the frontend can parse but does not lower are rejected loudly
   ## rather than dropped silently; ignoring `interface` or `override` produced
   ## programs that looked like they worked.
-
+  if cls.typeParams.len > 0:
+    for m in cls.sons:
+      if m.kind == nsnCtorDecl and m.attrs.isStatic:
+        ## Each instantiation would need its own run, on first use.
+        nsError(ctx.config, m.info, ndUnsupported,
+                "a static constructor in a generic class")
 
 proc signatureOf(cls: string; m: NsNode): string =
   ## `Shape.Area()`, as C# names a member in a diagnostic.
@@ -1283,11 +1366,14 @@ proc walkClass(ctx: var NsCheckContext; cls: NsNode) =
   ctx.checkInterfaces(cls)
   let savedCls = ctx.clsName
   let savedMembers = ctx.members
+  let savedTps = ctx.typeParams
+  for t in cls.typeParams: ctx.typeParams.add t.name
   ctx.clsName = cls.name
   ctx.members = ctx.scope.memberNames(cls.name)
   for m in cls.sons: ctx.walkMemberDecl(m)
   ctx.clsName = savedCls
   ctx.members = savedMembers
+  ctx.typeParams = savedTps
   ctx.checkBaseCtors(cls)
 
 proc walkTop(ctx: var NsCheckContext; d: NsNode) =

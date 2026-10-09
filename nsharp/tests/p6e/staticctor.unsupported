@@ -1,0 +1,2 @@
+Valid C# that N# rejects: a static constructor in a generic class.
+code: NS9999

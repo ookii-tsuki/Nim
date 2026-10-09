@@ -88,6 +88,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'f'
         nkIdent 'BinOp'
         nkEmpty
@@ -109,6 +115,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'v'
         nkIdent 'int32'
         nkEmpty
@@ -121,6 +133,23 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -174,6 +203,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'f'
         nkIdent 'BinOp'
         nkEmpty
@@ -199,6 +234,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
       nkIdentDefs
         nkIdent 'v'
         nkIdent 'int32'
@@ -249,6 +290,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Apply'
+          nkIdent 'Program'
           nkIdent 'plus'
           nkIntLit 2
           nkIntLit 3
@@ -282,7 +324,23 @@ nkStmtList
         nkIdentDefs
           nkIdent 'viaMethod'
           nkIdent 'IntFn'
-          nkIdent 'Twice'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkIdent 'int32'
+              nkIdentDefs
+                nkIdent 'v'
+                nkIdent 'int32'
+                nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkCall
+                nkIdent 'Twice'
+                nkIdent 'Program'
+                nkIdent 'v'
       nkCall
         nkIdent 'WriteLine'
         nkCall
@@ -382,6 +440,25 @@ nkStmtList
         nkCall
           nkIdent 'addBase'
           nkIntLit 5
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
   nkProcDef
     nkPostfix
       nkIdent '*'

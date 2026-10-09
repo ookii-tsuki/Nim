@@ -52,6 +52,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'c'
         nkIdent 'Color'
         nkEmpty
@@ -64,6 +70,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'string'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
       nkIdentDefs
         nkIdent 'd'
         nkIdent 'int32'
@@ -78,6 +90,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'k'
         nkIdent 'int32'
         nkEmpty
@@ -90,6 +108,23 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -143,6 +178,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'c'
         nkIdent 'Color'
         nkEmpty
@@ -183,6 +224,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'd'
         nkIdent 'int32'
         nkEmpty
@@ -219,6 +266,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
       nkIdentDefs
         nkIdent 'k'
         nkIdent 'int32'
@@ -306,6 +359,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Name'
+          nkIdent 'Program'
           nkDotExpr
             nkIdent 'Color'
             nkIdent 'Green'
@@ -313,21 +367,25 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Digit'
+          nkIdent 'Program'
           nkIntLit 0
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Digit'
+          nkIdent 'Program'
           nkIntLit 2
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Digit'
+          nkIdent 'Program'
           nkIntLit 5
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Digit'
+          nkIdent 'Program'
           nkIntLit 9
       nkVarSection
         nkIdentDefs
@@ -350,11 +408,13 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Bonus'
+          nkIdent 'Program'
           nkIntLit 2
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Bonus'
+          nkIdent 'Program'
           nkIntLit 7
       nkTryStmt
         nkStmtList
@@ -382,6 +442,25 @@ nkStmtList
             nkCall
               nkIdent 'WriteLine'
               nkStrLit "done"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
   nkProcDef
     nkPostfix
       nkIdent '*'

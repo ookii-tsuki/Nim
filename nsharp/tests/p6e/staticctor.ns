@@ -1,0 +1,17 @@
+// Valid C# that N# rejects: each instantiation of a generic class runs its own
+// static constructor on first use, which N# does not lower yet.
+using System;
+
+namespace Demo
+{
+    class Registry<T>
+    {
+        public static int Size;
+        static Registry() { Size = 10; }
+    }
+
+    class Program
+    {
+        static void Main() { Console.WriteLine(Registry<int>.Size); }
+    }
+}

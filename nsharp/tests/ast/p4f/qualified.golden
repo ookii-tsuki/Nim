@@ -55,6 +55,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Gadget'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -69,6 +75,23 @@ nkStmtList
       nkIdentDefs
         nkIdent 'self'
         nkIdent 'Gadget'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Gadget'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Gadget'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -127,6 +150,23 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initProgram'
     nkEmpty
     nkEmpty
@@ -175,6 +215,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Gadget'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
@@ -197,6 +243,25 @@ nkStmtList
     nkStmtList
       nkReturnStmt
         nkIntLit 3
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Gadget'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Gadget'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newGadget'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -262,6 +327,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Make'
+          nkIdent 'Gadget'
       nkVarSection
         nkIdentDefs
           nkIdent 'g'
@@ -283,6 +349,25 @@ nkStmtList
               nkIdent 'nsCheckNil'
               nkIdent 'same'
             nkIdent 'Size'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
   nkProcDef
     nkPostfix
       nkIdent '*'

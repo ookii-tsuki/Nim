@@ -1,0 +1,78 @@
+// Generic delegates, a generic linked stack, a class deriving from a generic
+// instantiation, per-instantiation statics, new T(), default(T) and explicit type
+// arguments on an instance method of a generic class.
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    delegate R Transform<T, R>(T input);
+
+    class Node<T>
+    {
+        public T Value;
+        public Node<T> Next;
+        public Node(T v, Node<T> next) { Value = v; Next = next; }
+    }
+
+    class Stack2<T>
+    {
+        Node<T> head;
+        int count;
+        public static int Instances;
+        public Stack2() { Instances++; }
+        public void Push(T v) { head = new Node<T>(v, head); count++; }
+        public T Pop() { T v = head.Value; head = head.Next; count--; return v; }
+        public int Count { get { return count; } }
+        public bool IsEmpty => count == 0;
+        public R Peek<R>(Transform<T, R> f) { return f(head.Value); }
+    }
+
+    class Named { public string Name = "named"; }
+
+    class IntStack : Stack2<int>
+    {
+        public int Sum()
+        {
+            int s = 0;
+            while (!IsEmpty) s += Pop();
+            return s;
+        }
+    }
+
+    class Factory
+    {
+        public static T Make<T>() where T : new() { return new T(); }
+        public static T Or<T>(T a, T b) where T : class { return a ?? b; }
+        public static T Zero<T>() { return default(T); }
+    }
+
+    class Program
+    {
+        static string Len(int x) { return "len" + x; }
+
+        static void Main()
+        {
+            Stack2<string> s = new Stack2<string>();
+            s.Push("a"); s.Push("bb");
+            Console.WriteLine(s.Count);
+            Transform<string, int> len = Length;
+            Console.WriteLine(s.Peek<int>(len));
+            Console.WriteLine(s.Pop() + s.Pop());
+            IntStack ints = new IntStack();
+            ints.Push(1); ints.Push(2); ints.Push(39);
+            Console.WriteLine(ints.Sum());
+            Console.WriteLine(Stack2<string>.Instances);
+            Console.WriteLine(Stack2<int>.Instances);
+            Named n = Factory.Make<Named>();
+            Console.WriteLine(n.Name);
+            Console.WriteLine(Factory.Or<Named>(null, n).Name);
+            Console.WriteLine(Factory.Zero<int>());
+            List<Stack2<int>> many = new List<Stack2<int>>();
+            many.Add(new Stack2<int>());
+            Console.WriteLine(many.Count);
+        }
+
+        static int Length(string x) { return x.Length; }
+    }
+}

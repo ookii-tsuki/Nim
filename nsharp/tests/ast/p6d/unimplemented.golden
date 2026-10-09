@@ -96,11 +96,6 @@ nkStmtList
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
-  nkVarSection
-    nkIdentDefs
-      nkIdent 'nsVt_Square_IShape'
-      nkIdent 'nsVT_IShape'
-      nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -250,6 +245,23 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Square'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Square'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initSquare'
     nkEmpty
     nkEmpty
@@ -295,6 +307,23 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -464,16 +493,24 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsStore'
+            nkPragma
+              nkIdent 'global'
+          nkIdent 'nsVT_IShape'
+          nkEmpty
       nkIfStmt
         nkElifBranch
           nkPrefix
             nkIdent 'not'
             nkDotExpr
-              nkIdent 'nsVt_Square_IShape'
+              nkIdent 'nsStore'
               nkIdent 'nsReady'
           nkStmtList
             nkAsgn
-              nkIdent 'nsVt_Square_IShape'
+              nkIdent 'nsStore'
               nkObjConstr
                 nkIdent 'nsVT_IShape'
                 nkExprColonExpr
@@ -523,7 +560,7 @@ nkStmtList
                           nkIdent 'self'
       nkCall
         nkIdent 'addr'
-        nkIdent 'nsVt_Square_IShape'
+        nkIdent 'nsStore'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -595,6 +632,25 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Square'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Square'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newSquare'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initSquare'
     nkEmpty
     nkEmpty
@@ -662,6 +718,25 @@ nkStmtList
           nkDotExpr
             nkIdent 's'
             nkIdent 'Area'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
   nkProcDef
     nkPostfix
       nkIdent '*'

@@ -177,6 +177,13 @@ static class Program
         {
             return "nullable";
         }
+        // A member reached through a type parameter is resolved by N# only when the
+        // generic is instantiated (Nim checks each instantiation), so neither side
+        // projects it.
+        if (recvType is ITypeParameterSymbol)
+        {
+            return "type-parameter-receiver";
+        }
         if (RecvName(recvType).Length == 0)
         {
             return "unplaceable";

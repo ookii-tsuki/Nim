@@ -42,6 +42,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'float64'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'v'
         nkIdent 'float64'
         nkEmpty
@@ -55,6 +61,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'int64'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'v'
         nkIdent 'int64'
         nkEmpty
@@ -67,6 +79,23 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -120,6 +149,12 @@ nkStmtList
     nkFormalParams
       nkIdent 'float64'
       nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
         nkIdent 'v'
         nkIdent 'float64'
         nkEmpty
@@ -137,6 +172,12 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkIdent 'int64'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
       nkIdentDefs
         nkIdent 'v'
         nkIdent 'int64'
@@ -275,6 +316,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Half'
+          nkIdent 'Program'
           nkCall
             nkIdent 'float64'
             nkIdent 'i'
@@ -282,6 +324,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Widen'
+          nkIdent 'Program'
           nkCall
             nkIdent 'int64'
             nkIdent 'i'
@@ -356,6 +399,25 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkStrLit "local"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
   nkProcDef
     nkPostfix
       nkIdent '*'
