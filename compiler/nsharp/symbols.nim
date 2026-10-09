@@ -30,6 +30,9 @@ type
     classKind*: NsClassKind
     isAbstract*: bool
     isSealed*: bool
+    interfaces*: seq[string]       ## the interfaces it names directly
+    written*: seq[string]          ## its base list as written, before resolution
+    decl*: NsNode                  ## its declaration
     members*: seq[NsMemberSymbol]
     ctorArities*: seq[int]
     ctorParams*: seq[seq[NsNode]]  ## one parameter list per declared constructor
@@ -68,7 +71,10 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
 
 proc collectClass(scope: NsModuleScope; cls: NsNode) =
   var sym = NsClassSymbol(name: cls.name, classKind: cls.classKind,
-                          isAbstract: cls.attrs.isAbstract, isSealed: cls.attrs.isSealed)
+                          isAbstract: cls.attrs.isAbstract, isSealed: cls.attrs.isSealed,
+                          decl: cls)
+  for b in cls.bases:
+    if b.kind == nsnTypeName: sym.written.add b.name
   if cls.typ != nil and cls.typ.kind == nsnTypeName:
     sym.base = cls.typ.name
   for m in cls.sons:
@@ -108,6 +114,31 @@ proc collect(decl: NsNode; scope: NsModuleScope) =
       for d in decl.body.sons: collect(d, scope)
   else: discard
 
+proc isInterface*(scope: NsModuleScope; name: string): bool =
+  scope.classes.hasKey(name) and scope.classes[name].classKind == ckInterface
+
+proc resolveBases*(scope: NsModuleScope) =
+  ## Splits each base list into the base class and the interfaces, which needs every
+  ## type to be known: `class C : IShape` has no base class at all. The declaration
+  ## is updated too, so lowering inherits from a class only.
+  var names: seq[string] = @[]
+  for k in scope.classes.keys: names.add k
+  for k in names:
+    var c = scope.classes[k]
+    if c.written.len == 0: continue
+    c.interfaces = @[]
+    var start = 0
+    if c.classKind == ckInterface:
+      c.base = ""
+    elif scope.isInterface(c.written[0]):
+      c.base = ""
+    else:
+      c.base = c.written[0]
+      start = 1
+    for i in start ..< c.written.len: c.interfaces.add c.written[i]
+    if c.decl != nil and c.base.len == 0: c.decl.typ = nil
+    scope.classes[k] = c
+
 proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Builds the module scope from a parsed module.
   result = NsModuleScope(classes: initTable[string, NsClassSymbol](),
@@ -115,6 +146,7 @@ proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
                          enums: initHashSet[string](),
                          namespaces: initHashSet[string]())
   for d in module.sons: collect(d, result)
+  result.resolveBases()
 
 proc chain*(scope: NsModuleScope; clsName: string): seq[string] =
   ## `clsName` followed by its bases, nearest first. A visited set makes this
@@ -139,11 +171,53 @@ proc baseChain*(scope: NsModuleScope; clsName: string): seq[string] =
     result.add c
     c = if scope.classes.hasKey(c): scope.classes[c].base else: ""
 
+proc interfaceClosure*(scope: NsModuleScope; clsName: string): seq[string] =
+  ## Every interface `clsName` implements: the ones it and its bases name, and the
+  ## ones those extend, nearest first, each once.
+  result = @[]
+  var work: seq[string] = @[]
+  for c in scope.chain(clsName):
+    for i in scope.classes[c].interfaces: work.add i
+  var k = 0
+  while k < work.len:
+    let i = work[k]
+    inc k
+    if i in result: continue
+    result.add i
+    if scope.classes.hasKey(i):
+      for j in scope.classes[i].interfaces: work.add j
+
+proc directInterfaces*(scope: NsModuleScope; clsName: string): seq[string] =
+  ## The interfaces `clsName` itself names, with the ones they extend; a base class's
+  ## interfaces are reached through the base's own conversions.
+  result = @[]
+  if not scope.classes.hasKey(clsName): return
+  var work = scope.classes[clsName].interfaces
+  var k = 0
+  while k < work.len:
+    let i = work[k]
+    inc k
+    if i in result: continue
+    result.add i
+    if scope.classes.hasKey(i):
+      for j in scope.classes[i].interfaces: work.add j
+
+proc lookupChain*(scope: NsModuleScope; clsName: string): seq[string] =
+  ## Where a member of `clsName` may be declared: its class chain, then the
+  ## interfaces it implements (all an interface type has).
+  result = scope.chain(clsName)
+  for i in scope.interfaceClosure(clsName):
+    if scope.classes.hasKey(i) and i notin result: result.add i
+
+proc implements*(scope: NsModuleScope; a, b: string): bool =
+  ## Whether a value of `a` converts implicitly to `b`: a base class or an interface.
+  b in scope.chain(a) or b in scope.interfaceClosure(a)
+
 proc findMember*(scope: NsModuleScope; clsName, member: string):
     tuple[found: bool, access: NsAccess, decl: string] =
   ## Looks a member up along the class chain. `decl` is the declaring class.
   if clsName.len > 0:
-    for c in scope.chain(clsName):
+    for c in scope.lookupChain(clsName):
       for m in scope.classes[c].members:
         if m.name == member: return (true, m.access, c)
   (false, aPrivate, "")
@@ -162,7 +236,7 @@ proc findMemberInfo*(scope: NsModuleScope; clsName, member: string): NsMemberSym
   ## (`name == ""`).
   result = NsMemberSymbol()
   if clsName.len > 0:
-    for c in scope.chain(clsName):
+    for c in scope.lookupChain(clsName):
       for m in scope.classes[c].members:
         if m.name == member: return m
 
@@ -182,7 +256,7 @@ proc memberOverloads*(scope: NsModuleScope; clsName, member: string): seq[seq[Ns
   ## judge (a library method, or a name the frontend cannot resolve).
   result = @[]
   if clsName.len == 0: return
-  for c in scope.chain(clsName):
+  for c in scope.lookupChain(clsName):
     for m in scope.classes[c].members:
       if m.name == member and m.isMethod: result.add m.params
 

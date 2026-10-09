@@ -2,7 +2,7 @@ using System;
 
 namespace Demo
 {
-    // Valid C# that N# rejects: interfaces are parsed but not implemented.
+    // An interface no class implements yet is still a type.
     interface IShape
     {
         int Sides();

@@ -1,0 +1,17 @@
+// A class must implement every member of the interfaces it names.
+using System;
+
+namespace Demo
+{
+    interface IShape { double Area(); string Name(); }
+
+    class Square : IShape
+    {
+        public double Area() { return 4; }
+    }
+
+    class Program
+    {
+        static void Main() { IShape s = new Square(); Console.WriteLine(s.Area()); }
+    }
+}

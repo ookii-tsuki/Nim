@@ -42,6 +42,17 @@ nkStmtList
               nkIdent 'RatioBacking'
               nkIdent 'float64'
               nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
   nkVarSection
     nkIdentDefs
       nkIdent 'nsCounter_Created'
@@ -137,18 +148,6 @@ nkStmtList
       nkIdent 'nsCounter_TotalBacking'
       nkIdent 'int32'
       nkEmpty
-  nkTypeSection
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'Program'
-      nkEmpty
-      nkRefTy
-        nkObjectTy
-          nkEmpty
-          nkOfInherit
-            nkIdent 'RootObj'
-          nkRecList
   nkProcDef
     nkIdent 'nsStaticInitCounter'
     nkEmpty

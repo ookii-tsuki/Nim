@@ -84,6 +84,8 @@ proc nsFixed(x: float; decimals: int): string =
   if x == Inf: return "∞"
   if x == NegInf: return "-∞"
   result = formatFloat(x, ffDecimal, decimals)
+  ## Nim keeps the point at precision 0 (`4.`); .NET does not.
+  if decimals <= 0 and result.endsWith('.'): result.setLen(result.len - 1)
   ## C's printf keeps the sign of a value that rounds to zero; .NET Core does too
   ## (`-0.00`), so nothing is stripped.
 
@@ -141,6 +143,7 @@ proc nsCustom(x: float; spec: string): string =
       inc maxFrac
     elif c == '#': inc maxFrac
   var s = formatFloat(abs(v), ffDecimal, maxFrac)
+  if s.endsWith('.'): s.setLen(s.len - 1)
   let d = s.find('.')
   var ip = (if d >= 0: s[0 ..< d] else: s)
   var fp = (if d >= 0: s[d + 1 .. ^1] else: "")

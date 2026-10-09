@@ -1,0 +1,99 @@
+// Interfaces as types: interface-typed locals, parameters, arrays and lists,
+// dispatch through them, interface inheritance, `is`/`as`/casts, and properties.
+using System;
+using System.Collections.Generic;
+
+namespace Shapes
+{
+    interface INamed
+    {
+        string Name { get; }
+    }
+
+    interface IShape : INamed
+    {
+        double Area();
+        string Describe(int precision);
+    }
+
+    interface IScalable
+    {
+        void Scale(double factor);
+    }
+
+    abstract class Shape : IShape
+    {
+        public abstract double Area();
+        public virtual string Name { get { return "shape"; } }
+        public string Describe(int precision)
+        {
+            return Name + " " + (precision > 0 ? $"{Area():F1}" : $"{Area():F0}");
+        }
+    }
+
+    class Circle : Shape, IScalable
+    {
+        double r;
+        public Circle(double r) { this.r = r; }
+        public override double Area() { return 3.0 * r * r; }
+        public override string Name { get { return "circle"; } }
+        public void Scale(double factor) { r = r * factor; }
+    }
+
+    class Square : Shape
+    {
+        double s;
+        public Square(double s) { this.s = s; }
+        public override double Area() { return s * s; }
+    }
+
+    class Label : INamed
+    {
+        public string Name { get; set; }
+    }
+
+    class Program
+    {
+        static double Total(IShape[] shapes)
+        {
+            double t = 0;
+            foreach (IShape s in shapes) t += s.Area();
+            return t;
+        }
+
+        static void Print(INamed n) { Console.WriteLine("named " + n.Name); }
+
+        static void Main()
+        {
+            IShape a = new Circle(1);
+            IShape b = new Square(2);
+            Console.WriteLine(a.Describe(1));
+            Console.WriteLine(b.Describe(0));
+            Console.WriteLine(Total(new IShape[] { a, b, new Circle(2) }));
+            List<IShape> list = new List<IShape>();
+            list.Add(a);
+            list.Add(new Square(3));
+            foreach (IShape s in list) Console.WriteLine(s.Name);
+            Print(a);
+            Label lab = new Label();
+            lab.Name = "tag";
+            Print(lab);
+            if (a is IScalable)
+            {
+                IScalable sc = (IScalable)a;
+                sc.Scale(2);
+                Console.WriteLine(a.Area());
+            }
+            Console.WriteLine(b is IScalable);
+            IScalable maybe = b as IScalable;
+            Console.WriteLine(maybe == null);
+            Circle c = (Circle)a;
+            Console.WriteLine(c.Area());
+            INamed n = a;
+            Console.WriteLine(n.Name);
+            IShape none = null;
+            Console.WriteLine(none == null);
+            Console.WriteLine(a);
+        }
+    }
+}

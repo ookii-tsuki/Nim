@@ -27,7 +27,6 @@ nkStmtList
             nkEmpty
         nkPragma
           nkIdent 'closure'
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -42,7 +41,6 @@ nkStmtList
             nkEmpty
         nkPragma
           nkIdent 'closure'
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -57,7 +55,6 @@ nkStmtList
             nkEmpty
         nkPragma
           nkIdent 'closure'
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'

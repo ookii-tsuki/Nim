@@ -159,6 +159,8 @@ type
     alias*: string            ## nsnUsing only: the name an alias gives the target
     initKind*: string         ## nsnCtorDecl only: "", "base" or "this"
     initArgs*: seq[NsNode]    ## nsnCtorDecl only: initializer arguments
+    bases*: seq[NsNode]       ## nsnClassDecl: every base type as written, in order
+    explicitIface*: string    ## a member written `I.M`: the interface it implements
     typeKind*: NsTypeKind     ## set by `sema.nim` on expressions
     typeName*: string         ## the resolved type name behind `typeKind`
     argConv*: NsArgConv       ## `nsnCall`/`nsnNew` argument: C#'s implicit conversion

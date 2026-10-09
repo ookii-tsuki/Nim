@@ -769,6 +769,19 @@ proc parseStatement(p: var NsParser): NsNode =
     else: discard
   result = p.parseSimpleStmt()
 
+proc parseEmbedded(p: var NsParser): seq[NsNode] =
+  ## The body of `if`, `else`, `while`, `do`, `for` and `foreach`: a block, or the
+  ## single embedded statement C# also allows there.
+  if p.at(nsLBrace): return p.parseBlock().sons
+  result = @[]
+  if p.at(nsSemi):
+    ## `while (f()) ;`: the empty statement.
+    discard p.advance
+    return
+  let s = p.parseStatement()
+  if s != nil: result.add s
+  if p.at(nsSemi): discard p.advance
+
 proc parseIf(p: var NsParser): NsNode =
   let info = p.here()
   discard p.advance
@@ -778,7 +791,7 @@ proc parseIf(p: var NsParser): NsNode =
   result = nsn(nsnIf, info)
   let br = nsn(nsnIfBranch, info)
   br.body = cond
-  br.sons = p.parseBlock().sons
+  br.sons = p.parseEmbedded()
   result.add br
   while p.at(nsIdent) and p.peek.text == "else":
     let elseInfo = p.here()
@@ -790,11 +803,11 @@ proc parseIf(p: var NsParser): NsNode =
       discard p.expect(nsRParen)
       let b2 = nsn(nsnIfBranch, elseInfo)
       b2.body = c2
-      b2.sons = p.parseBlock().sons
+      b2.sons = p.parseEmbedded()
       result.add b2
     else:
       let eb = nsn(nsnElseBranch, elseInfo)
-      eb.sons = p.parseBlock().sons
+      eb.sons = p.parseEmbedded()
       result.add eb
       break
 
@@ -806,14 +819,14 @@ proc parseWhile(p: var NsParser): NsNode =
   discard p.expect(nsRParen)
   result = nsn(nsnWhile, info)
   result.body = cond
-  result.sons = p.parseBlock().sons
+  result.sons = p.parseEmbedded()
 
 proc parseDoWhile(p: var NsParser): NsNode =
   ## `do { B } while (c);`, whose body runs before the condition is first read.
   let info = p.here()
   discard p.advance
   result = nsn(nsnDoWhile, info)
-  result.sons = p.parseBlock().sons
+  result.sons = p.parseEmbedded()
   if p.at(nsIdent) and p.peek.text == "while":
     discard p.advance
   else:
@@ -853,7 +866,7 @@ proc parseFor(p: var NsParser): NsNode =
   let header = nsn(nsnForHeader, info)
   header.sons = @[init, cond, step]
   result.body = header
-  result.sons = p.parseBlock().sons
+  result.sons = p.parseEmbedded()
 
 proc parseForeach(p: var NsParser): NsNode =
   let info = p.here()
@@ -873,7 +886,7 @@ proc parseForeach(p: var NsParser): NsNode =
     p.err(p.peek, ndForeachInExpected)
   result.body = p.parseExpr()
   discard p.expect(nsRParen)
-  result.sons = p.parseBlock().sons
+  result.sons = p.parseEmbedded()
 
 proc parseSwitchBody(p: var NsParser): seq[NsNode] =
   ## Statements of one switch section: up to the next label or the closing brace.
@@ -1045,12 +1058,20 @@ proc parseClassMember(p: var NsParser; clsName: string;
     if p.at(nsSemi): discard p.advance
     return nsn(nsnEmpty, modInfo)
 
-  let nameTok = p.advance
+  var nameTok = p.advance
+  var explicitIface = ""
+  while p.at(nsDot) and p.peekAhead(1).kind == nsIdent:
+    ## `R IShape.Area()`: an explicit interface implementation.
+    explicitIface = (if explicitIface.len > 0: explicitIface & "." else: "") &
+                    nameTok.text
+    discard p.advance
+    nameTok = p.advance
   let info = p.infoOf(nameTok)
 
   if p.at(nsLParen):
     result = nsn(nsnMethodDecl, info)
     result.name = nameTok.text
+    result.explicitIface = explicitIface
     result.typ = ty
     result.attrs = attrs
     result.params = p.parseParams()
@@ -1079,6 +1100,7 @@ proc parseClassMember(p: var NsParser; clsName: string;
   elif p.at(nsLBrace) or p.at(nsArrow):
     result = nsn(nsnPropertyDecl, info)
     result.name = nameTok.text
+    result.explicitIface = explicitIface
     result.typ = ty
     result.attrs = attrs
     var getter: NsNode = nil
@@ -1146,14 +1168,14 @@ proc parseTypeDecl(p: var NsParser): NsNode =
   result.attrs = NsAttrs(access: accessOfTopLevel(mods), isAbstract: "abstract" in mods,
                          isSealed: "sealed" in mods)
   if p.at(nsColon):
+    ## `: Base, I1, I2`. Which of them is a class is not the grammar's to say:
+    ## `symbols.nim` decides, once every type is known.
     discard p.advance
-    result.typ = p.parseType()
-    if p.at(nsComma):
-      ## A second base can only be an interface, which N# does not implement.
-      p.err(p.peek, ndUnsupported, "a second base type")
-      while p.at(nsComma):
-        discard p.advance
-        discard p.parseType()
+    result.bases.add p.parseType()
+    while p.at(nsComma):
+      discard p.advance
+      result.bases.add p.parseType()
+    result.typ = result.bases[0]
   if not p.at(nsLBrace):
     p.err(p.peek, ndOpenBraceExpectedBody, nameTok.text)
     ## Error recovery, after the diagnostic above: skip to the body or the end.

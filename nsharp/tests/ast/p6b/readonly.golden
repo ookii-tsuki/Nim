@@ -26,7 +26,6 @@ nkStmtList
                 nkIdent 'Size'
               nkIdent 'int32'
               nkEmpty
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'

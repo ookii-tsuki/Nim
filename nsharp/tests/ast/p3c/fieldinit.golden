@@ -24,7 +24,6 @@ nkStmtList
               nkIdent 'count'
               nkIdent 'int32'
               nkEmpty
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'

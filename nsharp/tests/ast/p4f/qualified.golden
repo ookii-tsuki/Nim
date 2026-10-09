@@ -21,7 +21,6 @@ nkStmtList
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
-  nkTypeSection
     nkTypeDef
       nkPostfix
         nkIdent '*'
