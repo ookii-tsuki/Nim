@@ -1,0 +1,11 @@
+using System
+using System.Collections.Generic
+member Console.Write = System | void
+member Console.Write = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void

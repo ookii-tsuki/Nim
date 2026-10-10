@@ -1,0 +1,824 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Person'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+            nkIdentDefs
+              nkIdent 'NameBacking'
+              nkIdent 'string'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'AgeBacking'
+              nkIdent 'int32'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'IdBacking'
+              nkIdent 'string'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'TagBacking'
+              nkIdent 'string'
+              nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsPerson_next'
+      nkIdent 'int32'
+      nkEmpty
+  nkTemplateDef
+    nkIdent 'next'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsPerson_next'
+  nkProcDef
+    nkIdent 'nsStaticInitPerson'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Age'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Age='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Id'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Id='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Tag'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Tag='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initPerson'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newPerson'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Person'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Retag'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Person'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkCall
+    nkIdent 'nsStaticInitPerson'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkDotExpr
+      nkIdent 'self'
+      nkIdent 'NameBacking'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkAsgn
+      nkDotExpr
+        nkIdent 'self'
+        nkIdent 'NameBacking'
+      nkIdent 'value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Age'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkDotExpr
+      nkIdent 'self'
+      nkIdent 'AgeBacking'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Age='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkAsgn
+      nkDotExpr
+        nkIdent 'self'
+        nkIdent 'AgeBacking'
+      nkIdent 'value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Id'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkDotExpr
+      nkIdent 'self'
+      nkIdent 'IdBacking'
+  nkProcDef
+    nkIdent 'Id='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkAsgn
+      nkDotExpr
+        nkIdent 'self'
+        nkIdent 'IdBacking'
+      nkIdent 'value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Tag'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkDotExpr
+      nkIdent 'self'
+      nkIdent 'TagBacking'
+  nkProcDef
+    nkIdent 'Tag='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkAsgn
+      nkDotExpr
+        nkIdent 'self'
+        nkIdent 'TagBacking'
+      nkIdent 'value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initPerson'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'AgeBacking'
+        nkIntLit 18
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'TagBacking'
+        nkStrLit "none"
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'Id'
+        nkInfix
+          nkIdent '+'
+          nkStrLit "P"
+          nkCall
+            nkIdent 'nsPostInc'
+            nkDotExpr
+              nkIdent 'Person'
+              nkIdent 'next'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newPerson'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Person'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initPerson'
+        nkIdent 'result'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Retag'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'Tag'
+        nkIdent 't'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkIdent 'self'
+                      nkIdent 'Id'
+                    nkStrLit ":"
+                  nkDotExpr
+                    nkIdent 'self'
+                    nkIdent 'Name'
+                nkStrLit "/"
+              nkDotExpr
+                nkIdent 'self'
+                nkIdent 'Age'
+            nkStrLit "/"
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'Tag'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Person'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newPerson'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'a'
+          nkEmpty
+          nkBlockExpr
+            nkEmpty
+            nkStmtList
+              nkVarSection
+                nkIdentDefs
+                  nkIdent 'nsInit1'
+                  nkEmpty
+                  nkCall
+                    nkIdent 'newPerson'
+              nkStmtList
+                nkDiscardStmt
+                  nkCall
+                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsInit1'
+                nkAsgn
+                  nkDotExpr
+                    nkIdent 'nsInit1'
+                    nkIdent 'Name'
+                  nkStrLit "ann"
+              nkIdent 'nsInit1'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'b'
+          nkEmpty
+          nkBlockExpr
+            nkEmpty
+            nkStmtList
+              nkVarSection
+                nkIdentDefs
+                  nkIdent 'nsInit2'
+                  nkEmpty
+                  nkCall
+                    nkIdent 'newPerson'
+              nkStmtList
+                nkDiscardStmt
+                  nkCall
+                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsInit2'
+                nkAsgn
+                  nkDotExpr
+                    nkIdent 'nsInit2'
+                    nkIdent 'Name'
+                  nkStrLit "bob"
+              nkStmtList
+                nkDiscardStmt
+                  nkCall
+                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsInit2'
+                nkAsgn
+                  nkDotExpr
+                    nkIdent 'nsInit2'
+                    nkIdent 'Age'
+                  nkIntLit 40
+              nkIdent 'nsInit2'
+      nkCall
+        nkDotExpr
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 'b'
+          nkIdent 'Retag'
+        nkStrLit "x"
+      nkCall
+        nkIdent 'WriteLine'
+        nkIdent 'a'
+      nkCall
+        nkIdent 'WriteLine'
+        nkIdent 'b'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkProcDef
+    nkIdent 'nsStaticInitPerson'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'nsPerson_next'
+        nkIntLit 1
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

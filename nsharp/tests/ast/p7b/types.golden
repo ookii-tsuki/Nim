@@ -252,9 +252,7 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'Balance='
+    nkIdent 'Balance='
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -830,9 +828,7 @@ nkStmtList
       nkIdent 'self'
       nkIdent 'BalanceBacking'
   nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'Balance='
+    nkIdent 'Balance='
     nkEmpty
     nkEmpty
     nkFormalParams

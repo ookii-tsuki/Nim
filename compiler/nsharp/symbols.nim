@@ -22,6 +22,11 @@ type
     isSealed*: bool
     isExtension*: bool        ## a static method whose first parameter is `this T`
     obsolete*: NsNode         ## its `[Obsolete]` attribute, if it has one
+    isEvent*: bool            ## an `event`: its handlers are a list
+    noSetter*: bool           ## a property with only a getter
+    autoGetOnly*: bool        ## ... `{ get; }`, which its constructors may assign
+    initOnly*: bool           ## a property whose setter is `init`
+    isRequired*: bool         ## `required`: `new T { ... }` must set it
     owner*: string            ## the class that declares it
     typeParams*: seq[string]  ## a generic method's own `<T>`
     typ*: NsNode              ## declared type of a field, or a method's return type
@@ -89,6 +94,13 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
                  m.params[0].paramMod == "this",
     owner: c.name,
     obsolete: m.attributeNamed("Obsolete"),
+    isEvent: m.attrs.isEvent,
+    isRequired: m.attrs.isRequired,
+    noSetter: m.kind == nsnPropertyDecl and (m.params.len < 2 or m.params[1] == nil),
+    autoGetOnly: m.kind == nsnPropertyDecl and m.params.len > 0 and m.params[0] != nil and
+                 m.params[0].kind == nsnEmpty and (m.params.len < 2 or m.params[1] == nil),
+    initOnly: m.kind == nsnPropertyDecl and m.params.len > 1 and m.params[1] != nil and
+              m.params[1].name == "init",
     typeParams: (block:
       var tps: seq[string] = @[]
       for t in m.typeParams: tps.add t.name

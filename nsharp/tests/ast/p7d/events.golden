@@ -1,0 +1,1348 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'PriceChangedEventArgs'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'EventArgs'
+          nkRecList
+            nkIdentDefs
+              nkIdent 'BeforeBacking'
+              nkIdent 'int32'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'AfterBacking'
+              nkIdent 'int32'
+              nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Stock'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+            nkIdentDefs
+              nkIdent 'price'
+              nkIdent 'int32'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'NameBacking'
+              nkIdent 'string'
+              nkEmpty
+            nkIdentDefs
+              nkPostfix
+                nkIdent '*'
+                nkIdent 'PriceChanged'
+              nkBracketExpr
+                nkIdent 'seq'
+                nkBracketExpr
+                  nkIdent 'EventHandler1'
+                  nkIdent 'PriceChangedEventArgs'
+              nkEmpty
+            nkIdentDefs
+              nkPostfix
+                nkIdent '*'
+                nkIdent 'Closed'
+              nkBracketExpr
+                nkIdent 'seq'
+                nkIdent 'Action0'
+              nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsStock_Created'
+      nkBracketExpr
+        nkIdent 'seq'
+        nkBracketExpr
+          nkIdent 'Action'
+          nkIdent 'string'
+      nkEmpty
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Created'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Stock'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsStock_Created'
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsProgram_closes'
+      nkIdent 'int32'
+      nkEmpty
+  nkTemplateDef
+    nkIdent 'closes'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsProgram_closes'
+  nkProcDef
+    nkIdent 'nsStaticInitProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Before'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Before='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'After'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'After='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initPriceChangedEventArgs'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'before'
+        nkIdent 'int32'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'after'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newPriceChangedEventArgs'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'PriceChangedEventArgs'
+      nkIdentDefs
+        nkIdent 'before'
+        nkIdent 'int32'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'after'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Name='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initStock'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'name'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newStock'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Stock'
+      nkIdentDefs
+        nkIdent 'name'
+        nkIdent 'string'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Price'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Price='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Close'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'OnClosed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkCall
+    nkIdent 'nsStaticInitProgram'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.PriceChangedEventArgs"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Before'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkDotExpr
+      nkIdent 'self'
+      nkIdent 'BeforeBacking'
+  nkProcDef
+    nkIdent 'Before='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkAsgn
+      nkDotExpr
+        nkIdent 'self'
+        nkIdent 'BeforeBacking'
+      nkIdent 'value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'After'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkDotExpr
+      nkIdent 'self'
+      nkIdent 'AfterBacking'
+  nkProcDef
+    nkIdent 'After='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkAsgn
+      nkDotExpr
+        nkIdent 'self'
+        nkIdent 'AfterBacking'
+      nkIdent 'value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initPriceChangedEventArgs'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'PriceChangedEventArgs'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'before'
+        nkIdent 'int32'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'after'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'initEventArgs'
+        nkIdent 'self'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'Before'
+        nkIdent 'before'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'After'
+        nkIdent 'after'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newPriceChangedEventArgs'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'PriceChangedEventArgs'
+      nkIdentDefs
+        nkIdent 'before'
+        nkIdent 'int32'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'after'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initPriceChangedEventArgs'
+        nkIdent 'result'
+        nkIdent 'before'
+        nkIdent 'after'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Stock"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Name'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkDotExpr
+      nkIdent 'self'
+      nkIdent 'NameBacking'
+  nkProcDef
+    nkIdent 'Name='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkAsgn
+      nkDotExpr
+        nkIdent 'self'
+        nkIdent 'NameBacking'
+      nkIdent 'value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initStock'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'name'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'Name'
+        nkIdent 'name'
+      nkBlockStmt
+        nkEmpty
+        nkStmtList
+          nkLetSection
+            nkIdentDefs
+              nkIdent 'nsCond'
+              nkEmpty
+              nkDotExpr
+                nkIdent 'Stock'
+                nkIdent 'Created'
+          nkIfStmt
+            nkElifBranch
+              nkPrefix
+                nkIdent 'not'
+                nkInfix
+                  nkIdent '=='
+                  nkIdent 'nsCond'
+                  nkNilLit
+              nkCall
+                nkIdent 'nsStmt'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'nsCond'
+                    nkIdent 'Invoke'
+                  nkIdent 'name'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newStock'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Stock'
+      nkIdentDefs
+        nkIdent 'name'
+        nkIdent 'string'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initStock'
+        nkIdent 'result'
+        nkIdent 'name'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Price'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'price'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Price='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfStmt
+        nkElifBranch
+          nkInfix
+            nkIdent '=='
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'price'
+            nkIdent 'value'
+          nkStmtList
+            nkReturnStmt
+              nkEmpty
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'old'
+          nkIdent 'int32'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'price'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'price'
+        nkIdent 'value'
+      nkBlockStmt
+        nkEmpty
+        nkStmtList
+          nkLetSection
+            nkIdentDefs
+              nkIdent 'nsCond'
+              nkEmpty
+              nkDotExpr
+                nkIdent 'self'
+                nkIdent 'PriceChanged'
+          nkIfStmt
+            nkElifBranch
+              nkPrefix
+                nkIdent 'not'
+                nkInfix
+                  nkIdent '=='
+                  nkIdent 'nsCond'
+                  nkNilLit
+              nkCall
+                nkIdent 'nsStmt'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'nsCond'
+                    nkIdent 'Invoke'
+                  nkIdent 'self'
+                  nkCall
+                    nkIdent 'newPriceChangedEventArgs'
+                    nkIdent 'old'
+                    nkIdent 'value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Close'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Stock'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfStmt
+        nkElifBranch
+          nkInfix
+            nkIdent '!='
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'Closed'
+            nkNilLit
+          nkStmtList
+            nkCall
+              nkIdent 'Invoke'
+              nkDotExpr
+                nkIdent 'self'
+                nkIdent 'Closed'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkIdent 'OnClosed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCommand
+        nkIdent 'inc'
+        nkDotExpr
+          nkIdent 'Program'
+          nkIdent 'closes'
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsSubscribe'
+        nkDotExpr
+          nkIdent 'Stock'
+          nkIdent 'Created'
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+            nkIdentDefs
+              nkIdent 'n'
+              nkIdent 'string'
+              nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkInfix
+                nkIdent '+'
+                nkStrLit "created "
+                nkIdent 'n'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 's'
+          nkEmpty
+          nkCall
+            nkIdent 'newStock'
+            nkStrLit "ACME"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'log'
+          nkBracketExpr
+            nkIdent 'EventHandler1'
+            nkIdent 'PriceChangedEventArgs'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkEmpty
+              nkIdentDefs
+                nkIdent 'sender'
+                nkIdent 'RootRef'
+                nkEmpty
+              nkIdentDefs
+                nkIdent 'e'
+                nkIdent 'PriceChangedEventArgs'
+                nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkInfix
+                      nkIdent '+'
+                      nkInfix
+                        nkIdent '+'
+                        nkDotExpr
+                          nkCall
+                            nkIdent 'Stock'
+                            nkIdent 'sender'
+                          nkIdent 'Name'
+                        nkStrLit ": "
+                      nkDotExpr
+                        nkCall
+                          nkIdent 'nsCheckNil'
+                          nkIdent 'e'
+                        nkIdent 'Before'
+                    nkStrLit " -> "
+                  nkDotExpr
+                    nkCall
+                      nkIdent 'nsCheckNil'
+                      nkIdent 'e'
+                    nkIdent 'After'
+      nkCall
+        nkIdent 'nsSubscribe'
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'PriceChanged'
+        nkIdent 'log'
+      nkCall
+        nkIdent 'nsSubscribe'
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'PriceChanged'
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+            nkIdentDefs
+              nkIdent 'sender'
+              nkIdent 'RootRef'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'e'
+              nkIdent 'PriceChangedEventArgs'
+              nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkIfStmt
+              nkElifBranch
+                nkInfix
+                  nkIdent '>'
+                  nkDotExpr
+                    nkCall
+                      nkIdent 'nsCheckNil'
+                      nkIdent 'e'
+                    nkIdent 'After'
+                  nkIntLit 100
+                nkStmtList
+                  nkCall
+                    nkIdent 'WriteLine'
+                    nkStrLit "high"
+      nkStmtList
+        nkDiscardStmt
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 's'
+        nkAsgn
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'Price'
+          nkIntLit 50
+      nkStmtList
+        nkDiscardStmt
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 's'
+        nkAsgn
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'Price'
+          nkIntLit 50
+      nkStmtList
+        nkDiscardStmt
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 's'
+        nkAsgn
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'Price'
+          nkIntLit 150
+      nkCall
+        nkIdent 'nsUnsubscribe'
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'PriceChanged'
+        nkIdent 'log'
+      nkStmtList
+        nkDiscardStmt
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 's'
+        nkAsgn
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'Price'
+          nkIntLit 10
+      nkCall
+        nkDotExpr
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 's'
+          nkIdent 'Close'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'onClosed'
+          nkIdent 'Action0'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkCall
+                nkIdent 'OnClosed'
+                nkIdent 'Program'
+      nkCall
+        nkIdent 'nsSubscribe'
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'Closed'
+        nkIdent 'onClosed'
+      nkCall
+        nkIdent 'nsSubscribe'
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'Closed'
+        nkIdent 'onClosed'
+      nkCall
+        nkDotExpr
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 's'
+          nkIdent 'Close'
+      nkCall
+        nkIdent 'nsUnsubscribe'
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'Closed'
+        nkIdent 'onClosed'
+      nkCall
+        nkDotExpr
+          nkCall
+            nkIdent 'nsCheckNil'
+            nkIdent 's'
+          nkIdent 'Close'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'Program'
+          nkIdent 'closes'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'chain'
+          nkIdent 'Action0'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkCall
+                nkIdent 'Write'
+                nkStrLit "one "
+      nkAsgn
+        nkIdent 'chain'
+        nkCall
+          nkIdent 'nsCombine'
+          nkIdent 'chain'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkCall
+                nkIdent 'Write'
+                nkStrLit "two "
+      nkAsgn
+        nkIdent 'chain'
+        nkCall
+          nkIdent 'nsCombine'
+          nkIdent 'chain'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "three"
+      nkCall
+        nkIdent 'nsStmt'
+        nkCall
+          nkIdent 'chain'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'f'
+          nkBracketExpr
+            nkIdent 'Func2'
+            nkIdent 'int32'
+            nkIdent 'int32'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkIdent 'int32'
+              nkIdentDefs
+                nkIdent 'x'
+                nkIdent 'int32'
+                nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkInfix
+                nkIdent '+'
+                nkIdent 'x'
+                nkIntLit 1
+      nkAsgn
+        nkIdent 'f'
+        nkCall
+          nkIdent 'nsCombine'
+          nkIdent 'f'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkIdent 'int32'
+              nkIdentDefs
+                nkIdent 'x'
+                nkIdent 'int32'
+                nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkInfix
+                nkIdent '*'
+                nkIdent 'x'
+                nkIntLit 10
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'f'
+          nkIntLit 4
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'none'
+          nkIdent 'Action0'
+          nkNilLit
+      nkAsgn
+        nkIdent 'none'
+        nkCall
+          nkIdent 'nsCombine'
+          nkIdent 'none'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "from null"
+      nkCall
+        nkIdent 'nsStmt'
+        nkCall
+          nkIdent 'none'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkProcDef
+    nkIdent 'nsStaticInitProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'nsProgram_closes'
+        nkIntLit 0
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

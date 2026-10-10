@@ -1,0 +1,2 @@
+A get-only property is assigned only by its constructors.
+code: NS0200

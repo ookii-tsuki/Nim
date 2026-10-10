@@ -55,6 +55,12 @@ type
   # once, so each arity is declared with its count, and the frontend picks the
   # declaration whose suffix is the number of type arguments written.
   Action0* = proc ()
+  EventArgs* = ref object of RootObj
+    ## The base of an event's data; `EventArgs.Empty` carries none.
+  EventHandler* = proc (sender: RootRef, e: EventArgs)
+    ## The usual event delegate: who raised it, and with what.
+  EventHandler1*[T] = proc (sender: RootRef, e: T)
+    ## `EventHandler<T>`, whose data is a `T`.
   Action2*[T1, T2] = proc (a: T1, b: T2)
   Action3*[T1, T2, T3] = proc (a: T1, b: T2, c: T3)
   Action4*[T1, T2, T3, T4] = proc (a: T1, b: T2, c: T3, d: T4)
@@ -139,6 +145,11 @@ proc HasFlag*[E](a, b: E): bool = (int64(a) and int64(b)) == int64(b)
   ## underlying integer (see `nsEnum` in the intrinsics).
 proc newRootRef*(): RootRef = RootRef()
 proc initAttribute*(self: Attribute) = discard
+proc initEventArgs*(self: EventArgs) = discard
+  ## The base constructor a user `EventArgs` class's constructor runs.
+proc newEventArgs*(): EventArgs = EventArgs()
+proc Empty*(t: typedesc[EventArgs]): EventArgs = EventArgs()
+  ## `EventArgs.Empty`.
   ## The base constructor a user attribute class's constructor runs.
   ## `new object()`: a fresh object with no members, such as a lock's target.
 

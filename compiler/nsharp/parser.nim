@@ -30,14 +30,14 @@ type
 const
   NsModifierWords = ["public", "private", "protected", "internal", "static",
     "virtual", "override", "abstract", "sealed", "readonly", "const", "unsafe",
-    "extern", "new", "implicit", "explicit"]
+    "extern", "new", "implicit", "explicit", "event", "required"]
   NsTypeModifiers = ["public", "private", "protected", "internal", "abstract",
     "sealed", "static", "partial"]
   ## Modifiers N# actually implements. Anything else recognised but unimplemented
   ## is reported by `parseModifierList` instead of being silently dropped.
   NsMemberModifiers = ["public", "private", "protected", "internal", "static",
     "const", "readonly", "virtual", "override", "abstract", "sealed", "new",
-    "implicit", "explicit"]
+    "implicit", "explicit", "event", "required"]
   NsClassModifiers = ["public", "private", "protected", "internal", "abstract",
     "sealed", "static", "partial"]
 
@@ -1700,6 +1700,7 @@ proc parseAccessors(p: var NsParser; info: TLineInfo): (NsNode, NsNode) =
                                    ["public", "private", "protected", "internal"])
     if p.at(nsIdent) and p.peek.text in ["get", "set", "init"]:
       let isGet = p.peek.text == "get"
+      let isInit = p.peek.text == "init"
       discard p.advance
       var acc: NsNode
       if p.at(nsLBrace):
@@ -1715,6 +1716,7 @@ proc parseAccessors(p: var NsParser; info: TLineInfo): (NsNode, NsNode) =
       if mods.len > 0:
         acc.attrs = NsAttrs(access: accessOf(mods))
         acc.strVal = "access"
+      if isInit: acc.name = "init"
       if isGet: getter = acc else: setter = acc
     else:
       p.err(p.peek, ndUnsupported, "this property accessor")
@@ -1765,7 +1767,8 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
   let attrs = NsAttrs(access: accessOf(mods), isStatic: isStatic, isConst: isConst,
                       isReadonly: "readonly" in mods, isVirtual: "virtual" in mods,
                       isOverride: "override" in mods, isAbstract: "abstract" in mods,
-                      isSealed: "sealed" in mods, isNew: "new" in mods)
+                      isSealed: "sealed" in mods, isNew: "new" in mods,
+                      isEvent: "event" in mods, isRequired: "required" in mods)
 
   # constructor: `ClassName(params)` (no return type, as in C#)
   if p.at(nsIdent) and p.peek.text == clsName and p.peekAhead(1).kind == nsLParen:
