@@ -36,7 +36,7 @@ Tick an item when it is merged into `nsharp`.
 - [x] Boxing: `object o = 5; (int)o; o is int n` (value types as `object`)
 - [x] Multi-dimensional arrays `int[,]`, `new int[3, 4]`, `a[i, j]`, `GetLength`
 - [x] Generic variance `in`/`out` on interfaces and delegates
-- [ ] Clear the current NS9999 rejections:
+- [x] Clear the current NS9999 rejections:
   - [x] type tests and casts to generic interfaces
   - [x] explicit implementations of generic interface members (`int IBox<int>.Get()`)
   - [x] static constructors in generic classes
@@ -44,7 +44,7 @@ Tick an item when it is merged into `nsharp`.
   - [x] `-=` on plain delegate variables
   - [x] classes implementing `IEnumerable<T>`
   - [x] iterator property getters
-  - [ ] finalizers `~C()`
+  - [x] finalizers `~C()` (accepted and checked; they never run, NS9998 warns)
   - [x] partial methods
   - [x] `event` add/remove accessors
 

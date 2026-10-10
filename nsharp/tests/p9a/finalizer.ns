@@ -1,0 +1,19 @@
+using System;
+namespace Demo
+{
+    class Resource
+    {
+        public string Name = "r";
+        ~Resource() { Console.WriteLine("finalized " + Name); }
+    }
+    class Program
+    {
+        static void Main()
+        {
+            var r = new Resource();
+            Console.WriteLine(r.Name);
+            r = null;
+            Console.WriteLine("done");
+        }
+    }
+}

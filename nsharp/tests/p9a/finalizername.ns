@@ -1,0 +1,9 @@
+using System;
+namespace Demo
+{
+    class C
+    {
+        ~D() { }
+    }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

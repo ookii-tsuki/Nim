@@ -57,6 +57,9 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndFinalizerName
+    ndFinalizerInStruct
+    ndFinalizerNeverRuns
     ndEventAccessors
     ndEventAccessorUse
     ndPartialNeedsImpl
@@ -165,6 +168,10 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndFinalizerName: (code: "0574", msg: "Name of destructor must match name of type"),
+    ndFinalizerInStruct: (code: "0575", msg: "Only class types can contain destructors"),
+    ndFinalizerNeverRuns: (code: "9998", msg: "The finalizer of '$1' never runs: N# has no" &
+                         " garbage collector to call it"),
     ndEventAccessors: (code: "0065", msg: "'$1': event property must have both add and remove accessors"),
     ndEventAccessorUse: (code: "0079", msg: "The event '$1' can only appear on the left hand side of" &
                        " += or -="),
