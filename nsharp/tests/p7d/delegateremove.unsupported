@@ -1,2 +1,0 @@
-Valid C# that N# rejects: removing a handler from a multicast delegate variable (events support -=).
-code: NS9999

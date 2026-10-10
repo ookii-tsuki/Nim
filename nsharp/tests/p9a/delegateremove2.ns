@@ -1,0 +1,45 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static int Count;
+        static void Main()
+        {
+            Action a = () => Console.WriteLine("a");
+            Action b = () => Console.WriteLine("b");
+            Action c = () => Console.WriteLine("c");
+            Action all = a;
+            all += b;
+            all += c;
+            all += b;
+            all();
+            Console.WriteLine("--");
+            all -= b;
+            all();
+            Console.WriteLine("--");
+            all -= a;
+            all -= c;
+            all();
+            all -= b;
+            Console.WriteLine(all == null);
+            Func<int> f = () => 1;
+            Func<int> g = () => 2;
+            Func<int> fg = f;
+            fg += g;
+            Console.WriteLine(fg());
+            fg -= g;
+            Console.WriteLine(fg());
+            Action<int> add = x => Count += x;
+            Action<int> twice = add;
+            twice += add;
+            twice(5);
+            twice -= add;
+            twice(1);
+            Console.WriteLine(Count);
+            Action none = null;
+            none -= a;
+            Console.WriteLine(none == null);
+        }
+    }
+}

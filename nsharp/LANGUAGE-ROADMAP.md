@@ -40,7 +40,7 @@ Tick an item when it is merged into `nsharp`.
   - [ ] type tests and casts to generic interfaces
   - [ ] static constructors in generic classes
   - [ ] `typeof` of generic types
-  - [ ] `-=` on plain delegate variables
+  - [x] `-=` on plain delegate variables
   - [ ] classes implementing `IEnumerable<T>`
   - [ ] iterator property getters
   - [ ] finalizers `~C()`
