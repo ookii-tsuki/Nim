@@ -12,7 +12,7 @@ nkStmtList
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'Animal'
+        nkIdent 'Plain'
       nkEmpty
       nkRefTy
         nkObjectTy
@@ -20,36 +20,17 @@ nkStmtList
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
-            nkIdentDefs
-              nkPostfix
-                nkIdent '*'
-                nkIdent 'Legs'
-              nkIdent 'int32'
-              nkEmpty
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'Dog'
+        nkIdent 'Thing'
       nkEmpty
       nkRefTy
         nkObjectTy
           nkEmpty
           nkOfInherit
-            nkIdent 'Animal'
+            nkIdent 'RootObj'
           nkRecList
-            nkIdentDefs
-              nkPostfix
-                nkIdent '*'
-                nkIdent 'Name'
-              nkIdent 'string'
-              nkEmpty
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'Color'
-      nkEmpty
-      nkDistinctTy
-        nkIdent 'int32'
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -61,50 +42,6 @@ nkStmtList
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
-  nkTemplateDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'Red'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'Color'
-      nkIdentDefs
-        nkIdent 't'
-        nkBracketExpr
-          nkIdent 'typedesc'
-          nkIdent 'Color'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkIdent 'Color'
-        nkCall
-          nkIdent 'int32'
-          nkIntLit 1
-  nkTemplateDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'Blue'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'Color'
-      nkIdentDefs
-        nkIdent 't'
-        nkBracketExpr
-          nkIdent 'typedesc'
-          nkIdent 'Color'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkIdent 'Color'
-        nkCall
-          nkIdent 'int32'
-          nkIntLit 2
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -115,7 +52,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Animal'
+        nkIdent 'Plain'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -127,12 +64,12 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Animal'
+      nkIdent 'Plain'
       nkIdentDefs
         nkIdent 't'
         nkBracketExpr
           nkIdent 'typedesc'
-          nkIdent 'Animal'
+          nkIdent 'Plain'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -140,14 +77,14 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initAnimal'
+      nkIdent 'initPlain'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Animal'
+        nkIdent 'Plain'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -155,11 +92,11 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newAnimal'
+      nkIdent 'newPlain'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Animal'
+      nkIdent 'Plain'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -174,7 +111,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Dog'
+        nkIdent 'Thing'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -186,12 +123,12 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Dog'
+      nkIdent 'Thing'
       nkIdentDefs
         nkIdent 't'
         nkBracketExpr
           nkIdent 'typedesc'
-          nkIdent 'Dog'
+          nkIdent 'Thing'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -199,14 +136,14 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initDog'
+      nkIdent 'initThing'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Dog'
+        nkIdent 'Thing'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -214,11 +151,11 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newDog'
+      nkIdent 'newThing'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Dog'
+      nkIdent 'Thing'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -301,12 +238,12 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Animal'
+        nkIdent 'Plain'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.Animal"
+      nkStrLit "Demo.Plain"
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -314,29 +251,29 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Animal'
+      nkIdent 'Plain'
       nkIdentDefs
         nkIdent 't'
         nkBracketExpr
           nkIdent 'typedesc'
-          nkIdent 'Animal'
+          nkIdent 'Plain'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'newAnimal'
+        nkIdent 'newPlain'
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initAnimal'
+      nkIdent 'initPlain'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Animal'
+        nkIdent 'Plain'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -344,11 +281,11 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newAnimal'
+      nkIdent 'newPlain'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Animal'
+      nkIdent 'Plain'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -357,7 +294,7 @@ nkStmtList
         nkIdent 'new'
         nkIdent 'result'
       nkCall
-        nkIdent 'initAnimal'
+        nkIdent 'initPlain'
         nkIdent 'result'
   nkMethodDef
     nkPostfix
@@ -369,12 +306,12 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Dog'
+        nkIdent 'Thing'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.Dog"
+      nkStrLit "Demo.Thing"
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -382,44 +319,41 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Dog'
+      nkIdent 'Thing'
       nkIdentDefs
         nkIdent 't'
         nkBracketExpr
           nkIdent 'typedesc'
-          nkIdent 'Dog'
+          nkIdent 'Thing'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'newDog'
+        nkIdent 'newThing'
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initDog'
+      nkIdent 'initThing'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Dog'
+        nkIdent 'Thing'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
-      nkCall
-        nkIdent 'initAnimal'
-        nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newDog'
+      nkIdent 'newThing'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Dog'
+      nkIdent 'Thing'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -428,32 +362,8 @@ nkStmtList
         nkIdent 'new'
         nkIdent 'result'
       nkCall
-        nkIdent 'initDog'
+        nkIdent 'initThing'
         nkIdent 'result'
-  nkCall
-    nkIdent 'nsEnum'
-    nkIdent 'Color'
-    nkIdent 'int32'
-    nkIdent 'false'
-    nkBracket
-      nkTupleConstr
-        nkStrLit "Red"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Red'
-      nkTupleConstr
-        nkStrLit "Blue"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Blue'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -479,129 +389,10 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'd'
-          nkIdent 'float64'
-          nkFloatLit 3.9
       nkCall
         nkIdent 'WriteLine'
         nkCall
-          nkIdent 'int32'
-          nkIdent 'd'
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'big'
-          nkIdent 'int64'
-          nkIntLit 7
-      nkCall
-        nkIdent 'WriteLine'
-        nkInfix
-          nkIdent '+'
-          nkCall
-            nkIdent 'int32'
-            nkIdent 'big'
-          nkIntLit 1
-      nkCall
-        nkIdent 'WriteLine'
-        nkCall
-          nkIdent 'char'
-          nkIntLit 65
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'c'
-          nkIdent 'Color'
-          nkDotExpr
-            nkIdent 'Color'
-            nkIdent 'Blue'
-      nkCall
-        nkIdent 'WriteLine'
-        nkCall
-          nkIdent 'int32'
-          nkIdent 'c'
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'a'
-          nkIdent 'Animal'
-          nkCall
-            nkIdent 'newDog'
-      nkCall
-        nkIdent 'WriteLine'
-        nkInfix
-          nkIdent 'of'
-          nkIdent 'a'
-          nkIdent 'Dog'
-      nkCall
-        nkIdent 'WriteLine'
-        nkInfix
-          nkIdent 'of'
-          nkIdent 'a'
-          nkIdent 'Animal'
-      nkCall
-        nkIdent 'WriteLine'
-        nkInfix
-          nkIdent '!='
-          nkBlockExpr
-            nkEmpty
-            nkStmtList
-              nkLetSection
-                nkIdentDefs
-                  nkIdent 'nsAs'
-                  nkEmpty
-                  nkIdent 'a'
-              nkIfExpr
-                nkElifExpr
-                  nkInfix
-                    nkIdent 'of'
-                    nkIdent 'nsAs'
-                    nkIdent 'Dog'
-                  nkCall
-                    nkIdent 'Dog'
-                    nkIdent 'nsAs'
-                nkElseExpr
-                  nkNilLit
-          nkNilLit
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'plain'
-          nkIdent 'Animal'
-          nkCall
-            nkIdent 'newAnimal'
-      nkCall
-        nkIdent 'WriteLine'
-        nkInfix
-          nkIdent '=='
-          nkBlockExpr
-            nkEmpty
-            nkStmtList
-              nkLetSection
-                nkIdentDefs
-                  nkIdent 'nsAs'
-                  nkEmpty
-                  nkIdent 'plain'
-              nkIfExpr
-                nkElifExpr
-                  nkInfix
-                    nkIdent 'of'
-                    nkIdent 'nsAs'
-                    nkIdent 'Dog'
-                  nkCall
-                    nkIdent 'Dog'
-                    nkIdent 'nsAs'
-                nkElseExpr
-                  nkNilLit
-          nkNilLit
-      nkCall
-        nkIdent 'WriteLine'
-        nkStrLit "Program"
-      nkCall
-        nkIdent 'WriteLine'
-        nkStrLit "Color"
-      nkCall
-        nkIdent 'WriteLine'
-        nkCall
-          nkIdent 'default'
-          nkIdent 'int32'
+          nkIdent 'newThing'
   nkProcDef
     nkPostfix
       nkIdent '*'

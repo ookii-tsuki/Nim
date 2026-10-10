@@ -55,6 +55,10 @@ type
     ndSealedNotOverride
     ndAbstractNotImplemented
     ndInterfaceNotImplemented
+    ndObsolete
+    ndObsoleteNoMessage
+    ndObsoleteError
+    ndNotAttributeClass
     ndStaticClassInstance
     ndStaticClassMember
     ndExtensionNotStatic
@@ -136,6 +140,10 @@ const
     ndAbstractNotImplemented: (code: "0534", msg: "'$1' does not implement inherited abstract member '$2'"),
     ndInterfaceNotImplemented: (code: "0535", msg: "'$1' does not implement interface" &
                         " member '$2'"),
+    ndObsolete: (code: "0618", msg: "'$1' is obsolete: '$2'"),
+    ndObsoleteNoMessage: (code: "0612", msg: "'$1' is obsolete"),
+    ndObsoleteError: (code: "0619", msg: "'$1' is obsolete: '$2'"),
+    ndNotAttributeClass: (code: "0616", msg: "'$1' is not an attribute class"),
     ndStaticClassInstance: (code: "0712", msg: "Cannot create an instance of the static class '$1'"),
     ndStaticClassMember: (code: "0708", msg: "'$1': cannot declare instance members in a static class"),
     ndExtensionNotStatic: (code: "1106", msg: "Extension method must be defined in a non-generic static" &

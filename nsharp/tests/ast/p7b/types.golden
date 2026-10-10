@@ -101,10 +101,8 @@ nkStmtList
         nkIdent '*'
         nkIdent 'Kind'
       nkEmpty
-      nkEnumTy
-        nkEmpty
-        nkIdent 'Small'
-        nkIdent 'Large'
+      nkDistinctTy
+        nkIdent 'int32'
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -137,6 +135,53 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkIdent 'nsOuter_created'
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Small'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Kind'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Kind'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'Kind'
+        nkIntLit 0
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Large'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Kind'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Kind'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'Kind'
+        nkInfix
+          nkIdent '+'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Kind'
+              nkIdent 'Small'
+          nkIntLit 1
   nkVarSection
     nkIdentDefs
       nkIdent 'nsProgram_counter'
@@ -1387,6 +1432,30 @@ nkStmtList
       nkCall
         nkIdent 'initLeaf'
         nkIdent 'result'
+  nkCall
+    nkIdent 'nsEnum'
+    nkIdent 'Kind'
+    nkIdent 'int32'
+    nkIdent 'false'
+    nkBracket
+      nkTupleConstr
+        nkStrLit "Small"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Kind'
+              nkIdent 'Small'
+      nkTupleConstr
+        nkStrLit "Large"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Kind'
+              nkIdent 'Large'
   nkMethodDef
     nkPostfix
       nkIdent '*'

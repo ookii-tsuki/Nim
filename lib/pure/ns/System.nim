@@ -71,6 +71,20 @@ type
   IDisposable* {.nsInterface.} = object
     ## `void Dispose()`, which the `using` statement calls.
 
+  Attribute* = ref object of RootObj
+    ## The base of every attribute class. N# has no reflection, so an attribute is
+    ## read by the compiler alone: `[Flags]` and `[Obsolete]` change what it does.
+  FlagsAttribute* = ref object of Attribute
+    ## `[Flags]`: an enum's value prints as the names of its set bits.
+  ObsoleteAttribute* = ref object of Attribute
+    ## `[Obsolete("why")]`: a use of the member warns (CS0618), or fails when the
+    ## second argument is `true` (CS0619).
+  AttributeUsageAttribute* = ref object of Attribute
+    ## `[AttributeUsage(...)]`: where an attribute may be written; not checked.
+  SerializableAttribute* = ref object of Attribute
+    ## `[Serializable]`: no effect without a serializer.
+  STAThreadAttribute* = ref object of Attribute
+    ## `[STAThread]`: no effect; N# programs have one thread.
   Math* = object
     ## `System.Math`: its members are static (`{.nsStatic: "Math".}` below).
   Console* = object
@@ -120,7 +134,12 @@ proc CompareTo*(a, b: bool): int32 = int32(cmp(a, b))
 method Equals*(a, b: RootRef): bool {.base.} = a == b
 method GetHashCode*(x: RootRef): int32 {.base.} = int32(cast[int](x))
 proc ReferenceEquals*(a, b: RootRef): bool {.nsStatic: "object".} = a == b
+proc HasFlag*[E](a, b: E): bool = (int64(a) and int64(b)) == int64(b)
+  ## `System.Enum.HasFlag`: every bit of `b` is set in `a`. An enum is its
+  ## underlying integer (see `nsEnum` in the intrinsics).
 proc newRootRef*(): RootRef = RootRef()
+proc initAttribute*(self: Attribute) = discard
+  ## The base constructor a user attribute class's constructor runs.
   ## `new object()`: a fresh object with no members, such as a lock's target.
 
 # --- System.String ----------------------------------------------------------

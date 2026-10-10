@@ -1,0 +1,10 @@
+using System;
+namespace Demo
+{
+    class Thing
+    {
+        [Obsolete("gone", true)]
+        public void Old() { }
+    }
+    class Program { static void Main() { new Thing().Old(); } }
+}

@@ -1,0 +1,3 @@
+AttributeTargets.Class = result:other
+AttributeTargets.Method = result:other
+AttributeTargets.Parameter = result:other

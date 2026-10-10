@@ -21,6 +21,7 @@ type
     isAbstract*: bool
     isSealed*: bool
     isExtension*: bool        ## a static method whose first parameter is `this T`
+    obsolete*: NsNode         ## its `[Obsolete]` attribute, if it has one
     owner*: string            ## the class that declares it
     typeParams*: seq[string]  ## a generic method's own `<T>`
     typ*: NsNode              ## declared type of a field, or a method's return type
@@ -34,6 +35,7 @@ type
     isSealed*: bool
     isStatic*: bool                ## a `static class`: no instances, no instance members
     enclosing*: string             ## the type a nested type is declared in
+    obsolete*: NsNode              ## its `[Obsolete]` attribute, if it has one
     interfaces*: seq[string]       ## the interfaces it names directly
     typeParams*: seq[string]       ## a generic class's `<T, U>`
     written*: seq[string]          ## its base list as written, before resolution
@@ -86,6 +88,7 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
     isExtension: m.kind == nsnMethodDecl and m.attrs.isStatic and m.params.len > 0 and
                  m.params[0].paramMod == "this",
     owner: c.name,
+    obsolete: m.attributeNamed("Obsolete"),
     typeParams: (block:
       var tps: seq[string] = @[]
       for t in m.typeParams: tps.add t.name
@@ -97,6 +100,7 @@ proc collectClass(scope: NsModuleScope; cls: NsNode) =
   var sym = NsClassSymbol(name: cls.name, classKind: cls.classKind,
                           isAbstract: cls.attrs.isAbstract, isSealed: cls.attrs.isSealed,
                           isStatic: cls.attrs.isStatic, decl: cls,
+                          obsolete: cls.attributeNamed("Obsolete"),
                           enclosing: (if cls.outer.len > 0: cls.outer.split('+')[^1]
                                       else: ""))
   for t in cls.typeParams: sym.typeParams.add t.name

@@ -78,7 +78,7 @@ type
     nsnUsing           # name (dotted, as written)
     nsnNamespace       # name, body (single statement)
     nsnClassDecl       # name, typ = base (or nil), sons = members
-    nsnEnumDecl        # name, sons = nsnEnumField
+    nsnEnumDecl        # name, typ = underlying type (or nil), sons = nsnEnumField
     nsnEnumField       # name, body = value expression (or nil)
     nsnDelegateDecl    # name, typ = return type, params
     nsnMethodDecl      # name, typ = return type, params, body, attrs
@@ -184,6 +184,8 @@ type
     nsnPatDiscard      #                                         (`_`)
     nsnInterpolated    # sons = nsnStrLit / nsnInterpHole parts  (from `$"..."`)
     nsnInterpHole      # body = value, sons = [alignment] (optional), strVal = format
+    nsnAttribute       # name (as written, without `Attribute`), sons = arguments,
+                       #   strVal = target (`return`, `assembly`, ...) or ""
 
   NsNode* = ref NsNodeObj
   NsNodeObj* = object
@@ -202,6 +204,7 @@ type
     classKind*: NsClassKind   ## nsnClassDecl only
     alias*: string            ## nsnUsing only: the name an alias gives the target
     outer*: string            ## a nested type: its enclosing types, `A+B`, as .NET names them
+    attributes*: seq[NsNode]  ## the `[...]` attributes written on a declaration
     initKind*: string         ## nsnCtorDecl only: "", "base" or "this"
     initArgs*: seq[NsNode]    ## nsnCtorDecl only: initializer arguments
     bases*: seq[NsNode]       ## nsnClassDecl: every base type as written, in order
@@ -368,3 +371,13 @@ proc substitute*(t: NsNode; params: seq[string]; args: seq[NsNode]): NsNode =
   of nsnArrayType: result = nsnArrayType(substitute(t.typ, params, args), t.info)
   of nsnNullableType: result = nsnNullableType(substitute(t.typ, params, args), t.info)
   else: result = t
+
+proc attributeNamed*(n: NsNode; name: string): NsNode =
+  ## The `[name]` (or `[nameAttribute]`, or qualified) attribute of a declaration.
+  for a in n.attributes:
+    let short = a.name.split('.')[^1]
+    if short == name or short == name & "Attribute": return a
+  nil
+
+proc hasAttribute*(n: NsNode; name: string): bool =
+  n.attributeNamed(name) != nil

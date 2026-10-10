@@ -9,6 +9,8 @@
 
 import format
 export format
+import std/hashes
+export hashes
 
 method ToString*(x: RootRef): string {.base.} =
   ## C#'s `object.ToString()`. Every class N# compiles overrides it with its own
@@ -188,3 +190,44 @@ proc nsVal*[T](x: T): T {.inline.} =
   ## Nim reads a variable operand after the call. The compiler wraps an operand in
   ## this when a later one may change it.
   x
+
+# A C# enum is its underlying integer with names: `Read | Write` and `(Color)7` are
+# values too, which a Nim `enum` cannot hold. The compiler declares each enum as a
+# `distinct` integer, each member as a template over its `typedesc`
+# (`Color.Red`), and calls `nsEnum` for the operators C# gives every enum.
+
+proc nsEnumName*(v: int64; names: openArray[(string, int64)]; flags: bool): string =
+  ## How .NET prints an enum value: the name of a member with that value; for a
+  ## `[Flags]` enum, otherwise the names of the members whose bits make it up,
+  ## highest first in the search and listed in declaration order; else the number.
+  for (n, x) in names:
+    if x == v: return n
+  if flags and v != 0:
+    var rest = v
+    var parts: seq[string] = @[]
+    for i in countdown(names.high, 0):
+      let x = names[i][1]
+      if x != 0 and (rest and x) == x:
+        parts.insert(names[i][0], 0)
+        rest = rest and not x
+    if rest == 0 and parts.len > 0:
+      result = ""
+      for i, p in parts:
+        if i > 0: result.add ", "
+        result.add p
+      return
+  $v
+
+template nsEnum*(E, U: untyped; flags: static bool; names: untyped) =
+  ## The operators of the enum `E` over the integer `U`, and its printing from
+  ## `names` (member, value) in declaration order. `HasFlag` is `System.Enum`'s.
+  proc `==`*(a, b: E): bool {.borrow.}
+  proc `<`*(a, b: E): bool {.borrow.}
+  proc `<=`*(a, b: E): bool {.borrow.}
+  proc `or`*(a, b: E): E = E(U(a) or U(b))
+  proc `and`*(a, b: E): E = E(U(a) and U(b))
+  proc `xor`*(a, b: E): E = E(U(a) xor U(b))
+  proc `not`*(a: E): E = E(not U(a))
+  proc hash*(a: E): Hash = hash(U(a))
+  proc `$`*(a: E): string = nsEnumName(int64(U(a)), names, flags)
+  proc ToString*(a: E): string = $a

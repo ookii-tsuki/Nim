@@ -219,8 +219,8 @@ are excluded: N# has no `void` type and no decimal.
 | `class` | reference type | ✅ v1 | `ref object` |
 | `struct` | value type | ✅ v1 | `object` |
 | `interface` | contract | ✅ v1 (values and dispatch) | fat value: object + static table (see §8) |
-| `enum` | named int constants | ✅ v1 | Nim `enum` (int-backed 🟡) |
-| `[Flags] enum` | bit flags | 🔜 later | `set` |
+| `enum` | named int constants | ✅ v1 | `distinct` underlying integer (`int` unless `: byte` etc.), each member a template over the enum's `typedesc` (`Color.Red`), `nsEnum` for `== < <= \| & ^ ~`, `HasFlag`, `hash` and printing; so `(Color)7` and combinations are values, members may repeat or skip values, and an unnamed value prints as its number |
+| `[Flags] enum` | bit flags | ✅ v1 | as `enum`; a value prints as the names of its set bits (`Read, Write`) as .NET does |
 | `delegate` declaration | named function type | ✅ v1 | `proc` type alias |
 | Generic types | `List<T>` | ✅ v1 | Nim generics |
 | Nested types | inner class | ✅ v1 | front (hoisted beside the enclosing type, which C#'s `Outer.Inner` already resolves by its last name; the runtime name stays `Ns.Outer+Inner`, and the enclosing type's statics are reachable bare). A type nested in a generic type is NS9999; a nested type's name must not collide with a top-level one of its namespace |
@@ -768,17 +768,17 @@ deliberate scope cut.
 
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
-| Custom attribute classes | metadata | ✅ v1 | desugar (→ `{.pragma.}`) |
-| `[Obsolete("msg")]` | deprecation | ✅ v1 | desugar (→ `{.deprecated.}`) |
-| `[DllImport("lib")]` | P/Invoke | ✅ v1 | desugar (→ `{.importc,dynlib.}`) |
+| Custom attribute classes | metadata | ✅ v1 | a class deriving from `System.Attribute`; `[A]` resolves `AAttribute` then `A` (else NS0246) and must name an attribute class (NS0616). Without reflection an attribute has no effect, so its arguments are not evaluated, and `AttributeUsage` is not enforced. `[assembly: X]` is dropped |
+| `[Obsolete("msg")]` | deprecation | ✅ v1 | sem: a call of an obsolete member or `new` of an obsolete class warns NS0618 (NS0612 without a message), and is the error NS0619 with `true` |
+| `[DllImport("lib")]` | P/Invoke | 🔜 later (NS0246: the library declares no such attribute) | desugar (→ `{.importc,dynlib.}`) |
 | `[StructLayout(LayoutKind.Sequential)]` | ABI layout | 🔜 later | desugar (→ `{.packed.}`) |
 | `[Conditional("X")]` | call-site strip | 🔜 later | desugar |
-| `[Serializable]`, `[JsonProperty]` etc. | framework | 🚫 out | - |
+| `[Serializable]`, `[STAThread]` | framework | ✅ v1 (accepted, no effect) | lib |
 | Attribute *reflection* at runtime | `GetCustomAttributes` | 🚫 out | - |
-| Built-in `[Flags]` on enums | - | 🔜 later | desugar |
+| Built-in `[Flags]` on enums | - | ✅ v1 | desugar (see §4) |
 
-**Note:** Attributes map to Nim **pragmas** - a natural fit. The key restriction:
-N# attributes are *compile-time* metadata only; no runtime reflection.
+**Note:** N# attributes are *compile-time* metadata only; no runtime reflection.
+The compiler reads the ones that change what it does (`[Flags]`, `[Obsolete]`).
 
 ---
 
@@ -997,6 +997,8 @@ code:
 | `NS0513` | CS0513 | an abstract member in a non-abstract class |
 | `NS0534` | CS0534 | a concrete class leaves an inherited abstract member unimplemented |
 | `NS0266` | CS0266 | a numeric value would narrow implicitly; a cast is needed |
+| `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
+| `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
 | `NS1674` | CS1674 | what `using` disposes does not implement `IDisposable` |
 | `NS1621` | CS1621 | `yield` inside a lambda |
 | `NS1624` | CS1624 | `yield` in a member whose return type is not `IEnumerable<T>`/`IEnumerator<T>` |

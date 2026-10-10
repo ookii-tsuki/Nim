@@ -65,11 +65,8 @@ nkStmtList
         nkIdent '*'
         nkIdent 'Color'
       nkEmpty
-      nkEnumTy
-        nkEmpty
-        nkIdent 'Red'
-        nkIdent 'Green'
-        nkIdent 'Blue'
+      nkDistinctTy
+        nkIdent 'int32'
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -81,6 +78,80 @@ nkStmtList
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Red'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Color'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Color'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'Color'
+        nkIntLit 0
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Green'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Color'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Color'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'Color'
+        nkInfix
+          nkIdent '+'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Red'
+          nkIntLit 1
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Blue'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Color'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Color'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'Color'
+        nkInfix
+          nkIdent '+'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Green'
+          nkIntLit 1
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -678,6 +749,39 @@ nkStmtList
           nkDotExpr
             nkIdent 'self'
             nkIdent 'H'
+  nkCall
+    nkIdent 'nsEnum'
+    nkIdent 'Color'
+    nkIdent 'int32'
+    nkIdent 'false'
+    nkBracket
+      nkTupleConstr
+        nkStrLit "Red"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Red'
+      nkTupleConstr
+        nkStrLit "Green"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Green'
+      nkTupleConstr
+        nkStrLit "Blue"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Blue'
   nkMethodDef
     nkPostfix
       nkIdent '*'

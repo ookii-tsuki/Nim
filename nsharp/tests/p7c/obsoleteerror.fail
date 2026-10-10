@@ -1,0 +1,2 @@
+[Obsolete(msg, true)] makes a use an error.
+code: NS0619

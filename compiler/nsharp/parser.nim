@@ -1042,12 +1042,54 @@ proc parseBlock(p: var NsParser): NsNode =
     if p.at(nsSemi): discard p.advance
   discard p.expect(nsRBrace)
 
+proc parseAttributes(p: var NsParser): seq[NsNode] =
+  ## `[A, B(x, Name = y)]` sections before a declaration, each attribute with its
+  ## arguments, and `[target: A]` with a target (`return`, `assembly`). Where an
+  ## attribute is allowed a `[` starts nothing else.
+  result = @[]
+  while p.at(nsLBracket):
+    discard p.advance
+    var target = ""
+    if p.at(nsIdent) and p.peekAhead(1).kind == nsColon:
+      target = p.advance.text
+      discard p.advance
+    while not p.at(nsRBracket) and not p.at(nsEof):
+      let info = p.here()
+      var name = ""
+      while p.at(nsIdent) or p.at(nsDot):
+        name.add p.advance.text
+      let a = nsn(nsnAttribute, info)
+      a.name = name
+      a.strVal = target
+      if name.len == 0:
+        p.err(p.peek, ndIdentifierExpected)
+        discard p.advance
+        continue
+      if p.at(nsLParen):
+        discard p.advance
+        while not p.at(nsRParen) and not p.at(nsEof):
+          if p.at(nsIdent) and p.peekAhead(1).kind == nsAssign:
+            ## `Name = value`: a named property of the attribute.
+            let na = nsn(nsnNamedArg, p.here())
+            na.name = p.advance.text
+            discard p.advance
+            na.body = p.parseExpr()
+            a.add na
+          else:
+            a.add p.parseArgument()
+          if p.at(nsComma): discard p.advance else: break
+        discard p.expect(nsRParen)
+      result.add a
+      if p.at(nsComma): discard p.advance else: break
+    discard p.expect(nsRBracket)
+
 proc parseParams(p: var NsParser): seq[NsNode] =
   ## A C# parameter list. A parameter written without a name keeps the
   ## placeholder `arg`, matching the previous behaviour.
   result = @[]
   discard p.expect(nsLParen)
   while not p.at(nsRParen) and not p.at(nsEof):
+    let pattrs = p.parseAttributes()
     let info = p.here()
     var pmod = ""
     while p.at(nsIdent) and p.peek.text in ["ref", "out", "in", "params", "this",
@@ -1063,6 +1105,7 @@ proc parseParams(p: var NsParser): seq[NsNode] =
       pname = p.advance.text
     let prm = nsnParam(pname, ty, info)
     prm.paramMod = pmod
+    prm.attributes = pattrs
     if p.at(nsAssign):
       ## An optional parameter's default value.
       discard p.advance
@@ -1683,8 +1726,21 @@ proc parseTypeDecl(p: var NsParser): NsNode
 proc parseEnumDecl(p: var NsParser): NsNode
 proc parseDelegateDecl(p: var NsParser): NsNode
 
+proc parseClassMemberInner(p: var NsParser; clsName: string;
+                           isInterface: bool): NsNode
+
 proc parseClassMember(p: var NsParser; clsName: string;
                       isInterface = false): NsNode =
+  ## A member, with the attributes written before it.
+  let attrs = p.parseAttributes()
+  result = p.parseClassMemberInner(clsName, isInterface)
+  if result != nil:
+    if result.kind == nsnMultiDecl:
+      for f in result.sons: f.attributes = attrs
+    else: result.attributes = attrs
+
+proc parseClassMemberInner(p: var NsParser; clsName: string;
+                           isInterface: bool): NsNode =
   block nestedType:
     ## A type declared inside a type. It stays a member here, as C# writes it;
     ## `hoistNestedTypes` moves it out once the file is parsed.
@@ -1921,18 +1977,24 @@ proc parseEnumDecl(p: var NsParser): NsNode =
   result = nsn(nsnEnumDecl, p.infoOf(nameTok))
   result.name = nameTok.text
   result.attrs = NsAttrs(access: accessOfTopLevel(mods))
+  if p.at(nsColon):
+    ## `enum E : byte`: the underlying integer type.
+    discard p.advance
+    result.typ = p.parseType()
   if p.at(nsLBrace):
     discard p.advance
     while not p.at(nsRBrace) and not p.at(nsEof):
       if p.at(nsComma):
         discard p.advance
         continue
+      let fattrs = p.parseAttributes()
       if p.peek.kind != nsIdent:
         discard p.advance
         continue
       let fieldTok = p.advance
       let f = nsn(nsnEnumField, p.infoOf(fieldTok))
       f.name = fieldTok.text
+      f.attributes = fattrs
       if p.at(nsAssign):
         discard p.advance
         f.body = p.parseExpr()
@@ -2015,7 +2077,22 @@ proc parseNamespace(p: var NsParser; nsPrefix = ""): NsNode =
     if d != nil: result.body.add d
   discard p.expect(nsRBrace)
 
+proc parseTopLevelDeclInner(p: var NsParser; nsPrefix: string): NsNode
+
 proc parseTopLevelDecl(p: var NsParser; nsPrefix: string): NsNode =
+  ## A declaration with the attributes written before it. `[assembly: X]` applies to
+  ## the program, which N# gives no reflection to read it, so it is dropped.
+  let attrs = p.parseAttributes()
+  var kept: seq[NsNode] = @[]
+  for a in attrs:
+    if a.strVal notin ["assembly", "module"]: kept.add a
+  if kept.len == 0 and attrs.len > 0 and
+     (p.at(nsEof) or p.at(nsRBrace)):
+    return nil
+  result = p.parseTopLevelDeclInner(nsPrefix)
+  if result != nil: result.attributes = kept
+
+proc parseTopLevelDeclInner(p: var NsParser; nsPrefix: string): NsNode =
   ## `nsPrefix` is the enclosing namespace, for a nested `namespace` statement.
   var k = 0
   while p.peekAhead(k).kind == nsIdent and p.peekAhead(k).text in NsTypeModifiers:
