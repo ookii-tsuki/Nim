@@ -367,7 +367,8 @@ nkStmtList
         nkIdent 'who'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -386,7 +387,8 @@ nkStmtList
         nkIdent 'who'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -532,7 +534,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Ticker'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -607,7 +610,8 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1004,7 +1008,8 @@ nkStmtList
         nkIdent 'who'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1028,7 +1033,8 @@ nkStmtList
         nkIdent 'who'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1267,7 +1273,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Ticker'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1355,7 +1362,8 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

@@ -1,4 +1,4 @@
 Valid C# that N# rejects: `sizeof` needs an unsafe context, `typeof` a type value,
-bare `default` a target type, and `checked(...)` a statement to carry the switch.
+and bare `default` a target type.
 Each reports NS9999.
 code: NS9999

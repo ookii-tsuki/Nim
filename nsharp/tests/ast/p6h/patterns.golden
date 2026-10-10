@@ -109,6 +109,7 @@ nkStmtList
         nkIdent 'Shape'
         nkEmpty
     nkPragma
+      nkIdent 'discardable'
       nkIdent 'base'
     nkEmpty
     nkEmpty
@@ -201,7 +202,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -274,7 +276,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Rect'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -308,7 +311,8 @@ nkStmtList
         nkIdent 'n'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -327,7 +331,8 @@ nkStmtList
         nkIdent 's'
         nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -346,7 +351,8 @@ nkStmtList
         nkIdent 'c'
         nkIdent 'Color'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -431,6 +437,7 @@ nkStmtList
         nkIdent 'Shape'
         nkEmpty
     nkPragma
+      nkIdent 'discardable'
       nkIdent 'base'
     nkEmpty
     nkStmtList
@@ -550,7 +557,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -657,7 +665,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Rect'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -701,7 +710,8 @@ nkStmtList
         nkIdent 'n'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -798,7 +808,8 @@ nkStmtList
         nkIdent 's'
         nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkBlockStmt
@@ -999,7 +1010,8 @@ nkStmtList
         nkIdent 'c'
         nkIdent 'Color'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

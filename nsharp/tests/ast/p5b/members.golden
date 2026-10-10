@@ -58,7 +58,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -73,7 +74,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -216,7 +218,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -233,7 +236,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

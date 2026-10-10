@@ -1,0 +1,97 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Resource : IDisposable
+    {
+        string name;
+        public Resource(string n) { name = n; Console.WriteLine("open " + n); }
+        public void Use() { Console.WriteLine("use " + name); }
+        public void Dispose() { Console.WriteLine("close " + name); }
+    }
+
+    class Program
+    {
+        static int Parse(string s) => s.Length > 0 ? s.Length : throw new ArgumentException("empty");
+
+        static readonly object gate = new object();
+
+        static void Main()
+        {
+            using (var r = new Resource("one"))
+            {
+                r.Use();
+            }
+            using (Resource a = new Resource("a"), b = new Resource("b"))
+            {
+                a.Use();
+            }
+            {
+                using var r2 = new Resource("two");
+                r2.Use();
+                Console.WriteLine("end of block");
+            }
+            int total = 0;
+            lock (gate) { total += 1; }
+            Console.WriteLine(total);
+            try
+            {
+                throw new InvalidOperationException("bad");
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "nope")
+            {
+                Console.WriteLine("filtered wrong");
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "bad")
+            {
+                Console.WriteLine("filtered " + ex.Message);
+            }
+            try { Parse(""); }
+            catch (ArgumentException ex) { Console.WriteLine("caught " + ex.Message); }
+            string name = null;
+            string shown = name ?? "anon";
+            Console.WriteLine(shown);
+            int big = int.MaxValue;
+            int wrapped = unchecked(big + 1);
+            Console.WriteLine(wrapped);
+            try
+            {
+                int boom = checked(big + 1);
+                Console.WriteLine(boom);
+            }
+            catch (OverflowException) { Console.WriteLine("overflow"); }
+            Resource shared = new Resource("expr");
+            using (shared) { shared.Use(); }
+            for (int k = 0; k < 3; k++)
+            {
+                using var loop = new Resource("loop" + k);
+                if (k == 1) break;
+            }
+            try
+            {
+                try { throw new ArgumentException("inner"); }
+                catch (ArgumentException ex) when (ex.Message == "other")
+                {
+                    Console.WriteLine("wrong");
+                }
+                finally { Console.WriteLine("inner finally"); }
+            }
+            catch (Exception ex) when (ex.Message.Length > 3)
+            {
+                Console.WriteLine("outer " + ex.Message);
+            }
+            string missing = null;
+            Console.WriteLine(missing == null);
+            Console.WriteLine(Describe(null));
+            Console.WriteLine(Describe("x"));
+            try { Console.WriteLine(Require(null)); }
+            catch (ArgumentException ex) { Console.WriteLine("null " + ex.Message); }
+            Console.WriteLine(Require("ok"));
+        }
+
+        static string Describe(string s) => s == null ? "none" : "some " + s;
+
+        static string Require(string s) => s ?? throw new ArgumentException("missing");
+    }
+}

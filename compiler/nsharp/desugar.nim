@@ -3,9 +3,8 @@
 # The C#-to-Nim translation: NsNode in, ordinary Nim PNodes out. The name mapping
 # itself lives in bcl.nim.
 #
-# Methods get no `discardable` pragma while generated `init`/`new` procs do (see
-# procPragmas). C# would allow discarding a method's result, so this asymmetry is
-# a fidelity bug, not a design choice.
+# A value-returning method, local function or generated `init`/`new` proc is
+# `{.discardable.}` (see procPragmas), since C# lets a call statement drop a result.
 
 import std/[strutils, tables, algorithm, sets]
 import ../ast, ../idents, ../lineinfos, ../options
@@ -154,7 +153,7 @@ proc asMethod(l: Lowerer; cls, m: NsNode; def: PNode): PNode =
   result = newNodeI(nkMethodDef, def.info, 7)
   for i in 0 .. 6: result[i] = def[i]
   if m.attrs.isVirtual or m.attrs.isAbstract:
-    let pr = newNodeI(nkPragma, def.info)
+    let pr = (if def[4].kind == nkPragma: copyTree(def[4]) else: newNodeI(nkPragma, def.info))
     pr.add l.id("base", def.info)
     result[4] = pr
   if m.attrs.isAbstract:
@@ -227,6 +226,8 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
     result = empty(info)
 
 proc expr(l: Lowerer; n: NsNode): PNode
+proc throwToNim(l: Lowerer; n: NsNode): PNode
+proc checkedExprToNim(l: Lowerer; n: NsNode): PNode
 
 proc paramDef(l: Lowerer; p: NsNode): PNode =
   ## One parameter: `ref`/`out` are Nim `var` parameters (`in` is a read-only
@@ -254,9 +255,9 @@ proc exportedName(l: Lowerer; attrs: NsAttrs; name: string; info: TLineInfo): PN
 
 
 proc procPragmas(l: Lowerer; params: PNode; info: TLineInfo): PNode =
-  ## `discardable` for value-returning *generated* procs (`init`/`new`). Methods
-  ## and property accessors pass `withPragmas = false`, reproducing the previous
-  ## emitter; see the module note.
+  ## `discardable` for a value-returning method or generated proc (`init`/`new`).
+  ## Accessors and operators pass `withPragmas = false`: C# never calls them as a
+  ## statement.
   if params.len > 0 and params[0].kind == nkEmpty:
     result = empty(info)
   else:
@@ -607,6 +608,18 @@ proc nullCoalesceToNim(l: Lowerer; n: NsNode): PNode =
   let fallback = if n.sons.len > 1: l.expr(n.sons[1]) else: newNodeI(nkNilLit, n.info)
   if lhs != nil and lhs.kind == nsnNullDot:
     result = l.condTail(lhs, fallback)
+  elif lhs != nil and lhs.typeKind == tkString:
+    ## `s ?? b` for a string: `b` when `s` is null, which is the empty string.
+    let t = NsCond
+    let sl = newNodeI(nkStmtList, n.info)
+    sl.add newTree(nkLetSection, n.info, newTree(nkIdentDefs, n.info, l.id(t, n.info),
+                                                empty(n.info), l.expr(lhs)))
+    sl.add newTree(nkIfExpr, n.info,
+      newTree(nkElifExpr, n.info, newTree(nkInfix, n.info, l.id("==", n.info),
+        newTree(nkCall, n.info, l.id("len", n.info), l.id(t, n.info)),
+        newIntNode(nkIntLit, 0)), fallback),
+      newTree(nkElseExpr, n.info, l.id(t, n.info)))
+    result = newTree(nkBlockExpr, n.info, empty(n.info), sl)
   elif lhs != nil and lhs.typeKind == tkNullable:
     ## `a ?? b` on a `T?`: the library answers the test and the unwrap, so no member
     ## name is known here, and `b` stays lazy.
@@ -693,6 +706,10 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     if n.typeName.len > 0 and l.scope.isInterface(n.typeName):
       ## The empty interface value.
       result = newTree(nkCall, n.info, l.id("default", n.info), l.id(n.typeName, n.info))
+    elif n.typeKind == tkString:
+      ## A null string is the empty one.
+      result = newStrNode(nkStrLit, "")
+      result.info = n.info
     else:
       result = newNodeI(nkNilLit, n.info)
   of nsnIntLit:
@@ -772,6 +789,10 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     result = newNodeI(nkCall, n.info)
     result.add l.id("default", n.info)
     result.add l.typeToNim(n.typ, n.info)
+  of nsnThrow:
+    ## Nim's `raise` is `noreturn`, so it stands where a value is expected.
+    result = l.throwToNim(n)
+  of nsnCheckedExpr: result = l.checkedExprToNim(n)
   of nsnBinary:
     if n.name in ["==", "!="] and (l.isIfaceValue(n.sons[0]) or l.isIfaceValue(n.sons[1])):
       ## An interface value is equal to another, or to null, by its object.
@@ -1082,7 +1103,7 @@ proc labelSwitchBreaks(n: NsNode; label: string) =
   else:
     for x in n.sons: labelSwitchBreaks(x, label)
     if n.kind in {nsnBlock, nsnBlockStmt, nsnIfBranch, nsnElseBranch, nsnIf, nsnTry,
-                  nsnCatch, nsnFinally, nsnChecked, nsnUnchecked}:
+                  nsnCatch, nsnFinally, nsnChecked, nsnUnchecked, nsnUsingStmt, nsnLock}:
       labelSwitchBreaks(n.body, label)
 
 proc isConstLabel(lab: NsNode): bool =
@@ -1182,7 +1203,8 @@ proc labelForContinues(n: NsNode; label: string; found: var bool) =
   else:
     for x in n.sons: labelForContinues(x, label, found)
     if n.kind in {nsnBlock, nsnBlockStmt, nsnIfBranch, nsnElseBranch, nsnIf, nsnTry,
-                  nsnCatch, nsnFinally, nsnChecked, nsnUnchecked, nsnSwitchSection}:
+                  nsnCatch, nsnFinally, nsnChecked, nsnUnchecked, nsnSwitchSection,
+                  nsnUsingStmt, nsnLock}:
       labelForContinues(n.body, label, found)
 
 proc forToNim(l: Lowerer; n: NsNode): PNode =
@@ -1222,7 +1244,105 @@ proc forToNim(l: Lowerer; n: NsNode): PNode =
   blk.add sl
   result = blk
 
+proc catchMatch(l: Lowerer; c: NsNode; exc: PNode): PNode =
+  ## Whether the current exception is one a `catch` clause takes.
+  if c.typ == nil or c.typ.kind in {nsnEmpty, nsnVoidType}: return l.id("true", c.info)
+  newTree(nkInfix, c.info, l.id("of", c.info), exc, l.typeToNim(c.typ, c.info))
+
+proc catchVar(l: Lowerer; c: NsNode; exc: PNode): PNode =
+  ## `let e = (ref T)(exc)`: the clause's variable, when it names one.
+  if c.typ == nil or c.typ.kind in {nsnEmpty, nsnVoidType}: return empty(c.info)
+  newTree(nkLetSection, c.info, newTree(nkIdentDefs, c.info, l.id(c.name, c.info),
+    empty(c.info), newTree(nkCall, c.info,
+      newTree(nkPar, c.info, newTree(nkRefTy, c.info, l.typeToNim(c.typ, c.info))),
+      exc)))
+
+proc filteredTryToNim(l: Lowerer; n: NsNode): PNode =
+  ## A `try` with a `catch ... when (filter)`. Nim's `except` has no filter, so one
+  ## branch takes every exception and picks the first clause that matches and whose
+  ## filter holds -- the filter sees the clause's variable -- then runs that clause's
+  ## body, or re-raises when none applies. C# runs filters before unwinding, so a
+  ## `finally` nested in the `try` runs earlier here than in C#.
+  let info = n.info
+  result = newNodeI(nkTryStmt, info)
+  result.add l.stmtSeq(n.body)
+  let exc = l.fresh("nsExc")
+  let pick = l.fresh("nsPick")
+  let br = newNodeI(nkExceptBranch, info)
+  let body = newNodeI(nkStmtList, info)
+  body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(exc, info),
+    empty(info), newTree(nkCall, info, l.id("getCurrentException", info))))
+  body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id(pick, info),
+    empty(info), newIntNode(nkIntLit, 0)))
+  var k = 0
+  let dispatch = newNodeI(nkIfStmt, info)
+  var finallyNode: PNode = nil
+  for c in n.sons:
+    if c.kind == nsnFinally:
+      finallyNode = newTree(nkFinally, c.info, l.stmtSeq(c.body))
+      continue
+    if c.kind != nsnCatch: continue
+    inc k
+    let unpicked = newTree(nkInfix, c.info, l.id("==", c.info), l.id(pick, c.info),
+                           newIntNode(nkIntLit, 0))
+    let test = newTree(nkInfix, c.info, l.id("and", c.info), unpicked,
+                       l.catchMatch(c, l.id(exc, c.info)))
+    let setPick = newTree(nkAsgn, c.info, l.id(pick, c.info), newIntNode(nkIntLit, k))
+    let then = newNodeI(nkStmtList, c.info)
+    then.add l.catchVar(c, l.id(exc, c.info))
+    if c.sons.len > 0:
+      then.add newTree(nkIfStmt, c.info, newTree(nkElifBranch, c.info,
+                                                l.expr(c.sons[0]), setPick))
+    else: then.add setPick
+    body.add newTree(nkIfStmt, c.info, newTree(nkElifBranch, c.info, test,
+      newTree(nkBlockStmt, c.info, empty(c.info), then)))
+    let run = newNodeI(nkStmtList, c.info)
+    run.add l.catchVar(c, l.id(exc, c.info))
+    run.add l.stmtSeq(c.body)
+    dispatch.add newTree(nkElifBranch, c.info, newTree(nkInfix, c.info, l.id("==", c.info),
+      l.id(pick, c.info), newIntNode(nkIntLit, k)), run)
+  dispatch.add newTree(nkElse, info, newTree(nkRaiseStmt, info, empty(info)))
+  body.add dispatch
+  br.add body
+  result.add br
+  if finallyNode != nil: result.add finallyNode
+
+proc usingToNim(l: Lowerer; n: NsNode): PNode =
+  ## `using (r) body` disposes `r` when the body is left, however it is left, and
+  ## several resources in the reverse of their order; Nim's `defer` runs at the end
+  ## of the enclosing scope, in the same reverse order. The statement form is a block
+  ## of its own; `using var` defers in the block it is declared in. A null resource
+  ## is not disposed.
+  let info = n.info
+  let sl = newNodeI(nkStmtList, info)
+  for r in n.sons:
+    var v: PNode
+    if r.kind == nsnLocalDecl:
+      sl.add l.stmt(r)
+      v = l.id(r.name, r.info)
+    else:
+      let t = l.fresh("nsUsing")
+      sl.add newTree(nkLetSection, r.info, newTree(nkIdentDefs, r.info, l.id(t, r.info),
+                                                  empty(r.info), l.expr(r)))
+      v = l.id(t, r.info)
+    sl.add newTree(nkDefer, r.info, newTree(nkStmtList, r.info,
+      newTree(nkCall, r.info, l.id("nsDispose", r.info), v)))
+  if n.body == nil: return sl
+  sl.add l.stmtSeq(n.body)
+  result = newTree(nkBlockStmt, info, empty(info), sl)
+
+proc lockToNim(l: Lowerer; n: NsNode): PNode =
+  ## `lock (x) body`: a program has one thread, so the lock is always free. The
+  ## locked expression is still evaluated.
+  let info = n.info
+  let sl = newNodeI(nkStmtList, info)
+  sl.add newTree(nkDiscardStmt, info, l.expr(n.body))
+  for s in n.sons: sl.add l.stmt(s)
+  result = newTree(nkBlockStmt, info, empty(info), sl)
+
 proc tryToNim(l: Lowerer; n: NsNode): PNode =
+  for c in n.sons:
+    if c.kind == nsnCatch and c.sons.len > 0: return l.filteredTryToNim(n)
   result = newNodeI(nkTryStmt, n.info)
   result.add l.stmtSeq(n.body)
   for c in n.sons:
@@ -1412,6 +1532,19 @@ proc checkedToNim(l: Lowerer; n: NsNode): PNode =
   pop.add l.id("pop", n.info)
   result.add pop
 
+proc checkedExprToNim(l: Lowerer; n: NsNode): PNode =
+  ## `checked(e)`: the operand computed under the `overflowChecks` state it names.
+  let info = n.info
+  let t = l.fresh("nsChecked")
+  let sl = newNodeI(nkStmtList, info)
+  sl.add newTree(nkPragma, info, l.id("push", info), newTree(nkExprColonExpr, info,
+    l.id("overflowChecks", info), l.id(if n.name == "checked": "on" else: "off", info)))
+  sl.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(t, info),
+                                            empty(info), l.expr(n.body)))
+  sl.add newTree(nkPragma, info, l.id("pop", info))
+  sl.add l.id(t, info)
+  result = newTree(nkBlockExpr, info, empty(info), sl)
+
 proc exprBindings(n: NsNode; into: var seq[NsNode]) =
   ## The variables an expression declares -- `out T x` and the variables of
   ## `x is pattern` -- but not those of a nested lambda, or of a switch
@@ -1510,7 +1643,8 @@ proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   let fp = inner.formalParams(n.typ, n.params, n.info)
   inner.procTypeParams = @[]
   for t in n.typeParams: inner.procTypeParams.add t.name
-  result = inner.mkProc(l.id(n.name, n.info), fp, inner.stmtSeq(n.body), n.info)
+  result = inner.mkProc(l.id(n.name, n.info), fp, inner.stmtSeq(n.body), n.info,
+                        withPragmas = true)
 
 proc stmtInner(l: Lowerer; n: NsNode): PNode =
   case n.kind
@@ -1562,6 +1696,8 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
     result.add l.stmtsToNode(n.sons, n.info)
   of nsnSwitch: result = l.switchToNim(n)
   of nsnTry: result = l.tryToNim(n)
+  of nsnUsingStmt: result = l.usingToNim(n)
+  of nsnLock: result = l.lockToNim(n)
   of nsnReturn:
     result = newNodeI(nkReturnStmt, n.info)
     result.add (if n.body == nil: empty(n.info) else: l.expr(n.body))
@@ -2434,8 +2570,9 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       let nameNode =
         if m.explicitIface.len > 0: l.id("ns" & m.explicitIface & "_" & m.name, m.info)
         else: l.exportedName(m.attrs, m.name, m.info)
+      ## C# lets a call statement drop a method's result.
       let pd = l.asMethod(n, m, inner.mkProc(nameNode, params, inner.stmtSeq(m.body),
-                                             m.info))
+                                             m.info, withPragmas = true))
       into.add pd
       if m.name == "Main" and l.entryPoint == nil: l.entryPoint = pd
     of nsnPropertyDecl:

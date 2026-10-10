@@ -1,0 +1,2 @@
+C# requires what `using` disposes to implement IDisposable; a Dispose method alone is not enough.
+code: NS1674

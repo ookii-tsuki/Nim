@@ -53,7 +53,8 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -141,7 +142,8 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

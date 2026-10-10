@@ -55,6 +55,7 @@ type
     ndSealedNotOverride
     ndAbstractNotImplemented
     ndInterfaceNotImplemented
+    ndNotDisposable
     ndErrorDirective
     ndWarningDirective
     ndUnsupported
@@ -130,6 +131,8 @@ const
     ndAbstractNotImplemented: (code: "0534", msg: "'$1' does not implement inherited abstract member '$2'"),
     ndInterfaceNotImplemented: (code: "0535", msg: "'$1' does not implement interface" &
                         " member '$2'"),
+    ndNotDisposable: (code: "1674", msg: "'$1': type used in a using statement must implement" &
+                        " 'System.IDisposable'"),
     ndErrorDirective: (code: "1029", msg: "#error: '$1'"),
     ndWarningDirective: (code: "1030", msg: "#warning: '$1'"),
     ndUnsupported: (code: "9999", msg: "$1 is currently unsupported"),

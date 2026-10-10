@@ -1,0 +1,35 @@
+using System
+using System.Collections.Generic
+member ArgumentException.Message = System | string
+member ArgumentException.Message = System | string
+member ArgumentException.Message = System | string
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Exception.Message = System | string
+member Exception.Message = System | string
+member InvalidOperationException.Message = System | string
+member InvalidOperationException.Message = System | string
+member InvalidOperationException.Message = System | string
+member int.MaxValue = System | int
+member string.Length = System | int
+member string.Length = System | int
+member string.Length = System | int

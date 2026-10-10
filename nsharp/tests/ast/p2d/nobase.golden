@@ -108,7 +108,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Base'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -304,7 +305,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Base'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

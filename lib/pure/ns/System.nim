@@ -118,6 +118,8 @@ proc CompareTo*(a, b: bool): int32 = int32(cmp(a, b))
 method Equals*(a, b: RootRef): bool {.base.} = a == b
 method GetHashCode*(x: RootRef): int32 {.base.} = int32(cast[int](x))
 proc ReferenceEquals*(a, b: RootRef): bool {.nsStatic: "object".} = a == b
+proc newRootRef*(): RootRef = RootRef()
+  ## `new object()`: a fresh object with no members, such as a lock's target.
 
 # --- System.String ----------------------------------------------------------
 

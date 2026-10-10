@@ -109,15 +109,21 @@ type
     nsnSwitch          # body = subject, sons = nsnSwitchSection
     nsnSwitchSection   # name = "case" or "default", sons = labels, body = statements
     nsnTry             # sons = [body, nsnCatch..., optional nsnFinally]
-    nsnCatch           # typ = exception type (or nil), name = variable, body
+    nsnCatch           # typ = exception type (or nil), name = variable, body,
+                       #   sons = [filter] when there is a `when (...)`
     nsnFinally         # body
     nsnReturn          # body = expression (or nil)
     nsnBreak
     nsnContinue
-    nsnThrow           # body = expression
+    nsnThrow           # body = expression; also an expression (`x ?? throw e`)
     nsnDoWhile         # body = condition, sons = statements
     nsnChecked         # sons = statements
     nsnUnchecked       # sons = statements
+    nsnUsingStmt       # sons = resources (nsnLocalDecl, or an expression), body =
+                       #   nsnBlock; body is nil for `using var x = ...;`, whose
+                       #   scope is the rest of the enclosing block
+    nsnLock            # body = the locked expression, sons = statements
+    nsnYield           # name = "return" or "break", body = value (or nil)
     # --- expressions ---
     nsnIdent           # name
     nsnIntLit          # intVal
@@ -145,6 +151,7 @@ type
     nsnIs              # typ = type, body = operand           (from `x is T`)
     nsnAs              # typ = type, body = operand           (from `x as T`)
     nsnDefault         # typ = type                           (from `default(T)`)
+    nsnCheckedExpr     # name = "checked" / "unchecked", body = operand
     nsnNamedArg        # name, body = value                   (from `f(name: v)`)
     nsnRefArg          # name = "ref" / "out" / "in", body = the variable
     nsnOutDecl         # typ (nil for `var`), name            (from `f(out int x)`)

@@ -530,6 +530,9 @@ proc markNull(ctx: NsCheckContext; value: NsNode; target: string) =
   ## `default(I)`, so the target is recorded on the literal.
   if value != nil and value.kind == nsnNull and ctx.scope.isInterface(target):
     value.setType(tkClass, target)
+  elif value != nil and value.kind == nsnNull and canonicalTypeName(target) == "string":
+    ## A Nim string cannot be nil: a null string is the empty one (SPEC 7.3).
+    value.setType(tkString, "string")
 
 proc checkConvertible(ctx: NsCheckContext; value: NsNode; t: NsTarget;
                       info: TLineInfo) =
@@ -651,6 +654,29 @@ proc checkCatch(ctx: NsCheckContext; c: NsNode) =
   let k = ctx.classifyType(c.typ)
   if k != tkUnknown and k != tkException:
     nsError(ctx.config, c.info, ndNotAnException)
+
+proc checkDisposable(ctx: NsCheckContext; r: NsNode) =
+  ## CS1674: what `using` disposes must convert to `System.IDisposable`. Only a type
+  ## this compilation declares is judged; a library type is left to Nim.
+  let t = (if r.kind == nsnLocalDecl:
+             (if r.typ != nil: declTypeName(r.typ) elif r.body != nil: r.body.typeName
+              else: "")
+           else: r.typeName)
+  if t.len == 0 or not ctx.scope.classes.hasKey(t): return
+  var seen: seq[string] = ctx.scope.chain(t)
+  for i in ctx.scope.interfaceClosure(t): seen.add i
+  for c in seen:
+    if not ctx.scope.classes.hasKey(c): continue
+    for li in ctx.scope.classes[c].libInterfaces:
+      if canonicalTypeName(li.name) == "IDisposable": return
+  nsError(ctx.config, r.info, ndNotDisposable, t)
+
+proc iteratorElement(t: NsNode): NsNode =
+  ## The `T` of an iterator's `IEnumerable<T>` / `IEnumerator<T>` return type.
+  if t != nil and t.kind == nsnTypeName and t.sons.len == 1 and
+     canonicalTypeName(t.name) in ["IEnumerable", "IEnumerator"]:
+    return t.sons[0]
+  nil
 
 proc warnNullableRefs(ctx: NsCheckContext; n: NsNode) =
   ## `MyObj?` on a reference type is only an annotation: C# accepts it and does
@@ -1261,6 +1287,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnBinary:
     var lk = ctx.walkExpr(n.sons[0])
     var rk = ctx.walkExpr(n.sons[1])
+    if n.name in ["==", "!="]:
+      ## `s == null` for a string compares with the empty string.
+      if lk == tkString: ctx.markNull(n.sons[1], "string")
+      if rk == tkString: ctx.markNull(n.sons[0], "string")
     result = tkUnknown
     let ln = numName(n.sons[0])
     let rn = numName(n.sons[1])
@@ -1346,6 +1376,17 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       nsError(ctx.config, n.info, ndUnsupported,
               "a null-conditional value without '??'")
     n.setType(result)
+  of nsnThrow:
+    ## A throw expression has no type of its own: it takes the other operand's.
+    discard ctx.walkExpr(n.body)
+    ctx.checkThrow(n)
+    n.setType(tkUnknown)
+    result = tkUnknown
+  of nsnCheckedExpr:
+    result = ctx.walkExpr(n.body)
+    n.setType(result, n.body.typeName)
+    n.rtype = n.body.rtype
+    n.conv = n.body.conv
   of nsnNullCoalesce:
     ## `a ?? b`. With a `?.` on the left, `b` is the absent value for *every* link of
     ## that chain, which is how a value-typed `a?.V ?? b` works without `Nullable<T>`.
@@ -1466,6 +1507,10 @@ proc walkTry(ctx: var NsCheckContext; n: NsNode) =
       ctx.pushScope()
       if c.typ != nil:
         ctx.declare(c.name, ctx.classifyType(c.typ), declTypeName(c.typ), c.typ)
+      for f in c.sons:
+        ## `when (filter)`: a condition over the caught exception.
+        discard ctx.walkExpr(f)
+        ctx.checkCondition(f)
       if c.body != nil:
         for s in c.body.sons: ctx.walkStmt(s)
       ctx.popScope()
@@ -1602,6 +1647,29 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     walkStmts(ctx, n.sons)
   of nsnChecked, nsnUnchecked:
     walkStmts(ctx, n.sons)
+  of nsnUsingStmt:
+    ## The statement form scopes its resources to its body; `using var` declares
+    ## them in the enclosing block.
+    if n.body != nil: ctx.pushScope()
+    for r in n.sons:
+      if r.kind == nsnLocalDecl: ctx.walkDecl(r)
+      else: discard ctx.walkExpr(r)
+      ctx.checkDisposable(r)
+    if n.body != nil:
+      walkBody(ctx, n.body)
+      ctx.popScope()
+  of nsnLock:
+    discard ctx.walkExpr(n.body)
+    walkStmts(ctx, n.sons)
+  of nsnYield:
+    nsError(ctx.config, n.info, ndUnsupported, "an iterator ('yield')")
+    if n.body != nil:
+      let et = iteratorElement(ctx.retType)
+      ctx.targetTyped(n.body, et)
+      discard ctx.walkExpr(n.body)
+      if et != nil:
+        ctx.checkConvertible(n.body, ctx.targetOfType(et), n.body.info)
+        ctx.coerce(n.body, declTypeName(et), n.body.info)
   of nsnFor: walkFor(ctx, n)
   of nsnForeach: walkForeach(ctx, n)
   of nsnSwitch: walkSwitch(ctx, n)

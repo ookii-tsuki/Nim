@@ -134,8 +134,10 @@ proc scanFile(source: string; path: string; fileIdx: FileIndex;
             continue
       elif t.text in NsTypeKeywords:
         noteTypeDecl(toks, i)
-      elif t.text in ["using", "import"]:
-        ## `using A = X.Y;` imports `X.Y`, so the target is what counts as used.
+      elif t.text in ["using", "import"] and
+           depth == (if open.len > 0: open[^1].depth else: 0):
+        ## A directive sits at file or namespace level; a `using` in a method body
+        ## is the statement. `using A = X.Y;` imports `X.Y`, so the target is what counts as used.
         var start = i + 1
         if start + 1 < toks.len and toks[start].kind == nsIdent and
            toks[start + 1].kind == nsAssign:

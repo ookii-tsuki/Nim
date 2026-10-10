@@ -136,9 +136,11 @@ Debt deliberately carried into later stages (all listed, none silent):
   qualifier. Stage 2 replaces it with resolution.
 * `parser.nim` keeps `looksLikeDecl`, the `expectGt` token mutation and the 104
   skip sites. Stage 3.
-* **Fidelity bug, not design:** methods get no `discardable` pragma while the
-  generated `init`/`new` procs do, because that is what the old emitter did. It is
-  confined to `desugar.procPragmas` so it can be fixed in one line later.
+* ~~**Fidelity bug, not design:** methods get no `discardable` pragma while the
+  generated `init`/`new` procs do.~~ Paid: methods and local functions take
+  `procPragmas` too, so a call statement may drop a result as in C#.
+* The namespace scan (`nsgen.scanNamespaces`) tells a `using` directive from the
+  `using` statement by brace depth: a directive sits at file or namespace level.
 
 **Stage 2 - type-directed lowering. DONE.**
 `sema.nim` now resolves names *and* attaches coarse type information

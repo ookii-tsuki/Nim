@@ -241,7 +241,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -628,7 +629,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

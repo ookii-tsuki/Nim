@@ -450,9 +450,10 @@ v2.
 | `goto` / labels | jump | 🚫 out | - |
 | `throw e;` | raise | ✅ v1 | front (→ `raise`) |
 | `try { } catch (E e) { } finally { }` | EH | ✅ v1 | front (→ `try/except/finally`) |
-| `catch when (cond)` | filter | 🔜 later | desugar |
-| `using (var r = ...) { }` | dispose scope | ✅ v1 | desugar (→ `defer`) |
-| `lock (o) { }` | mutual exclusion | 🔜 later | lib |
+| `catch when (cond)` | filter | ✅ v1 | desugar (one `except` takes every exception, picks the first clause whose type matches and whose filter holds, re-raises when none does; the filter runs after unwinding, so an inner `finally` runs before it, unlike C#) |
+| `using (var r = ...) { }` | dispose scope | ✅ v1 | desugar (a block: each resource declared, then `defer: nsDispose(r)`, which skips a null one; several resources dispose in reverse) |
+| `using var r = ...;` | dispose at block end | ✅ v1 | desugar (the same `defer`, in the enclosing block) |
+| `lock (o) { }` | mutual exclusion | ✅ v1 | desugar (a block that evaluates `o`; a program has one thread, so the lock is always free) |
 | `yield return e;` | iterator | ✅ v1 | front (→ Nim `yield`) |
 | `yield break;` | end iterator | ✅ v1 | desugar |
 | Iterator methods (`IEnumerable` return) | lazy seq | ✅ v1 | sem |
@@ -503,7 +504,8 @@ type; a struct likewise through a generated `$`. String `+` accepts
 any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 `"obj=" + obj` both work.
 | Null-forgiving `x!` | suppress NRT | 🔜 later | front |
-| `checked`/`unchecked` expr | ovf | 🔜 later | the block form is v1 |
+| `checked`/`unchecked` expr | ovf | ✅ v1 | desugar (a block expression: `push overflowChecks`, the operand into a temporary, `pop`) |
+| Throw expression `x ?? throw e` | raise as a value | ✅ v1 | desugar (`raise` is `noreturn`, so it stands where a value is expected) |
 | `stackalloc` | stack mem | 🚫 out | front |
 | Precedence | C# table | ✅ v1 | front |
 
@@ -576,7 +578,8 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | A bare value or `null` for a `T?` target | implicit conversion wherever a value is bound: an argument, an initialiser, an assignment, a `return` | - | `sema.nim` matches a call against the *declared* parameter lists (every overload, not just the first declaration) and records the conversion the winning one needs on the argument node; `desugar.nim` spells it as `some(T)(v)` or `none(T)`. An argument the scope cannot match is left to Nim, so a library method or a type from a module the frontend does not cover is never a false refusal | front |
 | Mutating a struct | a struct method may assign to `this`'s fields; the caller's variable changes | a parameter is immutable | a struct member that assigns to `this` (sema marks it) takes `var self`, as do struct constructors, setters and indexer setters; a read-only member keeps `self` by value, so it can be called on an rvalue | sem/desugar |
 | `x++` as a value | the old value; `++x` the new one | `inc` is a statement | a statement increment is `inc`/`dec`; in an expression the intrinsics' `nsPostInc`/`nsPreInc` (and `Dec`) | desugar/lib |
-| Discarding a result | any expression statement may drop a result | unused result is an error | every generated proc is `{.discardable.}` (and the collection shims `{.push discardable.}`) | front/lib |
+| Discarding a result | any expression statement may drop a result | unused result is an error | every value-returning method, local function and generated proc is `{.discardable.}` (and the collection shims `{.push discardable.}`) | front/lib |
+| `null` string | a string may be null | a Nim string cannot be nil | **divergence**: `null` converted to `string` is `""`, so `s == null` is `s == ""`, `s ?? b` is `b` for an empty `s`, and `s.Length` on a null string is 0 rather than a `NullReferenceException` | sem/desugar |
 
 > The overflow / `checked` / `unchecked` rows all ride on **one** mechanism:
 > Nim's `{.push overflowChecks: on|off.}` / `{.pop.}`, handled by `genPragma` at
@@ -724,7 +727,7 @@ statement drops its result through the intrinsics' `nsStmt`.
 | `catch (T e)` typed | filter by type | ✅ v1 | front (→ `except T as e`) |
 | `catch { }` catch-all | - | ✅ v1 | front |
 | Custom exceptions `class E : Exception` | user types | ✅ v1 | front |
-| `when` catch filters | conditional | 🔜 later | desugar |
+| `when` catch filters | conditional | ✅ v1 | desugar (see §7) |
 | `InnerException`, `Message` | std props | 🔜 later | lib |
 | Stack traces | - | ✅ v1 | free (Nim) |
 | `try`/`finally` only | - | ✅ v1 | front |
@@ -991,6 +994,7 @@ code:
 | `NS0513` | CS0513 | an abstract member in a non-abstract class |
 | `NS0534` | CS0534 | a concrete class leaves an inherited abstract member unimplemented |
 | `NS0266` | CS0266 | a numeric value would narrow implicitly; a cast is needed |
+| `NS1674` | CS1674 | what `using` disposes does not implement `IDisposable` |
 | `NS1021` | CS1021 | an integer literal is too large |
 | `NS1029` | CS1029 | `#error` |
 | `NS1030` | CS1030 | `#warning` (a warning) |

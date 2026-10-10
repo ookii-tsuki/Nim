@@ -10,8 +10,7 @@ namespace Demo
             Console.WriteLine(sizeof(int));
             Console.WriteLine(typeof(int));
             int z = default;
-            int y = checked(1 + 1);
-            Console.WriteLine(z + y);
+            Console.WriteLine(z);
         }
     }
 }
