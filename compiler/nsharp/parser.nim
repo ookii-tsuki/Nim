@@ -1194,6 +1194,9 @@ proc parseAttributes(p: var NsParser): seq[NsNode] =
         p.err(p.peek, ndIdentifierExpected)
         discard p.advance
         continue
+      if p.at(nsLt):
+        ## `[Tag<int>]`: a generic attribute (C# 11).
+        a.typeArgs = p.parseTypeArgs()
       if p.at(nsLParen):
         discard p.advance
         while not p.at(nsRParen) and not p.at(nsEof):

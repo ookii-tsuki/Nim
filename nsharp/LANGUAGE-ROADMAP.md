@@ -27,7 +27,8 @@ Tick an item when it is merged into `nsharp`.
 - [x] `ref` locals and `ref` returns: `ref int r = ref a[0];`, `ref T Find(...)`
 - [x] Default interface methods; static abstract interface members
 - [x] `file`-local types
-- [ ] generic attributes `[Attr<T>]`; user-defined `checked` operators
+- [x] generic attributes `[Attr<T>]`
+- [ ] user-defined `checked` operators
 
 ## Batch 3: deeper semantics
 

@@ -1,0 +1,19 @@
+using System;
+namespace Demo
+{
+    class TagAttribute<T> : Attribute
+    {
+        public string Note;
+        public TagAttribute(string note) { Note = note; }
+    }
+    [Tag<int>("first")]
+    class Widget
+    {
+        [Tag<string>("m")]
+        public int Size() => 3;
+    }
+    class Program
+    {
+        static void Main() { Console.WriteLine(new Widget().Size()); }
+    }
+}

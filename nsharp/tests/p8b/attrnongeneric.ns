@@ -1,0 +1,8 @@
+using System;
+namespace Demo
+{
+    class MarkAttribute : Attribute { }
+    [Mark<int>]
+    class Widget { }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

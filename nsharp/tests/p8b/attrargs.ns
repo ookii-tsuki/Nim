@@ -1,0 +1,8 @@
+using System;
+namespace Demo
+{
+    class TagAttribute<T> : Attribute { }
+    [Tag]
+    class Widget { }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

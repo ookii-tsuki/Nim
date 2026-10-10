@@ -785,6 +785,7 @@ deliberate scope cut.
 |---|---|---|---|
 | Custom attribute classes | metadata | ✅ v1 | a class deriving from `System.Attribute`; `[A]` resolves `AAttribute` then `A` (else NS0246) and must name an attribute class (NS0616). Without reflection an attribute has no effect, so its arguments are not evaluated, and `AttributeUsage` is not enforced. `[assembly: X]` is dropped |
 | `[Obsolete("msg")]` | deprecation | ✅ v1 | sem: a call of an obsolete member or `new` of an obsolete class warns NS0618 (NS0612 without a message), and is the error NS0619 with `true` |
+| Generic attributes (C# 11) | `[Tag<int>("x")]` on `class TagAttribute<T> : Attribute` | ✅ v1 | sem: the type arguments must match the class's parameters (NS0305; on a non-generic attribute NS0308); like any attribute, no runtime effect |
 | `[DllImport("lib")]` | P/Invoke | 🔜 later (NS0246: the library declares no such attribute) | desugar (→ `{.importc,dynlib.}`) |
 | `[StructLayout(LayoutKind.Sequential)]` | ABI layout | 🔜 later | desugar (→ `{.packed.}`) |
 | `[Conditional("X")]` | call-site strip | 🔜 later | desugar |
@@ -1012,6 +1013,8 @@ code:
 | `NS0513` | CS0513 | an abstract member in a non-abstract class |
 | `NS0534` | CS0534 | a concrete class leaves an inherited abstract member unimplemented |
 | `NS0266` | CS0266 | a numeric value would narrow implicitly; a cast is needed |
+| `NS0305`/`NS0308` | CS0305/CS0308 | an attribute's type arguments do not match its class |
+| `NS9054` | CS9054 | a `file` type nested in another type |
 | `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
 | `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
 | `NS0070` | CS0070 | an event used outside its type other than by `+=`/`-=` |

@@ -2501,6 +2501,14 @@ proc checkAttributes(ctx: NsCheckContext; n: NsNode) =
       nsError(ctx.config, a.info, ndNamespaceNotFound, short)
     elif ctx.scope.classes.hasKey(found) and "Attribute" notin ctx.scope.baseChain(found):
       nsError(ctx.config, a.info, ndNotAttributeClass, found)
+    elif ctx.scope.classes.hasKey(found):
+      ## `[Tag<int>]` (C# 11): the arguments must match the class's parameters.
+      let tps = ctx.scope.classes[found].typeParams
+      if tps.len == 0 and a.typeArgs.len > 0:
+        nsError(ctx.config, a.info, ndNotGenericType, found)
+      elif tps.len != a.typeArgs.len:
+        nsError(ctx.config, a.info, ndTypeArgCount,
+                found & "<" & tps.join(", ") & ">", $tps.len)
   for p in n.params: ctx.checkAttributes(p)
   if n.kind in {nsnClassDecl, nsnEnumDecl}:
     for m in n.sons: ctx.checkAttributes(m)
