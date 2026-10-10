@@ -259,38 +259,125 @@ macro Invoke*(d: typed; args: varargs[typed]): untyped =
   else:
     result = newCall(d, xs)
 
-macro nsCombine*(a, b: typed): untyped =
-  ## `a + b` for delegates (`d += h`): a delegate that calls `a` and then `b`,
-  ## answering `b`'s result; a null side is the other one.
-  let t = getTypeImpl(a)
-  expectKind t, nnkProcTy
-  let fp = t[0]
-  var params = newNimNode(nnkFormalParams)
-  params.add fp[0]
-  var args: seq[NimNode] = @[]
+# A delegate is a Nim closure. `d += h` makes a closure that calls each delegate of
+# an invocation list, flattened so that it never holds another combined one; `d -= h`
+# needs that list back, so a combined closure answers it when called while
+# `nsMultiQuery` is set. Only closures `nsCombine` made are ever called that way:
+# they are told apart by their proc, one per place `nsCombine` is expanded.
+var nsMultiQuery* {.threadvar.}: bool
+
+proc nsMultiSlot*[D](): var seq[D] =
+  var slot {.global.}: seq[D]
+  slot
+
+proc nsMultiProcs*[D](): var seq[pointer] =
+  var procs {.global.}: seq[pointer]
+  procs
+
+proc nsRawProc*[D](f: D): pointer =
+  ## The proc behind a closure, or nil for a proc type `rawProc` does not take.
+  when compiles(rawProc(f)): rawProc(f)
+  else: cast[pointer](f)
+
+proc nsMarkMulti*[D](f: D) =
+  let p = nsRawProc(f)
+  if p notin nsMultiProcs[D](): nsMultiProcs[D]().add p
+
+proc nsDelegateParams(t: NimNode): (NimNode, seq[NimNode], seq[NimNode]) =
+  ## A delegate type's return type, and for each parameter a fresh name and type.
+  let fp = getTypeImpl(t)[0]
+  var names, types: seq[NimNode]
   var k = 0
   for i in 1 ..< fp.len:
     let d = fp[i]
     for j in 0 ..< d.len - 2:
-      let nm = ident("nsArg" & $k)
+      names.add ident("nsArg" & $k)
+      types.add d[^2]
       inc k
-      params.add newIdentDefs(nm, d[^2])
-      args.add nm
+  (fp[0], names, types)
+
+macro nsQueryList(d: typed): untyped =
+  ## Calls combined delegate `d` with default arguments: in query mode it only
+  ## records its list.
+  let (ret, names, types) = nsDelegateParams(d)
+  result = newStmtList()
+  for i, t in types:
+    result.add newNimNode(nnkVarSection).add(newIdentDefs(names[i], t))
+  let call = newCall(d, names)
+  result.add(if ret.kind == nnkEmpty: call else: newNimNode(nnkDiscardStmt).add(call))
+  result = newBlockStmt(result)
+
+template nsListOf*(d: typed): untyped =
+  ## The invocation list of `d`: none for null, itself for a single delegate.
+  block:
+    let nsX = d
+    var nsR: seq[typeof(nsX)]
+    if nsX != nil:
+      if nsRawProc(nsX) in nsMultiProcs[typeof(nsX)]():
+        nsMultiQuery = true
+        nsQueryList(nsX)
+        nsMultiQuery = false
+        nsR = move nsMultiSlot[typeof(nsX)]()
+      else:
+        nsR = @[nsX]
+    nsR
+
+macro nsCombine*(a, b: typed): untyped =
+  ## `a + b` for delegates (`d += h`): a delegate calling `a`'s list and then
+  ## `b`'s, answering the last one's result; a null side is the other one.
+  let (ret, names, types) = nsDelegateParams(a)
+  var params = newNimNode(nnkFormalParams)
+  params.add ret
+  for i, nm in names: params.add newIdentDefs(nm, types[i])
   let na = genSym(nskLet, "nsA")
   let nb = genSym(nskLet, "nsB")
-  let callA = newCall(na, args)
-  let callB = newCall(nb, args)
-  let first = (if fp[0].kind == nnkEmpty: callA
-               else: newNimNode(nnkDiscardStmt).add(callA))
-  let body = newStmtList(callB)
-  let lam = newProc(newEmptyNode(), [], newStmtList(first, body), nnkLambda)
+  let nl = genSym(nskLet, "nsL")
+  let i = genSym(nskForVar, "nsI")
+  let each = newCall(newNimNode(nnkBracketExpr).add(nl, i), names)
+  let last = newCall(newNimNode(nnkBracketExpr).add(nl,
+    newNimNode(nnkPrefix).add(ident"^", newLit(1))), names)
+  let query = quote do:
+    if nsMultiQuery:
+      nsMultiSlot[typeof(`na`)]() = `nl`
+      return
+  let loop = quote do:
+    for `i` in 0 ..< `nl`.len - 1: `each`
+  if ret.kind != nnkEmpty:
+    loop[^1] = newStmtList(newNimNode(nnkDiscardStmt).add(each))
+  let lam = newProc(newEmptyNode(), [], newStmtList(query, loop, last), nnkLambda)
   lam[3] = params
   lam[4] = newNimNode(nnkPragma).add(ident"closure")
+  let f = genSym(nskLet, "nsF")
   result = quote do:
     (block:
       let `na` = `a`
-      let `nb` = `b`
-      (if `na` == nil: `nb` elif `nb` == nil: `na` else: `lam`))
+      let `nb`: typeof(`na`) = `b`
+      let `nl` = nsListOf(`na`) & nsListOf(`nb`)
+      if `nl`.len == 0: typeof(`na`)(nil)
+      elif `nl`.len == 1: `nl`[0]
+      else:
+        let `f`: typeof(`na`) = `lam`
+        nsMarkMulti(`f`)
+        `f`)
+
+proc nsWithout*[D](la, lb: seq[D]): seq[D] =
+  ## `la` without the last run of delegates equal to `lb`, as C#'s `Delegate.Remove`
+  ## takes it out; `la` itself when it holds no such run.
+  result = la
+  if lb.len == 0 or lb.len > la.len: return
+  for i in countdown(la.len - lb.len, 0):
+    if la[i ..< i + lb.len] == lb:
+      return la[0 ..< i] & la[i + lb.len .. ^1]
+
+macro nsRemove*(a, b: typed): untyped =
+  ## `a - b` for delegates (`d -= h`): the delegate of the list that remains.
+  let r = genSym(nskVar, "nsR")
+  let x = genSym(nskForVar, "nsX")
+  result = quote do:
+    (block:
+      var `r`: typeof(`a`) = nil
+      for `x` in nsWithout(nsListOf(`a`), nsListOf(`b`)): `r` = nsCombine(`r`, `x`)
+      `r`)
 
 proc nsSubscribe*[D](e: var seq[D]; h: D) =
   ## `e += h` on an event: `h` joins its handlers (a null one does not).

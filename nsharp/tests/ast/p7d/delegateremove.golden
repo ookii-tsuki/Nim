@@ -221,8 +221,8 @@ nkStmtList
           nkIdent 'b'
       nkAsgn
         nkIdent 'a'
-        nkInfix
-          nkIdent '-'
+        nkCall
+          nkIdent 'nsRemove'
           nkIdent 'a'
           nkIdent 'b'
       nkCall

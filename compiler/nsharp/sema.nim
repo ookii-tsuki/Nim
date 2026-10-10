@@ -2263,11 +2263,8 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       let cop = ctx.scope.userOperator(n.sons[0].typeName, n.name, 2, checked = true)
       if cop != nil: n.argParam = cop
     elif n.name in ["+", "-"] and n.sons[0].typeKind == tkDelegate:
-      ## `d += h` combines delegates; `d -= h` would need their invocation lists.
-      if n.name == "+": n.strVal = "combine"
-      else:
-        nsError(ctx.config, n.info, ndUnsupported,
-                "removing a delegate from a multicast delegate")
+      ## `d += h` combines delegates' invocation lists; `d -= h` takes `h`'s out.
+      n.strVal = (if n.name == "+": "combine" else: "remove")
     ## A plain `x = y` is a conversion C# may refuse; a compound one (`x += y`) is
     ## not, because C# lets the operator's own result narrow back.
     if n.name.len == 0 and n.sons.len == 2:

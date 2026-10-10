@@ -1,0 +1,15 @@
+a
+b
+c
+b
+--
+a
+b
+c
+--
+b
+True
+2
+1
+11
+True

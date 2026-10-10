@@ -1791,9 +1791,11 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
     return newTree(nkCall, n.info,
                    l.id(if n.name == "+": "nsSubscribe" else: "nsUnsubscribe", n.info),
                    lhs, l.expr(n.sons[1]))
-  if n.strVal == "combine":
-    ## `d += h`: a delegate that calls `d`, then `h`.
-    return newTree(nkAsgn, n.info, lhs, newTree(nkCall, n.info, l.id("nsCombine", n.info),
+  if n.strVal in ["combine", "remove"]:
+    ## `d += h`: a delegate that calls `d`'s list, then `h`'s; `d -= h`: `d`'s
+    ## list without the last run equal to `h`'s.
+    let op = (if n.strVal == "combine": "nsCombine" else: "nsRemove")
+    return newTree(nkAsgn, n.info, lhs, newTree(nkCall, n.info, l.id(op, n.info),
                                                 copyTree(lhs), l.expr(n.sons[1])))
   if n.name == "??":
     ## `a ??= b`: the compound form of `a = a ?? b`.
