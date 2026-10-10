@@ -815,6 +815,14 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if n.name == "$subject":
     ## The stand-in for a pattern's subject keeps the type it was given.
     return n.typeKind
+  if ctx.clsName.len > 0 and n.name notin ctx.members and
+     not ctx.types.hasKey(n.name):
+    let m = ctx.scope.enclosingStatic(ctx.clsName, n.name)
+    if m.name.len > 0:
+      ## A nested type names its enclosing type's statics bare.
+      n.kind = nsnMember
+      n.body = ctx.staticReceiver(m.owner, n.info)
+      return ctx.walkExpr(n)
   if ctx.clsName.len > 0 and n.name in ctx.members and
      not ctx.types.hasKey(n.name):
     let m = ctx.scope.findMemberInfo(ctx.clsName, n.name)
@@ -906,6 +914,11 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## A namespace's member is a type (`System.Console`); a declared type's member
     ## is one of its statics, which the library answers for (`string.Empty`,
     ## `int.MaxValue`, `Array.IndexOf`).
+    if n.body != nil and ctx.scope.enums.contains(n.body.typeName):
+      ## `Color.Green`: a value of the enum, not a type.
+      n.setType(tkUnknown, n.body.typeName)
+      n.rtype = nsnTypeName(n.body.typeName, n.info)
+      return tkUnknown
     if n.body != nil:
       let recv = n.body.typeName
       if ctx.scope.classes.hasKey(recv) and
@@ -952,6 +965,13 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   var owner = ""
   var tn = ""
   let callee = n.body
+  if callee != nil and callee.kind == nsnIdent and ctx.clsName.len > 0 and
+     not ctx.types.hasKey(callee.name) and callee.name notin ctx.members:
+    let m = ctx.scope.enclosingStatic(ctx.clsName, callee.name)
+    if m.name.len > 0 and m.isMethod:
+      ## A nested type calls its enclosing type's static methods bare.
+      callee.kind = nsnMember
+      callee.body = ctx.staticReceiver(m.owner, callee.info)
   if callee != nil and callee.kind == nsnIdent and ctx.clsName.len > 0 and
      not ctx.types.hasKey(callee.name) and callee.name in ctx.members:
     ## `M(args)` naming a member of the enclosing class is `C.M(args)` for a static
@@ -1412,6 +1432,12 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       nsError(ctx.config, n.info, ndUnsupported,
               "a null-conditional value without '??'")
     n.setType(result)
+  of nsnAssign:
+    ## `(x = e)` as a value: the assignment, then `x`'s type.
+    ctx.walkStmt(n)
+    n.setType(n.sons[0].typeKind, n.sons[0].typeName)
+    n.rtype = n.sons[0].rtype
+    result = n.sons[0].typeKind
   of nsnThrow:
     ## A throw expression has no type of its own: it takes the other operand's.
     discard ctx.walkExpr(n.body)

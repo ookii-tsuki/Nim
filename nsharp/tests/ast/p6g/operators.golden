@@ -1654,7 +1654,9 @@ nkStmtList
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '=='
-          nkIdent 'a'
+          nkCall
+            nkIdent 'nsVal'
+            nkIdent 'a'
           nkCall
             nkIdent 'newVec'
             nkIntLit 1
@@ -1732,7 +1734,9 @@ nkStmtList
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '>'
-          nkIdent 'k'
+          nkCall
+            nkIdent 'nsVal'
+            nkIdent 'k'
           nkCall
             nkIdent 'newCounter'
       nkVarSection
