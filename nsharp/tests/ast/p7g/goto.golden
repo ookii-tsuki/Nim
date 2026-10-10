@@ -36,6 +36,38 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
     nkIdent 'Main'
     nkEmpty
     nkEmpty
@@ -105,6 +137,42 @@ nkStmtList
     nkStmtList
       nkStrLit "Demo.Program"
   nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Program"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
     nkIdent 'Main'
     nkEmpty
     nkEmpty
@@ -113,22 +181,35 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkCall
-        nkIdent 'WriteLine'
-        nkEmpty
-      nkCall
-        nkIdent 'WriteLine'
-        nkEmpty
       nkVarSection
         nkIdentDefs
-          nkIdent 'z'
+          nkIdent 'x'
           nkIdent 'int32'
-          nkCall
-            nkIdent 'default'
-            nkIdent 'int32'
-      nkCall
-        nkIdent 'WriteLine'
-        nkIdent 'z'
+          nkIntLit 2
+      nkBlockStmt
+        nkIdent 'nsSwitch1'
+        nkStmtList
+          nkCaseStmt
+            nkIdent 'x'
+            nkOfBranch
+              nkIntLit 1
+              nkStmtList
+                nkCall
+                  nkIdent 'WriteLine'
+                  nkStrLit "one"
+                nkBreakStmt
+                  nkIdent 'nsSwitch1'
+            nkOfBranch
+              nkIntLit 2
+              nkStmtList
+                nkCall
+                  nkIdent 'WriteLine'
+                  nkStrLit "two"
+                nkEmpty
+            nkElse
+              nkStmtList
+                nkDiscardStmt
+                  nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'

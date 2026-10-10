@@ -1039,6 +1039,15 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         ## A static member of a library type: `String.Concat`, `Array.IndexOf`.
         kind = ctx.memberKindOfSurface(ctx.surface.kindOfName(owner), owner,
                                        callee.name, tn)
+    elif rk == tkUnknown and ctx.scope.enums.contains(callee.body.typeName):
+      ## A member of an enum value: what the library declares for any value
+      ## (`ToString`, `GetType`).
+      for m in ctx.surface.members.getOrDefault(NsParamKey):
+        if m.name == callee.name and m.ret.len > 0 and not m.retIsParam:
+          kind = ctx.surface.kindOfSpelling(m.ret)
+          tn = m.ret
+          n.rtype = nsnTypeName(m.ret, n.info)
+          break
     elif rk == tkClass:
       owner = callee.body.typeName
       kind = ctx.memberKind(owner, callee.name)
@@ -1537,6 +1546,23 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       for st in stmts: ctx.walkStmt(st)
       ctx.popScope()
       n.inits = stmts
+  of nsnTypeOf:
+    ## A `Type` names the type; one with type arguments, or an array, would need
+    ## the argument types' names too, which N# does not build yet.
+    discard ctx.classifyType(n.typ)
+    if n.typ == nil or n.typ.kind != nsnTypeName or n.typ.sons.len > 0:
+      nsError(ctx.config, n.info, ndUnsupported,
+              "'typeof' of a generic, array or tuple type")
+    n.setType(tkClass, "Type")
+    n.rtype = nsnTypeName("Type", n.info)
+    result = tkClass
+  of nsnSizeOf:
+    ## Only the built-in value types have a size outside an unsafe context.
+    let k = ctx.classifyType(n.typ)
+    if k notin {tkInt, tkFloat, tkBool, tkChar}:
+      nsError(ctx.config, n.info, ndUnsupported, "'sizeof' of a type other than a built-in value type")
+    n.setType(tkInt, "int")
+    result = tkInt
   of nsnCheckedExpr:
     result = ctx.walkExpr(n.body)
     n.setType(result, n.body.typeName)
