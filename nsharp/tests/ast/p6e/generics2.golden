@@ -362,7 +362,8 @@ nkStmtList
           nkIdent 'Stack2'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -433,7 +434,8 @@ nkStmtList
           nkIdent 'T'
           nkIdent 'R'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -547,7 +549,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntStack'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -627,7 +630,8 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Factory'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -656,7 +660,8 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -677,7 +682,8 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Factory'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -755,7 +761,8 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -783,7 +790,8 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1088,7 +1096,8 @@ nkStmtList
           nkIdent 'Stack2'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1199,7 +1208,8 @@ nkStmtList
           nkIdent 'T'
           nkIdent 'R'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1342,7 +1352,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntStack'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1457,7 +1468,8 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Factory'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1490,7 +1502,8 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1529,7 +1542,8 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Factory'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1620,7 +1634,8 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1851,7 +1866,8 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

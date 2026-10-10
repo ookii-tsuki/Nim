@@ -105,7 +105,8 @@ nkStmtList
         nkIdent 'y'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -124,7 +125,8 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -220,7 +222,8 @@ nkStmtList
         nkIdent 'y'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -244,7 +247,8 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

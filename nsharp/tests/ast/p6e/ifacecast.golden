@@ -213,7 +213,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntBox'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -545,7 +546,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntBox'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

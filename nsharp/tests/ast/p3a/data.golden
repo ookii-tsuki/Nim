@@ -61,7 +61,8 @@ nkStmtList
         nkIdent 'c'
         nkIdent 'Color'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -80,7 +81,8 @@ nkStmtList
         nkIdent 'd'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -99,7 +101,8 @@ nkStmtList
         nkIdent 'k'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -187,7 +190,8 @@ nkStmtList
         nkIdent 'c'
         nkIdent 'Color'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkBlockStmt
@@ -236,7 +240,8 @@ nkStmtList
         nkIdent 'd'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkBlockStmt
@@ -282,7 +287,8 @@ nkStmtList
         nkIdent 'k'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkBlockStmt

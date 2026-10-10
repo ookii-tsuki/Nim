@@ -157,3 +157,12 @@ type
   SwitchExpressionException* = object of CatchableError
     ## What a switch expression throws when no arm matches. C# declares it in
     ## `System.Runtime.CompilerServices`; the compiler raises it, so it lives here.
+
+template nsDispose*(x: typed) =
+  ## What `using` runs when its scope is left: `x.Dispose()`, unless `x` is null.
+  when x is ref:
+    if x != nil: x.Dispose()
+  elif compiles(x.nsObj):
+    if x.nsObj != nil: x.Dispose()
+  else:
+    x.Dispose()

@@ -55,7 +55,8 @@ nkStmtList
         nkIdent 'name'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -138,7 +139,8 @@ nkStmtList
         nkIdent 'name'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

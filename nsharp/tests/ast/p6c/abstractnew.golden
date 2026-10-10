@@ -59,6 +59,7 @@ nkStmtList
         nkIdent 'Shape'
         nkEmpty
     nkPragma
+      nkIdent 'discardable'
       nkIdent 'base'
     nkEmpty
     nkEmpty
@@ -186,6 +187,7 @@ nkStmtList
         nkIdent 'Shape'
         nkEmpty
     nkPragma
+      nkIdent 'discardable'
       nkIdent 'base'
     nkEmpty
     nkStmtList

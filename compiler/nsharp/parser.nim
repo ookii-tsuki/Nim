@@ -508,6 +508,19 @@ proc parsePrimary(p: var NsParser): NsNode =
     of "false": result = nsnBoolLit(false, p.infoOf(t))
     of "nameof": result = p.parseNameof(t)
     of "default": result = p.parseDefault(t)
+    of "throw":
+      ## A throw expression: `x ?? throw e`, `c ? v : throw e`, `=> throw e`.
+      result = nsn(nsnThrow, p.infoOf(t))
+      result.body = p.parseExpr()
+    of "checked", "unchecked":
+      if p.at(nsLParen):
+        ## `checked(e)`: `e` evaluated with overflow checking on (or off).
+        result = nsn(nsnCheckedExpr, p.infoOf(t))
+        result.name = t.text
+        discard p.advance
+        result.body = p.parseExpr()
+        discard p.expect(nsRParen)
+      else: result = nsnIdent(t.text, p.infoOf(t))
     of "sizeof", "typeof":
       ## `sizeof` needs an unsafe context and `typeof` a type value, neither of
       ## which N# has yet.
@@ -1215,6 +1228,8 @@ proc parseFor(p: var NsParser): NsNode
 proc parseForeach(p: var NsParser): NsNode
 proc parseSwitch(p: var NsParser): NsNode
 proc parseTry(p: var NsParser): NsNode
+proc parseUsingStmt(p: var NsParser): NsNode
+proc parseLock(p: var NsParser): NsNode
 
 proc looksLikeLocalFunc(p: NsParser): bool =
   ## `R F(...) { }` / `R F<T>(...) => e;` inside a body, optionally `static`.
@@ -1265,8 +1280,22 @@ proc parseStatement(p: var NsParser): NsNode =
     of "if": return p.parseIf()
     of "while": return p.parseWhile()
     of "do": return p.parseDoWhile()
-    of "checked": return p.parseChecked(true)
-    of "unchecked": return p.parseChecked(false)
+    of "checked", "unchecked":
+      ## `checked(x + y);` is an expression statement; `checked { }` a block.
+      if p.peekAhead(1).kind != nsLParen:
+        return p.parseChecked(t.text == "checked")
+    of "using":
+      if p.peekAhead(1).kind == nsLParen or p.peekAhead(1).kind == nsIdent:
+        return p.parseUsingStmt()
+    of "lock":
+      if p.peekAhead(1).kind == nsLParen: return p.parseLock()
+    of "yield":
+      if p.peekAhead(1).kind == nsIdent and p.peekAhead(1).text in ["return", "break"]:
+        result = nsn(nsnYield, p.infoOf(t))
+        discard p.advance
+        result.name = p.advance.text
+        if result.name == "return": result.body = p.parseExpr()
+        return
     of "for": return p.parseFor()
     of "foreach": return p.parseForeach()
     of "switch": return p.parseSwitch()
@@ -1471,6 +1500,40 @@ proc parseSwitch(p: var NsParser): NsNode =
       discard p.advance
   discard p.expect(nsRBrace)
 
+proc parseUsingResource(p: var NsParser; into: var seq[NsNode]) =
+  ## `var r = e`, `T a = e, b = f`, or an expression whose value is disposed.
+  let d = p.parseVarDecl()
+  if d.kind == nsnMultiDecl:
+    for x in d.sons: into.add x
+  else: into.add d
+
+proc parseUsingStmt(p: var NsParser): NsNode =
+  ## `using (resources) statement`, and the declaration `using var r = e;`, whose
+  ## resources are disposed at the end of the enclosing block.
+  let info = p.here()
+  discard p.advance
+  result = nsn(nsnUsingStmt, info)
+  if p.at(nsLParen):
+    discard p.advance
+    if looksLikeDecl(p): p.parseUsingResource(result.sons)
+    else: result.add p.parseExpr()
+    discard p.expect(nsRParen)
+    let blk = nsn(nsnBlock, p.here())
+    blk.sons = p.parseEmbedded()
+    result.body = blk
+  else:
+    p.parseUsingResource(result.sons)
+
+proc parseLock(p: var NsParser): NsNode =
+  ## `lock (x) statement`.
+  let info = p.here()
+  discard p.advance
+  result = nsn(nsnLock, info)
+  discard p.expect(nsLParen)
+  result.body = p.parseExpr()
+  discard p.expect(nsRParen)
+  result.sons = p.parseEmbedded()
+
 proc parseTry(p: var NsParser): NsNode =
   let info = p.here()
   discard p.advance
@@ -1487,6 +1550,12 @@ proc parseTry(p: var NsParser): NsNode =
         c.typ = p.parseType()
         if p.peek.kind == nsIdent:
           c.name = p.advance.text
+        discard p.expect(nsRParen)
+      if p.at(nsIdent) and p.peek.text == "when" and p.peekAhead(1).kind == nsLParen:
+        ## `catch (E e) when (cond)`: the clause applies only when the filter holds.
+        discard p.advance
+        discard p.expect(nsLParen)
+        c.add p.parseExpr()
         discard p.expect(nsRParen)
       c.body = p.parseBlock()
       result.add c

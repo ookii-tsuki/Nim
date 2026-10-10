@@ -676,7 +676,8 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -706,7 +707,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -862,7 +864,8 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1016,7 +1019,8 @@ nkStmtList
         nkIdent 'other'
         nkIdent 'Money'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1918,7 +1922,8 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1960,7 +1965,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2275,7 +2281,8 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2472,7 +2479,8 @@ nkStmtList
         nkIdent 'other'
         nkIdent 'Money'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

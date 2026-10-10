@@ -622,6 +622,7 @@ nkStmtList
         nkIdent 'Shape'
         nkEmpty
     nkPragma
+      nkIdent 'discardable'
       nkIdent 'base'
     nkEmpty
     nkEmpty
@@ -657,7 +658,8 @@ nkStmtList
         nkIdent 'precision'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -791,7 +793,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -890,7 +893,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1061,7 +1065,8 @@ nkStmtList
           nkIdent 'seq'
           nkIdent 'IShape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1796,6 +1801,7 @@ nkStmtList
         nkIdent 'Shape'
         nkEmpty
     nkPragma
+      nkIdent 'discardable'
       nkIdent 'base'
     nkEmpty
     nkStmtList
@@ -1838,7 +1844,8 @@ nkStmtList
         nkIdent 'precision'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2097,7 +2104,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2236,7 +2244,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2500,7 +2509,8 @@ nkStmtList
           nkIdent 'seq'
           nkIdent 'IShape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkVarSection

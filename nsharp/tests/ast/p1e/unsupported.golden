@@ -126,22 +126,9 @@ nkStmtList
           nkCall
             nkIdent 'default'
             nkIdent 'int32'
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'y'
-          nkIdent 'int32'
-          nkCall
-            nkIdent 'checked'
-            nkInfix
-              nkIdent '+'
-              nkIntLit 1
-              nkIntLit 1
       nkCall
         nkIdent 'WriteLine'
-        nkInfix
-          nkIdent '+'
-          nkIdent 'z'
-          nkIdent 'y'
+        nkIdent 'z'
   nkProcDef
     nkPostfix
       nkIdent '*'

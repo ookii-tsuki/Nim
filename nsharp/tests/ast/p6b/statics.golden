@@ -320,7 +320,8 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -335,7 +336,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -655,7 +657,8 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -674,7 +677,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt

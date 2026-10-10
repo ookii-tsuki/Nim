@@ -49,7 +49,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Store'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -126,7 +127,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Store'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkVarSection

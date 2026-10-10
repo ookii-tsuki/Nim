@@ -51,7 +51,8 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -70,7 +71,8 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'int64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -158,7 +160,8 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -182,7 +185,8 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'int64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkReturnStmt
