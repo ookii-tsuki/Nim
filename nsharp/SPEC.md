@@ -355,6 +355,7 @@ and the namespaces must be merged or layered.
 | `struct S { }` | value type | ✅ v1 | front |
 | `interface I { }` | contract | ✅ v1 | desugar → fat interface value (see §8) |
 | Default interface methods (C# 8) | `interface I { void M() { ... } }` | ✅ v1 | desugar (see §8); in a generic interface NS9999 |
+| Static abstract interface members (C# 11) | `static abstract T Zero { get; }`, `static abstract T operator +(T a, T b);`, `T.Zero` in `where T : I<T>` | ✅ v1 | sema checks the implementation (NS0535); a generic call `T.M()` resolves statically (see §8); a static member with a body NS9999 |
 | `enum E { A, B }` | enum | ✅ v1 | front |
 | `delegate R D(args);` | func type | ✅ v1 | front |
 | `record`, `record struct` | data classes | ✅ v1 | see §4 |
@@ -671,8 +672,12 @@ interface (`IComparable<T>`, `IEquatable<T>`, `IDisposable`, declared
 generic code calls by name, not a value type (NS9999 if a value is declared with
 one). A default interface method (C# 8) is `nsDefault_I_M(self: I, ...)`, whose
 `this` is the interface value; a class that does not implement the member gets a
-table entry calling it, and needs no implementation of its own. Deferred: default
-methods in a generic interface, static interface members, and `is`/`as`/casts to a
+table entry calling it, and needs no implementation of its own. Static abstract
+members (C# 11) are a contract only: an implementing type must declare a static
+member of the name (NS0535), and `T.Zero`/`T.Combine(a, b)`/`a + b` in a method
+constrained `where T : I<T>` bind statically when the generic is instantiated, so
+they need no table slot. Deferred: default methods in a generic interface, static
+interface members with a body, and `is`/`as`/casts to a
 generic interface (NS9999).
 
 ---

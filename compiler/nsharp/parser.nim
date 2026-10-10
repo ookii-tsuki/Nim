@@ -1821,6 +1821,9 @@ proc parseOperatorBody(p: var NsParser; n: NsNode) =
     discard p.advance
     n.body = p.parseArrowBody(info, n.typ != nil and n.typ.kind != nsnVoidType)
     if p.at(nsSemi): discard p.advance
+  elif p.at(nsSemi):
+    ## `static abstract T operator +(T a, T b);` in an interface.
+    discard p.advance
   else:
     n.body = p.parseBlock()
 

@@ -799,7 +799,10 @@ proc targetTyped(ctx: NsCheckContext; value, target: NsNode) =
       value.typ = (if target.kind == nsnNullableType and value.kind == nsnNew: target.typ
                    else: target)
   of nsnArrayLit:
-    if value.typ == nil and target.kind == nsnArrayType: value.typ = target.typ
+    ## A callee's own type parameter is no type here: the elements decide.
+    if value.typ == nil and target.kind == nsnArrayType and
+       not (ctx.isTypeParamRef(target.typ) and target.typ.name notin ctx.typeParams):
+      value.typ = target.typ
   of nsnCollection:
     if value.typ != nil or target.kind == nsnVoidType: return
     var hasSpread = false
@@ -2443,8 +2446,10 @@ proc checkInterfaces(ctx: NsCheckContext; cls: NsNode) =
     for m in cls.sons:
       if m.kind == nsnMethodDecl and m.body != nil and ctx.scope.classes[cls.name].typeParams.len > 0:
         nsError(ctx.config, m.info, ndUnsupported, "a default method in a generic interface")
-      elif m.attrs.isStatic:
-        nsError(ctx.config, m.info, ndUnsupported, "a static interface member")
+      elif m.attrs.isStatic and not m.attrs.isAbstract and not m.attrs.isVirtual:
+        ## `static abstract` / `static virtual` (C# 11) are contracts on the type,
+        ## checked by name; a plain static member of an interface is not lowered.
+        nsError(ctx.config, m.info, ndUnsupported, "a static interface member with a body")
     return
   for i in ctx.scope.interfaceClosure(cls.name):
     if not ctx.scope.classes.hasKey(i): continue
@@ -2453,7 +2458,8 @@ proc checkInterfaces(ctx: NsCheckContext; cls: NsNode) =
       var found = false
       for c in ctx.scope.chain(cls.name):
         for m in ctx.scope.classes[c].members:
-          if m.name == im.name and not m.isStatic: found = true
+          ## A static abstract member is implemented by a static one.
+          if m.name == im.name and m.isStatic == im.isStatic: found = true
         if found: break
       if not found:
         for m in cls.sons:
