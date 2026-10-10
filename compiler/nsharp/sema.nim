@@ -1235,6 +1235,45 @@ proc walkPattern(ctx: var NsCheckContext; pat, subject: NsNode) =
     ctx.walkPattern(pat.body, subject)
   of nsnPatVar:
     ctx.declare(pat.name, subject.typeKind, subject.typeName, pat.rtype)
+  of nsnPatList:
+    ## `[p, .., q]`: each element pattern against an element of the subject; the
+    ## slice's against a slice, which only an array or a string has.
+    let st = subject.rtype
+    var et: NsNode = nil
+    if subject.typeKind == tkString:
+      et = nsnTypeName("char", pat.info)
+      pat.strVal = "native"
+    elif st != nil and st.kind == nsnArrayType:
+      et = st.typ
+      pat.strVal = "native"
+    else:
+      if subject.typeKind == tkClass or subject.typeKind == tkSequence:
+        let tn = subject.typeName
+        for c in ["Count", "Length"]:
+          if (ctx.scope.classes.hasKey(tn) and ctx.scope.findMemberInfo(tn, c).name.len > 0) or
+             ctx.surface.member(tn, subject.typeKind, c).name.len > 0:
+            pat.strVal = c
+            break
+        et = libResultType(ctx.surface, subject, "[]", 1)
+        if et == nil and ctx.scope.classes.hasKey(tn) and
+           ctx.scope.findMemberInfo(tn, NsIndexerName).name.len > 0:
+          et = ctx.memberTypeOf(subject, tn, NsIndexerName)
+    if pat.strVal.len == 0:
+      nsError(ctx.config, pat.info, ndUnsupported,
+              "a list pattern on a type without a length and an indexer")
+      return
+    var slices = 0
+    for x in pat.sons:
+      if x.kind == nsnPatSlice:
+        inc slices
+        if x.body != nil:
+          if pat.strVal != "native":
+            nsError(ctx.config, x.info, ndUnsupported,
+                    "a slice pattern of a type other than an array or a string")
+          else: ctx.walkPattern(x.body, subject)
+      else:
+        ctx.walkPattern(x, subjectOf(ctx.classifyType(et), declTypeName(et), et, x.info))
+    if slices > 1: nsError(ctx.config, pat.info, ndUnsupported, "two slices in a list pattern")
   of nsnPatProp:
     ## `T { P: pat }`: each member is matched as a subject of its own type.
     var owner = subject

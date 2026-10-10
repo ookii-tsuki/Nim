@@ -1076,9 +1076,9 @@ proc patternBindings(pat: NsNode; into: var seq[NsNode]) =
   of nsnPatProp:
     if pat.name.len > 0: into.add pat
     for f in pat.sons: patternBindings(f.body, into)
-  of nsnPatAnd, nsnPatOr:
+  of nsnPatAnd, nsnPatOr, nsnPatList:
     for x in pat.sons: patternBindings(x, into)
-  of nsnPatNot: patternBindings(pat.body, into)
+  of nsnPatNot, nsnPatSlice: patternBindings(pat.body, into)
   else: discard
 
 proc bindingType(l: Lowerer; b: NsNode): PNode =
@@ -1192,6 +1192,55 @@ proc patTest(l: Lowerer; subj: PNode; pat: NsNode): PNode =
                      l.patTest(subj, pat.sons[1]))
   of nsnPatNot:
     result = newTree(nkPrefix, info, l.id("not", info), l.patTest(subj, pat.body))
+  of nsnPatList:
+    ## `[p, .., q]`: the length -- exactly the element count, or at least the
+    ## count beside the slice -- then each element against its pattern, those after
+    ## the slice counted from the end, and the slice against its own.
+    let native = pat.strVal == "native"
+    let len = l.fresh("nsLen")
+    var before, after = 0
+    var sliceAt = -1
+    for i, x in pat.sons:
+      if x.kind == nsnPatSlice: sliceAt = i
+      elif sliceAt < 0: inc before
+      else: inc after
+    var parts: seq[PNode] = @[]
+    if not native:
+      parts.add newTree(nkPrefix, info, l.id("not", info),
+                        newTree(nkCall, info, l.id("isNil", info), copyTree(subj)))
+    let measure = (if native: newTree(nkCall, info, l.id("len", info), copyTree(subj))
+                   else: newTree(nkDotExpr, info, copyTree(subj), l.id(pat.strVal, info)))
+    let lenOk = newTree(nkInfix, info, l.id(if sliceAt >= 0: ">=" else: "==", info),
+                        l.id(len, info), newIntNode(nkIntLit, before + after))
+    var inner: seq[PNode] = @[lenOk]
+    var k = 0
+    for i, x in pat.sons:
+      if x.kind == nsnPatSlice:
+        if x.body != nil:
+          let sl = newTree(nkBracketExpr, info, copyTree(subj), newTree(nkInfix, info,
+            l.id("..<", info), newIntNode(nkIntLit, before),
+            newTree(nkInfix, info, l.id("-", info), l.id(len, info),
+                    newIntNode(nkIntLit, after))))
+          let v = l.fresh("nsSlice")
+          inner.add newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
+            newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(v, info),
+                                               empty(info), sl)),
+            l.patTest(l.id(v, info), x.body)))
+        continue
+      let idx = (if sliceAt < 0 or i < sliceAt: newIntNode(nkIntLit, i)
+                 else: newTree(nkInfix, info, l.id("-", info), l.id(len, info),
+                               newIntNode(nkIntLit, pat.sons.len - i)))
+      inc k
+      let v = l.fresh("nsItem")
+      inner.add newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
+        newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(v, info), empty(info),
+          newTree(nkBracketExpr, info, copyTree(subj), idx))),
+        l.patTest(l.id(v, info), x)))
+    parts.add newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
+      newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(len, info), empty(info),
+                                         newTree(nkCall, info, l.id("int", info), measure))),
+      l.andAll(inner, info)))
+    result = l.andAll(parts, info)
   of nsnPatProp:
     ## `T { P: pat } p`: not null, of `T`, and each member matching its pattern.
     var parts: seq[PNode] = @[]
