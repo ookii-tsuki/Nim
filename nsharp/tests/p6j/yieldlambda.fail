@@ -1,0 +1,2 @@
+C# has no iterator lambdas: `yield` inside a lambda is an error.
+code: NS1621

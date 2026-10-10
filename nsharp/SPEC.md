@@ -444,7 +444,7 @@ v2.
 | `while` | loop | ✅ v1 | front |
 | `do { } while (c);` | post-test loop | ✅ v1 | desugar (flag-guarded `while`, §7.3) |
 | `for (i = 0; i < n; i++)` | C-style for | ✅ v1 | desugar (→ `while`) |
-| `foreach (var x in xs)` | iterate | ✅ v1 | desugar (→ `for`) |
+| `foreach (var x in xs)` | iterate | ✅ v1 | desugar (→ `for` over the collection's `items`; over a class with a `GetEnumerator` method, C#'s own expansion: `let e = c.GetEnumerator(); while e.MoveNext(): let x = e.Current`) |
 | `break` / `continue` | loop control | ✅ v1 | front |
 | `return` | return | ✅ v1 | front |
 | `goto` / labels | jump | 🚫 out | - |
@@ -454,9 +454,9 @@ v2.
 | `using (var r = ...) { }` | dispose scope | ✅ v1 | desugar (a block: each resource declared, then `defer: nsDispose(r)`, which skips a null one; several resources dispose in reverse) |
 | `using var r = ...;` | dispose at block end | ✅ v1 | desugar (the same `defer`, in the enclosing block) |
 | `lock (o) { }` | mutual exclusion | ✅ v1 | desugar (a block that evaluates `o`; a program has one thread, so the lock is always free) |
-| `yield return e;` | iterator | ✅ v1 | front (→ Nim `yield`) |
-| `yield break;` | end iterator | ✅ v1 | desugar |
-| Iterator methods (`IEnumerable` return) | lazy seq | ✅ v1 | sem |
+| `yield return e;` | iterator | ✅ v1 | desugar (→ Nim `yield` inside the closure iterator below) |
+| `yield break;` | end iterator | ✅ v1 | desugar (→ `return` from the closure iterator) |
+| Iterator methods (`IEnumerable` return) | lazy seq | ✅ v1 | sem + desugar: a method or local function returning `IEnumerable<T>`/`IEnumerator<T>` whose body yields becomes `result = nsEnumerable(T): body` -- a closure iterator started afresh per enumeration, so the body runs lazily as C#'s does. An iterator getter/indexer/operator is NS9999; `yield` in a lambda is NS1621, in a non-iterator member NS1624. A class implementing `IEnumerable<T>` itself is NS9999 (the `GetEnumerator` pattern works without it) |
 | `checked { }` / `unchecked { }` | ovf checks | ✅ v1 | desugar (→ `{.push overflowChecks.}`, §7.3) |
 | `unsafe { }` blocks (pointers, `&`, `*`) | unsafe | ✅ v1 | front |
 | `fixed`, `stackalloc` | stack-only | 🚫 out | front |
@@ -995,6 +995,8 @@ code:
 | `NS0534` | CS0534 | a concrete class leaves an inherited abstract member unimplemented |
 | `NS0266` | CS0266 | a numeric value would narrow implicitly; a cast is needed |
 | `NS1674` | CS1674 | what `using` disposes does not implement `IDisposable` |
+| `NS1621` | CS1621 | `yield` inside a lambda |
+| `NS1624` | CS1624 | `yield` in a member whose return type is not `IEnumerable<T>`/`IEnumerator<T>` |
 | `NS1021` | CS1021 | an integer literal is too large |
 | `NS1029` | CS1029 | `#error` |
 | `NS1030` | CS1030 | `#warning` (a warning) |

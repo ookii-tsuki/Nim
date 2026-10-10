@@ -1,0 +1,23 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Program
+    {
+        static IEnumerable<int> Numbers()
+        {
+            Func<int> f = () =>
+            {
+                yield return 1;
+                return 2;
+            };
+            yield return f();
+        }
+
+        static void Main()
+        {
+            foreach (var n in Numbers()) Console.WriteLine(n);
+        }
+    }
+}

@@ -178,6 +178,7 @@ proc IndexOf*[T](a: openArray[T]; value: T): int32 {.nsStatic: "Array".} =
 # test records C#'s output in a `.csout` beside the `.out` (SPEC 7).
 
 proc WriteLine*[T](x: T) {.nsStatic: "Console".} = echo x
+proc WriteLine*() {.nsStatic: "Console".} = echo ""
 proc Write*[T](x: T) {.nsStatic: "Console".} = stdout.write x
 proc ReadLine*(): string = stdin.readLine
 

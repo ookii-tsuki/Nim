@@ -279,6 +279,15 @@ proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
   for key in keys:
     for m in s.members.getOrDefault(key):
       if m.name == name: return m
+  ## A prelude type inherits its base's members, as `IEnumerator<T>` has `MoveNext`
+  ## from the non-generic enumerator.
+  var cur = nim
+  var hops = 0
+  while cur.len > 0 and s.types.hasKey(cur) and hops < 16:
+    cur = s.types[cur].base
+    inc hops
+    for m in s.members.getOrDefault(cur):
+      if m.name == name: return m
 
 proc noteMember(s: var NsBclSurface; m: NsBclMember) =
   ## Files a declaration under its receiver, and under that receiver's type class

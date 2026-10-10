@@ -24,6 +24,12 @@ import ../lineinfos, ../options
 import ast, bcl, diagnostics, lambdas, numeric, symbols
 
 type
+  NsYieldHost = enum
+    yhNone        ## a lambda, a constructor: C# has no iterator there
+    yhMember      ## a method or a local function, which may be an iterator
+    yhUnsupported ## an accessor or an operator: an iterator N# does not lower yet
+
+type
   NsTypeInfo* = object
     kind*: NsTypeKind
     name*: string              ## the type's name, when it has one
@@ -42,6 +48,7 @@ type
     tmpCounter: int                            ## numbers the temporaries sema introduces
     inCtor: bool                               ## inside a constructor of `clsName`
     ctorIsStatic: bool                         ## ... and it is the static one
+    yieldHost: NsYieldHost                     ## what a `yield` here would belong to
     types: TableRef[string, NsTypeInfo]        ## locals, params, loop variables
     undo: seq[seq[(string, NsTypeInfo, bool)]] ## one frame per open scope
 
@@ -263,6 +270,13 @@ proc needConv(n: NsNode; to: string) =
 proc coerce(ctx: NsCheckContext; value: NsNode; target: string; info: TLineInfo) =
   ## The implicit numeric conversion C# applies where a value of one numeric type is
   ## used as another: recorded when C# allows it, CS0266 when only a cast would.
+  if value != nil and canonicalTypeName(target).split('<')[0] == "IEnumerable" and
+     (value.typeKind == tkSequence or
+      ctx.surface.member(value.typeName, value.typeKind, "nsToIEnumerable").name.len > 0):
+    ## An array or a collection used as an `IEnumerable<T>`: the view the library
+    ## declares for it.
+    value.conv = "nsToIEnumerable"
+    return
   let dst = numericOfSpelling(target)
   if value == nil or dst.len == 0: return
   let src = numName(value)
@@ -427,7 +441,10 @@ proc incompatible(ctx: NsCheckContext; arg: NsNode; t: NsTarget): bool =
   of tkException:
     result = t.kind != tkException and t.kind != tkClass
   of tkDelegate: result = t.kind != tkDelegate
-  of tkSequence: result = t.kind != tkSequence
+  of tkSequence:
+    ## An array or a collection is an `IEnumerable<T>` too.
+    result = t.kind != tkSequence and
+             not canonicalTypeName(t.name).startsWith("IEnumerable")
   of tkString: result = t.kind != tkString
   of tkBool: result = t.kind != tkBool
   of tkInt, tkFloat, tkChar: result = t.kind notin {tkInt, tkFloat, tkChar}
@@ -670,13 +687,6 @@ proc checkDisposable(ctx: NsCheckContext; r: NsNode) =
     for li in ctx.scope.classes[c].libInterfaces:
       if canonicalTypeName(li.name) == "IDisposable": return
   nsError(ctx.config, r.info, ndNotDisposable, t)
-
-proc iteratorElement(t: NsNode): NsNode =
-  ## The `T` of an iterator's `IEnumerable<T>` / `IEnumerator<T>` return type.
-  if t != nil and t.kind == nsnTypeName and t.sons.len == 1 and
-     canonicalTypeName(t.name) in ["IEnumerable", "IEnumerator"]:
-    return t.sons[0]
-  nil
 
 proc warnNullableRefs(ctx: NsCheckContext; n: NsNode) =
   ## `MyObj?` on a reference type is only an annotation: C# accepts it and does
@@ -1426,12 +1436,15 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## type during lowering) but the body must still be walked, otherwise names
     ## inside it are never resolved.
     ctx.pushScope()
+    let savedHost = ctx.yieldHost
+    ctx.yieldHost = yhNone
     for p in n.params:
       if p.typ != nil: ctx.declare(p.name, ctx.classifyType(p.typ), declTypeName(p.typ),
                                    p.typ)
       else: ctx.declare(p.name, tkUnknown)
     if n.body != nil:
       for s in n.body.sons: ctx.walkStmt(s)
+    ctx.yieldHost = savedHost
     ctx.popScope()
     n.setType(tkDelegate)
     result = tkDelegate
@@ -1475,16 +1488,50 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   ctx.declare(n.name, kind, (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName),
               (if n.typ != nil: n.typ elif n.body != nil: n.body.rtype else: nil))
 
+proc enumeratedElement(ctx: NsCheckContext; n: NsNode): NsNode =
+  ## The element type `foreach` sees in a collection: an `IEnumerable<T>`'s `T`, or
+  ## for a class with a `GetEnumerator` method -- C#'s pattern, which needs no
+  ## interface -- what its enumerator's `Current` is. The latter marks the loop,
+  ## because it lowers to the enumerator's `MoveNext`/`Current` rather than `items`.
+  let coll = n.body
+  result = iteratorElement(coll.rtype)
+  if result != nil: return
+  if coll.rtype != nil and coll.rtype.kind == nsnTypeName and
+     coll.rtype.sons.len == 1 and
+     not ctx.scope.classes.hasKey(canonicalTypeName(coll.rtype.name)) and
+     ctx.surface.member(coll.typeName, coll.typeKind, "items").name.len > 0:
+    ## A library collection of one element type (`List<T>`, `Queue<T>`), which the
+    ## library walks with `items`, yields that type.
+    return coll.rtype.sons[0]
+  if coll.typeKind != tkClass or not ctx.scope.classes.hasKey(coll.typeName): return
+  let ge = ctx.scope.findMemberInfo(coll.typeName, "GetEnumerator")
+  if ge.name.len == 0 or not ge.isMethod: return
+  n.strVal = "GetEnumerator"
+  var et = iteratorElement(ge.typ)
+  if et == nil and ge.typ != nil and ctx.scope.classes.hasKey(declTypeName(ge.typ)):
+    let cur = ctx.scope.findMemberInfo(declTypeName(ge.typ), "Current")
+    if cur.name.len > 0: et = cur.typ
+  if et != nil and ctx.scope.classes.hasKey(ge.owner) and coll.rtype != nil and
+     coll.rtype.kind == nsnTypeName:
+    et = substitute(et, ctx.scope.classes[ge.owner].typeParams, coll.rtype.sons)
+  result = et
+
 proc walkForeach(ctx: var NsCheckContext; n: NsNode) =
   var elemKind = ctx.classifyType(n.typ)
   discard ctx.walkExpr(n.body)
   var elemName = (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName)
-  if n.typ == nil and n.body.typeKind == tkSequence and elemName.endsWith("[]"):
+  var elemType = n.typ
+  let et = ctx.enumeratedElement(n)
+  if n.typ == nil and et != nil:
+    elemType = et
+    elemKind = ctx.classifyType(et)
+    elemName = declTypeName(et)
+  elif n.typ == nil and n.body.typeKind == tkSequence and elemName.endsWith("[]"):
     ## `foreach (var x in xs)` over an array: `x` has the element type.
     elemName = elemName[0 ..< elemName.len - 2]
     elemKind = (if elemName.endsWith("[]"): tkSequence else: ctx.classifyName(elemName))
   ctx.pushScope()
-  ctx.declare(n.name, elemKind, elemName)
+  ctx.declare(n.name, elemKind, elemName, elemType)
   for s in n.sons: ctx.walkStmt(s)
   ctx.popScope()
 
@@ -1594,11 +1641,14 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     let savedTps = ctx.typeParams
     for t in n.typeParams: ctx.typeParams.add t.name
     ctx.retType = n.typ
+    let savedHost = ctx.yieldHost
+    ctx.yieldHost = yhMember
     ctx.pushScope()
     for p in n.params: ctx.walkDecl(p)
     if n.body != nil:
       for s in n.body.sons: ctx.walkStmt(s)
     ctx.popScope()
+    ctx.yieldHost = savedHost
     ctx.retType = savedRet
     ctx.typeParams = savedTps
   of nsnExprStmt: discard ctx.walkExpr(n.body)
@@ -1662,7 +1712,16 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     discard ctx.walkExpr(n.body)
     walkStmts(ctx, n.sons)
   of nsnYield:
-    nsError(ctx.config, n.info, ndUnsupported, "an iterator ('yield')")
+    case ctx.yieldHost
+    of yhUnsupported:
+      nsError(ctx.config, n.info, ndUnsupported,
+              "an iterator in a property, indexer or operator")
+    of yhNone:
+      nsError(ctx.config, n.info, ndYieldHere)
+    of yhMember:
+      if iteratorElement(ctx.retType) == nil:
+        nsError(ctx.config, n.info, ndNotIteratorType,
+                (if ctx.retType == nil: "void" else: declTypeName(ctx.retType)))
     if n.body != nil:
       let et = iteratorElement(ctx.retType)
       ctx.targetTyped(n.body, et)
@@ -1715,6 +1774,10 @@ proc checkBaseCtors(ctx: NsCheckContext; cls: NsNode) =
 
 proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
   ctx.curMember = m
+  ctx.yieldHost = (case m.kind
+                   of nsnMethodDecl: yhMember
+                   of nsnPropertyDecl, nsnIndexerDecl, nsnOperatorDecl: yhUnsupported
+                   else: yhNone)
   case m.kind
   of nsnOperatorDecl:
     let savedRet = ctx.retType
@@ -1833,6 +1896,12 @@ proc checkInheritance(ctx: NsCheckContext; cls: NsNode) =
   ## (CS0239), an abstract member needs an abstract class (CS0513) and no body
   ## (CS0500), a non-abstract one a body (CS0501), and a concrete class must fill
   ## every abstract slot it inherits (CS0534).
+  for b in cls.bases:
+    if b.kind == nsnTypeName and
+       canonicalTypeName(b.name) in ["IEnumerable", "IEnumerator"]:
+      ## The sequence interfaces are library types, not tables a class can fill.
+      nsError(ctx.config, b.info, ndUnsupported,
+              "a class implementing '" & unqualified(b.name) & "'")
   if cls.classKind == ckInterface: return
   if cls.typ != nil and cls.typ.kind == nsnTypeName:
     let b = canonicalTypeName(cls.typ.name)

@@ -174,6 +174,14 @@ proc resolveBases*(scope: NsModuleScope) =
     if c.decl != nil and c.base.len == 0: c.decl.typ = nil
     scope.classes[k] = c
 
+proc iteratorElement*(t: NsNode): NsNode =
+  ## The `T` of an iterator's `IEnumerable<T>` / `IEnumerator<T>` return type, nil
+  ## for any other type. C# gives `yield` meaning only in a member returning one.
+  if t != nil and t.kind == nsnTypeName and t.sons.len == 1 and
+     canonicalTypeName(t.name) in ["IEnumerable", "IEnumerator"]:
+    return t.sons[0]
+  nil
+
 proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Builds the module scope from a parsed module.
   result = NsModuleScope(classes: initTable[string, NsClassSymbol](),

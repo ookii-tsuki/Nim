@@ -1636,6 +1636,30 @@ proc deconstructToNim(l: Lowerer; n: NsNode): PNode =
       bare.nilChecks = false
       result.add newTree(nkAsgn, info, bare.expr(target), values[k])
 
+proc hasYield(n: NsNode): bool =
+  ## Whether a body is an iterator block: it holds a `yield` of its own, not one of
+  ## a nested local function.
+  if n == nil or n.kind in {nsnLambda, nsnLocalFunc}: return false
+  if n.kind == nsnYield: return true
+  if hasYield(n.body): return true
+  for x in n.sons:
+    if hasYield(x): return true
+  false
+
+proc memberBody(l: Lowerer; ret, body: NsNode): PNode =
+  ## A member's body. An iterator block becomes a closure iterator inside the
+  ## `IEnumerable<T>` (or `IEnumerator<T>`) it returns, so each enumeration runs
+  ## the body afresh, lazily, as C#'s does.
+  result = l.stmtSeq(body)
+  if body == nil or not hasYield(body): return
+  let el = iteratorElement(ret)
+  if el == nil: return
+  let info = body.info
+  let maker = (if canonicalTypeName(ret.name) == "IEnumerable": "nsEnumerable"
+               else: "nsEnumerator")
+  result = newTree(nkStmtList, info, newTree(nkAsgn, info, l.id("result", info),
+    newTree(nkCall, info, l.id(maker, info), l.typeToNim(el, info), result)))
+
 proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   ## A local function is a nested proc, which captures what it names as a closure.
   var inner = l
@@ -1643,8 +1667,26 @@ proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   let fp = inner.formalParams(n.typ, n.params, n.info)
   inner.procTypeParams = @[]
   for t in n.typeParams: inner.procTypeParams.add t.name
-  result = inner.mkProc(l.id(n.name, n.info), fp, inner.stmtSeq(n.body), n.info,
-                        withPragmas = true)
+  result = inner.mkProc(l.id(n.name, n.info), fp, inner.memberBody(n.typ, n.body),
+                        n.info, withPragmas = true)
+
+proc enumeratorLoop(l: Lowerer; n: NsNode): PNode =
+  ## `foreach` over a class with a `GetEnumerator` method, as C# defines it:
+  ## `var e = c.GetEnumerator(); while (e.MoveNext()) { var x = e.Current; ... }`.
+  let info = n.info
+  let e = l.fresh("nsEnum")
+  let sl = newNodeI(nkStmtList, info)
+  sl.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(e, info),
+    empty(info), newTree(nkCall, info,
+      newTree(nkDotExpr, info, l.expr(n.body), l.id("GetEnumerator", info)))))
+  let body = newNodeI(nkStmtList, info)
+  body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(n.name, info),
+    (if n.typ != nil: l.typeToNim(n.typ, info) else: empty(info)),
+    newTree(nkDotExpr, info, l.id(e, info), l.id("Current", info))))
+  for s in n.sons: body.add l.stmt(s)
+  sl.add newTree(nkWhileStmt, info, newTree(nkCall, info,
+    newTree(nkDotExpr, info, l.id(e, info), l.id("MoveNext", info))), body)
+  result = newTree(nkBlockStmt, info, empty(info), sl)
 
 proc stmtInner(l: Lowerer; n: NsNode): PNode =
   case n.kind
@@ -1690,10 +1732,18 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
   of nsnChecked, nsnUnchecked: result = l.checkedToNim(n)
   of nsnFor: result = l.forToNim(n)
   of nsnForeach:
+    if n.strVal == "GetEnumerator": return l.enumeratorLoop(n)
     result = newNodeI(nkForStmt, n.info)
     result.add l.id(n.name, n.info)
     result.add l.expr(n.body)
     result.add l.stmtsToNode(n.sons, n.info)
+  of nsnYield:
+    ## Inside the closure iterator `memberBody` builds: `yield return v` yields,
+    ## and `yield break` ends the iteration.
+    if n.name == "return":
+      result = newTree(nkYieldStmt, n.info, l.expr(n.body))
+    else:
+      result = newTree(nkReturnStmt, n.info, empty(n.info))
   of nsnSwitch: result = l.switchToNim(n)
   of nsnTry: result = l.tryToNim(n)
   of nsnUsingStmt: result = l.usingToNim(n)
@@ -2571,7 +2621,8 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         if m.explicitIface.len > 0: l.id("ns" & m.explicitIface & "_" & m.name, m.info)
         else: l.exportedName(m.attrs, m.name, m.info)
       ## C# lets a call statement drop a method's result.
-      let pd = l.asMethod(n, m, inner.mkProc(nameNode, params, inner.stmtSeq(m.body),
+      let pd = l.asMethod(n, m, inner.mkProc(nameNode, params,
+                                             inner.memberBody(m.typ, m.body),
                                              m.info, withPragmas = true))
       into.add pd
       if m.name == "Main" and l.entryPoint == nil: l.entryPoint = pd
