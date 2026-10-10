@@ -57,6 +57,8 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndTypeArgCount
+    ndNotGenericType
     ndPrimaryNotChained
     ndWithNotRecord
     ndRequiredMember
@@ -151,6 +153,8 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndTypeArgCount: (code: "0305", msg: "Using the generic type '$1' requires $2 type arguments"),
+    ndNotGenericType: (code: "0308", msg: "The non-generic type '$1' cannot be used with type arguments"),
     ndPrimaryNotChained: (code: "8862", msg: "A constructor declared in a type with parameter list must" &
                         " have 'this' constructor initializer."),
     ndWithNotRecord: (code: "8858", msg: "The receiver type '$1' is not a valid record type and is not" &
