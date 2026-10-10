@@ -57,6 +57,8 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndVarianceNotAllowed
+    ndInvalidVariance
     ndArrayInitLength
     ndAnonDeclarator
     ndAnonDuplicate
@@ -160,6 +162,10 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndVarianceNotAllowed: (code: "1960", msg: "Invalid variance modifier. Only interface and" &
+                         " delegate type parameters can be specified as variant."),
+    ndInvalidVariance: (code: "1961", msg: "Invalid variance: The type parameter '$1' must be" &
+                      " $2 valid on '$3'. '$1' is $4."),
     ndArrayInitLength: (code: "0847", msg: "An array initializer of length '$1' is expected"),
     ndAnonDeclarator: (code: "0746", msg: "Invalid anonymous type member declarator. Anonymous type" &
                      " members must be declared with a member assignment, simple name or member access."),

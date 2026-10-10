@@ -1,0 +1,14 @@
+// Valid C# that N# rejects: variance over a string type argument.
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            Func<string> fs = () => "s";
+            Func<object> fo = fs;
+            Console.WriteLine(fo());
+        }
+    }
+}

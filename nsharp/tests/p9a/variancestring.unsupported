@@ -1,0 +1,2 @@
+Valid C# that N# rejects: variance over a string type argument.
+code: NS9999

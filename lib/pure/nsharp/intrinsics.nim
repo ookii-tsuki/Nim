@@ -478,3 +478,13 @@ proc GetUpperBound*[T](a: NsMdArray[T]; d: SomeInteger): int32 = a.GetLength(d) 
 proc GetLowerBound*[T](a: NsMdArray[T]; d: SomeInteger): int32 = 0
 iterator items*[T](a: NsMdArray[T]): T =
   for x in a.nsData: yield x
+
+# --- variance -----------------------------------------------------------------
+
+proc nsVariant*[A, B](x: A; t: typedesc[B]): B =
+  ## `IProducer<Cat>` as `IProducer<Animal>`, `Func<Cat>` as `Func<Animal>`: C#
+  ## allows these only over reference type arguments, which Nim represents alike,
+  ## so the value is reread as the other instantiation (and copied as one, which
+  ## keeps the reference counts right).
+  static: doAssert sizeof(A) == sizeof(B)
+  cast[ptr B](unsafeAddr x)[]

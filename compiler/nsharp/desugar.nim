@@ -1057,7 +1057,12 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnRefArg: result = l.expr(n.body)
   of nsnOutDecl: result = l.id(n.name, n.info)   ## declared before the statement
   else: result = empty(n.info)
-  if n.conv.len > 0:
+  if n.conv == "nsVariant":
+    ## A variant conversion: the type arguments are references either way, so the
+    ## value is reinterpreted as the target instantiation.
+    result = newTree(nkCall, n.info, l.id("nsVariant", n.info), result,
+                     l.typeToNim(n.convType, n.info))
+  elif n.conv.len > 0:
     ## The implicit numeric conversion `sema.nim` recorded: C# promotes and widens
     ## where Nim wants the conversion spelled.
     result = newTree(nkCall, n.info, l.id(nimTypeName(n.conv), n.info), result)
