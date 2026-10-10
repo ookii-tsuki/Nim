@@ -922,9 +922,20 @@ proc parsePrimaryPattern(p: var NsParser): NsNode =
   let info = p.infoOf(t)
   case t.kind
   of nsLParen:
+    ## `(p)` groups; `(p, q)` is a positional pattern over a tuple or `Deconstruct`.
     discard p.advance
-    result = p.parsePattern()
+    let first = p.parsePattern()
+    if not p.at(nsComma):
+      discard p.expect(nsRParen)
+      return first
+    result = nsn(nsnPatPositional, info)
+    result.add first
+    while p.at(nsComma):
+      discard p.advance
+      result.add p.parsePattern()
     discard p.expect(nsRParen)
+    if p.at(nsIdent) and p.peek.text notin ["and", "or", "when"]:
+      result.name = p.advance.text
   of nsLt, nsGt, nsLe, nsGe:
     discard p.advance
     result = nsn(nsnPatRel, info)
@@ -962,7 +973,16 @@ proc parsePrimaryPattern(p: var NsParser): NsNode =
     if t.kind == nsIdent and t.text notin ["null", "true", "false", "default"] and
        p.looksLikeTypePattern():
       let ty = p.parseType()
-      if p.at(nsLBrace):
+      if p.at(nsLParen):
+        ## `T(p, q)`: of type `T`, deconstructed.
+        discard p.advance
+        result = nsn(nsnPatPositional, info)
+        result.typ = ty
+        while not p.at(nsRParen) and not p.at(nsEof):
+          result.add p.parsePattern()
+          if p.at(nsComma): discard p.advance else: break
+        discard p.expect(nsRParen)
+      elif p.at(nsLBrace):
         result = nsn(nsnPatProp, info)
         result.typ = ty
         p.parsePropertySubpatterns(result)

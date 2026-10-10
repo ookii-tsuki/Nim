@@ -1235,6 +1235,37 @@ proc walkPattern(ctx: var NsCheckContext; pat, subject: NsNode) =
     ctx.walkPattern(pat.body, subject)
   of nsnPatVar:
     ctx.declare(pat.name, subject.typeKind, subject.typeName, pat.rtype)
+  of nsnPatPositional:
+    ## `T(p, q)` / `(p, q)`: the subject (seen as `T`) taken apart -- a tuple by its
+    ## elements, anything else by its `Deconstruct` -- each part matched.
+    var owner = subject
+    if pat.typ != nil:
+      ctx.checkTypeTest(pat)
+      let k = ctx.classifyType(pat.typ)
+      owner = subjectOf(k, declTypeName(pat.typ), pat.typ, pat.info)
+    var parts: seq[NsNode] = @[]
+    let ot = owner.rtype
+    if ot != nil and ot.kind == nsnTupleType and ot.sons.len == pat.sons.len:
+      pat.strVal = "tuple"
+      for e in ot.sons: parts.add e.typ
+    elif ctx.scope.classes.hasKey(owner.typeName):
+      for o in ctx.scope.memberOverloads(owner.typeName, "Deconstruct"):
+        if o.len == pat.sons.len:
+          pat.strVal = "Deconstruct"
+          for p in o: parts.add p.typ
+          break
+    if pat.strVal.len == 0:
+      nsError(ctx.config, pat.info, ndUnsupported,
+              "a positional pattern on a type without a matching Deconstruct")
+      return
+    pat.rtype = owner.rtype
+    if pat.name.len > 0:
+      ctx.declare(pat.name, owner.typeKind, owner.typeName, owner.rtype)
+    for i, x in pat.sons:
+      let et = parts[i]
+      ctx.walkPattern(x, subjectOf(ctx.classifyType(et), declTypeName(et), et, x.info))
+    pat.argParam = nsn(nsnTupleType, pat.info)
+    for et in parts: pat.argParam.add nsnParam("", et, pat.info)
   of nsnPatList:
     ## `[p, .., q]`: each element pattern against an element of the subject; the
     ## slice's against a slice, which only an array or a string has.

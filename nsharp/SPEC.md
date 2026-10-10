@@ -491,7 +491,8 @@ v2.
 | `?:` ternary | ✅ | ✅ v1 | front (→ `nkIfExpr`) |
 | `is` / `as` | type test/cast | ✅ v1 | front (→ Nim `of`/conv) |
 | `(T)x` explicit cast | conversion | ✅ v1 | front (→ Nim `T(x)`) |
-| Patterns: type `T x`, constant, `null`, relational `> 5`, `and`/`or`/`not`, property `{ P: pat }`, `var x`, `_` | C# 7-9 | ✅ v1 | desugar (a boolean test assigning the pattern's variables, which are declared where C# scopes them); positional patterns are later |
+| Patterns: type `T x`, constant, `null`, relational `> 5`, `and`/`or`/`not`, property `{ P: pat }`, `var x`, `_` | C# 7-9 | ✅ v1 | desugar (a boolean test assigning the pattern's variables, which are declared where C# scopes them); positional patterns: see below |
+| Positional and tuple patterns `Point(var x, 0)`, `(0, _)` | deconstruction | ✅ v1 | sem + desugar: of the type (or not null), then the parts -- a tuple's elements, or the `out` values of the `Deconstruct` with as many parameters -- each against its pattern; a designation binds the whole |
 | List patterns `[1, _, ..]`, `[var a, .. var rest, var z]` (C# 11) | sequence shape | ✅ v1 | sem + desugar: the length (exactly, or at least the elements beside a slice), then each element pattern against `x[i]`, those after the slice counted from the end, and the slice's pattern against `x[i ..< len - j]`. Arrays and strings, and for element patterns any type with `Count`/`Length` and an indexer; a slice pattern of anything else is NS9999 |
 | Switch expressions | C# 8 | ✅ v1 | desugar |
 | `^` (index-from-end), `..` (range) | C# 8 | ✅ v1 in element access | desugar: on an array or a string Nim's own `^k` and slices (`a..b` excludes `b`, so it is `a ..< b`; an open end is `.. ^1`); `x[^k]` on a type with an indexer and `Count`/`Length` is `x[x.Count - k]`, `x` read once. A range of anything else (a `List<T>`'s `Slice`) and an `Index`/`Range` value outside `[...]` are NS9999 |

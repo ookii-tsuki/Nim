@@ -1078,13 +1078,17 @@ proc patternBindings(pat: NsNode; into: var seq[NsNode]) =
     for f in pat.sons: patternBindings(f.body, into)
   of nsnPatAnd, nsnPatOr, nsnPatList:
     for x in pat.sons: patternBindings(x, into)
+  of nsnPatPositional:
+    if pat.name.len > 0: into.add pat
+    for x in pat.sons: patternBindings(x, into)
   of nsnPatNot, nsnPatSlice: patternBindings(pat.body, into)
   else: discard
 
 proc bindingType(l: Lowerer; b: NsNode): PNode =
   ## The Nim type of a pattern variable: the pattern's type, or the subject's; an
   ## `out T x`'s is `T`.
-  let t = (if b.kind in {nsnPatType, nsnPatProp, nsnOutDecl} and b.typ != nil: b.typ
+  let t = (if b.kind in {nsnPatType, nsnPatProp, nsnOutDecl, nsnPatPositional} and
+              b.typ != nil: b.typ
            else: b.rtype)
   if t != nil: l.typeToNim(t, b.info)
   else: newTree(nkCall, b.info, l.id("typeof", b.info), l.id("nsUntyped", b.info))
@@ -1192,6 +1196,45 @@ proc patTest(l: Lowerer; subj: PNode; pat: NsNode): PNode =
                      l.patTest(subj, pat.sons[1]))
   of nsnPatNot:
     result = newTree(nkPrefix, info, l.id("not", info), l.patTest(subj, pat.body))
+  of nsnPatPositional:
+    ## `T(p, q)`: of `T` (or not null), then the parts -- a tuple's elements, or the
+    ## `out` values of `Deconstruct` into temporaries -- each against its pattern.
+    var parts: seq[PNode] = @[]
+    var owner = subj
+    if pat.typ != nil:
+      parts.add l.typeTest(subj, pat, pat.typ, "")
+      if l.isRefKindName(pat.typeKind, pat.typeName) or pat.typeKind == tkUnknown:
+        owner = newTree(nkCall, info, l.typeToNim(pat.typ, info), owner)
+    elif l.isRefKindName(pat.typeKind, pat.typeName):
+      parts.add newTree(nkPrefix, info, l.id("not", info),
+                        newTree(nkCall, info, l.id("isNil", info), copyTree(subj)))
+    let ptypes = pat.argParam
+    let o = l.fresh("nsWhole")
+    let body = newNodeI(nkStmtList, info)
+    body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(o, info),
+                                                empty(info), copyTree(owner)))
+    var tests: seq[PNode] = @[]
+    var names: seq[string] = @[]
+    for i, x in pat.sons:
+      let v = l.fresh("nsPart")
+      names.add v
+      if pat.strVal == "tuple":
+        body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(v, info),
+          empty(info), newTree(nkDotExpr, info, l.id(o, info), l.id("Item" & $(i + 1), info))))
+      else:
+        let et = (if ptypes != nil and i < ptypes.sons.len: ptypes.sons[i].typ else: nil)
+        body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id(v, info),
+          l.typeToNim(et, info), empty(info)))
+    if pat.strVal == "Deconstruct":
+      let call = newTree(nkCall, info, newTree(nkDotExpr, info, l.id(o, info),
+                                              l.id("Deconstruct", info)))
+      for v in names: call.add l.id(v, info)
+      body.add call
+    for i, x in pat.sons: tests.add l.patTest(l.id(names[i], info), x)
+    if pat.name.len > 0: tests.add l.assignTrue(pat.name, l.id(o, info), info)
+    body.add l.andAll(tests, info)
+    parts.add newTree(nkBlockExpr, info, empty(info), body)
+    result = l.andAll(parts, info)
   of nsnPatList:
     ## `[p, .., q]`: the length -- exactly the element count, or at least the
     ## count beside the slice -- then each element against its pattern, those after

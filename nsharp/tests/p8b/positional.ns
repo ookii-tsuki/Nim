@@ -1,0 +1,45 @@
+using System;
+namespace Demo
+{
+    record Point(int X, int Y);
+    class Seg
+    {
+        public Point A, B;
+        public Seg(Point a, Point b) { A = a; B = b; }
+        public void Deconstruct(out Point a, out Point b) { a = A; b = B; }
+    }
+    class Program
+    {
+        static string Classify(Point p) => p switch
+        {
+            (0, 0) => "origin",
+            (var x, 0) => "on x at " + x,
+            Point(0, var y) => "on y at " + y,
+            Point(> 0, > 0) q => "first quadrant " + q.X,
+            _ => "elsewhere",
+        };
+        static string Fizz(int n) => (n % 3, n % 5) switch
+        {
+            (0, 0) => "FizzBuzz",
+            (0, _) => "Fizz",
+            (_, 0) => "Buzz",
+            _ => n.ToString(),
+        };
+        static void Main()
+        {
+            Console.WriteLine(Classify(new Point(0, 0)));
+            Console.WriteLine(Classify(new Point(3, 0)));
+            Console.WriteLine(Classify(new Point(0, 4)));
+            Console.WriteLine(Classify(new Point(2, 5)));
+            Console.WriteLine(Classify(new Point(-1, 5)));
+            for (int i = 9; i <= 15; i++) Console.Write(Fizz(i) + " ");
+            Console.WriteLine();
+            var s = new Seg(new Point(1, 1), new Point(2, 2));
+            if (s is (Point(1, _), var end)) Console.WriteLine("seg to " + end.X);
+            object o = s;
+            if (o is Seg(_, Point(var ex, var ey))) Console.WriteLine(ex + ey);
+            var t = (1, "one");
+            if (t is (1, var name)) Console.WriteLine(name);
+        }
+    }
+}

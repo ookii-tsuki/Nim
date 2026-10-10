@@ -23,7 +23,7 @@ Tick an item when it is merged into `nsharp`.
 
 - [x] Collection expressions (C# 12): `int[] a = [1, 2, 3];`, spreads `[..xs, 4]`
 - [x] List patterns (C# 11): `x is [1, _, ..]`, `[var first, .., var last]`
-- [ ] Positional and tuple patterns: `p is Point(var x, 0)`, `(a, b) switch { (0, _) => ... }`
+- [x] Positional and tuple patterns: `p is Point(var x, 0)`, `(a, b) switch { (0, _) => ... }`
 - [ ] `ref` locals and `ref` returns: `ref int r = ref a[0];`, `ref T Find(...)`
 - [ ] Default interface methods; static abstract interface members
 - [ ] `file`-local types; generic attributes `[Attr<T>]`; user-defined `checked` operators
