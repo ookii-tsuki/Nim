@@ -262,8 +262,8 @@ Storing value types (`int`, `struct`) in an `object` - real boxing - is deferred
 | File-scoped namespace `namespace X;` | C# 10 | ✅ v1 | front (the rest of the file is the namespace's body) |
 | `using System;` | import namespace | ✅ v1 (becomes an `import`) | front |
 | `using Alias = X.Y;` | namespace alias | ✅ v1 (imports the target) | front |
-| `using Alias = SomeType;` | alias of a type | 🔜 later | front |
-| `using static T;` | import members | 🔜 later | front |
+| `using Alias = SomeType;` | alias of a type | ✅ v1 | front (the parser writes the target wherever the alias names a type, `new Alias()` included, and the target's namespace is imported; `A = X.Y` is a type alias when `X.Y` is not a namespace and `Y` is a declared or library type). The import makes the namespace's other names visible too, which C# would not |
+| `using static T;` | import members | ✅ v1 | sem (a bare name no local, member or enclosing type answers is looked up among the statics of each `using static` type, and resolved as `T.name`; `T`'s namespace is imported) |
 | Global `using` | project-wide imports | 🔜 later | front |
 | Nested namespaces | dotted or nested blocks | ✅ v1 (both give one path) | front |
 | **File ↔ module mapping** | - | ✅ **D4** (§5.1) | front |
@@ -277,8 +277,8 @@ One `.ns` file is one compilation unit; imports resolve across `.ns` and `.nim`.
 **Qualifiers are dropped.** A namespace or type qualifier is decorative once the
 name is lowered, because imported symbols are flat: `System.Console.WriteLine`,
 `Company.Products.Gadget` and `P.Gadget` all lower to the bare name. That is why a
-namespace alias is only an import of its target, and why `using A = List<int>;` is
-reported rather than lowered: a type alias has no qualifier to drop.
+namespace alias is only an import of its target. A type alias has no qualifier to
+drop, so the parser substitutes its target instead.
 
 **...but a namespace the library declares is global.** C# has no `using` in the
 reachability rule for a fully qualified name, so `System.Console.WriteLine("hi")`

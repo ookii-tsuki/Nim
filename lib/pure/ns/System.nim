@@ -224,19 +224,19 @@ proc ReadLine*(): string = stdin.readLine
 # are off, which they are not inside the library. `Round` rounds a midpoint to the
 # even neighbour, .NET's default.
 
-# One overload per type, as .NET declares them.
+# `int` and `double` overloads, as .NET declares them, so an untyped literal picks
+# `int`; a generic one covers the other numeric types.
 proc Abs*(x: int32): int32 {.nsStatic: "Math".} = abs(x)
-proc Abs*(x: int64): int64 {.nsStatic: "Math".} = abs(x)
 proc Abs*(x: float): float {.nsStatic: "Math".} = abs(x)
 proc Max*(a, b: int32): int32 {.nsStatic: "Math".} = max(a, b)
-proc Max*(a, b: int64): int64 {.nsStatic: "Math".} = max(a, b)
 proc Max*(a, b: float): float {.nsStatic: "Math".} = max(a, b)
 proc Min*(a, b: int32): int32 {.nsStatic: "Math".} = min(a, b)
-proc Min*(a, b: int64): int64 {.nsStatic: "Math".} = min(a, b)
 proc Min*(a, b: float): float {.nsStatic: "Math".} = min(a, b)
 proc Sign*(x: int32): int32 {.nsStatic: "Math".} = int32(cmp(x, int32(0)))
-proc Sign*(x: int64): int32 {.nsStatic: "Math".} = int32(cmp(x, int64(0)))
 proc Sign*(x: float): int32 {.nsStatic: "Math".} = int32(cmp(x, float(0)))
+proc Abs*[T: SomeSignedInt](x: T): T {.nsStatic: "Math".} = abs(x)
+proc Max*[T: SomeNumber](a, b: T): T {.nsStatic: "Math".} = max(a, b)
+proc Min*[T: SomeNumber](a, b: T): T {.nsStatic: "Math".} = min(a, b)
 proc Sqrt*(x: float): float {.nsStatic: "Math".} = sqrt(x)
 proc Pow*(x, y: float): float {.nsStatic: "Math".} = pow(x, y)
 proc Floor*(x: float): float {.nsStatic: "Math".} = floor(x)

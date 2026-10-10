@@ -82,18 +82,34 @@ proc nsOf(path: string): string =
 
 # --- walking ----------------------------------------------------------------
 
+proc csSpelling(t: NsNode): string =
+  ## A type as C# writes it: `A.B<int, C<string>>`.
+  if t == nil: return ""
+  result = t.name
+  if t.sons.len > 0:
+    result.add "<"
+    for i, a in t.sons:
+      if i > 0: result.add ", "
+      result.add csSpelling(a)
+    result.add ">"
+
 proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
           facts: var seq[string]; usings: var seq[string]) =
   ## Visits every node once, collecting the projected facts.
   if n == nil: return
   case n.kind
   of nsnUsing:
-    if n.alias.len > 0: usings.add "using " & n.alias & " = " & n.name
+    if n.strVal == "static": discard
+    elif n.strVal == "type":
+      ## Roslyn projects a type alias by the type as written.
+      if n.typ != nil: usings.add "using " & n.alias & " = " & csSpelling(n.typ)
+    elif n.alias.len > 0: usings.add "using " & n.alias & " = " & n.name
     else: usings.add "using " & n.name
   of nsnMember:
     ## A library member access. The declaring module's namespace is the fact under
     ## test; a `Type.M` names a static member and is projected the same way.
-    let rk = (if n.body != nil: n.body.typeKind else: tkUnknown)
+    let rk = (if n.strVal == "usingStatic": tkUnknown
+              elif n.body != nil: n.body.typeKind else: tkUnknown)
     if rk == tkType:
       let recv = recvSpelling(n.body)
       let kind = surface.kindOfName(recv)

@@ -1,0 +1,46 @@
+using System;
+using System.Collections.Generic;
+using static System.Math;
+using static System.Console;
+using static Demo.Geometry.Units;
+using Table = System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<int>>;
+using Pt = Demo.Geometry.Point;
+
+namespace Demo.Geometry
+{
+    public class Point
+    {
+        public int X;
+        public int Y;
+        public Point(int x, int y) { X = x; Y = y; }
+        public override string ToString() => "(" + X + ", " + Y + ")";
+    }
+
+    public static class Units
+    {
+        public const int Scale = 10;
+        public static int ToMillis(int cm) => cm * Scale;
+    }
+}
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            WriteLine(Max(3, 7) + Min(2, 9));
+            WriteLine(Abs(-4.5));
+            WriteLine(Sqrt(16.0));
+            WriteLine(ToMillis(3) + Scale);
+            Table t = new Table();
+            t["a"] = new List<int> { 1, 2 };
+            t["a"].Add(3);
+            WriteLine(t["a"].Count);
+            Pt p = new Pt(1, 2);
+            WriteLine(p);
+            var q = new Pt(Max(p.X, 5), p.Y);
+            WriteLine(q.X);
+        }
+    }
+}

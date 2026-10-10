@@ -8,7 +8,7 @@
 # constructs, and modifiers N# does not implement, are reported rather than
 # ignored; skipping happens only as error recovery, after a diagnostic.
 
-import std/[strutils, sets]
+import std/[strutils, sets, tables]
 import ../lineinfos, ../msgs, ../options
 import ast, bcl, diagnostics, lexer
 
@@ -21,6 +21,9 @@ type
     condSeq: int            ## counts `?.` markers, so each chain link gets its own
     surface: NsBclSurface   ## the library's declarations, for telling a cast apart
     typeParams: seq[string]  ## the type parameters in scope, which are type names
+    typeAliases: Table[string, NsNode]
+      ## `using A = X.Y<int>;`: a name for a type, which the parser writes out in its
+      ## place, as C# resolves it.
     aliases: HashSet[string]
       ## The namespace aliases this file's own `using` directives introduce. A type
       ## reached through one (`(P.Gadget)x`) is a cast, not a parenthesised
@@ -153,7 +156,10 @@ proc parseType(p: var NsParser): NsNode =
     discard p.advance
     return nsnVoidType(p.infoOf(t))
   result = nsnTypeName(p.parseDottedName(), p.infoOf(t))
-  if p.at(nsLt):
+  if p.typeAliases.hasKey(result.name) and not p.at(nsLt):
+    ## A type alias stands for its target.
+    result = copyNsTree(p.typeAliases[result.name])
+  elif p.at(nsLt):
     discard p.advance
     while not atGtClose(p) and not p.at(nsEof):
       result.add p.parseType()
@@ -316,7 +322,8 @@ proc isTypeName(p: NsParser; name: string): bool =
   ## a type or namespace this compilation declares, or a namespace alias this file
   ## introduces. The grammar has to tell a cast from a parenthesised expression, and
   ## this is the symbol table it reaches that through.
-  p.surface.isKnownTypeName(name) or p.aliases.contains(name) or name in p.typeParams
+  p.surface.isKnownTypeName(name) or p.aliases.contains(name) or name in p.typeParams or
+    p.typeAliases.hasKey(name)
 
 proc looksLikeCast(p: NsParser): bool =
   ## `(T)x` against `(x)`. The parenthesised name must be a type -- C#'s, the
@@ -1003,7 +1010,11 @@ proc parseNew(p: var NsParser, kw: NsToken): NsNode =
       discard p.advance
       typ.name.add "."
       typ.name.add p.advance.text
-    if p.at(nsLt):
+    if p.typeAliases.hasKey(typ.name) and not p.at(nsLt):
+      ## `new A()` through a type alias.
+      typ = copyNsTree(p.typeAliases[typ.name])
+      typ.info = info
+    elif p.at(nsLt):
       discard p.advance
       while not atGtClose(p) and not p.at(nsEof):
         typ.add p.parseType()
@@ -2061,15 +2072,39 @@ proc parseUsing(p: var NsParser): NsNode =
   ## written with it is resolved against, so it is recorded on the node.
   result = nsn(nsnUsing, p.here())
   discard p.advance
+  if p.at(nsIdent) and p.peek.text == "static" and p.peekAhead(1).kind == nsIdent:
+    ## `using static N.T;`: the statics of `T` are reachable by their bare names.
+    ## `T`'s namespace is imported; sema resolves the names.
+    discard p.advance
+    let target = p.parseType()
+    result.strVal = "static"
+    result.typ = target
+    let dot = target.name.rfind('.')
+    result.name = (if dot > 0: target.name[0 ..< dot] else: "")
+    while not p.at(nsSemi) and not p.at(nsEof): discard p.advance
+    if p.at(nsSemi): discard p.advance
+    return
   let first = p.parseDottedName()
   if p.at(nsAssign):
     discard p.advance
-    let target = p.parseDottedName()
-    if p.at(nsLt):
-      p.err(p.peek, ndUnsupported, "an alias of a type")
-    else:
-      result.name = target
+    let target = p.parseType()
+    let last = target.name.split('.')[^1]
+    if target.kind == nsnTypeName and
+       (target.sons.len > 0 or (not isDeclaredNamespace(target.name) and
+        (isDeclaredType(last) or p.surface.isKnownTypeName(last)))):
+      ## An alias of a type: the parser writes the target wherever the alias is
+      ## named, and the target's namespace is imported.
+      p.typeAliases[first] = target
+      result.strVal = "type"
       result.alias = first
+      result.typ = target
+      let dot = target.name.rfind('.')
+      result.name = (if dot > 0: target.name[0 ..< dot] else: "")
+      while not p.at(nsSemi) and not p.at(nsEof): discard p.advance
+      if p.at(nsSemi): discard p.advance
+      return
+    result.name = target.name
+    result.alias = first
   else:
     result.name = first
   ## Only the alias is this file's own name for the target; the target itself is a
@@ -2237,7 +2272,8 @@ proc parseNsModule*(source: string; fileIdx: FileIndex;
     else: kept.add t
   var p = NsParser(toks: kept, pos: 0, config: config,
                    fileIdx: fileIdx, surface: bclSurface(config),
-                   aliases: initHashSet[string]())
+                   aliases: initHashSet[string](),
+                   typeAliases: initTable[string, NsNode]())
   result = nsn(nsnModule, newLineInfo(fileIdx, 1, 1))
   while not p.at(nsEof):
     if p.at(nsSemi):

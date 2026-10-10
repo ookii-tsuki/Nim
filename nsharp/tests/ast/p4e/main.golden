@@ -8,6 +8,8 @@ nkStmtList
       nkIdent 'off'
   nkImportStmt
     nkStrLit "System"
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
   nkTypeSection
     nkTypeDef
       nkPostfix
@@ -116,9 +118,13 @@ nkStmtList
       nkVarSection
         nkIdentDefs
           nkIdent 'nums'
-          nkIdent 'IntList'
+          nkBracketExpr
+            nkIdent 'List'
+            nkIdent 'int32'
           nkCall
-            nkIdent 'newIntList'
+            nkBracketExpr
+              nkIdent 'newList'
+              nkIdent 'int32'
       nkCall
         nkDotExpr
           nkIdent 'nums'

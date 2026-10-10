@@ -212,3 +212,24 @@ proc applySig*(lam: NsNode; sig: NsSig) =
   for i, p in lam.params:
     if p.typ == nil and i < sig.params.len: p.typ = sig.params[i]
   if lam.typ == nil: lam.typ = sig.ret
+
+proc libResultType*(surface: NsBclSurface; recv: NsNode; name: string;
+                    nargs: int): NsNode =
+  ## The result type of a library member on a receiver of a known generic type
+  ## (`dict[k]` is the dictionary's `V`), its generic parameters bound by the
+  ## receiver's type arguments; nil when the library does not say.
+  if recv == nil or recv.rtype == nil or recv.rtype.kind != nsnTypeName: return nil
+  let rt = recv.rtype
+  let nimName = surface.nimSpellingOf(rt.name)
+  if nimName.len == 0: return nil
+  for m in surface.members.getOrDefault(nimName):
+    if m.name != name or m.paramTypes.len != nargs + 1 or m.ret.len == 0: continue
+    var nb = newSeq[NsNode](m.genParams.len)
+    unifyNim(m.paramTypes[0], rt, m.genParams, nb)
+    var ok = true
+    for b in nb:
+      if b == nil: ok = false
+    if not ok: continue
+    if m.genParams.find(m.ret) >= 0: return nb[m.genParams.find(m.ret)]
+    return nil
+  nil

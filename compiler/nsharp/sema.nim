@@ -808,6 +808,17 @@ proc checkLibraryInterfaceValue(ctx: NsCheckContext; t: NsNode) =
     nsError(ctx.config, t.info, ndUnsupported,
             "a value of the library interface '" & unqualified(t.name) & "'")
 
+proc staticImport(ctx: NsCheckContext; name: string): string =
+  ## The type a `using static` makes `name` a static member of, or "".
+  for t in ctx.scope.staticUsings:
+    if ctx.scope.classes.hasKey(t):
+      let m = ctx.scope.findMemberInfo(t, name)
+      if m.name.len > 0 and (m.isStatic or m.isConst): return t
+    else:
+      let m = ctx.surface.member(t, ctx.surface.kindOfName(t), name)
+      if m.name.len > 0 and m.isStatic: return t
+  ""
+
 proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## A bare name. Inside an instance member body, a name that is a class member
   ## is rewritten in place into `this.name` and then resolved as a member, which
@@ -815,6 +826,15 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if n.name == "$subject":
     ## The stand-in for a pattern's subject keeps the type it was given.
     return n.typeKind
+  if n.name notin ctx.members and not ctx.types.hasKey(n.name) and
+     ctx.scope.staticUsings.len > 0:
+    let owner = ctx.staticImport(n.name)
+    if owner.len > 0:
+      ## `using static T;` makes `T.name` reachable as `name`.
+      n.kind = nsnMember
+      n.strVal = "usingStatic"
+      n.body = ctx.staticReceiver(owner, n.info)
+      return ctx.walkExpr(n)
   if ctx.clsName.len > 0 and n.name notin ctx.members and
      not ctx.types.hasKey(n.name):
     let m = ctx.scope.enclosingStatic(ctx.clsName, n.name)
@@ -981,6 +1001,15 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   var owner = ""
   var tn = ""
   let callee = n.body
+  if callee != nil and callee.kind == nsnIdent and not ctx.types.hasKey(callee.name) and
+     callee.name notin ctx.members and ctx.scope.staticUsings.len > 0 and
+     ctx.scope.enclosingStatic(ctx.clsName, callee.name).name.len == 0:
+    let owner = ctx.staticImport(callee.name)
+    if owner.len > 0:
+      ## `using static T;` makes `T.M(...)` callable as `M(...)`.
+      callee.kind = nsnMember
+      callee.strVal = "usingStatic"
+      callee.body = ctx.staticReceiver(owner, callee.info)
   if callee != nil and callee.kind == nsnIdent and ctx.clsName.len > 0 and
      not ctx.types.hasKey(callee.name) and callee.name notin ctx.members:
     let m = ctx.scope.enclosingStatic(ctx.clsName, callee.name)
@@ -1314,6 +1343,12 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     elif n.body != nil and n.body.typeKind == tkString:
       result = tkChar
       n.setType(tkChar, "char")
+    elif n.body != nil and libResultType(ctx.surface, n.body, "[]", n.sons.len) != nil:
+      ## A library collection's element (`dict[k]`): the receiver's type argument.
+      let mt = libResultType(ctx.surface, n.body, "[]", n.sons.len)
+      result = ctx.classifyType(mt)
+      n.setType(result, declTypeName(mt))
+      n.rtype = mt
     elif n.body != nil and n.body.typeKind == tkClass and
          ctx.scope.findMemberInfo(rn, NsIndexerName).name.len > 0:
       ## A user indexer: its declared element type, seen through the receiver.
