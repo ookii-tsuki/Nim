@@ -40,14 +40,14 @@ const
     "virtual", "override", "abstract", "sealed", "readonly", "const", "unsafe",
     "extern", "new", "implicit", "explicit", "event", "required"]
   NsTypeModifiers = ["public", "private", "protected", "internal", "abstract",
-    "sealed", "static", "partial"]
+    "sealed", "static", "partial", "file"]
   ## Modifiers N# actually implements. Anything else recognised but unimplemented
   ## is reported by `parseModifierList` instead of being silently dropped.
   NsMemberModifiers = ["public", "private", "protected", "internal", "static",
     "const", "readonly", "virtual", "override", "abstract", "sealed", "new",
     "implicit", "explicit", "event", "required"]
   NsClassModifiers = ["public", "private", "protected", "internal", "abstract",
-    "sealed", "static", "partial"]
+    "sealed", "static", "partial", "file"]
 
 # --- token helpers ----------------------------------------------------------
 
@@ -2109,7 +2109,7 @@ proc parseTypeDecl(p: var NsParser): NsNode =
     result.params = p.parseParams()
   result.attrs = NsAttrs(access: accessOfTopLevel(mods), isAbstract: "abstract" in mods,
                          isSealed: "sealed" in mods, isStatic: "static" in mods,
-                         isPartial: "partial" in mods)
+                         isPartial: "partial" in mods, isFile: "file" in mods)
   if p.at(nsColon):
     ## `: Base, I1, I2`. Which of them is a class is not the grammar's to say:
     ## `symbols.nim` decides, once every type is known.
@@ -2163,7 +2163,7 @@ proc parseEnumDecl(p: var NsParser): NsNode =
   let nameTok = p.advance
   result = nsn(nsnEnumDecl, p.infoOf(nameTok))
   result.name = nameTok.text
-  result.attrs = NsAttrs(access: accessOfTopLevel(mods))
+  result.attrs = NsAttrs(access: accessOfTopLevel(mods), isFile: "file" in mods)
   if p.at(nsColon):
     ## `enum E : byte`: the underlying integer type.
     discard p.advance
@@ -2199,7 +2199,7 @@ proc parseDelegateDecl(p: var NsParser): NsNode =
   result = nsn(nsnDelegateDecl, p.infoOf(nameTok))
   result.name = nameTok.text
   result.typ = ret
-  result.attrs = NsAttrs(access: accessOfTopLevel(mods))
+  result.attrs = NsAttrs(access: accessOfTopLevel(mods), isFile: "file" in mods)
   result.typeParams = p.parseTypeParams()
   result.params = p.parseParams()
   result.constraints = p.parseWhereClauses()
@@ -2342,6 +2342,7 @@ proc hoistNestedTypes(list: var seq[NsNode]; config: ConfigRef) =
       for m in d.sons:
         if m.kind in {nsnClassDecl, nsnEnumDecl, nsnDelegateDecl}:
           m.outer = (if d.outer.len > 0: d.outer & "+" else: "") & d.name
+          if m.attrs.isFile: nsError(config, m.info, ndNestedFileType, m.name)
           nested.add m
         else: kept.add m
       d.sons = kept

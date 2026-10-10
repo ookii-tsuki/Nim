@@ -36,6 +36,7 @@ type
     isRequired*: bool       ## `required`: every object initializer must set it
     isRecord*: bool         ## a `record`: value equality, printing, `with`
     isPrimary*: bool        ## a constructor synthesized from a primary parameter list
+    isFile*: bool           ## `file` (C# 11): a top-level type only its own file may name
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.

@@ -26,7 +26,8 @@ Tick an item when it is merged into `nsharp`.
 - [x] Positional and tuple patterns: `p is Point(var x, 0)`, `(a, b) switch { (0, _) => ... }`
 - [x] `ref` locals and `ref` returns: `ref int r = ref a[0];`, `ref T Find(...)`
 - [x] Default interface methods; static abstract interface members
-- [ ] `file`-local types; generic attributes `[Attr<T>]`; user-defined `checked` operators
+- [x] `file`-local types
+- [ ] generic attributes `[Attr<T>]`; user-defined `checked` operators
 
 ## Batch 3: deeper semantics
 
