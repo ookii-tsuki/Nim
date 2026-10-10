@@ -1,0 +1,6 @@
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Program { static void Main() { var l = new List<int> { 1, 2, 3 }; var x = l[0..2]; Console.WriteLine(x.Count); } }
+}

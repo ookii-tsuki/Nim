@@ -12,7 +12,8 @@ Tick an item when it is merged into `nsharp`.
 
 - [x] `out var` / `out _` everywhere, typed from the parameter (generic methods too). A library method
       with an `out` parameter needs the library to declare one first, which is library work
-- [ ] Index-from-end and ranges: `a[^1]`, `a[1..^1]`, `s[..3]` (arrays, strings, lists)
+- [x] Index-from-end and ranges: `a[^1]`, `a[1..^1]`, `s[..3]` (arrays, strings; `^` on lists).
+      Ranges of lists and `Index`/`Range` values need library types
 - [ ] Null-forgiving `x!` (checked, no runtime effect)
 - [ ] Anonymous methods `delegate (int x) { ... }`
 - [ ] `protected internal`, `private protected`

@@ -1,0 +1,2 @@
+Valid C# that N# rejects: an Index (or Range) value outside an element access.
+code: NS9999

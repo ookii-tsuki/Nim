@@ -228,6 +228,7 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
     result = empty(info)
 
 proc expr(l: Lowerer; n: NsNode): PNode
+proc fresh(l: Lowerer; base: string): string
 proc throwToNim(l: Lowerer; n: NsNode): PNode
 proc checkedExprToNim(l: Lowerer; n: NsNode): PNode
 proc assignToNim(l: Lowerer; n: NsNode): PNode
@@ -412,6 +413,21 @@ proc typeRef(l: Lowerer; t: NsNode): PNode =
     for a in t.typeArgs: result.add l.typeToNim(a, t.info)
 
 proc memberReceiverChecked(l: Lowerer; n: NsNode): PNode
+
+proc indexArgToNim(l: Lowerer; a: NsNode): PNode =
+  ## An array or string index: `^k` is Nim's own; a C# range `a..b` excludes `b`,
+  ## so it is Nim's `a ..< b`, and an open end is `.. ^1`.
+  let info = a.info
+  if a.kind == nsnFromEnd:
+    return newTree(nkPrefix, info, l.id("^", info), l.expr(a.body))
+  if a.kind != nsnRange: return l.expr(a)
+  let start = (if a.sons[0] == nil: newIntNode(nkIntLit, 0) else: l.indexArgToNim(a.sons[0]))
+  let stop = a.sons[1]
+  if stop == nil or (stop.kind == nsnFromEnd and stop.body.kind == nsnIntLit and
+                     stop.body.intVal == 0):
+    return newTree(nkInfix, info, l.id("..", info), start,
+                   newTree(nkPrefix, info, l.id("^", info), newIntNode(nkIntLit, 1)))
+  newTree(nkInfix, info, l.id("..<", info), start, l.indexArgToNim(stop))
 
 proc callToNim(l: Lowerer; n: NsNode): PNode =
   var callee = n.body
@@ -831,8 +847,21 @@ proc expr(l: Lowerer; n: NsNode): PNode =
                        l.id(n.name, n.info))
   of nsnCall: result = l.callToNim(n)
   of nsnIndex:
+    if n.strVal.startsWith("count:"):
+      ## `x[^k]` on a collection: `x[x.Count - k]`, `x` read once.
+      let info = n.info
+      let t = l.fresh("nsRecv")
+      let count = newTree(nkDotExpr, info, l.id(t, info), l.id(n.strVal[6 .. ^1], info))
+      let br = newTree(nkBracketExpr, info, l.id(t, info))
+      for a in n.sons:
+        if a.kind == nsnFromEnd:
+          br.add newTree(nkInfix, info, l.id("-", info), count, l.expr(a.body))
+        else: br.add l.expr(a)
+      return newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
+        newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(t, info), empty(info),
+                                            l.expr(n.body))), br))
     result = newTree(nkBracketExpr, n.info, l.expr(n.body))
-    for i in n.sons: result.add l.expr(i)
+    for i in n.sons: result.add l.indexArgToNim(i)
   of nsnNew: result = l.newToNim(n)
   of nsnNewArray:
     let typ = newTree(nkBracketExpr, n.info, l.id("newSeq", n.info),

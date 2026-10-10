@@ -158,6 +158,8 @@ type
     nsnDefault         # typ = type                           (from `default(T)`)
     nsnCheckedExpr     # name = "checked" / "unchecked", body = operand
     nsnTypeOf          # typ = the type                       (from `typeof(T)`)
+    nsnFromEnd         # body = distance from the end         (from `^k`)
+    nsnRange           # sons = [start, end], either nil      (from `a..b` in `x[...]`)
     nsnSizeOf          # typ = the type                       (from `sizeof(T)`)
     nsnWith            # body = record value, inits = member initialisers
                        #   (from `r with { A = 1 }`); strVal = sema's temporary
