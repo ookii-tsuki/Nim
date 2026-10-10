@@ -57,6 +57,9 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndNameNotFound
+    ndObjectRefRequired
+    ndThisInStatic
     ndFinalizerName
     ndFinalizerInStruct
     ndFinalizerNeverRuns
@@ -168,6 +171,11 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndNameNotFound: (code: "0103", msg: "The name '$1' does not exist in the current context"),
+    ndObjectRefRequired: (code: "0120", msg: "An object reference is required for the non-static" &
+                        " field, method, or property '$1'"),
+    ndThisInStatic: (code: "0026", msg: "Keyword 'this' is not valid in a static property, static" &
+                   " method, or static field initializer"),
     ndFinalizerName: (code: "0574", msg: "Name of destructor must match name of type"),
     ndFinalizerInStruct: (code: "0575", msg: "Only class types can contain destructors"),
     ndFinalizerNeverRuns: (code: "9998", msg: "The finalizer of '$1' never runs: N# has no" &

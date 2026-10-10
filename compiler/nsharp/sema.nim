@@ -948,6 +948,14 @@ proc targetTyped(ctx: NsCheckContext; value, target: NsNode) =
           value.inits.add add
   else: discard
 proc walkStmt(ctx: var NsCheckContext; n: NsNode)
+
+proc walkInScope(ctx: var NsCheckContext; stmts: seq[NsNode]) =
+  ## Statements in the scope already open: its local functions first, since C#
+  ## lets a body call one before its declaration, or recursively.
+  for s in stmts:
+    if s != nil and s.kind == nsnLocalFunc:
+      ctx.declare(s.name, tkDelegate, NsLocalFuncMark, s)
+  for s in stmts: ctx.walkStmt(s)
 proc walkBody(ctx: var NsCheckContext; blk: NsNode)
 
 proc staticReceiver(ctx: NsCheckContext; owner: string; info: TLineInfo): NsNode =
@@ -982,6 +990,32 @@ proc staticImport(ctx: NsCheckContext; name: string): string =
       let m = ctx.surface.member(t, ctx.surface.kindOfName(t), name)
       if m.name.len > 0 and m.isStatic: return t
   ""
+
+proc chainInScope(ctx: NsCheckContext; cls: string): bool =
+  ## Whether every class `cls` derives from is this compilation's: a library base
+  ## (`Exception`, `Attribute`) lends members N# cannot list, so a name it does
+  ## not resolve may still be one of them.
+  if not ctx.scope.classes.hasKey(cls): return false
+  let ch = ctx.scope.chain(cls)
+  let last = ctx.scope.classes[ch[^1]].base
+  last.len == 0 or last in ["object", "Object"]
+
+proc unknownName(ctx: NsCheckContext; n: NsNode) =
+  ## A bare name nothing in scope declares (CS0103); an instance member named in a
+  ## static member, which needs an object (CS0120). Only reported where every
+  ## place the name could come from is known.
+  if n.name.len == 0 or n.name[0] in {'$', '#'} or n.name == "_": return
+  if ctx.clsName.len == 0 or not ctx.chainInScope(ctx.clsName): return
+  if n.name in ctx.typeParams or ctx.isTypeName(n.name): return
+  if ctx.surface.namespaces.contains(n.name): return
+  ## What every class inherits from `object` (`ReferenceEquals`, `Equals`).
+  if ctx.surface.member("object", tkClass, n.name).name.len > 0: return
+  if n.name in ctx.members:
+    let m = ctx.scope.findMemberInfo(ctx.clsName, n.name)
+    if not m.isStatic and ctx.isStaticCtx:
+      nsError(ctx.config, n.info, ndObjectRefRequired, m.owner & "." & n.name)
+    return
+  nsError(ctx.config, n.info, ndNameNotFound, n.name)
 
 proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## A bare name. Inside an instance member body, a name that is a class member
@@ -1037,6 +1071,7 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     result = tkType
   else:
     n.setType(tkUnknown)
+    ctx.unknownName(n)
     result = tkUnknown
 
 proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
@@ -1499,6 +1534,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnBoolLit: n.setType(tkBool); result = tkBool
   of nsnNull: n.setType(tkUnknown); result = tkUnknown
   of nsnThis:
+    if ctx.isStaticCtx and n.info.line > 0:
+      ## `this` names the object a static member does not have (CS0026).
+      nsError(ctx.config, n.info, ndThisInStatic)
     n.setType(tkClass, ctx.clsName)
     result = tkClass
   of nsnBase:
@@ -2006,7 +2044,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
                                    p.typ)
       else: ctx.declare(p.name, tkUnknown)
     if n.body != nil:
-      for s in n.body.sons: ctx.walkStmt(s)
+      ctx.walkInScope(n.body.sons)
     ctx.yieldHost = savedHost
     ctx.popScope()
     n.setType(tkDelegate)
@@ -2111,7 +2149,7 @@ proc walkForeach(ctx: var NsCheckContext; n: NsNode) =
     elemKind = (if elemName.endsWith("[]"): tkSequence else: ctx.classifyName(elemName))
   ctx.pushScope()
   ctx.declare(n.name, elemKind, elemName, elemType)
-  for s in n.sons: ctx.walkStmt(s)
+  ctx.walkInScope(n.sons)
   ctx.popScope()
 
 proc walkFor(ctx: var NsCheckContext; n: NsNode) =
@@ -2122,7 +2160,7 @@ proc walkFor(ctx: var NsCheckContext; n: NsNode) =
       if h == nil: continue
       if h.kind in {nsnLocalDecl, nsnAssign}: ctx.walkStmt(h)
       else: discard ctx.walkExpr(h)
-  for s in n.sons: ctx.walkStmt(s)
+  ctx.walkInScope(n.sons)
   ctx.popScope()
 
 proc walkTry(ctx: var NsCheckContext; n: NsNode) =
@@ -2138,7 +2176,7 @@ proc walkTry(ctx: var NsCheckContext; n: NsNode) =
         discard ctx.walkExpr(f)
         ctx.checkCondition(f)
       if c.body != nil:
-        for s in c.body.sons: ctx.walkStmt(s)
+        ctx.walkInScope(c.body.sons)
       ctx.popScope()
     elif c.kind == nsnFinally:
       walkBody(ctx, c.body)
@@ -2157,7 +2195,7 @@ proc walkSwitch(ctx: var NsCheckContext; n: NsNode) =
       else:
         discard ctx.walkExpr(lab)
     if sec.body != nil:
-      for st in sec.body.sons: ctx.walkStmt(st)
+      ctx.walkInScope(sec.body.sons)
     ctx.popScope()
 
 proc eventOf(ctx: NsCheckContext; target: NsNode): NsMemberSymbol =
@@ -2242,7 +2280,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     ctx.pushScope()
     for p in n.params: ctx.walkDecl(p)
     if n.body != nil:
-      for s in n.body.sons: ctx.walkStmt(s)
+      ctx.walkInScope(n.body.sons)
     ctx.popScope()
     ctx.yieldHost = savedHost
     ctx.retType = savedRet
@@ -2383,7 +2421,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       else:
         ctx.checkThrow(n)
   else:
-    for s in n.sons: ctx.walkStmt(s)
+    ctx.walkInScope(n.sons)
     if n.body != nil: discard ctx.walkExpr(n.body)
 
 proc walkBody(ctx: var NsCheckContext; blk: NsNode) =
@@ -2471,7 +2509,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     ctx.pushScope()
     for p in m.params: ctx.walkDecl(p)
     if m.body != nil:
-      for s in m.body.sons: ctx.walkStmt(s)
+      ctx.walkInScope(m.body.sons)
     ctx.popScope()
     ctx.isStaticCtx = false
     ctx.retType = savedRet
@@ -2484,7 +2522,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
       ctx.pushScope()
       for p in m.params: ctx.walkDecl(p)
       if i == 1: ctx.declare("value", ctx.classifyType(m.typ), declTypeName(m.typ), m.typ)
-      for s in acc.sons: ctx.walkStmt(s)
+      ctx.walkInScope(acc.sons)
       ctx.popScope()
     ctx.retType = savedRet
   of nsnMethodDecl:
@@ -2500,7 +2538,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     ctx.pushScope()
     for p in m.params: ctx.walkDecl(p)
     if m.body != nil:
-      for s in m.body.sons: ctx.walkStmt(s)
+      ctx.walkInScope(m.body.sons)
     ctx.popScope()
     ctx.members = saved
     ctx.retType = savedRet
@@ -2516,7 +2554,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     for p in m.params: ctx.walkDecl(p)
     for a in m.initArgs: discard ctx.walkExpr(a)
     if m.body != nil:
-      for s in m.body.sons: ctx.walkStmt(s)
+      ctx.walkInScope(m.body.sons)
     ctx.popScope()
     ctx.inCtor = false
     ctx.ctorIsStatic = false
@@ -2543,7 +2581,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
       if m.attrs.isEvent: ctx.retType = nil
       if i == 1 or m.attrs.isEvent:
         ctx.declare("value", ctx.classifyType(m.typ), declTypeName(m.typ), m.typ)
-      for s in acc.sons: ctx.walkStmt(s)
+      ctx.walkInScope(acc.sons)
       ctx.popScope()
     ctx.retType = savedRet
     ctx.isStaticCtx = false
