@@ -92,6 +92,29 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -317,6 +340,39 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Registry"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkCall
+          nkIdent 'nsGenericName'
+          nkStrLit "Demo.Registry"
+          nkCall
+            nkIdent 'FullName'
+            nkCall
+              nkIdent 'nsTypeOf'
+              nkIdent 'T'
   nkMethodDef
     nkPostfix
       nkIdent '*'

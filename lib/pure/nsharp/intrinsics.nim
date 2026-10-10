@@ -575,3 +575,14 @@ proc nsVariant*[A, B](x: A; t: typedesc[B]): B =
   ## keeps the reference counts right).
   static: doAssert sizeof(A) == sizeof(B)
   cast[ptr B](unsafeAddr x)[]
+
+# --- `typeof` of constructed types ---------------------------------------------
+
+proc nsGenericName*(base: string; args: varargs[string]): string =
+  ## .NET's name of a constructed generic type: ``System.Collections.Generic.List`1[System.Int32]``.
+  base & "`" & $args.len & "[" & args.join(",") & "]"
+
+proc nsTypeOf*[T](t: typedesc[seq[T]]): Type = nsTypeNamed(nsTypeOf(T).nsFull & "[]")
+  ## `typeof(int[])` is `System.Int32[]`.
+proc nsTypeOf*[T](t: typedesc[NsMdArray[T]]): Type = nsTypeNamed(nsMdName[T](2))
+  ## `typeof(int[,])`; a rank above 2 is not told apart by the type.

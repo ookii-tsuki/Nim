@@ -1,0 +1,8 @@
+System.Collections.Generic.List`1[System.Int32]
+System.Collections.Generic.Dictionary`2[System.String,System.Collections.Generic.List`1[System.Int32]]
+Demo.Box`1[System.String]
+Demo.Pair`2[System.Int32,Demo.Box`1[System.Double]]
+System.Int32[]
+true
+false
+Box`1

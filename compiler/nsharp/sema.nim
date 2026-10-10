@@ -1919,12 +1919,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     nsError(ctx.config, n.info, ndUnsupported, "an index or range value outside '[...]'")
     result = tkUnknown
   of nsnTypeOf:
-    ## A `Type` names the type; one with type arguments, or an array, would need
-    ## the argument types' names too, which N# does not build yet.
+    ## A `Type` names the type, a constructed one with its arguments' names.
     discard ctx.classifyType(n.typ)
-    if n.typ == nil or n.typ.kind != nsnTypeName or n.typ.sons.len > 0:
-      nsError(ctx.config, n.info, ndUnsupported,
-              "'typeof' of a generic, array or tuple type")
+    if n.typ == nil or n.typ.kind notin {nsnTypeName, nsnArrayType}:
+      nsError(ctx.config, n.info, ndUnsupported, "'typeof' of a tuple or nullable type")
     n.setType(tkClass, "Type")
     n.rtype = nsnTypeName("Type", n.info)
     result = tkClass
