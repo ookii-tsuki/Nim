@@ -183,19 +183,33 @@ nkStmtList
     nkStmtList
       nkVarSection
         nkIdentDefs
-          nkIdent 'grid'
+          nkIdent 'g'
           nkBracketExpr
             nkIdent 'NsMdArray'
             nkIdent 'int32'
           nkCall
-            nkIdent 'nsNewMd'
-            nkIdent 'int32'
-            nkIntLit 2
-            nkIntLit 2
+            nkIdent 'nsMdOf'
+            nkPrefix
+              nkIdent '@'
+              nkBracket
+                nkCall
+                  nkIdent 'int32'
+                  nkIntLit 1
+                nkCall
+                  nkIdent 'int32'
+                  nkIntLit 2
+                nkCall
+                  nkIdent 'int32'
+                  nkIntLit 3
+            nkPrefix
+              nkIdent '@'
+              nkBracket
+                nkIntLit 2
+                nkIntLit 2
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkIdent 'grid'
+          nkIdent 'g'
           nkIdent 'Length'
   nkProcDef
     nkPostfix

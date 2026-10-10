@@ -417,3 +417,64 @@ proc nsIsType*[T](o: RootRef; t: typedesc[T]): bool =
   ## `o is T`: a reference of that class, or a box of that value type.
   when T is RootRef: o != nil and o of T
   else: o != nil and o of NsBox[T]
+
+# --- multi-dimensional arrays ---------------------------------------------------
+#
+# `T[,]` is a reference, as a C# array is: the lengths and the elements in
+# row-major order, which is also the order `foreach` visits them in. An index out
+# of a dimension's range throws `IndexOutOfRangeException` (Nim's `IndexDefect`).
+
+type
+  NsMdBase* = ref object of RootObj
+    nsName: string    ## `System.Int32[,]`, what C# prints for the array
+  NsMdArray*[T] = ref object of NsMdBase
+    nsDims: seq[int]
+    nsData: seq[T]
+
+proc nsMdName[T](rank: int): string =
+  var name = "System.Object"
+  when compiles(nsTypeOf(T)): name = nsTypeOf(T).nsFull
+  name & "[" & repeat(',', rank - 1) & "]"
+
+method ToString*(a: NsMdBase): string = a.nsName
+method nsTypeName*(a: NsMdBase): string = a.nsName
+
+proc nsNewMd*[T](t: typedesc[T]; dims: varargs[int]): NsMdArray[T] =
+  var n = 1
+  for d in dims:
+    if d < 0: raise newException(OverflowDefect, "Arithmetic operation resulted in an overflow.")
+    n *= d
+  NsMdArray[T](nsDims: @dims, nsData: newSeq[T](n), nsName: nsMdName[T](dims.len))
+
+proc nsMdOf*[T](data: seq[T]; dims: seq[int]): NsMdArray[T] =
+  NsMdArray[T](nsDims: dims, nsData: data, nsName: nsMdName[T](dims.len))
+
+proc nsFlat[T](a: NsMdArray[T]; idx: openArray[int]): int =
+  if a == nil: raise newException(NilAccessDefect, "Object reference not set to an instance of an object.")
+  if idx.len != a.nsDims.len: raise newException(IndexDefect, "Index was outside the bounds of the array.")
+  for k, i in idx:
+    if i < 0 or i >= a.nsDims[k]:
+      raise newException(IndexDefect, "Index was outside the bounds of the array.")
+    result = result * a.nsDims[k] + i
+
+proc `[]`*[T](a: NsMdArray[T]; i, j: SomeInteger): var T =
+  a.nsData[a.nsFlat([int(i), int(j)])]
+proc `[]`*[T](a: NsMdArray[T]; i, j, k: SomeInteger): var T =
+  a.nsData[a.nsFlat([int(i), int(j), int(k)])]
+proc `[]=`*[T](a: NsMdArray[T]; i, j: SomeInteger; v: T) =
+  a.nsData[a.nsFlat([int(i), int(j)])] = v
+proc `[]=`*[T](a: NsMdArray[T]; i, j, k: SomeInteger; v: T) =
+  a.nsData[a.nsFlat([int(i), int(j), int(k)])] = v
+
+proc len*[T](a: NsMdArray[T]): int = a.nsData.len
+  ## `Length`: every element, across the dimensions.
+proc Length*[T](a: NsMdArray[T]): int32 = int32(a.nsData.len)
+proc Rank*[T](a: NsMdArray[T]): int32 = int32(a.nsDims.len)
+proc GetLength*[T](a: NsMdArray[T]; d: SomeInteger): int32 =
+  if d < 0 or int(d) >= a.nsDims.len:
+    raise newException(IndexDefect, "Index was outside the bounds of the array.")
+  int32(a.nsDims[d])
+proc GetUpperBound*[T](a: NsMdArray[T]; d: SomeInteger): int32 = a.GetLength(d) - 1
+proc GetLowerBound*[T](a: NsMdArray[T]; d: SomeInteger): int32 = 0
+iterator items*[T](a: NsMdArray[T]): T =
+  for x in a.nsData: yield x

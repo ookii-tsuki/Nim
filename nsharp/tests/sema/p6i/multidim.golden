@@ -1,0 +1,3 @@
+using System
+member Console.WriteLine = System | void
+member array.Length = System | int

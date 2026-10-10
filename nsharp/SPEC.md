@@ -197,7 +197,7 @@ are excluded: N# has no `void` type and no decimal.
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
 | Arrays `T[]` | 1-D array | ✅ v1 | front (→ `seq`/`array`) |
-| Multi-dim arrays `T[,]` | rectangular | 🔜 later (NS9999) | lib |
+| Multi-dim arrays `T[,]` | rectangular | ✅ v1 | front + lib: the library's `NsMdArray[T]`, a reference holding the lengths and the elements in row-major order (`foreach` order); `new T[n, m]`, `{ {..}, {..} }` initialisers (a ragged one is NS0847), `a[i, j]` up to rank 3, `Length`, `Rank`, `GetLength`, `GetUpper/LowerBound`, and it prints `System.Int32[,]`. Unlike `T[]`, which N# keeps as a value `seq`, it is shared by assignment, as in C#. Mixing `T[,]` with another array (`int[,][]`, `int[][,]`) is NS9999 |
 | Jagged arrays `T[][]` | array of arrays | ✅ v1 | front/lib |
 | `ValueTuple` `(int, string)`, named elements, deconstruction | tuples | ✅ v1 | desugar (→ a Nim tuple with fields `Item1..ItemN`; element names are aliases sema resolves; `(a, b) = v` reads `v` once; a class's `Deconstruct` is called). A whole tuple prints as Nim's `(Item1: 1, Item2: "z")`, not C#'s `(1, z)` |
 | `List<T>`, `Dictionary<K,V>`, `HashSet<T>`, `Queue<T>`, `Stack<T>` | collections | ✅ v1 | lib |
@@ -1026,6 +1026,7 @@ code:
 | `NS9054` | CS9054 | a `file` type nested in another type |
 | `NS9023`/`NS9024`/`NS9025` | CS9023/CS9024/CS9025 | a `checked` operator that cannot be checked, or has no unchecked version |
 | `NS0746`/`NS0828`/`NS0833` | CS0746/CS0828/CS0833 | an anonymous type member with no name, no type, or a repeated name |
+| `NS0847` | CS0847 | a multi-dimensional initializer whose rows differ in length |
 | `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
 | `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
 | `NS0070` | CS0070 | an event used outside its type other than by `+=`/`-=` |

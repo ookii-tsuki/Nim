@@ -77,7 +77,7 @@ type
     nsnEmpty
     # --- types ---
     nsnTypeName        # name, sons = generic arguments (may be empty)
-    nsnArrayType       # typ = element type
+    nsnArrayType       # typ = element type, intVal = rank when 2 or more (`T[,]`)
     nsnNullableType    # typ = inner type                 (from `T?`)
     nsnVoidType
     # --- declarations ---
@@ -147,8 +147,10 @@ type
     nsnMember          # body = receiver, name
     nsnIndex           # body = receiver, sons = indices
     nsnNew             # typ = constructed type, sons = arguments
-    nsnNewArray        # typ = element type, sons = [size]      (from `new T[n]`)
-    nsnArrayLit        # sons = elements                        (from `new T[] { .. }`)
+    nsnNewArray        # typ = element type, sons = sizes       (from `new T[n]`, `new T[n, m]`)
+    nsnArrayLit        # sons = elements                        (from `new T[] { .. }`);
+                       #   a `T[,]` one: intVal = rank, sons = elements in row-major
+                       #   order, params = nsnIntLit per dimension's length
     nsnUnary           # name = operator, body = operand
     nsnBinary          # name = operator, sons = [lhs, rhs]
     nsnNullDot         # name = marker name, body = guarded value, sons = [tail]

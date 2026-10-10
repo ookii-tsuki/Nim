@@ -176,13 +176,19 @@ proc parseType(p: var NsParser): NsNode =
     discard p.advance
     result = nsnNullableType(result, p.infoOf(t))
   while p.at(nsLBracket) and p.peekAhead(1).kind in {nsRBracket, nsComma}:
-    if p.peekAhead(1).kind == nsComma:
-      p.err(p.peek, ndUnsupported, "a multi-dimensional array")
-      while not p.at(nsRBracket) and not p.at(nsEof): discard p.advance
-    else:
-      discard p.advance
+    ## `T[]`, or `T[,]` with one comma per extra dimension.
     discard p.advance
+    var rank = 1
+    while p.at(nsComma):
+      discard p.advance
+      inc rank
+    discard p.expect(nsRBracket)
     result = nsnArrayType(result, p.infoOf(t))
+    if result.typ.kind == nsnArrayType and (rank > 1 or result.typ.intVal > 1):
+      ## C# reads `int[,][]` outside in, the reverse of how the nesting here
+      ## builds it, so a multi-dimensional array never mixes with another array.
+      p.err(p.peek, ndUnsupported, "a multi-dimensional array mixed with another array")
+    if rank > 1: result.intVal = rank
 
 proc parseTypeParams(p: var NsParser): seq[NsNode] =
   ## `<T, U>` after a declared name. C#'s variance markers (`in T`, `out T`) are
@@ -1092,8 +1098,29 @@ proc parseInitializerList(p: var NsParser): seq[NsNode] =
     if p.at(nsComma): discard p.advance else: break
   discard p.expect(nsRBrace)
 
+proc parseMdElements(p: var NsParser; lit: NsNode; level, rank: int) =
+  ## `{ {1, 2}, {3, 4} }` of a `T[,]` initialiser: the elements in row-major
+  ## order, and each dimension's length, which every row must share (CS0847).
+  let info = p.here()
+  discard p.expect(nsLBrace)
+  var n = 0
+  while not p.at(nsRBrace) and not p.at(nsEof):
+    if level + 1 < rank: p.parseMdElements(lit, level + 1, rank)
+    else: lit.add p.parseExpr()
+    inc n
+    if p.at(nsComma): discard p.advance else: break
+  discard p.expect(nsRBrace)
+  while lit.params.len < rank: lit.params.add nsnIntLit(-1, info)
+  if lit.params[level].intVal < 0:
+    lit.params[level].intVal = n
+  elif lit.params[level].intVal != n:
+    nsError(p.config, info, ndArrayInitLength, $lit.params[level].intVal)
+
 proc parseArrayElements(p: var NsParser; lit: NsNode) =
   ## `{ a, b, c }` of an array initialiser.
+  if lit.intVal > 1:
+    p.parseMdElements(lit, 0, int(lit.intVal))
+    return
   discard p.expect(nsLBrace)
   while not p.at(nsRBrace) and not p.at(nsEof):
     lit.add p.parseExpr()
@@ -1151,18 +1178,33 @@ proc parseNew(p: var NsParser, kw: NsToken): NsNode =
       p.expectGt()
     if p.at(nsLBracket):
       discard p.advance
-      if p.at(nsComma):
-        p.err(p.peek, ndUnsupported, "a multi-dimensional array")
-      if p.at(nsRBracket):
-        discard p.advance
+      if p.at(nsComma) or p.at(nsRBracket):
+        ## `new T[] { .. }`, `new T[,] { {..}, {..} }`.
+        var rank = 1
+        while p.at(nsComma):
+          discard p.advance
+          inc rank
+        discard p.expect(nsRBracket)
         result = nsn(nsnArrayLit, info)
         result.typ = typ
+        if rank > 1: result.intVal = rank
         if p.at(nsLBrace): p.parseArrayElements(result)
         return
       result = nsn(nsnNewArray, info)
       result.typ = typ
       result.add p.parseExpr()
+      while p.at(nsComma):
+        ## `new T[n, m]`: a multi-dimensional array.
+        discard p.advance
+        result.add p.parseExpr()
       discard p.expect(nsRBracket)
+      if p.at(nsLBrace):
+        ## `new T[2, 2] { {..}, {..} }`: the sizes restate the initialiser's.
+        let lit = nsn(nsnArrayLit, info)
+        lit.typ = typ
+        if result.sons.len > 1: lit.intVal = result.sons.len
+        p.parseArrayElements(lit)
+        return lit
       return
   elif not p.at(nsLParen):
     p.err(p.peek, ndInvalidExpressionTerm, p.peek.text)
@@ -1301,7 +1343,9 @@ proc parseInitializer(p: var NsParser; declared: NsNode): NsNode =
   ## A declaration's initialiser: an expression, or `{ a, b }` for an array.
   if p.at(nsLBrace):
     result = nsn(nsnArrayLit, p.here())
-    if declared != nil and declared.kind == nsnArrayType: result.typ = declared.typ
+    if declared != nil and declared.kind == nsnArrayType:
+      result.typ = declared.typ
+      result.intVal = declared.intVal
     p.parseArrayElements(result)
   else:
     result = p.parseExpr()
