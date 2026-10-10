@@ -1,0 +1,31 @@
+using System;
+namespace Demo
+{
+    class Animal { }
+    class Dog : Animal { }
+    struct Pt { public int X; }
+    enum Color { Red, Green }
+    class Outer { public class Inner { } }
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(typeof(int));
+            Console.WriteLine(typeof(int).Name);
+            Console.WriteLine(typeof(string).FullName);
+            Console.WriteLine(typeof(Dog));
+            Console.WriteLine(typeof(Outer.Inner).Name + " " + typeof(Outer.Inner).FullName);
+            Animal a = new Dog();
+            Console.WriteLine(a.GetType().Name);
+            Console.WriteLine(a.GetType() == typeof(Dog));
+            Console.WriteLine(a.GetType() == typeof(Animal));
+            Console.WriteLine(new Pt().GetType());
+            Console.WriteLine(Color.Green.GetType().Name);
+            Console.WriteLine(typeof(Color).Namespace);
+            Console.WriteLine(3.GetType());
+            Console.WriteLine(sizeof(int) + sizeof(long) + sizeof(char) + sizeof(byte) + sizeof(double));
+            Type t = typeof(object);
+            Console.WriteLine(t.Name);
+        }
+    }
+}

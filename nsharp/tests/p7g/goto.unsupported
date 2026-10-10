@@ -1,0 +1,2 @@
+Valid C# that N# rejects: goto (here goto case), which SPEC 6 leaves out.
+code: NS9999

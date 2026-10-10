@@ -1,0 +1,23 @@
+using System
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Type.FullName = System | string
+member Type.FullName = System | string
+member Type.Name = System.Reflection | string
+member Type.Name = System.Reflection | string
+member Type.Name = System.Reflection | string
+member Type.Name = System.Reflection | string
+member Type.Name = System.Reflection | string
+member Type.Namespace = System | string

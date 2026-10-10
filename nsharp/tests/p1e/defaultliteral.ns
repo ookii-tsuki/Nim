@@ -1,4 +1,4 @@
-// Valid C# that N# rejects: the forms that need a context N# does not have yet.
+// The `default` literal takes its type from its target.
 using System;
 
 namespace Demo
@@ -7,8 +7,6 @@ namespace Demo
     {
         static void Main()
         {
-            Console.WriteLine(sizeof(int));
-            Console.WriteLine(typeof(int));
             int z = default;
             Console.WriteLine(z);
         }

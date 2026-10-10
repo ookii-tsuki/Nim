@@ -1,0 +1,4 @@
+Animal.GetType = result:other
+Color.GetType = result:other
+Pt.GetType = result:other
+int.GetType = result:other

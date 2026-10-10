@@ -1,0 +1,6 @@
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Program { static void Main() { Console.WriteLine(typeof(List<int>)); } }
+}

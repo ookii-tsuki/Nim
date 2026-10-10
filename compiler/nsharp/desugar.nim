@@ -875,6 +875,10 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     ## Nim's `raise` is `noreturn`, so it stands where a value is expected.
     result = l.throwToNim(n)
   of nsnCheckedExpr: result = l.checkedExprToNim(n)
+  of nsnTypeOf:
+    result = newTree(nkCall, n.info, l.id("nsTypeOf", n.info), l.typeToNim(n.typ, n.info))
+  of nsnSizeOf:
+    result = newTree(nkCall, n.info, l.id("nsSizeOf", n.info), l.typeToNim(n.typ, n.info))
   of nsnWith:
     ## `r with { A = 1 }`: a copy of `r` -- `nsClone` for a class record, which
     ## keeps the dynamic type -- with the initialiser applied to it.
@@ -1992,6 +1996,14 @@ proc lowerEnum(l: Lowerer; n: NsNode; into: var seq[PNode]) =
     prev = f.name
   into.add newTree(nkCall, info, l.id("nsEnum", info), l.id(n.name, info), copyTree(u),
                    l.id(if n.hasAttribute("Flags"): "true" else: "false", info), table)
+  let local = (if n.outer.len > 0: n.outer & "+" & n.name else: n.name)
+  let full = (if l.curNamespace.len > 0: l.curNamespace & "." & local else: local)
+  into.add l.mkProc(l.exportId("nsTypeOf", info),
+    newTree(nkFormalParams, info, l.id("Type", info), newTree(nkIdentDefs, info,
+      l.id("t", info), newTree(nkBracketExpr, info, l.id("typedesc", info),
+                               l.id(n.name, info)), empty(info))),
+    newTree(nkStmtList, info, newTree(nkCall, info, l.id("nsTypeNamed", info),
+                                      newAtom(nkStrLit, full, info))), info)
 
 proc lowerDelegate(l: Lowerer; n: NsNode): PNode =
   ## `delegate R D(args)` becomes a `{.closure.}` proc type, so both plain
@@ -2808,6 +2820,18 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
     result.add l.mkProc(l.alwaysExported("ToString", info), fp,
                         newTree(nkStmtList, info, newAtom(nkStrLit, full, info)), info,
                         kind = (if isClass: nkMethodDef else: nkProcDef))
+  ## `typeof(C)` and, for a class, the dynamic type `GetType()` reads.
+  if n.typeParams.len == 0:
+    result.add l.mkProc(l.alwaysExported("nsTypeOf", info),
+      newTree(nkFormalParams, info, l.id("Type", info), newTree(nkIdentDefs, info,
+        l.id("t", info), newTree(nkBracketExpr, info, l.id("typedesc", info),
+                                 l.clsType(n.name, info)), empty(info))),
+      newTree(nkStmtList, info, newTree(nkCall, info, l.id("nsTypeNamed", info),
+                                        newAtom(nkStrLit, full, info))), info)
+  if isClass:
+    result.add l.mkProc(l.alwaysExported("nsTypeName", info),
+      newTree(nkFormalParams, info, l.id("string", info), copyTree(selfDefs)),
+      newTree(nkStmtList, info, newAtom(nkStrLit, full, info)), info, kind = nkMethodDef)
   if not isClass:
     ## `$` for a struct: the class form is the intrinsics' generic one.
     let fp = newNodeI(nkFormalParams, info)

@@ -546,11 +546,11 @@ proc parsePrimary(p: var NsParser): NsNode =
         discard p.expect(nsRParen)
       else: result = nsnIdent(t.text, p.infoOf(t))
     of "sizeof", "typeof":
-      ## `sizeof` needs an unsafe context and `typeof` a type value, neither of
-      ## which N# has yet.
-      p.err(t, ndUnsupported, "the '" & t.text & "' operator")
-      p.skipParens()
-      result = nsn(nsnEmpty, p.infoOf(t))
+      ## `typeof(T)` is the `System.Type` of `T`; `sizeof(T)` its size in bytes.
+      result = nsn((if t.text == "typeof": nsnTypeOf else: nsnSizeOf), p.infoOf(t))
+      discard p.expect(nsLParen)
+      result.typ = p.parseType()
+      discard p.expect(nsRParen)
     else: result = nsnIdent(t.text, p.infoOf(t))
   of nsLParen:
     if looksLikeCast(p):
@@ -1368,6 +1368,13 @@ proc parseStatement(p: var NsParser): NsNode =
         return p.parseUsingStmt()
     of "lock":
       if p.peekAhead(1).kind == nsLParen: return p.parseLock()
+    of "goto":
+      if p.peekAhead(1).kind == nsIdent:
+        ## `goto label`, `goto case c`, `goto default`: N# has no jumps (SPEC 6).
+        p.err(t, ndUnsupported, "'goto'")
+        while not p.at(nsSemi) and not p.at(nsRBrace) and not p.at(nsEof):
+          discard p.advance
+        return nsn(nsnEmpty, p.infoOf(t))
     of "yield":
       if p.peekAhead(1).kind == nsIdent and p.peekAhead(1).text in ["return", "break"]:
         result = nsn(nsnYield, p.infoOf(t))

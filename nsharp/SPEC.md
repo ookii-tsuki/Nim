@@ -130,7 +130,7 @@ Status of the blocking decisions (full log in §18). ✅ = resolved, 🟡 = stil
 | `#region/#endregion`, `#nullable` | folding / NRT context | ✅ v1 (accepted and ignored) | front |
 | `#error`, `#warning` | diagnostics | ✅ v1 (NS1029 / NS1030) | front |
 | `#pragma`, `#line` | compiler hints | ✅ v1 (accepted and ignored) | front |
-| `goto` + labels | jump | 🚫 out | - |
+| `goto` + labels | jump | 🚫 out (NS9999, `goto case`/`goto default` too) | - |
 | `;` terminators, `{ }` blocks | structure | ✅ v1 | front |
 
 **Notes**
@@ -447,7 +447,7 @@ v2.
 | `foreach (var x in xs)` | iterate | ✅ v1 | desugar (→ `for` over the collection's `items`; over a class with a `GetEnumerator` method, C#'s own expansion: `let e = c.GetEnumerator(); while e.MoveNext(): let x = e.Current`) |
 | `break` / `continue` | loop control | ✅ v1 | front |
 | `return` | return | ✅ v1 | front |
-| `goto` / labels | jump | 🚫 out | - |
+| `goto` / labels | jump | 🚫 out (NS9999) | - |
 | `throw e;` | raise | ✅ v1 | front (→ `raise`) |
 | `try { } catch (E e) { } finally { }` | EH | ✅ v1 | front (→ `try/except/finally`) |
 | `catch when (cond)` | filter | ✅ v1 | desugar (one `except` takes every exception, picks the first clause whose type matches and whose filter holds, re-raises when none does; the filter runs after unwinding, so an inner `finally` runs before it, unlike C#) |
@@ -521,12 +521,12 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 | Object initializer `new T { A = 1 }` | init props | ✅ v1 | sem (rewritten into assignments over a temporary, checked as such) + desugar (a block expression) |
 | Collection initializer `new List<int>{1,2}`, index initializer `{ [k] = v }`, nested `A = { ... }` | init | ✅ v1 | sem (`Add` calls / indexer assignments) + desugar |
 | Anonymous types `new { A = 1 }` | inferred type | 🔜 later | desugar |
-| `typeof(T)` | type object | 🔜 later | needs a type value |
+| `typeof(T)` | type object | ✅ v1 | lib + desugar: `nsTypeOf(T)`, declared by the library for the built-in types and by lowering for each class, struct and enum, yields a `System.Type` that knows the type's name (`Name`, `FullName`, `Namespace`, `==`); `x.GetType()` asks a class value through a `method` every class overrides, and a value its static type. No reflection beyond the name; a generic, array or tuple type is NS9999 |
 | `nameof(x)` | name string | ✅ v1 | front, a literal of the written name |
 | `default(T)` | default value | ✅ v1 | desugar (→ Nim `default`) |
 | `default` literal, `int[] a = { 1, 2 }`, `new[] { 1, 2 }` | target-typed / inferred | ✅ v1 | sem (from the target; an implicitly typed array from its elements) |
 | `T.MaxValue` etc. | `static` field | ✅ v1 | lib (`lib/pure/ns/System.nim`) |
-| `sizeof(T)` | byte size | 🔜 later | needs an unsafe context |
+| `sizeof(T)` | byte size | ✅ v1 for the built-in value types (C#'s sizes: `char` is 2) | lib (`nsSizeOf`); any other type needs an unsafe context and is NS9999 |
 | String interpolation `$"{x}"` | format | ✅ v1 | desugar |
 | `with` expression (records) | copy-update | ✅ v1 | sem + desugar (a copy -- `nsClone` for a class record, the value for a struct -- with the initialiser applied as to a temporary; on a non-record class NS8858) |
 | Target-typed `new()` (C# 9) | infer type | ✅ v1 | sem (typed by the declaration, assignment, field, `return` or parameter it converts to) |
@@ -537,9 +537,8 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 
 **Notes**
 - `?.`/`??`/`??=` are the main "null" desugars (null model: §4.4/§7.3).
-- `nameof` and `default(T)` are trivial rewrites. `sizeof` needs an unsafe context
-  and `typeof` a type value, so both report `NS9999`, as does the expression form of
-  `checked`/`unchecked`.
+- `nameof` and `default(T)` are trivial rewrites; `typeof` and `sizeof` are calls the
+  library answers.
 
 ### 7.3 Semantic traps (must-pin C#↔Nim mismatches)
 

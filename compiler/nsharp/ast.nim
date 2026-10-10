@@ -157,6 +157,8 @@ type
     nsnAs              # typ = type, body = operand           (from `x as T`)
     nsnDefault         # typ = type                           (from `default(T)`)
     nsnCheckedExpr     # name = "checked" / "unchecked", body = operand
+    nsnTypeOf          # typ = the type                       (from `typeof(T)`)
+    nsnSizeOf          # typ = the type                       (from `sizeof(T)`)
     nsnWith            # body = record value, inits = member initialisers
                        #   (from `r with { A = 1 }`); strVal = sema's temporary
     nsnNamedArg        # name, body = value                   (from `f(name: v)`)

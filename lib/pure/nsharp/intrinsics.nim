@@ -9,6 +9,7 @@
 
 import format
 export format
+import std/strutils
 import std/hashes
 export hashes
 
@@ -304,3 +305,57 @@ proc nsUnsubscribe*[D](e: var seq[D]; h: D) =
 
 proc `==`*[D: proc](e: seq[D]; n: typeof(nil)): bool = e.len == 0
   ## An event without handlers is null, as C#'s is.
+
+# `System.Type`, as far as N# can tell one type from another without reflection:
+# its name. `typeof(T)` is `nsTypeOf(T)`, which the compiler declares for each type
+# it lowers and the library for the built-in ones; `x.GetType()` asks a class
+# value for its dynamic type's name, through a `method` every class overrides.
+
+type
+  Type* = ref object of RootObj
+    ## C#'s `System.Type`: a type, known by its namespace-qualified name.
+    nsFull: string
+
+proc nsTypeNamed*(full: string): Type = Type(nsFull: full)
+proc FullName*(t: Type): string = t.nsFull
+proc Namespace*(t: Type): string =
+  let i = t.nsFull.rfind('.')
+  if i >= 0: t.nsFull[0 ..< i] else: ""
+method ToString*(t: Type): string = t.nsFull
+proc `==`*(a, b: Type): bool =
+  if a.isNil or b.isNil: a.isNil and b.isNil else: a.nsFull == b.nsFull
+
+proc nsTypeOf*(t: typedesc[int8]): Type = nsTypeNamed("System.SByte")
+proc nsTypeOf*(t: typedesc[uint8]): Type = nsTypeNamed("System.Byte")
+proc nsTypeOf*(t: typedesc[int16]): Type = nsTypeNamed("System.Int16")
+proc nsTypeOf*(t: typedesc[uint16]): Type = nsTypeNamed("System.UInt16")
+proc nsTypeOf*(t: typedesc[int32]): Type = nsTypeNamed("System.Int32")
+proc nsTypeOf*(t: typedesc[uint32]): Type = nsTypeNamed("System.UInt32")
+proc nsTypeOf*(t: typedesc[int64]): Type = nsTypeNamed("System.Int64")
+proc nsTypeOf*(t: typedesc[int]): Type = nsTypeNamed("System.Int32")
+  ## Nim's `int` is an untyped C# `int` literal (`3.GetType()`); C#'s `long` is
+  ## always `int64`.
+proc nsTypeOf*(t: typedesc[uint64]): Type = nsTypeNamed("System.UInt64")
+proc nsTypeOf*(t: typedesc[float32]): Type = nsTypeNamed("System.Single")
+proc nsTypeOf*(t: typedesc[float]): Type = nsTypeNamed("System.Double")
+proc nsTypeOf*(t: typedesc[bool]): Type = nsTypeNamed("System.Boolean")
+proc nsTypeOf*(t: typedesc[char]): Type = nsTypeNamed("System.Char")
+proc nsTypeOf*(t: typedesc[string]): Type = nsTypeNamed("System.String")
+proc nsTypeOf*(t: typedesc[RootRef]): Type = nsTypeNamed("System.Object")
+
+method nsTypeName*(x: RootRef): string {.base.} = "System.Object"
+  ## The dynamic type's name; every class N# lowers overrides it.
+
+proc GetType*(x: RootRef): Type =
+  ## `x.GetType()` on a class value: its dynamic type.
+  if x == nil: raise newException(NilAccessDefect, "attempt to access a nil address")
+  nsTypeNamed(x.nsTypeName)
+proc GetType*[T: not RootRef](x: T): Type = nsTypeOf(T)
+  ## A value's type is its static one.
+
+# `sizeof(T)` for the built-in value types, as C# defines them (a `char` is two
+# bytes there, whatever N#'s is).
+proc nsSizeOf*(t: typedesc[int8 | uint8 | bool]): int32 = 1
+proc nsSizeOf*(t: typedesc[int16 | uint16 | char]): int32 = 2
+proc nsSizeOf*(t: typedesc[int32 | uint32 | float32]): int32 = 4
+proc nsSizeOf*(t: typedesc[int64 | uint64 | float]): int32 = 8
