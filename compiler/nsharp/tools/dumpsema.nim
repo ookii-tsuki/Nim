@@ -104,6 +104,13 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
           facts.add "member " & recv & "." & n.name & " = " &
                     nsOf(m.path) & " | " & tok
     elif isValueKind(rk) and n.body != nil and
+         scope.classes.hasKey(n.body.typeName) and
+         scope.classes[n.body.typeName].decl != nil and
+         scope.classes[n.body.typeName].decl.attrs.isRecord and
+         n.name in ["Equals", "GetHashCode", "ToString", "Deconstruct"]:
+      ## What the compiler synthesizes for a record is the record's own member.
+      discard
+    elif isValueKind(rk) and n.body != nil and
          scope.findMemberInfo(n.body.typeName, n.name).name.len > 0:
       ## A member the program declares (an override of `ToString`) is not the
       ## library's, as Roslyn's side says too.

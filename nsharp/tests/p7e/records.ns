@@ -1,0 +1,73 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    record Point(int X, int Y)
+    {
+        public int Sum => X + Y;
+        public Point Mirror() => new Point(Y, X);
+    }
+
+    record Named(string Name, Point At);
+
+    record Shape(string Kind);
+    record Circle(int R) : Shape("circle");
+
+    record struct Size(int W, int H);
+
+    record Money
+    {
+        public int Cents { get; init; }
+        public string Currency { get; init; } = "USD";
+        public override string ToString() => Cents / 100 + "." + (Cents % 100).ToString("D2") + " " + Currency;
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var p = new Point(1, 2);
+            var q = new Point(1, 2);
+            Console.WriteLine(p);
+            Console.WriteLine(p == q);
+            Console.WriteLine(ReferenceEquals(p, q));
+            Console.WriteLine(p.Equals(q));
+            Console.WriteLine(p != p.Mirror());
+            Console.WriteLine(p.Sum);
+            var moved = p with { Y = 10 };
+            Console.WriteLine(moved + " " + p);
+            var (x, y) = moved;
+            Console.WriteLine(x + y);
+
+            var n = new Named("home", p);
+            Console.WriteLine(n);
+            Console.WriteLine(n == new Named("home", new Point(1, 2)));
+
+            Shape s = new Circle(3);
+            Console.WriteLine(s);
+            Shape copy = s with { Kind = "round" };
+            Console.WriteLine(copy);
+            Console.WriteLine(copy is Circle);
+
+            var sz = new Size(2, 3);
+            var sz2 = sz with { W = 5 };
+            sz.H = 9;
+            Console.WriteLine(sz + " " + sz2);
+            Console.WriteLine(sz2 == new Size(5, 3));
+
+            var m = new Money { Cents = 1234 };
+            Console.WriteLine(m);
+            Console.WriteLine(m with { Currency = "EUR" });
+
+            var seen = new HashSet<Point> { new Point(0, 0), new Point(0, 0), new Point(1, 0) };
+            Console.WriteLine(seen.Count);
+            var names = new Dictionary<Point, string>();
+            names[new Point(5, 5)] = "five";
+            Console.WriteLine(names[new Point(5, 5)]);
+            Point none = null;
+            Console.WriteLine(none == null);
+            Console.WriteLine(p == none);
+        }
+    }
+}

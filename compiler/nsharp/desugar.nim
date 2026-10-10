@@ -875,6 +875,24 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     ## Nim's `raise` is `noreturn`, so it stands where a value is expected.
     result = l.throwToNim(n)
   of nsnCheckedExpr: result = l.checkedExprToNim(n)
+  of nsnWith:
+    ## `r with { A = 1 }`: a copy of `r` -- `nsClone` for a class record, which
+    ## keeps the dynamic type -- with the initialiser applied to it.
+    let info = n.info
+    var copy = l.expr(n.body)
+    let rt = (if n.body.rtype != nil: n.body.rtype
+              else: nsnTypeName(n.body.typeName, info))
+    let cn = (if rt.kind == nsnTypeName: canonicalTypeName(rt.name) else: "")
+    if n.body.typeKind == tkClass and
+       not (l.scope.classes.hasKey(cn) and l.scope.classes[cn].classKind == ckStruct):
+      copy = newTree(nkCall, info, l.typeToNim(rt, info),
+                     newTree(nkCall, info, l.id("nsClone", info), copy))
+    let sl = newNodeI(nkStmtList, info)
+    sl.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id(n.strVal, info),
+                                              empty(info), copy))
+    for st in n.inits: sl.add l.stmt(st)
+    sl.add l.id(n.strVal, info)
+    result = newTree(nkBlockExpr, info, empty(info), sl)
   of nsnAssign:
     ## `(x = e)` as a value: the assignment, then the variable read back.
     var bare = l
@@ -2648,6 +2666,101 @@ proc alwaysExported(l: Lowerer; name: string; info: TLineInfo): PNode =
   ## emitter, regardless of the class's own accessibility.
   result = newTree(nkPostfix, info, l.id("*", info), l.id(name, info))
 
+proc recordState(l: Lowerer; n: NsNode): tuple[shown, compared: seq[string]] =
+  ## A record's members as C# sees them: `ToString` shows its public instance
+  ## fields and properties, base record first; equality compares its instance
+  ## state -- fields and auto-properties, not computed properties.
+  result = (@[], @[])
+  var chain = l.scope.chain(n.name)
+  chain.reverse()
+  for c in chain:
+    let decl = l.scope.classes[c].decl
+    if decl == nil: continue
+    for m in decl.sons:
+      if m.attrs.isStatic or m.attrs.isConst or m.attrs.isEvent: continue
+      case m.kind
+      of nsnFieldDecl:
+        if m.attrs.access == aPublic: result.shown.add m.name
+        result.compared.add m.name
+      of nsnPropertyDecl:
+        if m.explicitIface.len > 0: continue
+        if m.attrs.access == aPublic: result.shown.add m.name
+        if m.params.len > 0 and m.params[0] != nil and m.params[0].kind == nsnEmpty:
+          result.compared.add m.name
+      else: discard
+
+proc recordMembers(l: Lowerer; n: NsNode; isClass: bool; into: var seq[PNode]) =
+  ## A record's value semantics: `==` over its state (a class record also equal to
+  ## itself, and unequal to null), `Equals`, `hash`, and `nsClone`, which `with`
+  ## copies through; a class record's is a `method`, so the copy keeps the
+  ## dynamic type.
+  let info = n.info
+  let st = l.recordState(n)
+  let t = l.clsType(n.name, info)
+  let a = l.id("a", info)
+  let b = l.id("b", info)
+  proc pairDefs(): PNode =
+    newTree(nkIdentDefs, info, l.id("a", info), l.id("b", info), copyTree(t), empty(info))
+  var cond: PNode = l.id("true", info)
+  for f in st.compared:
+    let eq = newTree(nkInfix, info, l.id("==", info),
+                     newTree(nkDotExpr, info, copyTree(a), l.id(f, info)),
+                     newTree(nkDotExpr, info, copyTree(b), l.id(f, info)))
+    cond = newTree(nkInfix, info, l.id("and", info), cond, eq)
+  var body: PNode
+  if isClass:
+    let ident = newTree(nkInfix, info, l.id("==", info),
+      newTree(nkCast, info, l.id("pointer", info), copyTree(a)),
+      newTree(nkCast, info, l.id("pointer", info), copyTree(b)))
+    let anyNil = newTree(nkInfix, info, l.id("or", info),
+      newTree(nkCall, info, l.id("isNil", info), copyTree(a)),
+      newTree(nkCall, info, l.id("isNil", info), copyTree(b)))
+    body = newTree(nkIfExpr, info,
+      newTree(nkElifExpr, info, ident, l.id("true", info)),
+      newTree(nkElifExpr, info, anyNil, l.id("false", info)),
+      newTree(nkElseExpr, info, cond))
+  else: body = cond
+  into.add l.mkProc(l.alwaysExported("==", info),
+    newTree(nkFormalParams, info, l.id("bool", info), pairDefs()),
+    newTree(nkStmtList, info, body), info)
+  into.add l.mkProc(l.alwaysExported("Equals", info),
+    newTree(nkFormalParams, info, l.id("bool", info), pairDefs()),
+    newTree(nkStmtList, info, newTree(nkInfix, info, l.id("==", info), copyTree(a),
+                                      copyTree(b))), info)
+  ## `hash`: the members' hashes mixed, so a record can key a dictionary.
+  let hbody = newNodeI(nkStmtList, info)
+  hbody.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id("h", info),
+                                               l.id("Hash", info), newIntNode(nkIntLit, 0)))
+  if isClass:
+    hbody.add newTree(nkIfStmt, info, newTree(nkElifBranch, info,
+      newTree(nkCall, info, l.id("isNil", info), l.id("self", info)),
+      newTree(nkReturnStmt, info, newIntNode(nkIntLit, 0))))
+  for f in st.compared:
+    hbody.add newTree(nkAsgn, info, l.id("h", info), newTree(nkInfix, info, l.id("!&", info),
+      l.id("h", info), newTree(nkCall, info, l.id("hash", info),
+        newTree(nkDotExpr, info, l.id("self", info), l.id(f, info)))))
+  hbody.add newTree(nkPrefix, info, l.id("!$", info), l.id("h", info))
+  into.add l.mkProc(l.alwaysExported("hash", info),
+    newTree(nkFormalParams, info, l.id("Hash", info),
+            newTree(nkIdentDefs, info, l.id("self", info), copyTree(t), empty(info))),
+    hbody, info)
+  if isClass:
+    let base = l.scope.classes[n.name].base
+    let isRoot = base.len == 0 or not l.scope.classes.hasKey(base) or
+                 not l.scope.classes[base].decl.attrs.isRecord
+    let cbody = newTree(nkStmtList, info,
+      newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id("c", info), empty(info),
+        newTree(nkCall, info, copyTree(t)))),
+      newTree(nkAsgn, info, newTree(nkDerefExpr, info, l.id("c", info)),
+              newTree(nkDerefExpr, info, l.id("self", info))),
+      l.id("c", info))
+    let md = l.mkProc(l.alwaysExported("nsClone", info),
+      newTree(nkFormalParams, info, l.id("RootRef", info),
+              newTree(nkIdentDefs, info, l.id("self", info), copyTree(t), empty(info))),
+      cbody, info, kind = nkMethodDef)
+    if isRoot: md[4] = newTree(nkPragma, info, l.id("base", info))
+    into.add md
+
 proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
   ## C#'s `object.ToString()` names the dynamic type, namespace included. A class
   ## that does not override it, and inherits no override from this compilation, gets
@@ -2664,7 +2777,31 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
   selfDefs.add l.id("self", info)
   selfDefs.add l.clsType(n.name, info)
   selfDefs.add empty(info)
-  if not overridden:
+  if n.attrs.isRecord:
+    ## `R { A = 1, B = x }`: the type's own name and its public members. A record
+    ## prints this unless it declares `ToString` itself.
+    overridden = false
+    for m in n.sons:
+      if m.kind == nsnMethodDecl and m.name == "ToString" and not m.attrs.isStatic:
+        overridden = true
+  if not overridden and n.attrs.isRecord:
+    let shown = l.recordState(n).shown
+    var text: PNode = newAtom(nkStrLit, n.name & (if shown.len > 0: " { " else: " {"),
+                              info)
+    for i, f in shown:
+      let label = (if i > 0: ", " else: "") & f & " = "
+      text = newTree(nkInfix, info, l.id("&", info), text, newAtom(nkStrLit, label, info))
+      text = newTree(nkInfix, info, l.id("&", info), text, newTree(nkPrefix, info,
+        l.id("$", info), newTree(nkPar, info,
+          newTree(nkDotExpr, info, l.id("self", info), l.id(f, info)))))
+    text = newTree(nkInfix, info, l.id("&", info), text, newAtom(nkStrLit, " }", info))
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add l.id("string", info)
+    fp.add copyTree(selfDefs)
+    result.add l.mkProc(l.alwaysExported("ToString", info), fp,
+                        newTree(nkStmtList, info, text), info,
+                        kind = (if isClass: nkMethodDef else: nkProcDef))
+  elif not overridden:
     let fp = newNodeI(nkFormalParams, info)
     fp.add l.id("string", info)
     fp.add copyTree(selfDefs)
@@ -2704,6 +2841,7 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     l.clsTypeParams = @[]
     l.procTypeParams = @[]
   if not isException:
+    if n.attrs.isRecord: l.recordMembers(n, isClass, into)
     for p in l.objectToString(n, isClass): into.add p
   l.lowerImplementations(n, isException, into)
 

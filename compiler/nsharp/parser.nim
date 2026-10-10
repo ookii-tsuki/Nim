@@ -740,11 +740,22 @@ proc parseSwitchExpr(p: var NsParser; subject: NsNode): NsNode =
     if p.at(nsComma): discard p.advance else: break
   discard p.expect(nsRBrace)
 
+proc parseInitializerList(p: var NsParser): seq[NsNode]
+
 proc parseBinary(p: var NsParser; minPrec: int): NsNode =
   result = p.parseUnary()
-  while p.at(nsIdent) and p.peek.text == "switch" and p.peekAhead(1).kind == nsLBrace:
-    ## A switch expression binds tighter than any binary operator.
-    result = p.parseSwitchExpr(result)
+  while p.at(nsIdent) and p.peek.text in ["switch", "with"] and
+        p.peekAhead(1).kind == nsLBrace:
+    ## A switch expression binds tighter than any binary operator, and so does
+    ## `r with { ... }`.
+    if p.peek.text == "switch":
+      result = p.parseSwitchExpr(result)
+    else:
+      let w = nsn(nsnWith, p.here())
+      discard p.advance
+      w.body = result
+      w.inits = p.parseInitializerList()
+      result = w
   while true:
     var prec = binPrec(p.peek.kind)
     let typeOp = prec == 0 and p.at(nsIdent) and p.peek.text in ["is", "as"]
@@ -1754,7 +1765,7 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
     let head = p.peekAhead(k)
     if head.kind != nsIdent or p.peekAhead(k + 1).kind != nsIdent: break nestedType
     case head.text
-    of "class", "struct", "interface":
+    of "class", "struct", "interface", "record":
       if k > 0 and p.peekAhead(k - 1).text == "new": break nestedType
       return p.parseTypeDecl()
     of "enum": return p.parseEnumDecl()
@@ -1927,6 +1938,11 @@ proc parseTypeDecl(p: var NsParser): NsNode =
   var ckind = ckClass
   if kwTok.text == "struct": ckind = ckStruct
   elif kwTok.text == "interface": ckind = ckInterface
+  let isRecord = kwTok.text == "record"
+  if isRecord and p.at(nsIdent) and p.peek.text in ["class", "struct"] and
+     p.peekAhead(1).kind == nsIdent:
+    ## `record class R` is `record R`; `record struct R` is a value type.
+    if p.advance.text == "struct": ckind = ckStruct
   if p.peek.kind != nsIdent:
     return nsn(nsnEmpty, startInfo)
   let nameTok = p.advance
@@ -1936,6 +1952,10 @@ proc parseTypeDecl(p: var NsParser): NsNode =
   result.typeParams = p.parseTypeParams()
   let savedTps = p.typeParams
   for t in result.typeParams: p.typeParams.add t.name
+  if isRecord and p.at(nsLParen):
+    ## `record R(int X, string Y)`: the positional parameters, which become the
+    ## record's properties, constructor and `Deconstruct`.
+    result.params = p.parseParams()
   result.attrs = NsAttrs(access: accessOfTopLevel(mods), isAbstract: "abstract" in mods,
                          isSealed: "sealed" in mods, isStatic: "static" in mods,
                          isPartial: "partial" in mods)
@@ -1944,11 +1964,24 @@ proc parseTypeDecl(p: var NsParser): NsNode =
     ## `symbols.nim` decides, once every type is known.
     discard p.advance
     result.bases.add p.parseType()
+    if isRecord and p.at(nsLParen):
+      ## `: Base(X)`: the base record's constructor arguments.
+      discard p.advance
+      while not p.at(nsRParen) and not p.at(nsEof):
+        result.initArgs.add p.parseArgument()
+        if p.at(nsComma): discard p.advance else: break
+      discard p.expect(nsRParen)
     while p.at(nsComma):
       discard p.advance
       result.bases.add p.parseType()
     result.typ = result.bases[0]
   result.constraints = p.parseWhereClauses()
+  result.attrs.isRecord = isRecord
+  if isRecord and p.at(nsSemi):
+    ## `record R(int X);` has no body.
+    discard p.advance
+    p.typeParams = savedTps
+    return
   if not p.at(nsLBrace):
     p.err(p.peek, ndOpenBraceExpectedBody, nameTok.text)
     ## Error recovery, after the diagnostic above: skip to the body or the end.
@@ -2101,7 +2134,7 @@ proc parseTopLevelDeclInner(p: var NsParser; nsPrefix: string): NsNode =
   while p.peekAhead(k).kind == nsIdent and p.peekAhead(k).text in NsTypeModifiers:
     inc k
   let head = p.peekAhead(k)
-  if head.kind == nsIdent and head.text in ["class", "struct", "interface"]:
+  if head.kind == nsIdent and head.text in ["class", "struct", "interface", "record"]:
     return p.parseTypeDecl()
   elif head.kind == nsIdent and head.text == "enum":
     return p.parseEnumDecl()

@@ -34,6 +34,7 @@ type
     isPartial*: bool        ## `partial`: one of several declarations of one type
     isEvent*: bool          ## `event`: a delegate field outsiders may only `+=`/`-=`
     isRequired*: bool       ## `required`: every object initializer must set it
+    isRecord*: bool         ## a `record`: value equality, printing, `with`
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.
@@ -156,6 +157,8 @@ type
     nsnAs              # typ = type, body = operand           (from `x as T`)
     nsnDefault         # typ = type                           (from `default(T)`)
     nsnCheckedExpr     # name = "checked" / "unchecked", body = operand
+    nsnWith            # body = record value, inits = member initialisers
+                       #   (from `r with { A = 1 }`); strVal = sema's temporary
     nsnNamedArg        # name, body = value                   (from `f(name: v)`)
     nsnRefArg          # name = "ref" / "out" / "in", body = the variable
     nsnOutDecl         # typ (nil for `var`), name            (from `f(out int x)`)
