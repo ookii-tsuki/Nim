@@ -22,9 +22,7 @@ nkStmtList
         nkObjectTy
           nkEmpty
           nkOfInherit
-            nkBracketExpr
-              nkIdent 'IEnumerable'
-              nkIdent 'int32'
+            nkIdent 'RootObj'
           nkRecList
     nkTypeDef
       nkPostfix
@@ -94,20 +92,6 @@ nkStmtList
       nkBracketExpr
         nkIdent 'IEnumerator'
         nkIdent 'int32'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Pair'
-        nkEmpty
-    nkPragma
-      nkIdent 'discardable'
-    nkEmpty
-    nkEmpty
-  nkProcDef
-    nkIdent 'nsIEnumerable_GetEnumerator'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'IEnumerator'
       nkIdentDefs
         nkIdent 'self'
         nkIdent 'Pair'
@@ -341,25 +325,6 @@ nkStmtList
             nkYieldStmt
               nkIntLit 2
   nkProcDef
-    nkIdent 'nsIEnumerable_GetEnumerator'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'IEnumerator'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Pair'
-        nkEmpty
-    nkPragma
-      nkIdent 'discardable'
-    nkEmpty
-    nkStmtList
-      nkReturnStmt
-        nkCall
-          nkDotExpr
-            nkIdent 'self'
-            nkIdent 'GetEnumerator'
-  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'nsCreate'
@@ -393,9 +358,6 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkCall
-        nkIdent 'initIEnumerable'
-        nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'

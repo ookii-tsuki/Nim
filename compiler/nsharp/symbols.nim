@@ -382,8 +382,33 @@ proc synthesizePrimary(cls: NsNode) =
   cls.primary = cls.params
   cls.params = @[]
 
+proc sequenceInterfaces(cls: NsNode) =
+  ## `IEnumerable<T>` and `IEnumerator<T>` are library types, not tables a class
+  ## fills, so they leave the base list: the class keeps its `GetEnumerator` (or
+  ## `MoveNext`/`Current`), and sema converts it where one of them is expected.
+  ## Their non-generic halves, implemented explicitly beside the generic member
+  ## (`IEnumerator IEnumerable.GetEnumerator()`), have nothing to add and go too.
+  const seqIfaces = ["IEnumerable", "IEnumerator"]
+  var kept: seq[NsNode] = @[]
+  for b in cls.bases:
+    let n = (if b.kind == nsnTypeName: canonicalTypeName(b.name) else: "")
+    if n == "IEnumerable": cls.attrs.isEnumerable = true
+    elif n == "IEnumerator": cls.attrs.isEnumerator = true
+    else: kept.add b
+  if kept.len == cls.bases.len: return
+  cls.bases = kept
+  if cls.typ != nil and cls.typ.kind == nsnTypeName and
+     canonicalTypeName(cls.typ.name) in seqIfaces:
+    ## The first base was taken for the base class until the types are known.
+    cls.typ = (if kept.len > 0: kept[0] else: nil)
+  var members: seq[NsNode] = @[]
+  for m in cls.sons:
+    if canonicalTypeName(m.explicitIface) notin seqIfaces: members.add m
+  cls.sons = members
+
 proc synthesizeRecords(list: seq[NsNode]) =
   for d in list:
+    if d.kind == nsnClassDecl: sequenceInterfaces(d)
     if d.kind == nsnNamespace and d.body != nil: synthesizeRecords(d.body.sons)
     elif d.kind == nsnClassDecl and d.attrs.isRecord: synthesizeRecord(d)
     elif d.kind == nsnClassDecl: synthesizePrimary(d)

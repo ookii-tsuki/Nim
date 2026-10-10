@@ -1,2 +1,0 @@
-Valid C# that N# rejects: a class implementing IEnumerable<T> (and its non-generic twin).
-code: NS9999

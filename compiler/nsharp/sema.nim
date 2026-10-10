@@ -335,11 +335,31 @@ proc variantConversion(ctx: NsCheckContext; src, dst: NsNode): NsVariantConv =
   elif unsupported: vcUnsupported
   else: vcOk
 
+proc namesSequence(ctx: NsCheckContext; cls: string; enumerator: bool): bool =
+  ## Whether class `cls`, or a base of it, names `IEnumerable<T>` (or, with
+  ## `enumerator`, `IEnumerator<T>`).
+  for c in ctx.scope.chain(cls):
+    let d = ctx.scope.classes[c].decl
+    if d != nil and (if enumerator: d.attrs.isEnumerator else: d.attrs.isEnumerable):
+      return true
+  false
+
 proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineInfo;
             targetType: NsNode = nil) =
   ## The implicit numeric conversion C# applies where a value of one numeric type is
   ## used as another: recorded when C# allows it, CS0266 when only a cast would.
   ## A variant interface or delegate conversion is recorded too.
+  if value != nil and value.typeKind == tkClass and value.conv.len == 0:
+    ## A class implementing `IEnumerable<T>`/`IEnumerator<T>` where one is expected:
+    ## the library's view over its `GetEnumerator` (or `MoveNext`/`Current`).
+    let t = canonicalTypeName(targetName).split('<')[0]
+    let cn = canonicalTypeName(value.typeName)
+    if t == "IEnumerable" and ctx.namesSequence(cn, false):
+      value.conv = "nsToIEnumerable"
+      return
+    if t == "IEnumerator" and ctx.namesSequence(cn, true):
+      value.conv = "nsToIEnumerator"
+      return
   if value != nil and targetType != nil and value.conv.len == 0:
     case ctx.variantConversion(value.rtype, targetType)
     of vcOk:
@@ -2569,12 +2589,6 @@ proc checkInheritance(ctx: NsCheckContext; cls: NsNode) =
     if m.kind == nsnMethodDecl and m.params.len > 0 and m.params[0].paramMod == "this" and
        (not cls.attrs.isStatic or cls.typeParams.len > 0 or not m.attrs.isStatic):
       nsError(ctx.config, m.info, ndExtensionNotStatic)
-  for b in cls.bases:
-    if b.kind == nsnTypeName and
-       canonicalTypeName(b.name) in ["IEnumerable", "IEnumerator"]:
-      ## The sequence interfaces are library types, not tables a class can fill.
-      nsError(ctx.config, b.info, ndUnsupported,
-              "a class implementing '" & unqualified(b.name) & "'")
   if cls.classKind == ckInterface: return
   if cls.typ != nil and cls.typ.kind == nsnTypeName:
     let b = canonicalTypeName(cls.typ.name)

@@ -39,6 +39,8 @@ type
     isFile*: bool           ## `file` (C# 11): a top-level type only its own file may name
     isChecked*: bool        ## `operator checked +` (C# 11): used in a `checked` context
     isAnon*: bool           ## a class sema synthesized for an anonymous type
+    isEnumerable*: bool     ## a class naming `IEnumerable<T>`: it converts to one
+    isEnumerator*: bool     ## a class naming `IEnumerator<T>`: it converts to one
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.

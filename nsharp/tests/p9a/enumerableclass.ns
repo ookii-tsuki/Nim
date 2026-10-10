@@ -1,0 +1,52 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Bag<T> : IEnumerable<T>
+    {
+        List<T> items = new List<T>();
+        public void Add(T x) => items.Add(x);
+        public IEnumerator<T> GetEnumerator()
+        {
+            foreach (var x in items) yield return x;
+        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+    class Countdown : IEnumerator<int>
+    {
+        int n;
+        public Countdown(int from) { n = from + 1; }
+        public int Current => n;
+        object IEnumerator.Current => n;
+        public bool MoveNext() { n--; return n > 0; }
+        public void Reset() { }
+        public void Dispose() { }
+    }
+    class Launch : IEnumerable<int>
+    {
+        public IEnumerator<int> GetEnumerator() => new Countdown(3);
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+    class Program
+    {
+        static int Total(IEnumerable<int> xs)
+        {
+            int t = 0;
+            foreach (var x in xs) t += x;
+            return t;
+        }
+        static void Main()
+        {
+            var b = new Bag<int> { 1, 2, 3 };
+            foreach (var x in b) Console.Write(x + " ");
+            Console.WriteLine();
+            Console.WriteLine(Total(b));
+            IEnumerable<int> e = b;
+            Console.WriteLine(Total(e));
+            foreach (var x in new Launch()) Console.Write(x + " ");
+            Console.WriteLine();
+            Console.WriteLine(Total(new Launch()));
+        }
+    }
+}

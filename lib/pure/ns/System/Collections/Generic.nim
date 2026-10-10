@@ -1161,3 +1161,24 @@ proc nsTypeOf*[K, V](t: typedesc[SortedDictionary[K, V]]): Type =
 proc nsTypeOf*[K, V](t: typedesc[KeyValuePair[K, V]]): Type =
   nsTypeNamed(nsGenericName(nsGenNs & "KeyValuePair", nsTypeOf(K).FullName,
                             nsTypeOf(V).FullName))
+
+# --- classes implementing `IEnumerable<T>` / `IEnumerator<T>` --------------------
+#
+# A class naming one of them keeps its own `GetEnumerator` (or `MoveNext` and
+# `Current`); where C# converts it to the interface, the compiler calls these.
+
+proc nsToIEnumerator*[T](e: IEnumerator[T]): IEnumerator[T] = e
+
+proc nsToIEnumerator*[C: ref RootObj](c: C): auto =
+  ## A user enumerator as the library's: each `MoveNext` steps the class's.
+  mixin Current, MoveNext
+  type E = typeof(c.Current)
+  nsEnumeratorOf[E](iterator(): E {.closure.} =
+    while c.MoveNext(): yield c.Current)
+
+proc nsToIEnumerable*[C: ref RootObj](c: C): auto =
+  ## A user sequence as the library's: each enumeration asks it for a new
+  ## enumerator.
+  mixin GetEnumerator
+  type E = typeof(nsToIEnumerator(c.GetEnumerator()).Current)
+  IEnumerable[E](make: proc(): IEnumerator[E] = nsToIEnumerator(c.GetEnumerator()))
