@@ -37,15 +37,16 @@ Tick an item when it is merged into `nsharp`.
 - [x] Multi-dimensional arrays `int[,]`, `new int[3, 4]`, `a[i, j]`, `GetLength`
 - [x] Generic variance `in`/`out` on interfaces and delegates
 - [ ] Clear the current NS9999 rejections:
-  - [ ] type tests and casts to generic interfaces
-  - [ ] static constructors in generic classes
+  - [x] type tests and casts to generic interfaces
+  - [ ] explicit implementations of generic interface members (`int IBox<int>.Get()`)
+  - [x] static constructors in generic classes
   - [x] `typeof` of generic types
   - [x] `-=` on plain delegate variables
   - [x] classes implementing `IEnumerable<T>`
   - [x] iterator property getters
   - [ ] finalizers `~C()`
   - [x] partial methods
-  - [ ] `event` add/remove accessors
+  - [x] `event` add/remove accessors
 
 ## Last: `async` / `await`
 

@@ -1,5 +1,3 @@
-// Valid C# that N# rejects: each instantiation of a generic class runs its own
-// static constructor on first use, which N# does not lower yet.
 using System;
 
 namespace Demo

@@ -62,15 +62,6 @@ nkStmtList
         nkBracketExpr
           nkIdent 'nsRegistry_Size'
           nkIdent 'T'
-  nkProcDef
-    nkIdent 'nsStaticInitRegistry'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkEmpty
-    nkEmpty
-    nkEmpty
-    nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -149,6 +140,21 @@ nkStmtList
     nkFormalParams
       nkVarTy
         nkIdent 'int32'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticCtor_Registry'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkEmpty
     nkEmpty
     nkEmpty
     nkEmpty
@@ -316,8 +322,6 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkEmpty
-  nkCall
-    nkIdent 'nsStaticInitRegistry'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -411,6 +415,10 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkCall
+        nkBracketExpr
+          nkIdent 'nsStaticCtor_Registry'
+          nkIdent 'T'
       nkVarSection
         nkIdentDefs
           nkPragmaExpr
@@ -420,6 +428,45 @@ nkStmtList
           nkIdent 'int32'
           nkEmpty
       nkIdent 'nsV'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticCtor_Registry'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsRan'
+            nkPragma
+              nkIdent 'global'
+          nkEmpty
+          nkIdent 'false'
+      nkIfStmt
+        nkElifBranch
+          nkPrefix
+            nkIdent 'not'
+            nkIdent 'nsRan'
+          nkStmtList
+            nkAsgn
+              nkIdent 'nsRan'
+              nkIdent 'true'
+            nkAsgn
+              nkDotExpr
+                nkBracketExpr
+                  nkIdent 'Registry'
+                  nkIdent 'T'
+                nkIdent 'Size'
+              nkIntLit 10
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -614,22 +661,6 @@ nkStmtList
       nkCall
         nkIdent 'initProgram'
         nkIdent 'result'
-  nkProcDef
-    nkIdent 'nsStaticInitRegistry'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkAsgn
-        nkDotExpr
-          nkBracketExpr
-            nkIdent 'Registry'
-            nkIdent 'T'
-          nkIdent 'Size'
-        nkIntLit 10
   nkWhenStmt
     nkElifBranch
       nkIdent 'isMainModule'

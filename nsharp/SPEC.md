@@ -686,9 +686,13 @@ table entry calling it, and needs no implementation of its own. Static abstract
 members (C# 11) are a contract only: an implementing type must declare a static
 member of the name (NS0535), and `T.Zero`/`T.Combine(a, b)`/`a + b` in a method
 constrained `where T : I<T>` bind statically when the generic is instantiated, so
-they need no table slot. Deferred: default methods in a generic interface, static
-interface members with a body, and `is`/`as`/casts to a
-generic interface (NS9999).
+they need no table slot. `is`, `as`, casts and type patterns against a generic interface
+(`o is IBox<int>`) ask the object's class through `nsVtByKey`, a method every class
+implementing an instantiation of a generic interface overrides: it answers that
+instantiation's table by the type's name and passes any other name to its base.
+Deferred: default methods in a generic interface, static interface members with a
+body, and explicit implementations of a generic interface's members
+(`int IBox<int>.Get()`, a parse error today) (NS9999).
 
 ---
 
@@ -709,7 +713,7 @@ generic interface (NS9999).
 | Generic delegates | `Func<T,R>` | ✅ v1 | lib + desugar (C# overloads `Func`/`Action` by arity; the library declares `Func2[T, R]` etc. and lowering picks the suffix matching the argument count) |
 | Generic interfaces | `IEnumerable<T>` | ✅ v1 | desugar (generic tables, §8) |
 | `default(T)` | default value | ✅ v1 | lib |
-| Static members of generics | per-instantiation | ✅ v1 | desugar (a `{.global.}` inside a generic storage proc, initialised on first use); a static constructor in a generic class is NS9999 |
+| Static members of generics | per-instantiation | ✅ v1 | desugar (a `{.global.}` inside a generic storage proc, initialised on first use); a static constructor is `nsStaticCtor_C[T]()`, run once per instantiation the first time its statics, static methods or constructors are used, as C# runs it |
 | Variance `in`/`out` | - | 🔜 later | sem |
 | Generic nested types | - | 🔜 later | sem |
 
@@ -731,7 +735,7 @@ map directly. The cost is in **constraints**, which map to Nim
 | Multicast (combine) `+=` / `-=` | invocation list | ✅ v1 | lib: `nsCombine` makes a closure over the flattened invocation list of both sides, calling each in order and answering the last one's result (a null side is the other); `nsRemove` (`d -= h`) takes out the last run of delegates equal to `h`'s list, giving null when none remain, as `Delegate.Remove` does. A combined closure hands its list back when called in query mode, and only closures `nsCombine` made are asked. Two delegates are equal when they are the same closure, so a lambda or method group written again is a different delegate |
 | `d.Invoke(args)`, `d?.Invoke(args)` | call | ✅ v1 | lib (`Invoke` calls the delegate, or each handler of an event); `x?.M()` as a statement does nothing for a null `x` |
 | `event D E;` | pub/sub member | ✅ v1 | desugar + lib: the field holds `seq[D]`, its handlers; `E += h` / `E -= h` are `nsSubscribe`/`nsUnsubscribe` (the last equal handler leaves), raising it calls each in order, and with none it is null. Outside its type only `+=`/`-=` (NS0070). `EventHandler`, `EventHandler<T>`, `EventArgs` are declared |
-| `event` add/remove accessors | custom | 🔜 later (NS9999) | lib |
+| `event` add/remove accessors | custom | ✅ v1 | desugar: `event D E { add { ... } remove { ... } }` lowers to procs `nsAdd_E`/`nsRemove_E` over the receiver (a `typedesc` for a static event) and `value`, which `x.E += h` / `x.E -= h` call. It has no handlers of its own, so any other use, a call included, is NS0079; it declares both accessors (NS0065) |
 | Anonymous methods `delegate { }` | - | ✅ v1 | see §7 |
 | Delegate variance | `Action<Derived> = Action<Base>` | ✅ v1 | sem + lib (see §8 variance) |
 | Expression trees | `Expression<Func<>>` | 🚫 out | - |
@@ -1029,6 +1033,7 @@ code:
 | `NS0847` | CS0847 | a multi-dimensional initializer whose rows differ in length |
 | `NS1960`/`NS1961` | CS1960/CS1961 | variance where it may not stand, or a variant parameter used against its variance |
 | `NS8795` | CS8795 | a partial method that must be implemented has no implementation |
+| `NS0065`/`NS0079` | CS0065/CS0079 | an event with accessors that lacks one, or is used other than by `+=`/`-=` |
 | `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
 | `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
 | `NS0070` | CS0070 | an event used outside its type other than by `+=`/`-=` |

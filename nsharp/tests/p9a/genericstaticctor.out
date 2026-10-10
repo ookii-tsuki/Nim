@@ -1,0 +1,9 @@
+start
+init Int32
+10
+ready
+init String
+touch 10
+init Double
+10
+3 10

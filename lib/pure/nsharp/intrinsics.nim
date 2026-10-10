@@ -586,3 +586,24 @@ proc nsTypeOf*[T](t: typedesc[seq[T]]): Type = nsTypeNamed(nsTypeOf(T).nsFull & 
   ## `typeof(int[])` is `System.Int32[]`.
 proc nsTypeOf*[T](t: typedesc[NsMdArray[T]]): Type = nsTypeNamed(nsMdName[T](2))
   ## `typeof(int[,])`; a rank above 2 is not told apart by the type.
+
+# --- type tests against generic interfaces ------------------------------------
+#
+# `o is IBox<int>`: every class implementing an instantiation of a generic
+# interface overrides `nsVtByKey`, answering that instantiation's table by its
+# type's name, and passing any other key to its base class.
+
+import std/typetraits
+
+method nsVtByKey*(x: RootRef; key: string): pointer {.base.} = nil
+
+proc nsKeyOf*(t: typedesc): string = name(t)
+
+proc nsAsByKey*[I](o: RootRef; t: typedesc[I]): I =
+  ## The interface value of `o`, or the empty one when its class does not
+  ## implement `I`.
+  if o != nil:
+    let p = nsVtByKey(o, nsKeyOf(I))
+    if p != nil:
+      result.nsObj = o
+      result.nsVt = cast[typeof(result.nsVt)](p)
