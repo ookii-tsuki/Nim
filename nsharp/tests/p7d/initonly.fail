@@ -1,0 +1,2 @@
+An init accessor is used only by an object initializer or a constructor.
+code: NS8852

@@ -1,0 +1,80 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class PriceChangedEventArgs : EventArgs
+    {
+        public int Before { get; }
+        public int After { get; }
+        public PriceChangedEventArgs(int before, int after) { Before = before; After = after; }
+    }
+
+    class Stock
+    {
+        int price;
+        public string Name { get; }
+        public event EventHandler<PriceChangedEventArgs> PriceChanged;
+        public event Action Closed;
+        public static event Action<string> Created;
+
+        public Stock(string name) { Name = name; Created?.Invoke(name); }
+
+        public int Price
+        {
+            get { return price; }
+            set
+            {
+                if (price == value) return;
+                int old = price;
+                price = value;
+                PriceChanged?.Invoke(this, new PriceChangedEventArgs(old, value));
+            }
+        }
+
+        public void Close()
+        {
+            if (Closed != null) Closed();
+        }
+    }
+
+    class Program
+    {
+        static int closes = 0;
+        static void OnClosed() { closes++; }
+
+        static void Main()
+        {
+            Stock.Created += n => Console.WriteLine("created " + n);
+            var s = new Stock("ACME");
+            EventHandler<PriceChangedEventArgs> log = (sender, e) =>
+                Console.WriteLine(((Stock)sender).Name + ": " + e.Before + " -> " + e.After);
+            s.PriceChanged += log;
+            s.PriceChanged += (sender, e) => { if (e.After > 100) Console.WriteLine("high"); };
+            s.Price = 50;
+            s.Price = 50;
+            s.Price = 150;
+            s.PriceChanged -= log;
+            s.Price = 10;
+            s.Close();
+            Action onClosed = OnClosed;
+            s.Closed += onClosed;
+            s.Closed += onClosed;
+            s.Close();
+            s.Closed -= onClosed;
+            s.Close();
+            Console.WriteLine(closes);
+
+            Action chain = () => Console.Write("one ");
+            chain += () => Console.Write("two ");
+            chain += () => Console.WriteLine("three");
+            chain();
+            Func<int, int> f = x => x + 1;
+            f += x => x * 10;
+            Console.WriteLine(f(4));
+            Action none = null;
+            none += () => Console.WriteLine("from null");
+            none();
+        }
+    }
+}

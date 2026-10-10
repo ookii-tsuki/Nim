@@ -32,6 +32,8 @@ type
     isSealed*: bool         ## `sealed`: closes a slot or a class
     isNew*: bool            ## `new`: hides a base member instead of overriding it
     isPartial*: bool        ## `partial`: one of several declarations of one type
+    isEvent*: bool          ## `event`: a delegate field outsiders may only `+=`/`-=`
+    isRequired*: bool       ## `required`: every object initializer must set it
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.

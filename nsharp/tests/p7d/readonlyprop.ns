@@ -1,0 +1,6 @@
+using System;
+namespace Demo
+{
+    class P { public int X { get; } public P() { X = 1; } }
+    class Program { static void Main() { var p = new P(); p.X = 2; Console.WriteLine(p.X); } }
+}

@@ -886,9 +886,11 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ## Not a member this module declares: the prelude may declare one
       ## (`Equals`, `ToString`, `q.Count`), or nothing does.
       kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
-    if kind != tkDelegate:
+    if kind != tkDelegate or
+       not ctx.scope.findMemberInfo(n.body.typeName, n.name).isMethod:
       ## A member of a generic class, seen through a receiver whose type arguments
-      ## are known, has the substituted type.
+      ## are known, has the substituted type. A delegate-typed field or property
+      ## has its delegate type too, which types a lambda assigned to it.
       let mt = ctx.memberTypeOf(n.body, n.body.typeName, n.name)
       if mt != nil:
         n.rtype = mt
@@ -925,7 +927,9 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
          ctx.scope.findMemberInfo(recv, n.name).name.len > 0:
         ## A static member of a class this compilation declares.
         kind = ctx.memberKind(recv, n.name)
-        if ctx.scope.findMemberInfo(recv, n.name).isMethod: kind = tkDelegate
+        let mi = ctx.scope.findMemberInfo(recv, n.name)
+        if mi.isMethod: kind = tkDelegate
+        else: n.rtype = mi.typ
         if kind in {tkNullable, tkClass, tkException, tkInt, tkFloat, tkChar}:
           tname = ctx.memberTypeName(recv, n.name)
       else:
@@ -1025,6 +1029,12 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     cands = ctx.scope.memberOverloads(owner, callee.name)
     if ctx.scope.classes.hasKey(owner):
       let mi = ctx.scope.findMemberInfo(owner, callee.name)
+      if mi.isEvent:
+        ## Raising an event calls each handler; only its own type may (CS0070).
+        callee.strVal = "event"
+        if mi.owner != ctx.clsName:
+          nsError(ctx.config, callee.info, ndEventOutside, mi.owner & "." & mi.name,
+                  mi.owner)
       if mi.obsolete != nil:
         ctx.warnObsolete(mi.obsolete, signature(mi.owner & "." & callee.name, mi.params),
                          callee.info)
@@ -1240,6 +1250,17 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
            ctx.scope.classes[cn].classKind == ckInterface:
           nsError(ctx.config, n.info, ndAbstractInstance, cn)
         ctx.checkCallArgs(ctx.scope.ctorOverloads(cn), n.sons, cn, cn, true, n.info)
+    if n.typ != nil and n.typ.kind == nsnTypeName and n.strVal.len == 0 and
+       ctx.scope.classes.hasKey(unqualified(n.typ.name)):
+      ## A `required` member must be set by the object initialiser (CS9035).
+      var setNames: seq[string] = @[]
+      for it in n.inits:
+        if it.kind == nsnInitMember: setNames.add it.name
+      let cn = unqualified(n.typ.name)
+      for c in ctx.scope.chain(cn):
+        for m in ctx.scope.classes[c].members:
+          if m.isRequired and m.name notin setNames:
+            nsError(ctx.config, n.info, ndRequiredMember, c & "." & m.name)
     if n.inits.len > 0 and n.strVal.len == 0:
       ## `new T(...) { A = 1, [k] = v, x }`: the initialiser becomes ordinary
       ## statements over a temporary, checked like any other.
@@ -1651,6 +1672,15 @@ proc walkSwitch(ctx: var NsCheckContext; n: NsNode) =
       for st in sec.body.sons: ctx.walkStmt(st)
     ctx.popScope()
 
+proc eventOf(ctx: NsCheckContext; target: NsNode): NsMemberSymbol =
+  ## The event a member access names, or a zeroed symbol.
+  result = NsMemberSymbol()
+  if target == nil or target.kind != nsnMember or target.body == nil: return
+  let owner = (if target.body.kind == nsnThis: ctx.clsName else: target.body.typeName)
+  if not ctx.scope.classes.hasKey(owner): return
+  let m = ctx.scope.findMemberInfo(owner, target.name)
+  if m.isEvent: result = m
+
 proc checkAssignable(ctx: NsCheckContext; target: NsNode) =
   ctx.noteMutation(target)
   ## A `const` is never assigned (CS0131); a `readonly` field only by its own class's
@@ -1663,6 +1693,14 @@ proc checkAssignable(ctx: NsCheckContext; target: NsNode) =
   if owner.len == 0 or not ctx.scope.classes.hasKey(owner): return
   let m = ctx.scope.findMemberInfo(owner, target.name)
   if m.name.len == 0: return
+  let inOwnCtor = ctx.inCtor and m.owner == ctx.clsName and not ctx.ctorIsStatic
+  let inInitializer = target.body.kind == nsnIdent and target.body.name.startsWith("nsInit")
+  if m.isProperty and m.noSetter and not (m.autoGetOnly and inOwnCtor):
+    nsError(ctx.config, target.info, ndReadOnlyProperty, m.owner & "." & m.name)
+    return
+  if m.isProperty and m.initOnly and not (inOwnCtor or inInitializer):
+    nsError(ctx.config, target.info, ndInitOnly, m.owner & "." & m.name)
+    return
   if m.isConst:
     nsError(ctx.config, target.info, ndNotAssignable)
   elif m.isReadonly:
@@ -1730,6 +1768,19 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       applySig(n.sons[1], delegateSig(ctx.scope, ctx.surface, n.sons[0].rtype))
     for i in 1 ..< n.sons.len: discard ctx.walkExpr(n.sons[i])
     ctx.checkAssignable(n.sons[0])
+    let ev = ctx.eventOf(n.sons[0])
+    if ev.name.len > 0:
+      ## `e += h` / `e -= h` on an event add and remove a handler; anything else
+      ## is allowed only inside the declaring type (CS0070).
+      if n.name in ["+", "-"]: n.strVal = "event"
+      elif ev.owner != ctx.clsName:
+        nsError(ctx.config, n.info, ndEventOutside, ev.owner & "." & ev.name, ev.owner)
+    elif n.name in ["+", "-"] and n.sons[0].typeKind == tkDelegate:
+      ## `d += h` combines delegates; `d -= h` would need their invocation lists.
+      if n.name == "+": n.strVal = "combine"
+      else:
+        nsError(ctx.config, n.info, ndUnsupported,
+                "removing a delegate from a multicast delegate")
     ## A plain `x = y` is a conversion C# may refuse; a compound one (`x += y`) is
     ## not, because C# lets the operator's own result narrow back.
     if n.name.len == 0 and n.sons.len == 2:
@@ -1967,6 +2018,8 @@ proc checkInheritance(ctx: NsCheckContext; cls: NsNode) =
   ## (CS0500), a non-abstract one a body (CS0501), and a concrete class must fill
   ## every abstract slot it inherits (CS0534).
   for m in cls.sons:
+    if m.kind == nsnPropertyDecl and m.attrs.isEvent:
+      nsError(ctx.config, m.info, ndUnsupported, "an event with add/remove accessors")
     if cls.attrs.isStatic and m.kind in {nsnFieldDecl, nsnMethodDecl, nsnPropertyDecl,
                                          nsnIndexerDecl} and
        not m.attrs.isStatic and not m.attrs.isConst:

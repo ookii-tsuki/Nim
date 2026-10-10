@@ -1,0 +1,27 @@
+using System;
+namespace Demo
+{
+    class Person
+    {
+        public required string Name { get; init; }
+        public int Age { get; init; } = 18;
+        public string Id { get; }
+        public string Tag { get; private set; } = "none";
+        static int next = 1;
+        public Person() { Id = "P" + next++; }
+        public void Retag(string t) { Tag = t; }
+        public override string ToString() => Id + ":" + Name + "/" + Age + "/" + Tag;
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var a = new Person { Name = "ann" };
+            var b = new Person { Name = "bob", Age = 40 };
+            b.Retag("x");
+            Console.WriteLine(a);
+            Console.WriteLine(b);
+        }
+    }
+}

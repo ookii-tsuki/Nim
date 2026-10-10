@@ -1,0 +1,6 @@
+using System;
+namespace Demo
+{
+    class B { public event Action Fired; }
+    class Program { static void Main() { var b = new B(); b.Fired = null; } }
+}

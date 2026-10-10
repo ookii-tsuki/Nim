@@ -55,6 +55,10 @@ type
     ndSealedNotOverride
     ndAbstractNotImplemented
     ndInterfaceNotImplemented
+    ndRequiredMember
+    ndReadOnlyProperty
+    ndInitOnly
+    ndEventOutside
     ndObsolete
     ndObsoleteNoMessage
     ndObsoleteError
@@ -140,6 +144,15 @@ const
     ndAbstractNotImplemented: (code: "0534", msg: "'$1' does not implement inherited abstract member '$2'"),
     ndInterfaceNotImplemented: (code: "0535", msg: "'$1' does not implement interface" &
                         " member '$2'"),
+    ndRequiredMember: (code: "9035", msg: "Required member '$1' must be set in the object initializer or" &
+                        " attribute constructor."),
+    ndReadOnlyProperty: (code: "0200", msg: "Property or indexer '$1' cannot be assigned to -- it is" &
+                        " read only"),
+    ndInitOnly: (code: "8852", msg: "Init-only property or indexer '$1' can only be assigned in an" &
+                        " object initializer, or on 'this' or 'base' in an instance" &
+                        " constructor or an 'init' accessor."),
+    ndEventOutside: (code: "0070", msg: "The event '$1' can only appear on the left hand side of +=" &
+                        " or -= (except when used from within the type '$2')"),
     ndObsolete: (code: "0618", msg: "'$1' is obsolete: '$2'"),
     ndObsoleteNoMessage: (code: "0612", msg: "'$1' is obsolete"),
     ndObsoleteError: (code: "0619", msg: "'$1' is obsolete: '$2'"),

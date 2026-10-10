@@ -1,0 +1,15 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            Action a = () => Console.WriteLine("a");
+            Action b = () => Console.WriteLine("b");
+            a += b;
+            a -= b;
+            a();
+        }
+    }
+}

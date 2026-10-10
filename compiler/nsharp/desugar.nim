@@ -411,8 +411,17 @@ proc typeRef(l: Lowerer; t: NsNode): PNode =
     result = newTree(nkBracketExpr, t.info, result)
     for a in t.typeArgs: result.add l.typeToNim(a, t.info)
 
+proc memberReceiverChecked(l: Lowerer; n: NsNode): PNode
+
 proc callToNim(l: Lowerer; n: NsNode): PNode =
   var callee = n.body
+  if callee != nil and callee.kind == nsnMember and callee.strVal == "event":
+    ## Raising an event: each of its handlers is called.
+    result = newTree(nkCall, n.info, l.id("Invoke", n.info),
+                     newTree(nkDotExpr, n.info, l.memberReceiverChecked(callee),
+                             l.id(callee.name, n.info)))
+    for a in l.argsToNim(n): result.add a
+    return
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
      callee.body.kind == nsnBase:
     ## `base.M(args)` calls the base implementation, never the override.
@@ -649,6 +658,24 @@ proc condTail(l: Lowerer; nd: NsNode; absent: PNode): PNode =
   result.add empty(nd.info)
   result.add inner
 
+proc condStmt(l: Lowerer; nd: NsNode): PNode =
+  ## `a?.M(...)` as a statement: nothing happens when `a` is null, otherwise the
+  ## tail runs, its result dropped.
+  let info = nd.info
+  var tailNim = newTree(nkDiscardStmt, info, empty(info))
+  if nd.sons.len > 0 and nd.sons[0] != nil:
+    nd.sons[0] = replaceIdentical(nd.sons[0], nd.body, nsnIdent(NsCond, info))
+    let tail = nd.sons[0]
+    tailNim = (if tail.kind == nsnNullDot: l.condStmt(tail)
+               else: newTree(nkCall, info, l.id("nsStmt", info), l.expr(tail)))
+  let inner = newNodeI(nkStmtList, info)
+  inner.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(NsCond, info),
+                                                empty(info), l.expr(nd.body)))
+  inner.add newTree(nkIfStmt, info, newTree(nkElifBranch, info,
+    newTree(nkPrefix, info, l.id("not", info), newTree(nkInfix, info, l.id("==", info),
+      l.id(NsCond, info), newNodeI(nkNilLit, info))), tailNim))
+  result = newTree(nkBlockStmt, info, empty(info), inner)
+
 proc nullDotToNim(l: Lowerer; n: NsNode): PNode =
   ## `a?.B` on its own yields nil when the receiver is nil; a value-typed one is
   ## rejected by `sema.nim` unless a `??` supplies the absent value.
@@ -789,7 +816,8 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       ## `base.P`: the base's getter, not the override's.
       result = l.baseCall(n.name, @[], n.info)
     elif n.body != nil and n.body.typeKind == tkType and n.typeKind == tkDelegate and
-         l.scope.classes.hasKey(n.body.typeName):
+         l.scope.classes.hasKey(n.body.typeName) and
+         l.scope.findMemberInfo(n.body.typeName, n.name).isMethod:
       ## `C.M` as a method group: a closure that calls `M(C, ...)`.
       result = l.staticMethodGroup(n)
     elif n.body != nil and n.typeKind == tkDelegate and n.body.typeKind == tkClass and
@@ -1513,6 +1541,15 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
   bare.nilChecks = false
   let lhs = bare.expr(n.sons[0])
   var value: PNode
+  if n.strVal == "event":
+    ## `e += h` / `e -= h`: a handler joins or leaves the event's list.
+    return newTree(nkCall, n.info,
+                   l.id(if n.name == "+": "nsSubscribe" else: "nsUnsubscribe", n.info),
+                   lhs, l.expr(n.sons[1]))
+  if n.strVal == "combine":
+    ## `d += h`: a delegate that calls `d`, then `h`.
+    return newTree(nkAsgn, n.info, lhs, newTree(nkCall, n.info, l.id("nsCombine", n.info),
+                                                copyTree(lhs), l.expr(n.sons[1])))
   if n.name == "??":
     ## `a ??= b`: the compound form of `a = a ?? b`.
     let co = nsn(nsnNullCoalesce, n.info)
@@ -1788,6 +1825,8 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
     result = blk
   of nsnLocalDecl: result = l.localDeclToNim(n)
   of nsnExprStmt:
+    if n.body != nil and n.body.kind == nsnNullDot:
+      return l.condStmt(n.body)
     if n.body != nil and n.body.kind == nsnIncDec:
       let target = n.body.body
       if l.isPlainVariable(target):
@@ -2047,7 +2086,7 @@ proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[P
   ## accessor written `get;`/`set;` reads and writes a generated `PBacking` field.
   result = @[]
   let getter = if m.params.len > 0: m.params[0] else: nil
-  let setter = if m.params.len > 1: m.params[1] else: nil
+  var setter = if m.params.len > 1: m.params[1] else: nil
   ## A static property is reached through its type, so its receiver is the
   ## `typedesc`, and an auto-property's storage is a module global.
   let isStatic = m.attrs.isStatic
@@ -2066,6 +2105,12 @@ proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[P
     gp.add l.typeToNim(m.typ, m.info)
     gp.add copyTree(recvDefs)
     result.add l.mkProc(l.exportedName(m.attrs, m.name, m.info), gp, gbody, m.info)
+  if setter == nil and getter != nil and getter.kind == nsnEmpty:
+    ## `{ get; }`: its constructors assign it, through a setter only this module
+    ## sees (sema rejects any other assignment).
+    setter = nsn(nsnEmpty, m.info)
+    setter.attrs = NsAttrs(access: aPrivate)
+    setter.strVal = "access"
   if setter != nil:
     let sbody =
       if setter.kind == nsnEmpty:
@@ -2077,7 +2122,9 @@ proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[P
     sp.add (if isStatic: copyTree(recvDefs)
             else: l.selfDefs(cls.name, isException, m.info, mutable = true))
     sp.add l.paramDef(nsnParam("value", m.typ, m.info))
-    result.add l.mkProc(l.exportedName(m.attrs, m.name & "=", m.info), sp, sbody, m.info)
+    ## `private set;` keeps the setter in its module, as it does a private member.
+    let sattrs = (if setter.strVal == "access": setter.attrs else: m.attrs)
+    result.add l.mkProc(l.exportedName(sattrs, m.name & "=", m.info), sp, sbody, m.info)
 
 # --- operators and indexers ---------------------------------------------------
 
@@ -2643,6 +2690,13 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   l.curClass = n
   l.curBase = mappedBase
   l.curIsException = isException
+  for m in n.sons:
+    if m.kind == nsnFieldDecl and m.attrs.isEvent and m.typ != nil and
+       not (m.typ.kind == nsnTypeName and m.typ.name == "seq"):
+      ## An event holds its handlers: a list of the delegate type.
+      let t = nsnTypeName("seq", m.typ.info)
+      t.add m.typ
+      m.typ = t
   l.clsTypeParams = @[]
   for t in n.typeParams: l.clsTypeParams.add t.name
   l.procTypeParams = l.clsTypeParams

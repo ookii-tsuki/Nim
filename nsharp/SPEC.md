@@ -387,7 +387,7 @@ and the namespaces must be merged or layered.
 | **Properties** (see §5.4) | accessors | ✅ v1 | desugar |
 | `this[...]` indexer | indexer | ✅ v1 | desugar (→ `[]`/`[]=` over the receiver and the index parameters; several indices allowed) |
 | Named indexers | C# 13 | ✅ v1 (ext) | desugar |
-| **Events** `event D E;` | pub/sub | 🔜 later | lib |
+| **Events** `event D E;` | pub/sub | ✅ v1 | see §10 |
 | **Operators** `operator +` | overload | ✅ v1 | desugar (→ the Nim proc of that operator; `%`/`&`/`\|`/`^`/`<<`/`>>`/`!` are `mod`/`and`/`or`/`xor`/`shl`/`shr`/`not`); `operator true/false` is NS9999 |
 | Conversion ops `implicit`/`explicit` | casts | ✅ v1 | desugar (implicit → `converter nsImplicit_T`, explicit → a proc a cast calls; using an explicit one implicitly is NS0266) |
 | `++`/`--` overloads | `operator ++` | ✅ v1 | desugar (→ `inc`/`dec` over a `var` operand) |
@@ -403,13 +403,13 @@ and the namespaces must be merged or layered.
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
 | Auto-property `R P { get; set; }` | backing field + accessors | ✅ v1 | desugar |
-| Read-only `R P { get; }` | getter only | ✅ v1 | desugar |
+| Read-only `R P { get; }` | getter only | ✅ v1 | desugar (its constructors assign it through a setter private to the module; any other assignment is NS0200) |
 | Computed `R P { get { .. } set { .. } }` | bodies | ✅ v1 | desugar |
 | Expression-bodied `R P => e;` | single expr | ✅ v1 | desugar |
-| Init-only `R P { get; init; }` | set in ctor only | 🔜 later | sem/desugar |
-| `required` members | must-init | 🔜 later | sem |
+| Init-only `R P { get; init; }` | set in ctor only | ✅ v1 | sem (an ordinary setter; assigning it outside an object initialiser or its own constructor is NS8852) |
+| `required` members | must-init | ✅ v1 | sem (`new T { ... }` without one of them is NS9035; `[SetsRequiredMembers]` is not recognised) |
 | Static properties | type-level | ✅ v1 | desugar (getter/setter over `typedesc[C]`, backing in a module global) |
-| Accessor visibility `{ get; private set; }` | per-accessor | ✅ v1 | front (accessors may also be `=> e`; `init` is accepted as a setter) |
+| Accessor visibility `{ get; private set; }` | per-accessor | ✅ v1 | front (accessors may also be `=> e`); a `private set` is not exported from its module |
 | Abstract/virtual properties | dispatch | ✅ v1 | sem |
 | Interface properties | contract | ✅ v1 | desugar (getter/setter table entries) |
 
@@ -705,15 +705,16 @@ map directly. The cost is in **constraints**, which map to Nim
 | Lambda expressions | `x => e` | ✅ v1 | desugar (typed from the delegate it converts to: a declared local's type, or the parameter it is passed for, with the method's and class's type arguments substituted; for a library member the declaration's Nim parameter types, bound by the receiver's) |
 | Closures (capture) | - | ✅ v1 (3b) | free (Nim closures) |
 | Method group → delegate | `D d = M;` | ✅ v1 | desugar (a closure: `M(C, ...)` for a static method, the receiver read once for an instance one) |
-| Multicas (combine) `+=` / `-=` | invocation list | 🔜 later | lib |
-| `event D E;` | pub/sub member | 🔜 later | lib |
-| `event` add/remove accessors | custom | 🔜 later | lib |
+| Multicast (combine) `+=` / `-=` | invocation list | ✅ v1 for `+=` | lib (`nsCombine`: a delegate calling the left then the right, answering the right's result; a null side is the other). `-=` on a delegate variable is NS9999; on an event it works |
+| `d.Invoke(args)`, `d?.Invoke(args)` | call | ✅ v1 | lib (`Invoke` calls the delegate, or each handler of an event); `x?.M()` as a statement does nothing for a null `x` |
+| `event D E;` | pub/sub member | ✅ v1 | desugar + lib: the field holds `seq[D]`, its handlers; `E += h` / `E -= h` are `nsSubscribe`/`nsUnsubscribe` (the last equal handler leaves), raising it calls each in order, and with none it is null. Outside its type only `+=`/`-=` (NS0070). `EventHandler`, `EventHandler<T>`, `EventArgs` are declared |
+| `event` add/remove accessors | custom | 🔜 later (NS9999) | lib |
 | Anonymous methods `delegate { }` | - | 🔜 later | front |
 | Delegate variance | `Action<Base> = Action<Derived>` | 🔜 later | sem |
 | Expression trees | `Expression<Func<>>` | 🚫 out | - |
 
-**Note:** Nim closures (`{.closure.}` procs) cover the 95% case (single-target
-delegates). Multicast delegates and `event` become a small `lib` library type.
+**Note:** Nim closures (`{.closure.}` procs) cover single-target delegates; a
+combined delegate is another closure, and an event is the list of its handlers.
 
 A lambda passed directly as an argument is typed from the parameter it is passed
 for (`xs.Find(x => x > 4)`, `Apply(x => x * 3, 5)`); a delegate call used as a
@@ -999,6 +1000,10 @@ code:
 | `NS0266` | CS0266 | a numeric value would narrow implicitly; a cast is needed |
 | `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
 | `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
+| `NS0070` | CS0070 | an event used outside its type other than by `+=`/`-=` |
+| `NS0200` | CS0200 | a get-only property assigned outside its constructors |
+| `NS8852` | CS8852 | an `init` property assigned outside an initialiser or constructor |
+| `NS9035` | CS9035 | an object initialiser omits a `required` member |
 | `NS1674` | CS1674 | what `using` disposes does not implement `IDisposable` |
 | `NS1621` | CS1621 | `yield` inside a lambda |
 | `NS1624` | CS1624 | `yield` in a member whose return type is not `IEnumerable<T>`/`IEnumerator<T>` |
@@ -1120,7 +1125,7 @@ UFCS, tuples/multiple returns, variant types, `defer`, compile-time functions,
 
 ### 🔜 Deliberately deferred
 `async`/`await`, LINQ (query + method), records, advanced pattern matching,
-`init`/`required`, events/multicast delegates, `decimal`, variance, dynamic
+`decimal`, variance, dynamic
 interface values, universal value boxing, `fixed`/`stackalloc`/`ref struct`,
 reflection, threads, static constructors,
 finalizers, `Span<T>`, `StringBuilder`-adjacent IO, `Result<T,E>`, formatter, REPL.

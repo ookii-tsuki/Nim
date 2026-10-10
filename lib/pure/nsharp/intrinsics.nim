@@ -231,3 +231,63 @@ template nsEnum*(E, U: untyped; flags: static bool; names: untyped) =
   proc hash*(a: E): Hash = hash(U(a))
   proc `$`*(a: E): string = nsEnumName(int64(U(a)), names, flags)
   proc ToString*(a: E): string = $a
+
+import std/macros
+
+macro Invoke*(d: typed; args: varargs[typed]): untyped =
+  ## `d.Invoke(args)`, the member every delegate has: a call of `d`. For an
+  ## event, which is the list of its handlers, each is called in order.
+  var xs: seq[NimNode] = @[]
+  for a in args: xs.add a
+  if d.getTypeInst.typeKind == ntySequence:
+    let h = genSym(nskForVar, "nsHandler")
+    result = nnkForStmt.newTree(h, d, newStmtList(newCall(h, xs)))
+  else:
+    result = newCall(d, xs)
+
+macro nsCombine*(a, b: typed): untyped =
+  ## `a + b` for delegates (`d += h`): a delegate that calls `a` and then `b`,
+  ## answering `b`'s result; a null side is the other one.
+  let t = getTypeImpl(a)
+  expectKind t, nnkProcTy
+  let fp = t[0]
+  var params = newNimNode(nnkFormalParams)
+  params.add fp[0]
+  var args: seq[NimNode] = @[]
+  var k = 0
+  for i in 1 ..< fp.len:
+    let d = fp[i]
+    for j in 0 ..< d.len - 2:
+      let nm = ident("nsArg" & $k)
+      inc k
+      params.add newIdentDefs(nm, d[^2])
+      args.add nm
+  let na = genSym(nskLet, "nsA")
+  let nb = genSym(nskLet, "nsB")
+  let callA = newCall(na, args)
+  let callB = newCall(nb, args)
+  let first = (if fp[0].kind == nnkEmpty: callA
+               else: newNimNode(nnkDiscardStmt).add(callA))
+  let body = newStmtList(callB)
+  let lam = newProc(newEmptyNode(), [], newStmtList(first, body), nnkLambda)
+  lam[3] = params
+  lam[4] = newNimNode(nnkPragma).add(ident"closure")
+  result = quote do:
+    (block:
+      let `na` = `a`
+      let `nb` = `b`
+      (if `na` == nil: `nb` elif `nb` == nil: `na` else: `lam`))
+
+proc nsSubscribe*[D](e: var seq[D]; h: D) =
+  ## `e += h` on an event: `h` joins its handlers (a null one does not).
+  if h != nil: e.add h
+
+proc nsUnsubscribe*[D](e: var seq[D]; h: D) =
+  ## `e -= h` on an event: the last handler equal to `h` leaves.
+  for i in countdown(e.high, 0):
+    if e[i] == h:
+      e.delete(i)
+      return
+
+proc `==`*[D: proc](e: seq[D]; n: typeof(nil)): bool = e.len == 0
+  ## An event without handlers is null, as C#'s is.
