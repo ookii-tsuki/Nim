@@ -21,6 +21,9 @@ type
     condSeq: int            ## counts `?.` markers, so each chain link gets its own
     surface: NsBclSurface   ## the library's declarations, for telling a cast apart
     typeParams: seq[string]  ## the type parameters in scope, which are type names
+    inGuard: bool
+      ## Parsing a switch arm's `when` guard: the arm's `=>` follows it, so a name
+      ## before it is not a lambda's parameter.
     typeAliases: Table[string, NsNode]
       ## `using A = X.Y<int>;`: a name for a type, which the parser writes out in its
       ## place, as C# resolves it.
@@ -356,7 +359,14 @@ proc parseCast(p: var NsParser): NsNode =
   result.typ = typ
   result.body = p.parseUnary()
 
+proc looksLikeLambdaShape(p: NsParser): bool
+
 proc looksLikeLambda(p: NsParser): bool =
+  ## Not at a guard's own level, where `=>` is the arm's.
+  if p.inGuard: return false
+  result = looksLikeLambdaShape(p)
+
+proc looksLikeLambdaShape(p: NsParser): bool =
   ## `x =>` or `( ... ) =>` (a parenthesised group immediately followed by `=>`).
   if p.peek.kind == nsIdent and p.peekAhead(1).kind == nsArrow:
     return true
@@ -421,7 +431,16 @@ proc typeShapeEnd(p: NsParser; start: int): int =
     i += 2
   i
 
+proc parseArgumentInner(p: var NsParser): NsNode
+
 proc parseArgument(p: var NsParser): NsNode =
+  ## A call argument may be a lambda even inside a switch arm's guard.
+  let saved = p.inGuard
+  p.inGuard = false
+  result = p.parseArgumentInner()
+  p.inGuard = saved
+
+proc parseArgumentInner(p: var NsParser): NsNode =
   ## One call argument: `e`, `name: e`, `ref x`, `out x`, `out int x`, `out var x`,
   ## `in x`.
   if p.at(nsIdent) and p.peekAhead(1).kind == nsColon and
@@ -787,7 +806,10 @@ proc parseSwitchExpr(p: var NsParser; subject: NsNode): NsNode =
     var guard: NsNode = nil
     if p.at(nsIdent) and p.peek.text == "when":
       discard p.advance
+      let saved = p.inGuard
+      p.inGuard = true
       guard = p.parseExpr()
+      p.inGuard = saved
     arm.sons.add guard
     discard p.expect(nsArrow)
     arm.add p.parseExpr()
@@ -914,11 +936,20 @@ proc parsePrimaryPattern(p: var NsParser): NsNode =
     if p.at(nsIdent) and p.peek.text notin ["and", "or", "when"]:
       result.name = p.advance.text
   of nsLBracket:
-    p.err(t, ndUnsupported, "a list pattern")
+    ## A list pattern (C# 11): element patterns in order, and at most one `..`
+    ## slice, which may carry a pattern of its own.
     discard p.advance
-    while not p.at(nsRBracket) and not p.at(nsEof): discard p.advance
-    discard p.advance
-    result = nsn(nsnPatDiscard, info)
+    result = nsn(nsnPatList, info)
+    while not p.at(nsRBracket) and not p.at(nsEof):
+      if p.at(nsDotDot):
+        let s = nsn(nsnPatSlice, p.here())
+        discard p.advance
+        if not p.at(nsComma) and not p.at(nsRBracket): s.body = p.parsePattern()
+        result.add s
+      else:
+        result.add p.parsePattern()
+      if p.at(nsComma): discard p.advance else: break
+    discard p.expect(nsRBracket)
   else:
     if t.kind == nsIdent and t.text == "_" :
       discard p.advance

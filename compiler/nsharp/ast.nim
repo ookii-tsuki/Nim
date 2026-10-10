@@ -195,6 +195,9 @@ type
     nsnPatField        # name = member, body = pattern
     nsnPatVar          # name                                    (`var x`)
     nsnPatDiscard      #                                         (`_`)
+    nsnPatList         # sons = element patterns and at most one nsnPatSlice,
+                       #   strVal = how the subject is measured   (`[1, .., var z]`)
+    nsnPatSlice        # body = pattern for the slice (or nil)    (`..`, `.. var rest`)
     nsnInterpolated    # sons = nsnStrLit / nsnInterpHole parts  (from `$"..."`)
     nsnInterpHole      # body = value, sons = [alignment] (optional), strVal = format
     nsnAttribute       # name (as written, without `Attribute`), sons = arguments,

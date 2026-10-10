@@ -1,0 +1,41 @@
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Program
+    {
+        static string Describe(int[] xs) => xs switch
+        {
+            [] => "empty",
+            [var only] => "one " + only,
+            [1, 2] => "one-two",
+            [var first, .., var last] when first == last => "same ends " + first,
+            [_, _, ..] => "starts " + xs[0] + " and has " + xs.Length,
+        };
+
+        static void Main()
+        {
+            Console.WriteLine(Describe(new int[0]));
+            Console.WriteLine(Describe([7]));
+            Console.WriteLine(Describe([1, 2]));
+            Console.WriteLine(Describe([4, 5, 4]));
+            Console.WriteLine(Describe([3, 9, 8, 1]));
+            int[] a = [1, 2, 3, 4, 5];
+            if (a is [1, .. var middle, 5])
+                Console.WriteLine(middle.Length + " " + middle[0]);
+            if (a is [.., > 4]) Console.WriteLine("ends big");
+            if (a is not [0, ..]) Console.WriteLine("no leading zero");
+            string s = "hello";
+            if (s is ['h', .. var rest]) Console.WriteLine(rest);
+            if (s is [.., 'l', 'o']) Console.WriteLine("lo");
+            var list = new List<int> { 10, 20, 30 };
+            if (list is [10, _, var t]) Console.WriteLine(t);
+            Console.WriteLine(list is [_, _] ? "two" : "not two");
+            Console.WriteLine(list switch { [var h, ..] when list.Exists(v => v > h) => "grows", _ => "flat" });
+            switch (a)
+            {
+                case [var x, var y, ..]: Console.WriteLine(x + y); break;
+            }
+        }
+    }
+}
