@@ -1917,9 +1917,11 @@ proc parseAccessors(p: var NsParser; info: TLineInfo): (NsNode, NsNode) =
       continue
     let mods = p.parseModifierList(["public", "private", "protected", "internal"],
                                    ["public", "private", "protected", "internal"])
-    if p.at(nsIdent) and p.peek.text in ["get", "set", "init"]:
-      let isGet = p.peek.text == "get"
+    if p.at(nsIdent) and p.peek.text in ["get", "set", "init", "add", "remove"]:
+      ## An event's `add`/`remove` take the getter's and the setter's places.
+      let isGet = p.peek.text in ["get", "add"]
       let isInit = p.peek.text == "init"
+      let isEventAcc = p.peek.text in ["add", "remove"]
       discard p.advance
       var acc: NsNode
       if p.at(nsLBrace):
@@ -1936,6 +1938,7 @@ proc parseAccessors(p: var NsParser; info: TLineInfo): (NsNode, NsNode) =
         acc.attrs = NsAttrs(access: accessOf(mods))
         acc.strVal = "access"
       if isInit: acc.name = "init"
+      if isEventAcc: acc.name = (if isGet: "add" else: "remove")
       if isGet: getter = acc else: setter = acc
     else:
       p.err(p.peek, ndUnsupported, "this property accessor")

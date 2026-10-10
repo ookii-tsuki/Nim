@@ -643,6 +643,25 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtByKey'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'pointer'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'CatShop'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'key'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -777,6 +796,25 @@ nkStmtList
       nkIdentDefs
         nkIdent 'x'
         nkIdent 'Vet'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtByKey'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'pointer'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Vet'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'key'
+        nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1521,6 +1559,49 @@ nkStmtList
               nkIdent 'nsVt'
               nkCall
                 nkIdent 'nsVtGet_CatShop_IProducer_Cat'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtByKey'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'pointer'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'CatShop'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'key'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfStmt
+        nkElifBranch
+          nkInfix
+            nkIdent '=='
+            nkIdent 'key'
+            nkCall
+              nkIdent 'nsKeyOf'
+              nkBracketExpr
+                nkIdent 'IProducer'
+                nkIdent 'Cat'
+          nkStmtList
+            nkReturnStmt
+              nkCast
+                nkIdent 'pointer'
+                nkCall
+                  nkIdent 'nsVtGet_CatShop_IProducer_Cat'
+      nkCall
+        nkIdent 'procCall'
+        nkCall
+          nkIdent 'nsVtByKey'
+          nkCall
+            nkIdent 'RootRef'
+            nkIdent 'x'
+          nkIdent 'key'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1753,6 +1834,49 @@ nkStmtList
               nkIdent 'nsVt'
               nkCall
                 nkIdent 'nsVtGet_Vet_IConsumer_Animal'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtByKey'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'pointer'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Vet'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'key'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfStmt
+        nkElifBranch
+          nkInfix
+            nkIdent '=='
+            nkIdent 'key'
+            nkCall
+              nkIdent 'nsKeyOf'
+              nkBracketExpr
+                nkIdent 'IConsumer'
+                nkIdent 'Animal'
+          nkStmtList
+            nkReturnStmt
+              nkCast
+                nkIdent 'pointer'
+                nkCall
+                  nkIdent 'nsVtGet_Vet_IConsumer_Animal'
+      nkCall
+        nkIdent 'procCall'
+        nkCall
+          nkIdent 'nsVtByKey'
+          nkCall
+            nkIdent 'RootRef'
+            nkIdent 'x'
+          nkIdent 'key'
   nkProcDef
     nkPostfix
       nkIdent '*'

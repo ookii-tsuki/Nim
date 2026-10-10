@@ -507,6 +507,25 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtByKey'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'pointer'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Text'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'key'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1423,6 +1442,49 @@ nkStmtList
               nkIdent 'nsVt'
               nkCall
                 nkIdent 'nsVtGet_Text_IMonoid_Text'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtByKey'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'pointer'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Text'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'key'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfStmt
+        nkElifBranch
+          nkInfix
+            nkIdent '=='
+            nkIdent 'key'
+            nkCall
+              nkIdent 'nsKeyOf'
+              nkBracketExpr
+                nkIdent 'IMonoid'
+                nkIdent 'Text'
+          nkStmtList
+            nkReturnStmt
+              nkCast
+                nkIdent 'pointer'
+                nkCall
+                  nkIdent 'nsVtGet_Text_IMonoid_Text'
+      nkCall
+        nkIdent 'procCall'
+        nkCall
+          nkIdent 'nsVtByKey'
+          nkCall
+            nkIdent 'RootRef'
+            nkIdent 'x'
+          nkIdent 'key'
   nkProcDef
     nkPostfix
       nkIdent '*'

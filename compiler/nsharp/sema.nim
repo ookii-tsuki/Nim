@@ -959,13 +959,9 @@ proc staticReceiver(ctx: NsCheckContext; owner: string; info: TLineInfo): NsNode
       result.typeArgs.add nsnTypeName(t, info)
 
 proc checkTypeTest(ctx: NsCheckContext; n: NsNode) =
-  ## `is`, `as` and casts to a generic interface would need the dynamic type to name
-  ## its type arguments, which the interface tables do not record yet.
-  let t = n.typ
-  if t != nil and t.kind == nsnTypeName and t.sons.len > 0 and
-     ctx.scope.isInterface(canonicalTypeName(t.name)):
-    nsError(ctx.config, n.info, ndUnsupported,
-            "a type test or cast to a generic interface")
+  ## `is`, `as` and casts need nothing checked here: a generic interface's type
+  ## test asks the object's class by the instantiation's name (`nsVtByKey`).
+  discard
 
 proc checkLibraryInterfaceValue(ctx: NsCheckContext; t: NsNode) =
   ## A library interface (`IComparable<T>`) is a contract N# checks by name; it has
@@ -1236,7 +1232,10 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     cands = ctx.scope.memberOverloads(owner, callee.name)
     if ctx.scope.classes.hasKey(owner):
       let mi = ctx.scope.findMemberInfo(owner, callee.name)
-      if mi.isEvent:
+      if mi.isEvent and mi.isProperty:
+        ## An event with accessors has no handlers to call, even inside (CS0079).
+        nsError(ctx.config, callee.info, ndEventAccessorUse, mi.owner & "." & mi.name)
+      elif mi.isEvent:
         ## Raising an event calls each handler; only its own type may (CS0070).
         callee.strVal = "event"
         if mi.owner != ctx.clsName:
@@ -2272,7 +2271,10 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     if ev.name.len > 0:
       ## `e += h` / `e -= h` on an event add and remove a handler; anything else
       ## is allowed only inside the declaring type (CS0070).
-      if n.name in ["+", "-"]: n.strVal = "event"
+      if n.name in ["+", "-"]:
+        n.strVal = (if ev.isProperty: "eventAccessor" else: "event")
+      elif ev.isProperty:
+        nsError(ctx.config, n.info, ndEventAccessorUse, ev.owner & "." & ev.name)
       elif ev.owner != ctx.clsName:
         nsError(ctx.config, n.info, ndEventOutside, ev.owner & "." & ev.name, ev.owner)
     elif ctx.inChecked and n.name in ["+", "-", "*", "/"] and
@@ -2524,8 +2526,11 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
       let acc = m.params[i]
       if acc == nil or acc.kind == nsnEmpty: continue
       ctx.pushScope()
-      ## The setter's implicit parameter is `value`.
-      if i == 1: ctx.declare("value", ctx.classifyType(m.typ), declTypeName(m.typ))
+      ## The setter's implicit parameter is `value`; an event's `add` and
+      ## `remove` both take the handler as `value` and give nothing back.
+      if m.attrs.isEvent: ctx.retType = nil
+      if i == 1 or m.attrs.isEvent:
+        ctx.declare("value", ctx.classifyType(m.typ), declTypeName(m.typ), m.typ)
       for s in acc.sons: ctx.walkStmt(s)
       ctx.popScope()
     ctx.retType = savedRet
@@ -2555,12 +2560,6 @@ proc checkSupported(ctx: NsCheckContext; cls: NsNode) =
   for m in cls.sons:
     if m.kind == nsnOperatorDecl and m.name in ["true", "false"]:
       nsError(ctx.config, m.info, ndUnsupported, "'operator " & m.name & "'")
-  if cls.typeParams.len > 0:
-    for m in cls.sons:
-      if m.kind == nsnCtorDecl and m.attrs.isStatic:
-        ## Each instantiation would need its own run, on first use.
-        nsError(ctx.config, m.info, ndUnsupported,
-                "a static constructor in a generic class")
 
 proc signatureOf(cls: string; m: NsNode): string =
   ## `Shape.Area()`, as C# names a member in a diagnostic.
@@ -2579,8 +2578,11 @@ proc checkInheritance(ctx: NsCheckContext; cls: NsNode) =
          m.initKind != "this":
         nsError(ctx.config, m.info, ndPrimaryNotChained)
   for m in cls.sons:
-    if m.kind == nsnPropertyDecl and m.attrs.isEvent:
-      nsError(ctx.config, m.info, ndUnsupported, "an event with add/remove accessors")
+    if m.kind == nsnPropertyDecl and m.attrs.isEvent and
+       (m.params.len < 2 or m.params[0] == nil or m.params[1] == nil or
+        m.params[0].name != "add" or m.params[1].name != "remove"):
+      ## An event with accessors declares both, and nothing else (CS0065).
+      nsError(ctx.config, m.info, ndEventAccessors, cls.name & "." & m.name)
     if cls.attrs.isStatic and m.kind in {nsnFieldDecl, nsnMethodDecl, nsnPropertyDecl,
                                          nsnIndexerDecl} and
        not m.attrs.isStatic and not m.attrs.isConst:

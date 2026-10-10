@@ -1,5 +1,3 @@
-// Valid C# that N# rejects: a type test against a generic interface needs the
-// object's class to name its type arguments, which N#'s tables do not record yet.
 using System;
 
 namespace Demo

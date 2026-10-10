@@ -1193,8 +1193,13 @@ proc typeTest(l: Lowerer; subj: PNode; pat: NsNode; target: NsNode;
                      l.assignTrue(bindName, l.id(a, info), info))
     return newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
       newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(a, info), empty(info),
-        newTree(nkCall, info, l.id("nsAs" & tname, info),
-                newTree(nkCall, info, l.id("RootRef", info), copyTree(obj))))), test))
+        (if target.sons.len > 0:
+           newTree(nkCall, info, l.id("nsAsByKey", info),
+                   newTree(nkCall, info, l.id("RootRef", info), copyTree(obj)),
+                   l.typeToNim(target, info))
+         else:
+           newTree(nkCall, info, l.id("nsAs" & tname, info),
+                   newTree(nkCall, info, l.id("RootRef", info), copyTree(obj)))))), test))
   if not subjIface and canonicalTypeName(pat.typeName) in ["object", "Object", "RootRef"]:
     ## An `object` holds a reference or a box: the library asks which.
     let t = l.typeToNim(target, info)
@@ -1786,6 +1791,16 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
                    newTree(nkCall, n.info, l.id("addr", n.info), bare.expr(n.sons[1].body)))
   let lhs = bare.expr(n.sons[0])
   var value: PNode
+  if n.strVal == "eventAccessor":
+    ## `e += h` / `e -= h` on an event with accessors: its `add` or `remove`.
+    let t = n.sons[0]
+    let call = newTree(nkCall, n.info, l.id((if n.name == "+": "nsAdd_" else: "nsRemove_") &
+                                            t.name, n.info))
+    if t.kind == nsnMember and t.body != nil: call.add l.expr(t.body)
+    elif l.curClass != nil: call.add l.id((if l.thisName.len > 0: l.thisName
+                                           else: l.curClass.name), n.info)
+    call.add l.expr(n.sons[1])
+    return call
   if n.strVal == "event":
     ## `e += h` / `e -= h`: a handler joins or leaves the event's list.
     return newTree(nkCall, n.info,
@@ -2285,6 +2300,22 @@ proc staticAccessor(l: Lowerer; cls: string; m: NsNode; storage: string): PNode 
   result[3] = fp
   result[6] = newTree(nkStmtList, m.info, l.staticStorageRef(storage, m.info))
 
+proc genericStaticCtor(n: NsNode): NsNode =
+  ## A generic class's static constructor, which each instantiation runs on its
+  ## own, or nil.
+  if n == nil or n.typeParams.len == 0: return nil
+  for m in n.sons:
+    if m.kind == nsnCtorDecl and m.attrs.isStatic: return m
+  nil
+
+proc staticCtorCall(l: Lowerer; info: TLineInfo): PNode =
+  ## `nsStaticCtor_C[T]()`, which runs the instantiation's static constructor the
+  ## first time anything of it is used; nil when the class has none to run.
+  if genericStaticCtor(l.curClass) == nil: return nil
+  let callee = newTree(nkBracketExpr, info, l.id("nsStaticCtor_" & l.curClass.name, info))
+  for t in l.clsTypeParams: callee.add l.id(t, info)
+  newTree(nkCall, info, callee)
+
 proc emitStaticStorage(l: Lowerer; storage: string; typ: NsNode; init: NsNode;
                        info: TLineInfo; inits: var seq[PNode]; into: var seq[PNode]) =
   ## A static member's storage. C# gives every instantiation of a generic class its
@@ -2297,6 +2328,8 @@ proc emitStaticStorage(l: Lowerer; storage: string; typ: NsNode; init: NsNode;
       inits.add newTree(nkAsgn, info, l.id(storage, info), l.expr(init))
     return
   let body = newNodeI(nkStmtList, info)
+  let sc = l.staticCtorCall(info)
+  if sc != nil: body.add sc
   let gv = newTree(nkPragmaExpr, info, l.id("nsV", info),
                    newTree(nkPragma, info, l.id("global", info)))
   body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, gv,
@@ -2340,10 +2373,26 @@ proc lowerStaticField(l: Lowerer; cls: NsNode; m: NsNode; inits: var seq[PNode];
 
 # --- properties -------------------------------------------------------------
 
+proc lowerEventAccessors(l: Lowerer; cls, m: NsNode; isException: bool): seq[PNode] =
+  ## `event D E { add { ... } remove { ... } }`: procs `nsAdd_E`/`nsRemove_E` over
+  ## the receiver (a `typedesc` for a static event) and the handler, `value`.
+  let recvDefs =
+    if m.attrs.isStatic: l.typedescDefs(cls.name, m.info)
+    else: l.selfDefs(cls.name, isException, m.info)
+  for i, prefix in ["nsAdd_", "nsRemove_"]:
+    let fp = newNodeI(nkFormalParams, m.info)
+    fp.add empty(m.info)
+    fp.add copyTree(recvDefs)
+    fp.add newTree(nkIdentDefs, m.info, l.id("value", m.info), l.typeToNim(m.typ, m.info),
+                   empty(m.info))
+    result.add l.mkProc(l.exportedName(m.attrs, prefix & m.name, m.info), fp,
+                        l.stmtSeq(m.params[i]), m.info)
+
 proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[PNode] =
   ## A C# property becomes a getter named `P` and a setter named `P=`. An
   ## accessor written `get;`/`set;` reads and writes a generated `PBacking` field.
   result = @[]
+  if m.attrs.isEvent: return l.lowerEventAccessors(cls, m, isException)
   let getter = if m.params.len > 0: m.params[0] else: nil
   var setter = if m.params.len > 1: m.params[1] else: nil
   ## A static property is reached through its type, so its receiver is the
@@ -2463,6 +2512,8 @@ proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
   ip.add l.selfDefs(cls.name, isException, m.info, mutable = true)
   for p in m.params: ip.add l.paramDef(p)
   let ibody = newNodeI(nkStmtList, m.info)
+  let sc = l.staticCtorCall(m.info)
+  if sc != nil: ibody.add sc
   if m.initKind != "this":
     for f in fieldInits: ibody.add copyTree(f)
   var initName = ""
@@ -2876,6 +2927,31 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
                   l.id("nsTo_" & mangleType(it), info), l.id("x", info)))
       into.add l.mkProc(l.exportId("nsAs" & iface, info), afp, abody, info,
                         kind = nkMethodDef)
+  ## method nsVtByKey*(x: C; key: string): pointer -- the dynamic test of a generic
+  ## interface: each instantiation's table by its type's name, else the base's.
+  if isStruct or isException: return
+  let kbody = newNodeI(nkStmtList, info)
+  for it in ifaces:
+    if it.sons.len == 0 or not l.scope.classes.hasKey(canonicalTypeName(it.name)): continue
+    let key = newTree(nkCall, info, l.id("nsKeyOf", info), l.typeToNim(it, info))
+    let table = newTree(nkCast, info, l.id("pointer", info),
+                        l.getterCall("nsVtGet_" & n.name & "_" & mangleType(it), info))
+    kbody.add newTree(nkIfStmt, info, newTree(nkElifBranch, info,
+      newTree(nkInfix, info, l.id("==", info), l.id("key", info), key),
+      newTree(nkStmtList, info, newTree(nkReturnStmt, info, table))))
+  if kbody.len == 0: return
+  let base = (if n.typ != nil and l.scope.classes.hasKey(canonicalTypeName(n.typ.name)):
+                l.typeToNim(n.typ, info)
+              else: l.id("RootRef", info))
+  kbody.add newTree(nkCall, info, l.id("procCall", info), newTree(nkCall, info,
+    l.id("nsVtByKey", info), newTree(nkCall, info, base, l.id("x", info)), l.id("key", info)))
+  let kfp = newNodeI(nkFormalParams, info)
+  kfp.add l.id("pointer", info)
+  kfp.add l.identDefs("x", copyTree(recvType), info)
+  kfp.add l.identDefs("key", l.id("string", info), info)
+  var kl = l
+  kl.procTypeParams = l.clsTypeParams
+  into.add kl.mkProc(l.exportId("nsVtByKey", info), kfp, kbody, info, kind = nkMethodDef)
 
 proc isIfaceType(l: Lowerer; t: NsNode): bool =
   t != nil and t.kind == nsnTypeName and l.scope.isInterface(canonicalTypeName(t.name))
@@ -2896,7 +2972,12 @@ proc ifaceTypeOp(l: Lowerer; n: NsNode): PNode =
   let info = n.info
   if l.isIfaceType(n.typ):
     let iface = canonicalTypeName(n.typ.name)
-    let probe = newTree(nkCall, info, l.id("nsAs" & iface, info), l.id("nsSrc", info))
+    let probe =
+      if n.typ.sons.len > 0:
+        ## A generic interface: the class answers by the instantiation's name.
+        newTree(nkCall, info, l.id("nsAsByKey", info), l.id("nsSrc", info),
+                l.typeToNim(n.typ, info))
+      else: newTree(nkCall, info, l.id("nsAs" & iface, info), l.id("nsSrc", info))
     var value: PNode
     case n.kind
     of nsnIs:
@@ -3256,6 +3337,9 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       let pd = l.asMethod(n, m, inner.mkProc(nameNode, params,
                                              inner.memberBody(m.typ, m.body),
                                              m.info, withPragmas = true))
+      let sc = l.staticCtorCall(m.info)
+      if sc != nil and m.attrs.isStatic and pd[6].kind == nkStmtList:
+        pd[6].sons.insert(sc, 0)
       into.add pd
       if m.name == "Main" and m.attrs.isStatic and m.params.len > 0 and
          pd[6].kind == nkStmtList:
@@ -3275,6 +3359,30 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       inner.thisName = "self"
       for p in inner.lowerIndexer(n, m, isException): into.add p
     of nsnCtorDecl:
+      if m.attrs.isStatic and genericStaticCtor(n) != nil:
+        ## Each instantiation runs it once, the first time it is used: a generic
+        ## proc whose `{.global.}` flag belongs to the instantiation. The flag is
+        ## set first, so the statics it touches do not call it again.
+        inner.thisName = ""
+        let info = m.info
+        let body = newNodeI(nkStmtList, info)
+        body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info,
+          newTree(nkPragmaExpr, info, l.id("nsRan", info),
+                  newTree(nkPragma, info, l.id("global", info))),
+          empty(info), l.id("false", info)))
+        let run = newTree(nkStmtList, info,
+                          newTree(nkAsgn, info, l.id("nsRan", info), l.id("true", info)))
+        if m.body != nil:
+          for st in m.body.sons: run.add inner.stmt(st)
+        body.add newTree(nkIfStmt, info, newTree(nkElifBranch, info,
+          newTree(nkPrefix, info, l.id("not", info), l.id("nsRan", info)), run))
+        let fp = newNodeI(nkFormalParams, info)
+        fp.add empty(info)
+        var pl = inner
+        pl.procTypeParams = l.clsTypeParams
+        into.add pl.mkProc(newTree(nkPostfix, info, l.id("*", info),
+                                   l.id("nsStaticCtor_" & n.name, info)), fp, body, info)
+        continue
       if m.attrs.isStatic:
         ## The static constructor runs once, after the static initialisers.
         inner.thisName = ""

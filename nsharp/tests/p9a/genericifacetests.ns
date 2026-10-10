@@ -1,0 +1,40 @@
+using System;
+namespace Demo
+{
+    interface IBox<T> { T Get(); }
+    interface INamed { string Name { get; } }
+    class IntBox : IBox<int>, INamed
+    {
+        public int Get() => 1;
+        public string Name => "ints";
+    }
+    class StrBox : IBox<string> { public string Get() => "s"; }
+    class Wrap<T> : IBox<T>
+    {
+        T v;
+        public Wrap(T v) { this.v = v; }
+        public T Get() => v;
+    }
+    class SubBox : IntBox { }
+    class Program
+    {
+        static void Main()
+        {
+            object o = new IntBox();
+            Console.WriteLine(o is IBox<int>);
+            Console.WriteLine(o is IBox<string>);
+            var ib = (IBox<int>)o;
+            Console.WriteLine(ib.Get());
+            Console.WriteLine((o as IBox<string>) == null);
+            object s = new StrBox();
+            if (s is IBox<string> sb) Console.WriteLine(sb.Get());
+            object w = new Wrap<double>(2.5);
+            Console.WriteLine(w is IBox<double>);
+            Console.WriteLine(((IBox<double>)w).Get());
+            object sub = new SubBox();
+            Console.WriteLine(sub is IBox<int>);
+            try { var bad = (IBox<string>)o; Console.WriteLine(bad.Get()); }
+            catch (InvalidCastException) { Console.WriteLine("invalid cast"); }
+        }
+    }
+}

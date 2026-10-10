@@ -1,0 +1,31 @@
+using System;
+namespace Demo
+{
+    class Registry<T>
+    {
+        public static int Size;
+        public static string Label = "unset";
+        static Registry()
+        {
+            Console.WriteLine("init " + typeof(T).Name);
+            Size = 10;
+            Label = "ready";
+        }
+        public static void Touch() => Console.WriteLine("touch " + Size);
+        public T Value;
+    }
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("start");
+            Console.WriteLine(Registry<int>.Size);
+            Console.WriteLine(Registry<int>.Label);
+            Registry<string>.Touch();
+            var r = new Registry<double>();
+            Console.WriteLine(Registry<double>.Size);
+            Registry<int>.Size = 3;
+            Console.WriteLine(Registry<int>.Size + " " + Registry<string>.Size);
+        }
+    }
+}

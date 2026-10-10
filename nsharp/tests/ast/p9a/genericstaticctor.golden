@@ -1,6 +1,9 @@
 nkStmtList
   nkImportStmt
     nkStrLit "nsharp/intrinsics"
+  nkFromStmt
+    nkStrLit "System/Reflection"
+    nkIdent 'Name'
   nkPragma
     nkIdent 'push'
     nkExprColonExpr
@@ -12,75 +15,24 @@ nkStmtList
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'nsVT_IBox'
+        nkIdent 'Registry'
       nkGenericParams
         nkIdentDefs
           nkIdent 'T'
           nkEmpty
           nkEmpty
-      nkObjectTy
-        nkEmpty
-        nkEmpty
-        nkRecList
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'nsReady'
-            nkIdent 'bool'
-            nkEmpty
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'f0'
-            nkProcTy
-              nkFormalParams
-                nkIdent 'T'
-                nkIdentDefs
-                  nkIdent 'self'
-                  nkIdent 'RootRef'
-                  nkEmpty
-              nkPragma
-                nkIdent 'nimcall'
-            nkEmpty
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'IBox'
-      nkGenericParams
-        nkIdentDefs
-          nkIdent 'T'
-          nkEmpty
-          nkEmpty
-      nkObjectTy
-        nkEmpty
-        nkEmpty
-        nkRecList
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'nsObj'
-            nkIdent 'RootRef'
-            nkEmpty
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'nsVt'
-            nkPtrTy
-              nkBracketExpr
-                nkIdent 'nsVT_IBox'
-                nkIdent 'T'
-            nkEmpty
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'IntBox'
-      nkEmpty
       nkRefTy
         nkObjectTy
           nkEmpty
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
+            nkIdentDefs
+              nkPostfix
+                nkIdent '*'
+                nkIdent 'Value'
+              nkIdent 'T'
+              nkEmpty
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -92,10 +44,10 @@ nkStmtList
           nkOfInherit
             nkIdent 'RootObj'
           nkRecList
-  nkProcDef
+  nkTemplateDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Get'
+      nkIdent 'Size'
     nkEmpty
     nkGenericParams
       nkIdentDefs
@@ -103,20 +55,26 @@ nkStmtList
         nkEmpty
         nkEmpty
     nkFormalParams
-      nkIdent 'T'
+      nkIdent 'untyped'
       nkIdentDefs
-        nkIdent 'self'
+        nkIdent 't'
         nkBracketExpr
-          nkIdent 'IBox'
-          nkIdent 'T'
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
-    nkEmpty
-  nkProcDef
+    nkStmtList
+      nkCall
+        nkBracketExpr
+          nkIdent 'nsRegistry_Size'
+          nkIdent 'T'
+  nkTemplateDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkIdent 'Label'
     nkEmpty
     nkGenericParams
       nkIdentDefs
@@ -124,48 +82,39 @@ nkStmtList
         nkEmpty
         nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'untyped'
       nkIdentDefs
-        nkIdent 'self'
+        nkIdent 't'
         nkBracketExpr
-          nkIdent 'IBox'
-          nkIdent 'T'
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
-    nkEmpty
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'ToString'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
+    nkStmtList
+      nkCall
         nkBracketExpr
-          nkIdent 'IBox'
+          nkIdent 'nsRegistry_Label'
           nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
       nkIdent 'ToString'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'IntBox'
+        nkBracketExpr
+          nkIdent 'Registry'
+          nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -175,14 +124,20 @@ nkStmtList
       nkIdent '*'
       nkIdent 'nsTypeOf'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
       nkIdent 'Type'
       nkIdentDefs
         nkIdent 't'
         nkBracketExpr
           nkIdent 'typedesc'
-          nkIdent 'IntBox'
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -192,62 +147,18 @@ nkStmtList
       nkIdent '*'
       nkIdent 'nsTypeName'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'IntBox'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkEmpty
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsVtGet_IntBox_IBox_int'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkPtrTy
         nkBracketExpr
-          nkIdent 'nsVT_IBox'
-          nkIdent 'int32'
-    nkEmpty
-    nkEmpty
-    nkEmpty
-  nkConverterDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsTo_IBox_int'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkBracketExpr
-        nkIdent 'IBox'
-        nkIdent 'int32'
-      nkIdentDefs
-        nkIdent 'x'
-        nkIdent 'IntBox'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkEmpty
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsVtByKey'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'pointer'
-      nkIdentDefs
-        nkIdent 'x'
-        nkIdent 'IntBox'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'key'
-        nkIdent 'string'
+          nkIdent 'Registry'
+          nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -255,17 +166,71 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Get'
+      nkIdent 'nsRegistry_Size'
     nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'int32'
+    nkGenericParams
       nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'IntBox'
+        nkIdent 'T'
         nkEmpty
-    nkPragma
-      nkIdent 'discardable'
+        nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'int32'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsRegistry_Label'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'string'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticCtor_Registry'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Touch'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'T'
+        nkEmpty
+    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -273,14 +238,22 @@ nkStmtList
       nkIdent '*'
       nkIdent 'nsCreate'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
-      nkIdent 'IntBox'
+      nkBracketExpr
+        nkIdent 'Registry'
+        nkIdent 'T'
       nkIdentDefs
         nkIdent 't'
         nkBracketExpr
           nkIdent 'typedesc'
-          nkIdent 'IntBox'
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -288,14 +261,20 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initIntBox'
+      nkIdent 'initRegistry'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'IntBox'
+        nkBracketExpr
+          nkIdent 'Registry'
+          nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -303,11 +282,17 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newIntBox'
+      nkIdent 'newRegistry'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
-      nkIdent 'IntBox'
+      nkBracketExpr
+        nkIdent 'Registry'
+        nkIdent 'T'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -412,338 +397,300 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkEmpty
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'Get'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkIdent 'T'
-      nkIdentDefs
-        nkIdent 'self'
-        nkBracketExpr
-          nkIdent 'IBox'
-          nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkPar
-          nkDotExpr
-            nkDotExpr
-              nkIdent 'self'
-              nkIdent 'nsVt'
-            nkIdent 'f0'
-        nkCall
-          nkIdent 'nsCheckNil'
-          nkDotExpr
-            nkIdent 'self'
-            nkIdent 'nsObj'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent '$'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkBracketExpr
-          nkIdent 'IBox'
-          nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkPrefix
-        nkIdent '$'
-        nkDotExpr
-          nkIdent 'self'
-          nkIdent 'nsObj'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'ToString'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkBracketExpr
-          nkIdent 'IBox'
-          nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkPrefix
-        nkIdent '$'
-        nkDotExpr
-          nkIdent 'self'
-          nkIdent 'nsObj'
   nkMethodDef
     nkPostfix
       nkIdent '*'
       nkIdent 'ToString'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'IntBox'
+        nkBracketExpr
+          nkIdent 'Registry'
+          nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.IntBox"
+      nkStrLit "Demo.Registry"
   nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'nsTypeOf'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
       nkIdent 'Type'
       nkIdentDefs
         nkIdent 't'
         nkBracketExpr
           nkIdent 'typedesc'
-          nkIdent 'IntBox'
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
       nkCall
         nkIdent 'nsTypeNamed'
-        nkStrLit "Demo.IntBox"
+        nkCall
+          nkIdent 'nsGenericName'
+          nkStrLit "Demo.Registry"
+          nkCall
+            nkIdent 'FullName'
+            nkCall
+              nkIdent 'nsTypeOf'
+              nkIdent 'T'
   nkMethodDef
     nkPostfix
       nkIdent '*'
       nkIdent 'nsTypeName'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'IntBox'
+        nkBracketExpr
+          nkIdent 'Registry'
+          nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.IntBox"
+      nkStrLit "Demo.Registry"
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsVtGet_IntBox_IBox_int'
+      nkIdent 'nsRegistry_Size'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
-      nkPtrTy
+      nkVarTy
+        nkIdent 'int32'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
         nkBracketExpr
-          nkIdent 'nsVT_IBox'
+          nkIdent 'nsStaticCtor_Registry'
+          nkIdent 'T'
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsV'
+            nkPragma
+              nkIdent 'global'
           nkIdent 'int32'
+          nkEmpty
+      nkIdent 'nsV'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsRegistry_Label'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'string'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkBracketExpr
+          nkIdent 'nsStaticCtor_Registry'
+          nkIdent 'T'
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsV'
+            nkPragma
+              nkIdent 'global'
+          nkIdent 'string'
+          nkEmpty
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsReady'
+            nkPragma
+              nkIdent 'global'
+          nkEmpty
+          nkIdent 'false'
+      nkIfStmt
+        nkElifBranch
+          nkPrefix
+            nkIdent 'not'
+            nkIdent 'nsReady'
+          nkStmtList
+            nkAsgn
+              nkIdent 'nsReady'
+              nkIdent 'true'
+            nkAsgn
+              nkIdent 'nsV'
+              nkStrLit "unset"
+      nkIdent 'nsV'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticCtor_Registry'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
       nkVarSection
         nkIdentDefs
           nkPragmaExpr
-            nkIdent 'nsStore'
+            nkIdent 'nsRan'
             nkPragma
               nkIdent 'global'
-          nkBracketExpr
-            nkIdent 'nsVT_IBox'
-            nkIdent 'int32'
           nkEmpty
+          nkIdent 'false'
       nkIfStmt
         nkElifBranch
           nkPrefix
             nkIdent 'not'
-            nkDotExpr
-              nkIdent 'nsStore'
-              nkIdent 'nsReady'
+            nkIdent 'nsRan'
           nkStmtList
             nkAsgn
-              nkIdent 'nsStore'
-              nkObjConstr
-                nkBracketExpr
-                  nkIdent 'nsVT_IBox'
-                  nkIdent 'int32'
-                nkExprColonExpr
-                  nkIdent 'nsReady'
-                  nkIdent 'true'
-                nkExprColonExpr
-                  nkIdent 'f0'
-                  nkLambda
-                    nkEmpty
-                    nkEmpty
-                    nkEmpty
-                    nkFormalParams
-                      nkIdent 'int32'
-                      nkIdentDefs
-                        nkIdent 'self'
-                        nkIdent 'RootRef'
-                        nkEmpty
-                    nkPragma
-                      nkIdent 'nimcall'
-                    nkEmpty
-                    nkStmtList
-                      nkCall
-                        nkIdent 'Get'
-                        nkCall
-                          nkIdent 'IntBox'
-                          nkIdent 'self'
-      nkCall
-        nkIdent 'addr'
-        nkIdent 'nsStore'
-  nkConverterDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsTo_IBox_int'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkBracketExpr
-        nkIdent 'IBox'
-        nkIdent 'int32'
-      nkIdentDefs
-        nkIdent 'x'
-        nkIdent 'IntBox'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkIfExpr
-        nkElifExpr
-          nkCall
-            nkIdent 'isNil'
-            nkIdent 'x'
-          nkCall
-            nkIdent 'default'
-            nkBracketExpr
-              nkIdent 'IBox'
-              nkIdent 'int32'
-        nkElseExpr
-          nkObjConstr
-            nkBracketExpr
-              nkIdent 'IBox'
-              nkIdent 'int32'
-            nkExprColonExpr
-              nkIdent 'nsObj'
-              nkIdent 'x'
-            nkExprColonExpr
-              nkIdent 'nsVt'
-              nkCall
-                nkIdent 'nsVtGet_IntBox_IBox_int'
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsVtByKey'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'pointer'
-      nkIdentDefs
-        nkIdent 'x'
-        nkIdent 'IntBox'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'key'
-        nkIdent 'string'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkIfStmt
-        nkElifBranch
-          nkInfix
-            nkIdent '=='
-            nkIdent 'key'
+              nkIdent 'nsRan'
+              nkIdent 'true'
             nkCall
-              nkIdent 'nsKeyOf'
-              nkBracketExpr
-                nkIdent 'IBox'
-                nkIdent 'int32'
-          nkStmtList
-            nkReturnStmt
-              nkCast
-                nkIdent 'pointer'
-                nkCall
-                  nkIdent 'nsVtGet_IntBox_IBox_int'
-      nkCall
-        nkIdent 'procCall'
-        nkCall
-          nkIdent 'nsVtByKey'
-          nkCall
-            nkIdent 'RootRef'
-            nkIdent 'x'
-          nkIdent 'key'
+              nkIdent 'WriteLine'
+              nkInfix
+                nkIdent '+'
+                nkStrLit "init "
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsTypeOf'
+                    nkIdent 'T'
+                  nkIdent 'Name'
+            nkAsgn
+              nkDotExpr
+                nkBracketExpr
+                  nkIdent 'Registry'
+                  nkIdent 'T'
+                nkIdent 'Size'
+              nkIntLit 10
+            nkAsgn
+              nkDotExpr
+                nkBracketExpr
+                  nkIdent 'Registry'
+                  nkIdent 'T'
+                nkIdent 'Label'
+              nkStrLit "ready"
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Get'
+      nkIdent 'Touch'
     nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'int32'
+    nkGenericParams
       nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'IntBox'
+        nkIdent 'T'
         nkEmpty
-    nkPragma
-      nkIdent 'discardable'
+        nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'T'
+        nkEmpty
+    nkEmpty
     nkEmpty
     nkStmtList
-      nkReturnStmt
-        nkIntLit 1
+      nkCall
+        nkBracketExpr
+          nkIdent 'nsStaticCtor_Registry'
+          nkIdent 'T'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkStrLit "touch "
+          nkDotExpr
+            nkBracketExpr
+              nkIdent 'Registry'
+              nkIdent 'T'
+            nkIdent 'Size'
   nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'nsCreate'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
-      nkIdent 'IntBox'
+      nkBracketExpr
+        nkIdent 'Registry'
+        nkIdent 'T'
       nkIdentDefs
         nkIdent 't'
         nkBracketExpr
           nkIdent 'typedesc'
-          nkIdent 'IntBox'
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'newIntBox'
+        nkBracketExpr
+          nkIdent 'newRegistry'
+          nkIdent 'T'
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initIntBox'
+      nkIdent 'initRegistry'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'IntBox'
+        nkBracketExpr
+          nkIdent 'Registry'
+          nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -751,11 +698,17 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newIntBox'
+      nkIdent 'newRegistry'
     nkEmpty
-    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
     nkFormalParams
-      nkIdent 'IntBox'
+      nkBracketExpr
+        nkIdent 'Registry'
+        nkIdent 'T'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -764,7 +717,7 @@ nkStmtList
         nkIdent 'new'
         nkIdent 'result'
       nkCall
-        nkIdent 'initIntBox'
+        nkIdent 'initRegistry'
         nkIdent 'result'
   nkMethodDef
     nkPostfix
@@ -827,37 +780,67 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'o'
-          nkIdent 'RootRef'
-          nkCall
-            nkIdent 'nsBox'
-            nkCall
-              nkIdent 'newIntBox'
       nkCall
         nkIdent 'WriteLine'
-        nkBlockExpr
+        nkStrLit "start"
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'int32'
+          nkIdent 'Size'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'int32'
+          nkIdent 'Label'
+      nkCall
+        nkIdent 'Touch'
+        nkBracketExpr
+          nkIdent 'Registry'
+          nkIdent 'string'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'r'
           nkEmpty
-          nkStmtList
-            nkLetSection
-              nkIdentDefs
-                nkIdent 'nsSrc'
-                nkEmpty
-                nkCall
-                  nkIdent 'RootRef'
-                  nkIdent 'o'
-            nkInfix
-              nkIdent '!='
-              nkDotExpr
-                nkCall
-                  nkIdent 'nsAsByKey'
-                  nkIdent 'nsSrc'
-                  nkBracketExpr
-                    nkIdent 'IBox'
-                    nkIdent 'int32'
-                nkIdent 'nsObj'
-              nkNilLit
+          nkCall
+            nkBracketExpr
+              nkIdent 'newRegistry'
+              nkIdent 'float64'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'float64'
+          nkIdent 'Size'
+      nkAsgn
+        nkDotExpr
+          nkBracketExpr
+            nkIdent 'Registry'
+            nkIdent 'int32'
+          nkIdent 'Size'
+        nkIntLit 3
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkDotExpr
+              nkBracketExpr
+                nkIdent 'Registry'
+                nkIdent 'int32'
+              nkIdent 'Size'
+            nkStrLit " "
+          nkDotExpr
+            nkBracketExpr
+              nkIdent 'Registry'
+              nkIdent 'string'
+            nkIdent 'Size'
   nkProcDef
     nkPostfix
       nkIdent '*'

@@ -1,0 +1,42 @@
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Button
+    {
+        List<Action> handlers = new List<Action>();
+        public event Action Clicked
+        {
+            add { Console.WriteLine("add"); handlers.Add(value); }
+            remove { Console.WriteLine("remove"); handlers.Remove(value); }
+        }
+        public void Click() { foreach (var h in handlers) h(); }
+        public void SelfSubscribe() { Clicked += () => Console.WriteLine("self"); }
+    }
+    static class Bus
+    {
+        static int count;
+        public static event Action<string> Message
+        {
+            add { count++; }
+            remove { count--; }
+        }
+        public static int Count => count;
+    }
+    class Program
+    {
+        static void Main()
+        {
+            var b = new Button();
+            Action hi = () => Console.WriteLine("hi");
+            b.Clicked += hi;
+            b.SelfSubscribe();
+            b.Click();
+            b.Clicked -= hi;
+            b.Click();
+            Bus.Message += s => Console.WriteLine(s);
+            Bus.Message += s => Console.WriteLine(s);
+            Console.WriteLine(Bus.Count);
+        }
+    }
+}
