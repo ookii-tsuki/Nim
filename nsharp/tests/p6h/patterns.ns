@@ -1,0 +1,109 @@
+// Pattern matching: type, constant, relational, logical, property and var
+// patterns in `is`, switch statements with guards, and switch expressions; and
+// `continue` inside a switch inside a `for`.
+using System;
+
+namespace Demo
+{
+    abstract class Shape { public abstract double Area(); }
+    class Circle : Shape
+    {
+        public double R;
+        public Circle(double r) { R = r; }
+        public override double Area() => 3 * R * R;
+    }
+    class Rect : Shape
+    {
+        public double W;
+        public double H;
+        public Rect(double w, double h) { W = w; H = h; }
+        public override double Area() => W * H;
+    }
+    enum Color { Red, Green, Blue }
+
+    class Program
+    {
+        static string Classify(int n) => n switch
+        {
+            < 0 => "negative",
+            0 => "zero",
+            >= 1 and <= 9 => "digit",
+            10 or 100 => "round",
+            _ => "big"
+        };
+
+        static string Describe(Shape s)
+        {
+            switch (s)
+            {
+                case Circle c when c.R > 10:
+                    return "big circle";
+                case Circle c:
+                    return "circle " + c.R;
+                case Rect { W: var w, H: 1 }:
+                    return "strip " + w;
+                case Rect r:
+                    return "rect " + r.Area();
+                case null:
+                    return "nothing";
+                default:
+                    return "shape";
+            }
+        }
+
+        static string Name(Color c) => c switch
+        {
+            Color.Red => "red",
+            Color.Green => "green",
+            _ => "other"
+        };
+
+        static void Main()
+        {
+            Console.WriteLine(Classify(-5) + " " + Classify(0) + " " + Classify(7) + " " + Classify(100) + " " + Classify(50));
+            Console.WriteLine(Describe(new Circle(20)));
+            Console.WriteLine(Describe(new Circle(2)));
+            Console.WriteLine(Describe(new Rect(5, 1)));
+            Console.WriteLine(Describe(new Rect(2, 3)));
+            Console.WriteLine(Describe(null));
+            Shape s = new Circle(3);
+            if (s is Circle c && c.R > 2) Console.WriteLine("r=" + c.R);
+            if (s is not Rect) Console.WriteLine("not rect");
+            if (s is Circle { R: > 1 and < 5 }) Console.WriteLine("medium");
+            object o = s;
+            if (!(o is Shape sh)) return;
+            Console.WriteLine(sh.Area());
+            string text = "hello";
+            if (text is { Length: 5 }) Console.WriteLine("five");
+            Console.WriteLine(text is null);
+            Console.WriteLine(Name(Color.Green) + Name(Color.Blue));
+            int k = 3;
+            switch (k)
+            {
+                case 1:
+                case 2:
+                    Console.WriteLine("small");
+                    break;
+                case int n when n > 2:
+                    Console.WriteLine("large " + n);
+                    break;
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                switch (i)
+                {
+                    case 0: continue;
+                    case 1: Console.WriteLine("one"); break;
+                    default: Console.WriteLine("other"); break;
+                }
+            }
+            var label = s switch
+            {
+                Circle { R: var r } when r > 100 => "huge",
+                Circle ci => $"circle {ci.R}",
+                _ => "?"
+            };
+            Console.WriteLine(label);
+        }
+    }
+}

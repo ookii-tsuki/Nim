@@ -117,7 +117,9 @@ nkStmtList
         nkVarSection
           nkIdentDefs
             nkIdent 'n'
-            nkEmpty
+            nkCall
+              nkIdent 'typeof'
+              nkIdent 'nsUntyped'
             nkEmpty
         nkIfStmt
           nkElifBranch

@@ -152,3 +152,8 @@ template nsPreInc*(x: untyped): untyped =
   (inc x; x)
 template nsPreDec*(x: untyped): untyped =
   (dec x; x)
+
+type
+  SwitchExpressionException* = object of CatchableError
+    ## What a switch expression throws when no arm matches. C# declares it in
+    ## `System.Runtime.CompilerServices`; the compiler raises it, so it lives here.

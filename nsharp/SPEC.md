@@ -439,8 +439,8 @@ v2.
 |---|---|---|---|
 | Block `{ ... }` | scope | ✅ v1 | front |
 | `if` / `else if` / `else` | branching | ✅ v1 | front (→ `nkIfStmt`) |
-| `switch` (statement) | multi-branch | ✅ v1 (basic); patterns 🔜 | desugar (→ `case`) |
-| `switch` expression `x switch { ... }` | C# 8 | 🔜 later | desugar |
+| `switch` (statement) | multi-branch | ✅ v1 (patterns and `when` guards included) | desugar (a labeled block, so `break` leaves the switch; Nim `case` when every label is a constant, otherwise a chain of pattern tests over the subject read once) |
+| `switch` expression `x switch { ... }` | C# 8 | ✅ v1 | desugar (a chain of arms, each in its own block; no match throws `SwitchExpressionException`) |
 | `while` | loop | ✅ v1 | front |
 | `do { } while (c);` | post-test loop | ✅ v1 | desugar (flag-guarded `while`, §7.3) |
 | `for (i = 0; i < n; i++)` | C-style for | ✅ v1 | desugar (→ `while`) |
@@ -490,8 +490,8 @@ v2.
 | `?:` ternary | ✅ | ✅ v1 | front (→ `nkIfExpr`) |
 | `is` / `as` | type test/cast | ✅ v1 | front (→ Nim `of`/conv) |
 | `(T)x` explicit cast | conversion | ✅ v1 | front (→ Nim `T(x)`) |
-| Pattern `is T x`, property patterns | C# 7+ | 🔜 later | desugar |
-| Switch expressions | C# 8 | 🔜 later | desugar |
+| Patterns: type `T x`, constant, `null`, relational `> 5`, `and`/`or`/`not`, property `{ P: pat }`, `var x`, `_` | C# 7-9 | ✅ v1 | desugar (a boolean test assigning the pattern's variables, which are declared where C# scopes them); list and positional patterns are NS9999 / later |
+| Switch expressions | C# 8 | ✅ v1 | desugar |
 | `^` (index-from-end), `..` (range) | C# 8 | 🔜 later | desugar/lib |
 
 **Stringification of primitives is Nim's.** `$` and `ToString` are the same thing.
@@ -555,6 +555,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `ToString()` | virtual method | `$` proc | satisfied by a `ToString` proc in the intrinsics (`$x[]`), which Nim's dot-call reaches; no member name is mapped by the compiler | lib |
 | Numeric conversions | implicit widening, explicit narrowing; binary numeric promotion (`byte + byte` is `int`, `int * double` is `double`) | stricter: no implicit `int`→`float`, no `char` arithmetic, `uint8 + uint8` stays `uint8` | `compiler/nsharp/numeric.nim` holds C#'s promotion and implicit-conversion tables; `sema.nim` records the conversion an operand or a value needs (`conv`) wherever both types are known exactly, and `desugar.nim` spells it `T(x)`. A compound `x op= y` promotes and casts back, as C# does. Implicit narrowing of a non-constant is NS0266. Elsewhere implicit widening; explicit narrowing. The refusals the frontend can *see* are diagnosed with C#'s own code (CS0029, CS0037, CS1503) before anything is lowered; what it cannot see -- an unresolved name, an enum, a type from a module it does not cover -- counts as compatible, so Nim keeps the last word | front/sem |
 | `(T)x` vs `(x)` | the symbol table decides | - | the parenthesised name must resolve as a type -- C#'s vocabulary, the library's declarations, a type this compilation declares, an enum, or a namespace it imports -- **and** be followed by a value, so `(x) - 1` is a subtraction while `(Foo) - 1` is a cast | front |
+| `for` and `continue` | `continue` runs the step | a `while`'s `continue` skips what follows in the body | the loop's own `continue`s leave a labeled block around the body, so the step still runs | desugar |
 | `do-while` and `continue` | the check runs *after* the body, so `continue` re-tests it | `while` tests before | one body copy under a first-pass flag (`while first or c`, cleared before the body), leaving `break` and `continue` to Nim's own loop | desugar |
 | `using` keyword | directive **and** statement | - | disambiguate by context | front |
 | `switch` fallthrough | forbidden (empty cases group) | no fallthrough | maps to Nim `case`; empty-case groups allowed; a trailing `break;` is dropped; a non-exhaustive switch gets `else: discard` | front |

@@ -32,6 +32,7 @@ type
     scope: NsModuleScope
     surface: NsBclSurface   ## what the prelude declares
     imports: NsFromImports  ## the prelude declarations the lowered code names
+    counter: ref int        ## numbers the temporaries a lowering introduces
     usingPaths: HashSet[string]
       ## The modules this module's own `using` directives import, so a member whose
       ## namespace is already imported is not named twice.
@@ -644,6 +645,8 @@ proc interpolatedToNim(l: Lowerer; n: NsNode): PNode =
   if result == nil: result = newAtom(nkStrLit, "", n.info)
 
 proc ifaceTypeOp(l: Lowerer; n: NsNode): PNode
+proc isPatternToNim(l: Lowerer; n: NsNode): PNode
+proc switchExprToNim(l: Lowerer; n: NsNode): PNode
 proc isIfaceValue(l: Lowerer; e: NsNode): bool
 proc objOf(l: Lowerer; e: NsNode): PNode
 
@@ -781,6 +784,8 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     result.add newTree(nkElseExpr, n.info, l.expr(n.sons[2]))
   of nsnLambda: result = l.lambdaToNim(n)
   of nsnNamedArg: result = l.wrappedArg(n)
+  of nsnIsPattern: result = l.isPatternToNim(n)
+  of nsnSwitchExpr: result = l.switchExprToNim(n)
   of nsnRefArg: result = l.expr(n.body)
   of nsnOutDecl: result = l.id(n.name, n.info)   ## declared before the statement
   else: result = empty(n.info)
@@ -823,38 +828,331 @@ proc throwToNim(l: Lowerer; n: NsNode): PNode =
     e = ne
   result = newTree(nkRaiseStmt, n.info, e)
 
-proc switchSectionBody(l: Lowerer; blk: NsNode): PNode =
-  ## A section body with a trailing `break` dropped: in C# `break` exits the
-  ## switch, but Nim `case` never falls through, so keeping it would break out of
-  ## an enclosing loop instead.
-  var stmts = if blk == nil: newSeq[NsNode]() else: blk.sons
-  if stmts.len > 0 and stmts[^1].kind == nsnBreak:
-    stmts = stmts[0 ..< stmts.len - 1]
-  result = newNodeI(nkStmtList, if blk == nil: unknownLineInfo else: blk.info)
-  for s in stmts: result.add l.stmt(s)
+# --- patterns -----------------------------------------------------------------
+#
+# A pattern lowers to a boolean test of a temporary holding the subject, and its
+# variables to Nim variables declared where C# scopes them -- before the statement
+# for `x is T t` (C# puts them in the enclosing block), at the start of a switch
+# section or a switch-expression arm otherwise -- which the test assigns when it
+# succeeds.
+
+proc fresh(l: Lowerer; base: string): string =
+  inc l.counter[]
+  base & $l.counter[]
+
+proc patternBindings(pat: NsNode; into: var seq[NsNode]) =
+  ## The pattern nodes that declare a variable: `T t`, `var x`, `{ ... } p`.
+  if pat == nil: return
+  case pat.kind
+  of nsnPatType, nsnPatVar:
+    if pat.name.len > 0 and pat.name != "_": into.add pat
+  of nsnPatProp:
+    if pat.name.len > 0: into.add pat
+    for f in pat.sons: patternBindings(f.body, into)
+  of nsnPatAnd, nsnPatOr:
+    for x in pat.sons: patternBindings(x, into)
+  of nsnPatNot: patternBindings(pat.body, into)
+  else: discard
+
+proc bindingType(l: Lowerer; b: NsNode): PNode =
+  ## The Nim type of a pattern variable: the pattern's type, or the subject's; an
+  ## `out T x`'s is `T`.
+  let t = (if b.kind in {nsnPatType, nsnPatProp, nsnOutDecl} and b.typ != nil: b.typ
+           else: b.rtype)
+  if t != nil: l.typeToNim(t, b.info)
+  else: newTree(nkCall, b.info, l.id("typeof", b.info), l.id("nsUntyped", b.info))
+
+proc bindingDecls(l: Lowerer; bindings: seq[NsNode]; into: PNode) =
+  for b in bindings:
+    into.add newTree(nkVarSection, b.info, newTree(nkIdentDefs, b.info,
+      l.id(b.name, b.info), l.bindingType(b), empty(b.info)))
+
+proc isRefKindName(l: Lowerer; kind: NsTypeKind; name: string): bool =
+  ## Whether a subject of this type can be null as a Nim `ref`.
+  if kind in {tkException, tkDelegate}: return true
+  if kind == tkClass:
+    if l.scope.classes.hasKey(name):
+      return l.scope.classes[name].classKind == ckClass
+    return true
+  false
+
+proc assignTrue(l: Lowerer; name: string; v: PNode; info: TLineInfo): PNode =
+  ## `(name = v; true)`: binds a pattern variable inside a test.
+  newTree(nkStmtListExpr, info, newTree(nkAsgn, info, l.id(name, info), v),
+          l.id("true", info))
+
+proc andAll(l: Lowerer; parts: seq[PNode]; info: TLineInfo): PNode =
+  if parts.len == 0: return l.id("true", info)
+  result = parts[0]
+  for i in 1 ..< parts.len:
+    result = newTree(nkInfix, info, l.id("and", info), result, parts[i])
+
+proc patTest(l: Lowerer; subj: PNode; pat: NsNode): PNode
+
+proc typeTest(l: Lowerer; subj: PNode; pat: NsNode; target: NsNode;
+              bindName: string): PNode =
+  ## `subject is T` with an optional variable: an interface asks the object's class,
+  ## a class is Nim's `of`, and a value type is decided by its static type.
+  let info = pat.info
+  let tname = canonicalTypeName(target.name)
+  let subjIface = l.scope.isInterface(pat.typeName)
+  let obj = (if subjIface: newTree(nkDotExpr, info, subj, l.id("nsObj", info))
+             else: subj)
+  if l.scope.isInterface(tname):
+    let a = l.fresh("nsAs")
+    var test = newTree(nkInfix, info, l.id("!=", info),
+                       newTree(nkDotExpr, info, l.id(a, info), l.id("nsObj", info)),
+                       newNodeI(nkNilLit, info))
+    if bindName.len > 0:
+      test = newTree(nkInfix, info, l.id("and", info), test,
+                     l.assignTrue(bindName, l.id(a, info), info))
+    return newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
+      newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(a, info), empty(info),
+        newTree(nkCall, info, l.id("nsAs" & tname, info),
+                newTree(nkCall, info, l.id("RootRef", info), copyTree(obj))))), test))
+  let targetIsStruct = l.scope.classes.hasKey(tname) and
+                       l.scope.classes[tname].classKind == ckStruct
+  if subjIface or l.isRefKindName(pat.typeKind, pat.typeName) or
+     pat.typeKind == tkUnknown and not targetIsStruct and
+     l.surface.kindOfName(tname) notin {tkInt, tkFloat, tkBool, tkChar, tkString}:
+    ## A reference: the object's dynamic type decides; null is never a `T`.
+    let ofT = (if targetIsStruct: l.id("nsBox_" & tname, info)
+               else: l.typeToNim(target, info))
+    result = newTree(nkInfix, info, l.id("of", info), copyTree(obj), ofT)
+    if bindName.len > 0:
+      let conv = (if targetIsStruct:
+                    newTree(nkDotExpr, info, newTree(nkCall, info, copyTree(ofT),
+                                                     copyTree(obj)), l.id("v", info))
+                  else: newTree(nkCall, info, l.typeToNim(target, info), copyTree(obj)))
+      result = newTree(nkInfix, info, l.id("and", info), result,
+                       l.assignTrue(bindName, conv, info))
+    return
+  ## A value: its static type is the answer.
+  let same = canonicalTypeName(pat.typeName) == tname or
+             nimTypeName(pat.typeName) == nimTypeName(tname)
+  if not same: return l.id("false", info)
+  result = (if bindName.len > 0: l.assignTrue(bindName, copyTree(subj), info)
+            else: l.id("true", info))
+
+proc patTest(l: Lowerer; subj: PNode; pat: NsNode): PNode =
+  let info = pat.info
+  case pat.kind
+  of nsnPatDiscard: result = l.id("true", info)
+  of nsnPatVar: result = l.assignTrue(pat.name, copyTree(subj), info)
+  of nsnPatType: result = l.typeTest(subj, pat, pat.typ, pat.name)
+  of nsnPatConst:
+    if pat.body != nil and pat.body.kind == nsnNull:
+      if l.scope.isInterface(pat.typeName):
+        result = newTree(nkInfix, info, l.id("==", info),
+                         newTree(nkDotExpr, info, copyTree(subj), l.id("nsObj", info)),
+                         newNodeI(nkNilLit, info))
+      elif pat.typeKind == tkNullable:
+        result = newTree(nkCall, info, l.id("nsAbsent", info), copyTree(subj))
+      elif l.isRefKindName(pat.typeKind, pat.typeName) or pat.typeKind == tkUnknown:
+        result = newTree(nkCall, info, l.id("isNil", info), copyTree(subj))
+      else:
+        ## A value type is never null.
+        result = l.id("false", info)
+    else:
+      result = newTree(nkInfix, info, l.id("==", info), copyTree(subj), l.expr(pat.body))
+  of nsnPatRel:
+    result = newTree(nkInfix, info, l.id(pat.name, info), copyTree(subj), l.expr(pat.body))
+  of nsnPatAnd:
+    result = newTree(nkInfix, info, l.id("and", info), l.patTest(subj, pat.sons[0]),
+                     l.patTest(subj, pat.sons[1]))
+  of nsnPatOr:
+    result = newTree(nkInfix, info, l.id("or", info), l.patTest(subj, pat.sons[0]),
+                     l.patTest(subj, pat.sons[1]))
+  of nsnPatNot:
+    result = newTree(nkPrefix, info, l.id("not", info), l.patTest(subj, pat.body))
+  of nsnPatProp:
+    ## `T { P: pat } p`: not null, of `T`, and each member matching its pattern.
+    var parts: seq[PNode] = @[]
+    var owner = subj
+    let subjIface = l.scope.isInterface(pat.typeName)
+    if subjIface:
+      owner = newTree(nkDotExpr, info, copyTree(subj), l.id("nsObj", info))
+    if pat.typ != nil:
+      parts.add l.typeTest(subj, pat, pat.typ, "")
+      let tname = canonicalTypeName(pat.typ.name)
+      if l.scope.classes.hasKey(tname) and l.scope.classes[tname].classKind == ckStruct and
+         (subjIface or l.isRefKindName(pat.typeKind, pat.typeName)):
+        owner = newTree(nkDotExpr, info, newTree(nkCall, info,
+                        l.id("nsBox_" & tname, info), owner), l.id("v", info))
+      elif l.isRefKindName(pat.typeKind, pat.typeName) or subjIface or
+           pat.typeKind == tkUnknown:
+        owner = newTree(nkCall, info, l.typeToNim(pat.typ, info), owner)
+    elif l.isRefKindName(pat.typeKind, pat.typeName):
+      parts.add newTree(nkPrefix, info, l.id("not", info),
+                        newTree(nkCall, info, l.id("isNil", info), copyTree(subj)))
+    for f in pat.sons:
+      let v = l.fresh("nsField")
+      var access = copyTree(owner)
+      for part in f.name.split('.'):
+        access = newTree(nkDotExpr, info, access, l.id(part, info))
+      parts.add newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
+        newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(v, info),
+                                           empty(info), access)),
+        l.patTest(l.id(v, info), f.body)))
+    if pat.name.len > 0: parts.add l.assignTrue(pat.name, copyTree(owner), info)
+    result = l.andAll(parts, info)
+  else: result = l.id("true", info)
+
+proc isPatternToNim(l: Lowerer; n: NsNode): PNode =
+  ## `x is pattern`: the subject read once, then tested.
+  let s = l.fresh("nsSubj")
+  result = newTree(nkBlockExpr, n.info, empty(n.info), newTree(nkStmtList, n.info,
+    newTree(nkLetSection, n.info, newTree(nkIdentDefs, n.info, l.id(s, n.info),
+                                         empty(n.info), l.expr(n.body))),
+    l.patTest(l.id(s, n.info), n.sons[0])))
+
+proc exprBindings(n: NsNode; into: var seq[NsNode])
+
+proc switchExprToNim(l: Lowerer; n: NsNode): PNode =
+  ## `x switch { p1 when g1 => v1, ... }`: the subject read once, then a chain of
+  ## arms, each in a block of its own so their variables do not meet. No match
+  ## throws, as C#'s `SwitchExpressionException` does.
+  let info = n.info
+  let s = l.fresh("nsSubj")
+  proc chain(l: Lowerer; i: int): PNode =
+    if i >= n.sons.len:
+      return newTree(nkRaiseStmt, info, newTree(nkCall, info,
+        l.id("newException", info), l.id("SwitchExpressionException", info),
+        newAtom(nkStrLit, "Non-exhaustive switch expression failed to match its input.",
+                info)))
+    let arm = n.sons[i]
+    var test = l.patTest(l.id(s, info), arm.sons[0])
+    if arm.sons[1] != nil:
+      test = newTree(nkInfix, info, l.id("and", info), test, l.expr(arm.sons[1]))
+    let body = newNodeI(nkStmtList, info)
+    var binds: seq[NsNode] = @[]
+    patternBindings(arm.sons[0], binds)
+    exprBindings(arm.sons[1], binds)
+    exprBindings(arm.sons[2], binds)
+    l.bindingDecls(binds, body)
+    body.add newTree(nkIfExpr, info,
+      newTree(nkElifExpr, info, test, l.expr(arm.sons[2])),
+      newTree(nkElseExpr, info, l.chain(i + 1)))
+    result = newTree(nkBlockExpr, info, empty(info), body)
+  result = newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
+    newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(s, info), empty(info),
+                                       l.expr(n.body))),
+    l.chain(0)))
+
+proc labelSwitchBreaks(n: NsNode; label: string) =
+  ## Every `break` that leaves this switch -- not one inside a nested loop or switch
+  ## -- names the switch's block, since Nim's `break` would leave a loop.
+  if n == nil: return
+  case n.kind
+  of nsnBreak:
+    if n.name.len == 0: n.name = label
+  of nsnWhile, nsnDoWhile, nsnFor, nsnForeach, nsnSwitch, nsnLambda, nsnLocalFunc:
+    discard
+  else:
+    for x in n.sons: labelSwitchBreaks(x, label)
+    if n.kind in {nsnBlock, nsnBlockStmt, nsnIfBranch, nsnElseBranch, nsnIf, nsnTry,
+                  nsnCatch, nsnFinally, nsnChecked, nsnUnchecked}:
+      labelSwitchBreaks(n.body, label)
+
+proc isConstLabel(lab: NsNode): bool =
+  ## A label Nim's `case` can take: a constant without a guard.
+  lab.kind == nsnCaseLabel and lab.sons.len == 0 and lab.body != nil and
+    lab.body.kind == nsnPatConst and lab.body.body != nil and
+    lab.body.body.kind != nsnNull
 
 proc switchToNim(l: Lowerer; n: NsNode): PNode =
-  result = newNodeI(nkCaseStmt, n.info)
-  result.add l.expr(n.body)
-  var hasDefault = false
+  ## A switch is a labeled block, so `break` leaves it from anywhere in a section. A
+  ## section without statements shares the next section's (`case 1: case 2: ...`).
+  ## When every label is a constant it is Nim's `case`; otherwise a chain of tests
+  ## over the subject, read once, each section in a block of its own for its
+  ## pattern variables, with `default` last whatever its position.
+  let info = n.info
+  let label = l.fresh("nsSwitch")
+  var sections: seq[tuple[labels: seq[NsNode], isDefault: bool, body: NsNode]] = @[]
+  var pending: seq[NsNode] = @[]
+  var pendingDefault = false
   for sec in n.sons:
-    if sec.name == "default":
-      let e = newNodeI(nkElse, sec.info)
-      e.add l.switchSectionBody(sec.body)
-      result.add e
-      hasDefault = true
+    if sec.name == "default": pendingDefault = true
     else:
-      let br = newNodeI(nkOfBranch, sec.info)
-      for lab in sec.sons: br.add l.expr(lab)
-      br.add l.switchSectionBody(sec.body)
-      result.add br
-  if not hasDefault:
-    ## C# does not require a `default`; Nim `case` needs an `else`.
-    let e = newNodeI(nkElse, n.info)
-    let sl = newNodeI(nkStmtList, n.info)
-    sl.add newTree(nkDiscardStmt, n.info, empty(n.info))
-    e.add sl
-    result.add e
+      for lab in sec.sons: pending.add lab
+    if sec.body != nil and sec.body.sons.len > 0:
+      labelSwitchBreaks(sec.body, label)
+      sections.add (labels: pending, isDefault: pendingDefault, body: sec.body)
+      pending = @[]
+      pendingDefault = false
+  var allConst = true
+  for sec in sections:
+    for lab in sec.labels:
+      if not isConstLabel(lab): allConst = false
+  let inner = newNodeI(nkStmtList, info)
+  if allConst:
+    let cs = newNodeI(nkCaseStmt, info)
+    cs.add l.expr(n.body)
+    var hasDefault = false
+    for sec in sections:
+      if sec.isDefault: continue
+      let br = newNodeI(nkOfBranch, info)
+      for lab in sec.labels: br.add l.expr(lab.body.body)
+      br.add l.stmtSeq(sec.body)
+      cs.add br
+    for sec in sections:
+      if sec.isDefault:
+        cs.add newTree(nkElse, info, l.stmtSeq(sec.body))
+        hasDefault = true
+    if not hasDefault:
+      ## C# does not require a `default`; Nim `case` needs an `else`.
+      cs.add newTree(nkElse, info, newTree(nkStmtList, info,
+                                          newTree(nkDiscardStmt, info, empty(info))))
+    inner.add cs
+  else:
+    let s = l.fresh("nsSubj")
+    inner.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(s, info),
+                                                 empty(info), l.expr(n.body)))
+    var defaultBody: NsNode = nil
+    for sec in sections:
+      if sec.isDefault:
+        defaultBody = sec.body
+        continue
+      let blk = newNodeI(nkStmtList, info)
+      var binds: seq[NsNode] = @[]
+      var tests: seq[PNode] = @[]
+      for lab in sec.labels:
+        patternBindings(lab.body, binds)
+        var t = l.patTest(l.id(s, info), lab.body)
+        if lab.sons.len > 0:
+          exprBindings(lab.sons[0], binds)
+          t = newTree(nkInfix, info, l.id("and", info), t, l.expr(lab.sons[0]))
+        tests.add t
+      l.bindingDecls(binds, blk)
+      var cond = tests[0]
+      for i in 1 ..< tests.len:
+        cond = newTree(nkInfix, info, l.id("or", info), cond, tests[i])
+      let body = l.stmtSeq(sec.body)
+      ## A section ends in a jump in C#; one that does not leave is made to.
+      if body.len == 0 or body[^1].kind notin {nkReturnStmt, nkRaiseStmt, nkBreakStmt,
+                                               nkContinueStmt}:
+        body.add newTree(nkBreakStmt, info, l.id(label, info))
+      blk.add newTree(nkIfStmt, info, newTree(nkElifBranch, info, cond, body))
+      inner.add newTree(nkBlockStmt, info, empty(info), blk)
+    if defaultBody != nil:
+      inner.add l.stmtSeq(defaultBody)
+  result = newTree(nkBlockStmt, info, l.id(label, info), inner)
+
+proc labelForContinues(n: NsNode; label: string; found: var bool) =
+  ## Marks the `continue`s of the enclosing loop -- not one in a nested loop -- so
+  ## they lower to `break label`.
+  if n == nil: return
+  case n.kind
+  of nsnContinue:
+    if n.name.len == 0:
+      n.name = label
+      found = true
+  of nsnWhile, nsnDoWhile, nsnFor, nsnForeach, nsnLambda, nsnLocalFunc: discard
+  else:
+    for x in n.sons: labelForContinues(x, label, found)
+    if n.kind in {nsnBlock, nsnBlockStmt, nsnIfBranch, nsnElseBranch, nsnIf, nsnTry,
+                  nsnCatch, nsnFinally, nsnChecked, nsnUnchecked, nsnSwitchSection}:
+      labelForContinues(n.body, label, found)
 
 proc forToNim(l: Lowerer; n: NsNode): PNode =
   ## `for (init; cond; step) body` -> `block: (init; while cond: (body; step))`,
@@ -871,8 +1169,22 @@ proc forToNim(l: Lowerer; n: NsNode): PNode =
   else:
     w.add l.id("true", n.info)
   let wbody = newNodeI(nkStmtList, n.info)
-  for s in n.sons: wbody.add l.stmt(s)
-  if header != nil and header.sons.len > 2 and header.sons[2] != nil:
+  let hasStep = header != nil and header.sons.len > 2 and header.sons[2] != nil
+  var label = ""
+  if hasStep:
+    ## C#'s `continue` runs the step; Nim's would skip it, so this loop's
+    ## `continue`s leave a block around the body instead.
+    label = l.fresh("nsForBody")
+    var found = false
+    for s in n.sons: labelForContinues(s, label, found)
+    if not found: label = ""
+  if label.len > 0:
+    let body = newNodeI(nkStmtList, n.info)
+    for s in n.sons: body.add l.stmt(s)
+    wbody.add newTree(nkBlockStmt, n.info, l.id(label, n.info), body)
+  else:
+    for s in n.sons: wbody.add l.stmt(s)
+  if hasStep:
     wbody.add l.stmt(header.sons[2])
   w.add wbody
   sl.add w
@@ -1069,15 +1381,29 @@ proc checkedToNim(l: Lowerer; n: NsNode): PNode =
   pop.add l.id("pop", n.info)
   result.add pop
 
-proc collectOutDecls(n: NsNode; into: var seq[NsNode]) =
-  ## The `out T x` declarations in an expression, not those of a nested lambda.
+proc exprBindings(n: NsNode; into: var seq[NsNode]) =
+  ## The variables an expression declares -- `out T x` and the variables of
+  ## `x is pattern` -- but not those of a nested lambda, or of a switch
+  ## expression's arms, which are scoped to the arm.
   if n == nil or n.kind in {nsnLambda, nsnLocalFunc}: return
-  if n.kind == nsnOutDecl:
+  case n.kind
+  of nsnOutDecl:
     into.add n
     return
-  collectOutDecls(n.body, into)
-  for x in n.sons: collectOutDecls(x, into)
-  for x in n.initArgs: collectOutDecls(x, into)
+  of nsnIsPattern:
+    exprBindings(n.body, into)
+    if n.sons.len > 0: patternBindings(n.sons[0], into)
+    return
+  of nsnSwitchExpr:
+    exprBindings(n.body, into)
+    return
+  else: discard
+  exprBindings(n.body, into)
+  for x in n.sons: exprBindings(x, into)
+  for x in n.initArgs: exprBindings(x, into)
+
+proc collectOutDecls(n: NsNode; into: var seq[NsNode]) =
+  exprBindings(n, into)
 
 proc outDeclsOf(n: NsNode): seq[NsNode] =
   ## The `out T x` a statement declares: C# scopes them to the enclosing block, so
@@ -1104,10 +1430,11 @@ proc stmt(l: Lowerer; n: NsNode): PNode =
   let outs = outDeclsOf(n)
   if outs.len == 0: return l.stmtInner(n)
   result = newNodeI(nkStmtList, n.info)
-  for o in outs:
-    result.add newTree(nkVarSection, o.info, newTree(nkIdentDefs, o.info,
-      l.id(o.name, o.info), l.typeToNim(o.typ, o.info), empty(o.info)))
+  l.bindingDecls(outs, result)
   result.add l.stmtInner(n)
+  if n.kind in {nsnWhile, nsnDoWhile, nsnFor, nsnForeach, nsnSwitch}:
+    ## A loop's or a switch's variables are scoped to it, not to the block.
+    result = newTree(nkBlockStmt, n.info, empty(n.info), result)
 
 proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   ## A local function is a nested proc, which captures what it names as a closure.
@@ -1171,11 +1498,16 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
     result = newNodeI(nkReturnStmt, n.info)
     result.add (if n.body == nil: empty(n.info) else: l.expr(n.body))
   of nsnBreak:
+    ## A `break` that leaves a switch names the switch's block.
     result = newNodeI(nkBreakStmt, n.info)
-    result.add empty(n.info)
+    result.add (if n.name.len > 0: l.id(n.name, n.info) else: empty(n.info))
   of nsnContinue:
-    result = newNodeI(nkContinueStmt, n.info)
-    result.add empty(n.info)
+    if n.name.len > 0:
+      ## A `for` loop's `continue`, which must still run the step.
+      result = newTree(nkBreakStmt, n.info, l.id(n.name, n.info))
+    else:
+      result = newNodeI(nkContinueStmt, n.info)
+      result.add empty(n.info)
   of nsnThrow: result = l.throwToNim(n)
   else: result = l.expr(n)
 
@@ -2171,6 +2503,7 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   ## Lowers a whole `.ns` module to the Nim statements the rest of the compiler
   ## consumes.
   var l = Lowerer(scope: scope, surface: bclSurface(config), cache: cache,
+                  counter: new int,
                   imports: NsFromImports(byModule: initTable[string, seq[string]]()),
                   usingPaths: initHashSet[string](),
                   nilChecks: optNilCheck in config.options)

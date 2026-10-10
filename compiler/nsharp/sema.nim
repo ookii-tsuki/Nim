@@ -722,8 +722,10 @@ proc checkLibraryInterfaceValue(ctx: NsCheckContext; t: NsNode) =
 proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## A bare name. Inside an instance member body, a name that is a class member
   ## is rewritten in place into `this.name` and then resolved as a member, which
-  ## is the behaviour the parse-time rewrite used to have. `value` is exempt: it
-  ## is the implicit setter parameter.
+  ## is the behaviour the parse-time rewrite used to have.
+  if n.name == "$subject":
+    ## The stand-in for a pattern's subject keeps the type it was given.
+    return n.typeKind
   if ctx.clsName.len > 0 and n.name in ctx.members and
      not ctx.types.hasKey(n.name):
     let m = ctx.scope.findMemberInfo(ctx.clsName, n.name)
@@ -920,6 +922,49 @@ proc markCoalesced(n: NsNode) =
   for s in n.sons: markCoalesced(s)
   markCoalesced(n.body)
 
+proc subjectOf(kind: NsTypeKind; name: string; rtype: NsNode; info: TLineInfo): NsNode =
+  ## A stand-in for a pattern's subject, carrying its type, for the sub-patterns.
+  result = nsnIdent("$subject", info)
+  result.setType(kind, name)
+  result.rtype = rtype
+
+proc walkPattern(ctx: var NsCheckContext; pat, subject: NsNode) =
+  ## A pattern against a subject of known (or unknown) type. A designation declares
+  ## a local of the pattern's type; a `var` one takes the subject's. The subject's
+  ## type is recorded on the pattern, which lowering needs for its test.
+  if pat == nil: return
+  pat.setType(subject.typeKind, subject.typeName)
+  pat.rtype = (if subject.rtype != nil: subject.rtype
+               elif subject.typeName.len > 0: nsnTypeName(subject.typeName, pat.info)
+               else: nil)
+  case pat.kind
+  of nsnPatType:
+    ctx.checkTypeTest(pat)
+    let k = ctx.classifyType(pat.typ)
+    if pat.name.len > 0:
+      ctx.declare(pat.name, k, declTypeName(pat.typ), pat.typ)
+  of nsnPatConst, nsnPatRel:
+    discard ctx.walkExpr(pat.body)
+  of nsnPatAnd, nsnPatOr:
+    for x in pat.sons: ctx.walkPattern(x, subject)
+  of nsnPatNot:
+    ctx.walkPattern(pat.body, subject)
+  of nsnPatVar:
+    ctx.declare(pat.name, subject.typeKind, subject.typeName, pat.rtype)
+  of nsnPatProp:
+    ## `T { P: pat }`: each member is matched as a subject of its own type.
+    var owner = subject
+    if pat.typ != nil:
+      let k = ctx.classifyType(pat.typ)
+      owner = subjectOf(k, declTypeName(pat.typ), pat.typ, pat.info)
+    if pat.name.len > 0:
+      ctx.declare(pat.name, owner.typeKind, owner.typeName, owner.rtype)
+    for f in pat.sons:
+      let probe = nsnMember(owner, f.name, f.info)
+      let k = ctx.walkExpr(probe)
+      ctx.walkPattern(f.body, subjectOf(k, probe.typeName, probe.rtype, f.info))
+  else: discard
+
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if n == nil: return tkUnknown
   case n.kind
@@ -942,6 +987,32 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnFloatLit:
     n.setType(tkFloat, (if n.strVal == "f": "float" else: ""))
     result = tkFloat
+  of nsnIsPattern:
+    ## `x is pattern`: its variables are declared in the enclosing scope, as C#
+    ## scopes them to the statement's block.
+    discard ctx.walkExpr(n.body)
+    if n.sons.len > 0: ctx.walkPattern(n.sons[0], n.body)
+    n.setType(tkBool)
+    result = tkBool
+  of nsnSwitchExpr:
+    discard ctx.walkExpr(n.body)
+    result = tkUnknown
+    var name = ""
+    var rt: NsNode = nil
+    for arm in n.sons:
+      ctx.pushScope()
+      ctx.walkPattern(arm.sons[0], n.body)
+      if arm.sons[1] != nil:
+        discard ctx.walkExpr(arm.sons[1])
+        ctx.checkCondition(arm.sons[1])
+      let k = ctx.walkExpr(arm.sons[2])
+      if result == tkUnknown and k != tkUnknown and arm.sons[2].kind != nsnNull:
+        result = k
+        name = arm.sons[2].typeName
+        rt = arm.sons[2].rtype
+      ctx.popScope()
+    n.setType(result, name)
+    n.rtype = rt
   of nsnNamedArg, nsnRefArg:
     result = ctx.walkExpr(n.body)
     n.setType(result, (if n.body != nil: n.body.typeName else: ""))
@@ -1279,10 +1350,21 @@ proc walkTry(ctx: var NsCheckContext; n: NsNode) =
       walkBody(ctx, c.body)
 
 proc walkSwitch(ctx: var NsCheckContext; n: NsNode) =
+  ## A section's pattern variables are in scope in that section only.
   discard ctx.walkExpr(n.body)
   for sec in n.sons:
-    for lab in sec.sons: discard ctx.walkExpr(lab)
-    walkBody(ctx, sec.body)
+    ctx.pushScope()
+    for lab in sec.sons:
+      if lab.kind == nsnCaseLabel:
+        ctx.walkPattern(lab.body, n.body)
+        for g in lab.sons:
+          discard ctx.walkExpr(g)
+          ctx.checkCondition(g)
+      else:
+        discard ctx.walkExpr(lab)
+    if sec.body != nil:
+      for st in sec.body.sons: ctx.walkStmt(st)
+    ctx.popScope()
 
 proc checkAssignable(ctx: NsCheckContext; target: NsNode) =
   ctx.noteMutation(target)

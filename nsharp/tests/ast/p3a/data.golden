@@ -190,33 +190,36 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkCaseStmt
-        nkIdent 'c'
-        nkOfBranch
-          nkDotExpr
-            nkIdent 'Color'
-            nkIdent 'Red'
-          nkStmtList
-            nkReturnStmt
-              nkStrLit "red"
-        nkOfBranch
-          nkDotExpr
-            nkIdent 'Color'
-            nkIdent 'Green'
-          nkStmtList
-            nkReturnStmt
-              nkStrLit "green"
-        nkOfBranch
-          nkDotExpr
-            nkIdent 'Color'
-            nkIdent 'Blue'
-          nkStmtList
-            nkReturnStmt
-              nkStrLit "blue"
-        nkElse
-          nkStmtList
-            nkReturnStmt
-              nkStrLit "?"
+      nkBlockStmt
+        nkIdent 'nsSwitch1'
+        nkStmtList
+          nkCaseStmt
+            nkIdent 'c'
+            nkOfBranch
+              nkDotExpr
+                nkIdent 'Color'
+                nkIdent 'Red'
+              nkStmtList
+                nkReturnStmt
+                  nkStrLit "red"
+            nkOfBranch
+              nkDotExpr
+                nkIdent 'Color'
+                nkIdent 'Green'
+              nkStmtList
+                nkReturnStmt
+                  nkStrLit "green"
+            nkOfBranch
+              nkDotExpr
+                nkIdent 'Color'
+                nkIdent 'Blue'
+              nkStmtList
+                nkReturnStmt
+                  nkStrLit "blue"
+            nkElse
+              nkStmtList
+                nkReturnStmt
+                  nkStrLit "?"
   nkProcDef
     nkIdent 'Digit'
     nkEmpty
@@ -236,30 +239,33 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkCaseStmt
-        nkIdent 'd'
-        nkOfBranch
-          nkIntLit 0
-          nkStmtList
-            nkReturnStmt
-              nkStrLit "zero"
-        nkOfBranch
-          nkIntLit 1
-          nkIntLit 2
-          nkIntLit 3
-          nkStmtList
-            nkReturnStmt
-              nkStrLit "small"
-        nkOfBranch
-          nkIntLit 4
-          nkIntLit 5
-          nkStmtList
-            nkReturnStmt
-              nkStrLit "mid"
-        nkElse
-          nkStmtList
-            nkReturnStmt
-              nkStrLit "big"
+      nkBlockStmt
+        nkIdent 'nsSwitch2'
+        nkStmtList
+          nkCaseStmt
+            nkIdent 'd'
+            nkOfBranch
+              nkIntLit 0
+              nkStmtList
+                nkReturnStmt
+                  nkStrLit "zero"
+            nkOfBranch
+              nkIntLit 1
+              nkIntLit 2
+              nkIntLit 3
+              nkStmtList
+                nkReturnStmt
+                  nkStrLit "small"
+            nkOfBranch
+              nkIntLit 4
+              nkIntLit 5
+              nkStmtList
+                nkReturnStmt
+                  nkStrLit "mid"
+            nkElse
+              nkStmtList
+                nkReturnStmt
+                  nkStrLit "big"
   nkProcDef
     nkIdent 'Bonus'
     nkEmpty
@@ -279,22 +285,25 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkCaseStmt
-        nkIdent 'k'
-        nkOfBranch
-          nkIntLit 1
-          nkStmtList
-            nkReturnStmt
-              nkIntLit 100
-        nkOfBranch
-          nkIntLit 2
-          nkStmtList
-            nkReturnStmt
-              nkIntLit 200
-        nkElse
-          nkStmtList
-            nkDiscardStmt
-              nkEmpty
+      nkBlockStmt
+        nkIdent 'nsSwitch3'
+        nkStmtList
+          nkCaseStmt
+            nkIdent 'k'
+            nkOfBranch
+              nkIntLit 1
+              nkStmtList
+                nkReturnStmt
+                  nkIntLit 100
+            nkOfBranch
+              nkIntLit 2
+              nkStmtList
+                nkReturnStmt
+                  nkIntLit 200
+            nkElse
+              nkStmtList
+                nkDiscardStmt
+                  nkEmpty
       nkReturnStmt
         nkIntLit 0
   nkProcDef

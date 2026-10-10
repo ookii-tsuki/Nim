@@ -149,6 +149,21 @@ type
     nsnOutDecl         # typ (nil for `var`), name            (from `f(out int x)`)
     nsnLocalFunc       # a nsnMethodDecl declared inside a body (C# 7 local function)
     nsnMultiDecl       # sons = nsnLocalDecl, one per declarator (`int a = 1, b = 2;`)
+    nsnIsPattern       # body = subject, sons = [pattern]     (from `x is pattern`)
+    nsnSwitchExpr      # body = subject, sons = nsnSwitchArm  (from `x switch { }`)
+    nsnSwitchArm       # sons = [pattern, guard (or nil), value]
+    nsnCaseLabel       # body = pattern, sons = [guard] when there is a `when`
+    # --- patterns ---
+    nsnPatType         # typ, name = designation ("" for none)   (`Circle c`)
+    nsnPatConst        # body = constant expression              (`5`, `null`)
+    nsnPatRel          # name = "<", "<=", ">", ">=", body = constant
+    nsnPatAnd          # sons = patterns
+    nsnPatOr           # sons = patterns
+    nsnPatNot          # body = pattern
+    nsnPatProp         # typ (or nil), name = designation, sons = nsnPatField
+    nsnPatField        # name = member, body = pattern
+    nsnPatVar          # name                                    (`var x`)
+    nsnPatDiscard      #                                         (`_`)
     nsnInterpolated    # sons = nsnStrLit / nsnInterpHole parts  (from `$"..."`)
     nsnInterpHole      # body = value, sons = [alignment] (optional), strVal = format
 
