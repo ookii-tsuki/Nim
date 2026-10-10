@@ -493,7 +493,7 @@ v2.
 | `(T)x` explicit cast | conversion | ✅ v1 | front (→ Nim `T(x)`) |
 | Patterns: type `T x`, constant, `null`, relational `> 5`, `and`/`or`/`not`, property `{ P: pat }`, `var x`, `_` | C# 7-9 | ✅ v1 | desugar (a boolean test assigning the pattern's variables, which are declared where C# scopes them); list and positional patterns are NS9999 / later |
 | Switch expressions | C# 8 | ✅ v1 | desugar |
-| `^` (index-from-end), `..` (range) | C# 8 | 🔜 later | desugar/lib |
+| `^` (index-from-end), `..` (range) | C# 8 | ✅ v1 in element access | desugar: on an array or a string Nim's own `^k` and slices (`a..b` excludes `b`, so it is `a ..< b`; an open end is `.. ^1`); `x[^k]` on a type with an indexer and `Count`/`Length` is `x[x.Count - k]`, `x` read once. A range of anything else (a `List<T>`'s `Slice`) and an `Index`/`Range` value outside `[...]` are NS9999 |
 
 **Stringification of primitives is Nim's.** `$` and `ToString` are the same thing.
 Two consequences are deliberate: a bool reads `true` where C# writes `True`, and a

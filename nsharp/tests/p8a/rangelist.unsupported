@@ -1,0 +1,2 @@
+Valid C# that N# rejects: a range of a List<T> (C# calls its Slice, which the library does not declare).
+code: NS9999

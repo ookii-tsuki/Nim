@@ -1362,7 +1362,61 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     result = tkTuple
   of nsnIndex:
     discard ctx.walkExpr(n.body)
-    for a in n.sons: discard ctx.walkExpr(a)
+    var hasRange, hasHat = false
+    for a in n.sons:
+      if a == nil: continue
+      if a.kind == nsnRange:
+        hasRange = true
+        for x in a.sons:
+          if x != nil:
+            if x.kind == nsnFromEnd: discard ctx.walkExpr(x.body) else: discard ctx.walkExpr(x)
+      elif a.kind == nsnFromEnd:
+        hasHat = true
+        discard ctx.walkExpr(a.body)
+      else: discard ctx.walkExpr(a)
+    if hasRange or hasHat:
+      let rk = n.body.typeKind
+      let native = rk == tkString or (rk == tkSequence and n.body.typeName.endsWith("[]"))
+      if native:
+        ## An array or a string: Nim's `^k` and slices mean what C#'s do.
+        n.strVal = "native"
+        if hasRange:
+          n.setType(rk, n.body.typeName)
+          n.rtype = n.body.rtype
+          return rk
+      elif hasRange:
+        nsError(ctx.config, n.info, ndUnsupported,
+                "a range of a type other than an array or a string")
+        return tkUnknown
+      else:
+        ## C#'s implicit index support: `x[^k]` is `x[x.Count - k]` for a type
+        ## with an indexer and a `Count` (or `Length`).
+        let tn = n.body.typeName
+        var countName = ""
+        for c in ["Count", "Length"]:
+          if (ctx.scope.classes.hasKey(tn) and ctx.scope.findMemberInfo(tn, c).name.len > 0) or
+             ctx.surface.member(tn, rk, c).name.len > 0:
+            countName = c
+            break
+        if countName.len == 0:
+          nsError(ctx.config, n.info, ndUnsupported, "'^' on a type without Count or Length")
+          return tkUnknown
+        n.strVal = "count:" & countName
+        let mt = libResultType(ctx.surface, n.body, "[]", n.sons.len)
+        if mt != nil:
+          result = ctx.classifyType(mt)
+          n.setType(result, declTypeName(mt))
+          n.rtype = mt
+          return result
+        if ctx.scope.classes.hasKey(tn) and
+           ctx.scope.findMemberInfo(tn, NsIndexerName).name.len > 0:
+          let it = ctx.memberTypeOf(n.body, tn, NsIndexerName)
+          result = ctx.classifyType(it)
+          n.setType(result, declTypeName(it))
+          n.rtype = it
+          return result
+        n.setType(tkUnknown)
+        return tkUnknown
     result = tkUnknown
     let rn = (if n.body != nil: n.body.typeName else: "")
     if n.body != nil and n.body.typeKind == tkSequence and rn.endsWith("[]"):
@@ -1567,6 +1621,11 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       for st in stmts: ctx.walkStmt(st)
       ctx.popScope()
       n.inits = stmts
+  of nsnFromEnd, nsnRange:
+    ## `^k` and `a..b` are `System.Index` / `System.Range` values outside an
+    ## element access, which the library does not declare.
+    nsError(ctx.config, n.info, ndUnsupported, "an index or range value outside '[...]'")
+    result = tkUnknown
   of nsnTypeOf:
     ## A `Type` names the type; one with type arguments, or an array, would need
     ## the argument types' names too, which N# does not build yet.

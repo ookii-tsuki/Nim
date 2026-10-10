@@ -1,0 +1,43 @@
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Ring
+    {
+        int[] items = { 10, 20, 30 };
+        public int Count => items.Length;
+        public int this[int i] => items[i];
+    }
+    class Program
+    {
+        static int calls = 0;
+        static int[] Data() { calls++; return new[] { 1, 2, 3, 4, 5 }; }
+        static string Show(int[] xs)
+        {
+            string r = "";
+            foreach (var x in xs) r += (r.Length > 0 ? "," : "") + x;
+            return r;
+        }
+        static void Main()
+        {
+            int[] a = { 1, 2, 3, 4, 5 };
+            string s = "hello world";
+            Console.WriteLine(a[^1] + a[^5]);
+            Console.WriteLine(s[^1]);
+            Console.WriteLine(Show(a[1..^1]));
+            Console.WriteLine(Show(a[..2]));
+            Console.WriteLine(Show(a[3..]));
+            Console.WriteLine(Show(a[..]));
+            Console.WriteLine(s[6..]);
+            Console.WriteLine(s[..5] + "|" + s[^5..^2]);
+            int k = 2;
+            Console.WriteLine(Show(a[k..(k + 2)]));
+            var list = new List<int> { 7, 8, 9 };
+            Console.WriteLine(list[^1] + list[^3]);
+            var r = new Ring();
+            Console.WriteLine(r[^1]);
+            Console.WriteLine(Data()[^2] + " " + calls);
+            Console.WriteLine(a[1..1].Length);
+        }
+    }
+}

@@ -453,6 +453,19 @@ proc parseArgument(p: var NsParser): NsNode =
     return
   result = p.parseExpr()
 
+proc parseIndexArgument(p: var NsParser): NsNode =
+  ## An element access argument: an index (`^1` counts from the end) or a range
+  ## `a..b`, either end left out.
+  let info = p.here()
+  var start: NsNode = nil
+  if not p.at(nsDotDot): start = p.parseExpr()
+  if not p.at(nsDotDot): return start
+  discard p.advance
+  result = nsn(nsnRange, info)
+  var stop: NsNode = nil
+  if not p.at(nsRBracket) and not p.at(nsComma): stop = p.parseExpr()
+  result.sons = @[start, stop]
+
 proc parseInterpolated(p: var NsParser): NsNode =
   ## `$"a{x,5:F2}b"`: the lexer has already split it into literal chunks and holes,
   ## so each hole is an ordinary expression, an optional `, alignment`, and the
@@ -648,7 +661,7 @@ proc parsePostfixTail(p: var NsParser; start: NsNode): NsNode =
       let idx = nsn(nsnIndex, info)
       idx.body = result
       while true:
-        idx.add p.parseExpr()
+        idx.add p.parseIndexArgument()
         if p.at(nsComma): discard p.advance else: break
       discard p.expect(nsRBracket)
       result = idx
@@ -677,6 +690,11 @@ proc parseUnary(p: var NsParser): NsNode =
     result = nsn(nsnIncDec, p.infoOf(t))
     result.name = if t.kind == nsPlusPlus: "inc" else: "dec"
     result.strVal = "prefix"
+    result.body = p.parseUnary()
+  of nsCaret:
+    ## `^k`: an index counted from the end.
+    discard p.advance
+    result = nsn(nsnFromEnd, p.infoOf(t))
     result.body = p.parseUnary()
   of nsMinus, nsPlus, nsBang, nsTilde:
     discard p.advance
