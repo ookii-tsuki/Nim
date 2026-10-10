@@ -14,9 +14,9 @@ Tick an item when it is merged into `nsharp`.
       with an `out` parameter needs the library to declare one first, which is library work
 - [x] Index-from-end and ranges: `a[^1]`, `a[1..^1]`, `s[..3]` (arrays, strings; `^` on lists).
       Ranges of lists and `Index`/`Range` values need library types
-- [ ] Null-forgiving `x!` (checked, no runtime effect)
-- [ ] Anonymous methods `delegate (int x) { ... }`
-- [ ] `protected internal`, `private protected`
+- [x] Null-forgiving `x!` (checked, no runtime effect)
+- [x] Anonymous methods `delegate (int x) { ... }`
+- [x] `protected internal`, `private protected`
 - [ ] Primary constructors (C# 12): `class C(int x) { ... }`, `x` captured in the body
 
 ## Batch 2: newer syntax SPEC does not list yet

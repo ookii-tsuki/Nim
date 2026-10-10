@@ -421,8 +421,8 @@ and the namespaces must be merged or layered.
 | `private` | type/unit | ✅ v1 | module-private (default) |
 | `protected` | type + derived | ✅ v1 (approx) | module-scoped in v1 (see note) |
 | `internal` | assembly | ✅ v1 | module-private |
-| `protected internal` | union | 🔜 later | - |
-| `private protected` | intersection | 🔜 later | - |
+| `protected internal` | union | ✅ v1 | front (one compilation is one assembly, so it is `internal`) |
+| `private protected` | intersection | ✅ v1 | front (within one assembly, `protected`) |
 | `file` | file-only | ➕ ext | Nim module-private |
 
 **Note on `protected` (resolved):** Nim's visibility is module-based, not
@@ -503,7 +503,7 @@ so a class shows its override, or its namespace-qualified name, for its *dynamic
 type; a struct likewise through a generated `$`. String `+` accepts
 any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 `"obj=" + obj` both work.
-| Null-forgiving `x!` | suppress NRT | 🔜 later | front |
+| Null-forgiving `x!` | suppress NRT | ✅ v1 | front (a postfix with no effect: it only silences nullable warnings, which N# does not issue) |
 | `checked`/`unchecked` expr | ovf | ✅ v1 | desugar (a block expression: `push overflowChecks`, the operand into a temporary, `pop`) |
 | Throw expression `x ?? throw e` | raise as a value | ✅ v1 | desugar (`raise` is `noreturn`, so it stands where a value is expected) |
 | `stackalloc` | stack mem | 🚫 out | front |
@@ -517,7 +517,7 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 | Member access `a.b` | dot | ✅ v1 | front |
 | `this`, `base` | self/base | ✅ v1 | desugar |
 | Lambdas `x => e`, `(a,b) => e` | closures | ✅ v1 | front (→ Nim closure) |
-| Anonymous methods `delegate { }` | older lambdas | 🔜 later | front |
+| Anonymous methods `delegate { }` | older lambdas | ✅ v1 | front (a lambda with typed parameters and a block body; `delegate { }` without a list takes its delegate's parameters, unnamed) |
 | Object initializer `new T { A = 1 }` | init props | ✅ v1 | sem (rewritten into assignments over a temporary, checked as such) + desugar (a block expression) |
 | Collection initializer `new List<int>{1,2}`, index initializer `{ [k] = v }`, nested `A = { ... }` | init | ✅ v1 | sem (`Add` calls / indexer assignments) + desugar |
 | Anonymous types `new { A = 1 }` | inferred type | 🔜 later | desugar |
@@ -709,7 +709,7 @@ map directly. The cost is in **constraints**, which map to Nim
 | `d.Invoke(args)`, `d?.Invoke(args)` | call | ✅ v1 | lib (`Invoke` calls the delegate, or each handler of an event); `x?.M()` as a statement does nothing for a null `x` |
 | `event D E;` | pub/sub member | ✅ v1 | desugar + lib: the field holds `seq[D]`, its handlers; `E += h` / `E -= h` are `nsSubscribe`/`nsUnsubscribe` (the last equal handler leaves), raising it calls each in order, and with none it is null. Outside its type only `+=`/`-=` (NS0070). `EventHandler`, `EventHandler<T>`, `EventArgs` are declared |
 | `event` add/remove accessors | custom | 🔜 later (NS9999) | lib |
-| Anonymous methods `delegate { }` | - | 🔜 later | front |
+| Anonymous methods `delegate { }` | - | ✅ v1 | see §7 |
 | Delegate variance | `Action<Base> = Action<Derived>` | 🔜 later | sem |
 | Expression trees | `Expression<Func<>>` | 🚫 out | - |
 

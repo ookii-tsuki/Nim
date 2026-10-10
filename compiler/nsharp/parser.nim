@@ -496,6 +496,8 @@ proc parseInterpolated(p: var NsParser): NsNode =
       discard p.advance
   discard p.expect(nsInterpEnd)
 
+proc parseParams(p: var NsParser): seq[NsNode]
+
 proc parsePrimary(p: var NsParser): NsNode =
   if looksLikeLambda(p):
     return p.parseLambda()
@@ -545,6 +547,15 @@ proc parsePrimary(p: var NsParser): NsNode =
     of "false": result = nsnBoolLit(false, p.infoOf(t))
     of "nameof": result = p.parseNameof(t)
     of "default": result = p.parseDefault(t)
+    of "delegate":
+      ## An anonymous method: `delegate (int x) { ... }`, or `delegate { ... }`,
+      ## which converts to any delegate type whatever its parameters.
+      result = nsn(nsnLambda, p.infoOf(t))
+      if p.at(nsLParen):
+        for prm in p.parseParams(): result.addParam prm
+      else:
+        result.strVal = "anyParams"
+      result.body = p.parseBlock()
     of "throw":
       ## A throw expression: `x ?? throw e`, `c ? v : throw e`, `=> throw e`.
       result = nsn(nsnThrow, p.infoOf(t))
@@ -608,6 +619,11 @@ proc parsePostfixTail(p: var NsParser; start: NsNode): NsNode =
   ## the receiver.
   result = start
   while true:
+    if p.at(nsBang):
+      ## `x!`, the null-forgiving operator: it only silences C#'s nullable
+      ## warnings, which N# does not issue, so the value is `x` itself.
+      discard p.advance
+      continue
     if p.at(nsDot):
       discard p.advance
       let nameTok = p.peek
