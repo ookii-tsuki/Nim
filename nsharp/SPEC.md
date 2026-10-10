@@ -179,7 +179,7 @@ differ only by case is a **hard error**.
 | `double` | ✅ v1 | `float64` |
 | `decimal` | 🔜 later (D7) | `decimal` lib |
 | `string` | ✅ v1 | Nim `string` (UTF-8, mutable; see §4.4) |
-| `object` (universal base) | ✅ v1 (limited) | ref base `RootObj`; value boxing 🔜 (§4.4, §8) |
+| `object` (universal base) | ✅ v1 | ref base `RootObj`; a value is boxed (§4.4) |
 | `void` | ✅ v1 | return type omitted/`void` |
 | `null` | ✅ v1 | `nil` (see §4.4/§7.3) |
 | `var` (local inference) | ✅ v1 | `var x = expr` |
@@ -204,7 +204,7 @@ are excluded: N# has no `void` type and no decimal.
 | `Span<T>`, `Memory<T>` | views | 🔜 later | lib |
 | `Nullable<T>` / `int?` | nullable value | ✅ v1 | lib (→ `Option[T]`) |
 | Nullable reference types `string?` | NRT annotations | ✅ v1 (no-op, §7.3) | front (reported as the CS8632-style warning) |
-| `object`-typed boxes | boxing | 🔜 later | sem |
+| `object`-typed boxes | boxing | ✅ v1 | sem + lib (§4.4) |
 | `IEnumerable<T>` etc. | interfaces | ✅ v1 (static/concept) | sem/lib |
 | Pointers `T*`, `&`, `*`, `cast` | unsafe | ✅ v1 | front (→ `ptr`/`addr`/`[]`/`cast`) |
 | `Func<>`, `Action<>` | delegate types | ✅ v1 | lib (→ `proc` types) |
@@ -247,7 +247,15 @@ mutable like Nim's - we do **not** fake C# immutability.
 types are *boxed* into it. Nim has no universal value boxing and we will not add
 a managed one, so v1 scopes `object` as a **reference base** (a `RootObj`-rooted
 hierarchy) with `ToString()`/`Equals()`/`GetHashCode()` mapped to `$`/`==`/`hash`.
-Storing value types (`int`, `struct`) in an `object` - real boxing - is deferred.
+A value type (`int`, a `struct`, a `string`, which Nim holds by value) stored in
+an `object` is **boxed**: sema marks the conversion wherever a value meets an
+`object` target (a declaration, an assignment, an argument, a return, an array
+element, `(object)v`), and the library's `nsBox` wraps it in an `NsBox[T]`, a
+`RootObj` whose `ToString`, `Equals`, `GetHashCode` and `GetType` answer for the
+value. `(T)o` unboxes through `nsUnbox`, which throws `InvalidCastException` unless
+the box holds exactly a `T`; `o is T`, `o is T x` and type patterns ask `nsIsType`.
+`==` on two `object`s compares references, so two boxes of `5` are `Equals` but not
+`==`, as in C#. An untyped integer literal boxes as `int`.
 
 ---
 
@@ -623,7 +631,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `base.M()` calls | call base impl | ✅ v1 | desugar (→ `procCall M(Base(self), ...)`; `base.P` likewise for a property) |
 | `this` | self ref | ✅ v1 | desugar |
 | `Object` base (`Equals`/`ToString`/`GetHashCode`) | universal methods | ✅ v1 | `ToString` is a base `method` in the intrinsics; every class N# compiles overrides it with its namespace-qualified name unless it (or a base) overrides it, and `$` calls it, so `Console.WriteLine(obj)` prints what C# prints |
-| Boxing/unboxing (value↔`object`) | implicit | 🔜 later | sem |
+| Boxing/unboxing (value↔`object`) | implicit | ✅ v1 | sem + lib (§4.4) |
 | Operator overloading | `operator +` | ✅ v1 | front |
 | Method overloading | same name, diff sig | ✅ v1 | sem (Nim overloads) |
 | Named/optional/default args | `M(x: 1)` | ✅ v1 | sem (arguments mapped to parameters for overload matching, NS7036 for a missing one) + desugar (Nim's own named and default arguments) |
@@ -870,7 +878,7 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | `GC.*` | 🚫 out | Nim manages memory |
 | `Task`, `Thread`, `Interlocked` | 🔜 later | `std/*` |
 | `Marshal`, `IntPtr` | 🔜 later | `lib` |
-| `object` boxing helpers | 🔜 later | - |
+| `object` boxing helpers | ✅ v1 | `NsBox[T]`, `nsBox`, `nsUnbox`, `nsIsType` in the intrinsics |
 
 **Naming:** do we keep C# names (`List`, `Count`, `Length`) or Nim names
 (`seq`, `len`)? **Proposed:** keep **C# names at the source level** for
@@ -1108,7 +1116,7 @@ flag=True       # the .csout, which is what C# prints
 
 **Resolved this round:** `char` = 1 byte; `string` = Nim UTF-8 mutable (§4.4);
 overflow default unchecked + `checked`/`unchecked` via `push`/`pop` (§7.3);
-`unsafe` pointers in v1; `object` = reference base with boxing deferred;
+`unsafe` pointers in v1; `object` = reference base with boxing, values boxed;
 interfaces = static concepts; identifiers ASCII-only; `#region` ignored;
 `stackalloc`/`fixed`/`ref struct` out; `Nullable<T>` → `Option[T]` (v1);
 `Result<T,E>` later. **All of D1–D8 are resolved.** Remaining *non-blocking*
@@ -1177,7 +1185,7 @@ finalizers, `Span<T>`, `StringBuilder`-adjacent IO, `Result<T,E>`, formatter, RE
   [`GLOSSARY.md`](GLOSSARY.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md); updated
   §2/§4/§5.5/§7.3/§17/§18/§20. All D1–D8 now resolved.
 - **v1.1** - applied review decisions: case-sensitive identifiers (§3.1);
-  1-byte `char` + Nim UTF-8 mutable strings (§4.4); `object` = reference base,
+  1-byte `char` + Nim UTF-8 mutable strings (§4.4); `object` = reference base with boxing,
   boxing deferred (§4.4); interfaces = static concepts + anonymous concepts
   (§8); all generic constraints in v1 (§9); `checked`/`unchecked` promoted to v1
   via `{.push overflowChecks.}` (§6, §7.3); `unsafe` pointers in v1 (§14.2);

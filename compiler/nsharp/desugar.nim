@@ -586,6 +586,10 @@ proc castToNim(l: Lowerer; n: NsNode): PNode =
   if n.argParam != nil and n.argParam.kind == nsnOperatorDecl:
     return newTree(nkCall, n.info, l.id(conversionProcName(n.argParam), n.info),
                    l.expr(n.body))
+  if n.strVal == "unbox":
+    ## `(T)o` on an `object`: the boxed value, or the reference downcast.
+    return newTree(nkCall, n.info, l.id("nsUnbox", n.info), l.expr(n.body),
+                   l.typeToNim(n.typ, n.info))
   result = newNodeI(nkCall, n.info)
   result.add l.typeToNim(n.typ, n.info)
   if n.body != nil and n.body.typeKind == tkNullable:
@@ -943,6 +947,9 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnCast, nsnIs, nsnAs:
     result = l.ifaceTypeOp(n)
     if result != nil: discard
+    elif n.kind == nsnIs and n.name == "nsIsType":
+      result = newTree(nkCall, n.info, l.id("nsIsType", n.info), l.expr(n.body),
+                       l.typeToNim(n.typ, n.info))
     elif n.kind == nsnIs:
       result = newTree(nkInfix, n.info, l.id(n.name, n.info), l.expr(n.body),
                        l.typeToNim(n.typ, n.info))
@@ -1170,6 +1177,14 @@ proc typeTest(l: Lowerer; subj: PNode; pat: NsNode; target: NsNode;
       newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(a, info), empty(info),
         newTree(nkCall, info, l.id("nsAs" & tname, info),
                 newTree(nkCall, info, l.id("RootRef", info), copyTree(obj))))), test))
+  if not subjIface and canonicalTypeName(pat.typeName) in ["object", "Object", "RootRef"]:
+    ## An `object` holds a reference or a box: the library asks which.
+    let t = l.typeToNim(target, info)
+    result = newTree(nkCall, info, l.id("nsIsType", info), copyTree(obj), t)
+    if bindName.len > 0:
+      result = newTree(nkInfix, info, l.id("and", info), result, l.assignTrue(bindName,
+        newTree(nkCall, info, l.id("nsUnbox", info), copyTree(obj), copyTree(t)), info))
+    return
   let targetIsStruct = l.scope.classes.hasKey(tname) and
                        l.scope.classes[tname].classKind == ckStruct
   if subjIface or l.isRefKindName(pat.typeKind, pat.typeName) or

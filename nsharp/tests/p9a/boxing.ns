@@ -1,0 +1,38 @@
+using System;
+namespace Demo
+{
+    struct Pt { public int X; public int Y; public Pt(int x, int y) { X = x; Y = y; } public override string ToString() => $"({X}, {Y})"; }
+    class Program
+    {
+        static string Describe(object o)
+        {
+            if (o is int n) return "int " + n;
+            if (o is string s) return "string " + s;
+            if (o is Pt p) return "pt " + p.X;
+            return "other " + o;
+        }
+        static void Main()
+        {
+            object a = 5;
+            object b = 5;
+            object c = "hi";
+            object d = new Pt(1, 2);
+            object e = 2.5;
+            Console.WriteLine(a);
+            Console.WriteLine(d);
+            Console.WriteLine(a.Equals(b));
+            Console.WriteLine(a == b);
+            Console.WriteLine((int)a + 1);
+            Console.WriteLine(Describe(a) + ", " + Describe(c) + ", " + Describe(d) + ", " + Describe(e));
+            Console.WriteLine(a.GetType().Name);
+            Console.WriteLine(a.GetHashCode() == b.GetHashCode());
+            object[] items = { 1, "two", 3.0, true };
+            foreach (var it in items) Console.WriteLine(it);
+            try { var s = (string)a; Console.WriteLine(s); }
+            catch (InvalidCastException) { Console.WriteLine("bad cast"); }
+            var r = a switch { int i when i > 3 => "big", int => "small", _ => "?" };
+            Console.WriteLine(r);
+            Console.WriteLine(Describe(42));
+        }
+    }
+}

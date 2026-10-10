@@ -1691,7 +1691,9 @@ nkStmtList
         nkIdentDefs
           nkIdent 'o'
           nkIdent 'RootRef'
-          nkIdent 's'
+          nkCall
+            nkIdent 'nsBox'
+            nkIdent 's'
       nkStmtList
         nkVarSection
           nkIdentDefs
@@ -1712,16 +1714,17 @@ nkStmtList
                       nkIdent 'o'
                   nkInfix
                     nkIdent 'and'
-                    nkInfix
-                      nkIdent 'of'
+                    nkCall
+                      nkIdent 'nsIsType'
                       nkIdent 'nsSubj11'
                       nkIdent 'Shape'
                     nkStmtListExpr
                       nkAsgn
                         nkIdent 'sh'
                         nkCall
-                          nkIdent 'Shape'
+                          nkIdent 'nsUnbox'
                           nkIdent 'nsSubj11'
+                          nkIdent 'Shape'
                       nkIdent 'true'
             nkStmtList
               nkReturnStmt

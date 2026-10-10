@@ -359,3 +359,61 @@ proc nsSizeOf*(t: typedesc[int8 | uint8 | bool]): int32 = 1
 proc nsSizeOf*(t: typedesc[int16 | uint16 | char]): int32 = 2
 proc nsSizeOf*(t: typedesc[int32 | uint32 | float32]): int32 = 4
 proc nsSizeOf*(t: typedesc[int64 | uint64 | float]): int32 = 8
+
+# --- boxing -----------------------------------------------------------------
+#
+# C# stores a value type in an `object` by boxing it. `object` is `RootRef` here,
+# so a box is a `RootObj` holding the value, and what C# asks of any object --
+# `ToString`, `Equals`, `GetHashCode`, `GetType` -- dispatches on the box to procs
+# made for its element type. `(int)o` unboxes, and throws `InvalidCastException`
+# (Nim's `ObjectConversionDefect`) when the box holds another type, as C# does.
+
+type
+  NsBoxed* = ref object of RootObj
+    nsStr: proc (b: NsBoxed): string {.nimcall.}
+    nsEq: proc (a: NsBoxed; b: RootRef): bool {.nimcall.}
+    nsHash: proc (b: NsBoxed): int32 {.nimcall.}
+    nsType: string
+  NsBox*[T] = ref object of NsBoxed
+    v*: T
+
+proc nsBoxStr[T](b: NsBoxed): string = $NsBox[T](b).v
+proc nsBoxEq[T](a: NsBoxed; b: RootRef): bool =
+  ## Two boxes are equal when they hold equal values of one type.
+  b != nil and b of NsBox[T] and NsBox[T](a).v == NsBox[T](b).v
+proc nsBoxHash[T](b: NsBoxed): int32 = int32(hash(NsBox[T](b).v) and 0x7fffffff)
+
+proc nsBoxOf[T](x: T): RootRef =
+  var name = ""
+  when compiles(nsTypeOf(T)): name = nsTypeOf(T).nsFull
+  NsBox[T](v: x, nsStr: nsBoxStr[T], nsEq: nsBoxEq[T], nsHash: nsBoxHash[T],
+           nsType: name)
+
+proc nsBox*(x: RootRef): RootRef {.inline.} = x
+  ## A reference is already an object.
+proc nsBox*(x: int): RootRef = nsBoxOf(int32(x))
+  ## An untyped integer literal is a C# `int`.
+proc nsBox*[T: not RootRef and not int](x: T): RootRef = nsBoxOf(x)
+
+method ToString*(b: NsBoxed): string = b.nsStr(b)
+method nsTypeName*(b: NsBoxed): string = b.nsType
+proc nsBoxEquals*(a: NsBoxed; b: RootRef): bool = a.nsEq(a, b)
+proc nsBoxHash*(a: NsBoxed): int32 = a.nsHash(a)
+
+proc nsUnbox*[T](o: RootRef; t: typedesc[T]): T =
+  ## `(T)o`: the boxed value, which must be exactly a `T`.
+  when T is RootRef:
+    if o != nil and not (o of T):
+      raise newException(ObjectConversionDefect, "Specified cast is not valid.")
+    T(o)
+  else:
+    if o == nil:
+      raise newException(NilAccessDefect, "Object reference not set to an instance of an object.")
+    if not (o of NsBox[T]):
+      raise newException(ObjectConversionDefect, "Specified cast is not valid.")
+    NsBox[T](o).v
+
+proc nsIsType*[T](o: RootRef; t: typedesc[T]): bool =
+  ## `o is T`: a reference of that class, or a box of that value type.
+  when T is RootRef: o != nil and o of T
+  else: o != nil and o of NsBox[T]

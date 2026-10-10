@@ -1375,7 +1375,9 @@ nkStmtList
       nkAsgn
         nkIdent 'nsProgram_gate'
         nkCall
-          nkIdent 'newRootRef'
+          nkIdent 'nsBox'
+          nkCall
+            nkIdent 'newRootRef'
   nkWhenStmt
     nkElifBranch
       nkIdent 'isMainModule'

@@ -770,7 +770,9 @@ nkStmtList
           nkIdent 'o'
           nkIdent 'RootRef'
           nkCall
-            nkIdent 'newIntBox'
+            nkIdent 'nsBox'
+            nkCall
+              nkIdent 'newIntBox'
       nkCall
         nkIdent 'WriteLine'
         nkBlockExpr
