@@ -5,7 +5,7 @@
 
 import std/[tables, sets, strutils]
 import ../options
-import ast, bcl
+import ast, bcl, diagnostics
 
 type
   NsMemberSymbol* = object
@@ -222,7 +222,7 @@ proc iteratorElement*(t: NsNode): NsNode =
     return t.sons[0]
   nil
 
-proc mergePartials(module: NsNode) =
+proc mergePartials(module: NsNode; config: ConfigRef) =
   ## C# merges the `partial` declarations of a type -- in one file or several,
   ## in any namespace block of the same name -- into one type: the members and the
   ## base list of all of them. The first declaration keeps them, the rest leave the
@@ -256,6 +256,37 @@ proc mergePartials(module: NsNode) =
       else: kept.add d
     list = kept
   visit(module.sons, "")
+  ## A partial method: its implementing declaration (the one with a body) is the
+  ## method; the defining one only states it. A `partial void` without one is
+  ## an empty method -- C# drops the calls too, so their arguments are not even
+  ## evaluated, which N# does not do -- and any other must have one (CS8795).
+  proc methods(list: seq[NsNode]) =
+    for d in list:
+      if d.kind == nsnNamespace and d.body != nil: methods(d.body.sons)
+      elif d.kind == nsnClassDecl:
+        var kept: seq[NsNode] = @[]
+        for m in d.sons:
+          if m.kind != nsnMethodDecl or not m.attrs.isPartial:
+            kept.add m
+            continue
+          var impl: NsNode = nil
+          for o in d.sons:
+            if o.kind == nsnMethodDecl and o.attrs.isPartial and o.name == m.name and
+               o.params.len == m.params.len and o.body != nil:
+              impl = o
+          if m.body != nil:
+            kept.add m
+          elif impl == nil:
+            let isVoid = m.typ == nil or m.typ.kind == nsnVoidType
+            var hasOut = false
+            for p in m.params:
+              if p.paramMod == "out": hasOut = true
+            if m.attrs.access != aPrivate or not isVoid or hasOut:
+              nsError(config, m.info, ndPartialNeedsImpl, m.name)
+            m.body = nsn(nsnBlock, m.info)
+            kept.add m
+        d.sons = kept
+  methods(module.sons)
 
 proc synthesizeRecord*(cls: NsNode) =
   ## What C# generates for `record R(T1 A, T2 B)`: a public property per
@@ -359,7 +390,7 @@ proc synthesizeRecords(list: seq[NsNode]) =
 
 proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Builds the module scope from a parsed module.
-  mergePartials(module)
+  mergePartials(module, config)
   synthesizeRecords(module.sons)
   result = NsModuleScope(classes: initTable[string, NsClassSymbol](),
                          delegates: initTable[string, NsNode](),

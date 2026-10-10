@@ -1,0 +1,27 @@
+using System;
+namespace Demo
+{
+    partial class Widget
+    {
+        partial void OnCreated();
+        partial void OnRenamed(string name);
+        public partial string Describe();
+        public string Name = "w";
+        public Widget() { OnCreated(); }
+        public void Rename(string n) { Name = n; OnRenamed(n); }
+    }
+    partial class Widget
+    {
+        partial void OnCreated() { Console.WriteLine("created"); }
+        public partial string Describe() => "widget " + Name;
+    }
+    class Program
+    {
+        static void Main()
+        {
+            var w = new Widget();
+            w.Rename("x");
+            Console.WriteLine(w.Describe());
+        }
+    }
+}

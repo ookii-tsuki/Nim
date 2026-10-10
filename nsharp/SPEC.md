@@ -402,7 +402,7 @@ and the namespaces must be merged or layered.
 | Conversion ops `implicit`/`explicit` | casts | ✅ v1 | desugar (implicit → `converter nsImplicit_T`, explicit → a proc a cast calls; using an explicit one implicitly is NS0266) |
 | `++`/`--` overloads | `operator ++` | ✅ v1 | desugar (→ `inc`/`dec` over a `var` operand) |
 | `checked` operators (C# 11) | `operator checked +`, `explicit operator checked int` | ✅ v1 | sem + desugar: inside `checked(...)`/`checked { }` a `+`, `-`, `*`, `/`, unary `-`, compound assignment or explicit cast on a type that declares the checked version calls it (`nsCheckedAdd`, `nsExplicitChecked_T`); elsewhere the unchecked one. Only those operators may be checked (NS9023), never an implicit conversion (NS9024), and only beside the unchecked version (NS9025); a checked `++`/`--` is NS9999 |
-| Nested/partial members | - | 🔜 later (partial methods) | - |
+| Partial methods | `partial void OnX();` + `partial void OnX() { ... }` | ✅ v1 | symbols: the implementing declaration (with a body) is the method and the defining one leaves the tree. A `partial void` with no implementation is an empty method; C# removes the calls as well, arguments included, so a call's arguments are still evaluated in N#. One with an access modifier, a result or an `out` parameter must be implemented (NS8795) |
 
 ### 5.4 Properties (flagship C# feature)
 
@@ -1028,6 +1028,7 @@ code:
 | `NS0746`/`NS0828`/`NS0833` | CS0746/CS0828/CS0833 | an anonymous type member with no name, no type, or a repeated name |
 | `NS0847` | CS0847 | a multi-dimensional initializer whose rows differ in length |
 | `NS1960`/`NS1961` | CS1960/CS1961 | variance where it may not stand, or a variant parameter used against its variance |
+| `NS8795` | CS8795 | a partial method that must be implemented has no implementation |
 | `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
 | `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
 | `NS0070` | CS0070 | an event used outside its type other than by `+=`/`-=` |
