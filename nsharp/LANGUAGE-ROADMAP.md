@@ -32,7 +32,7 @@ Tick an item when it is merged into `nsharp`.
 
 ## Batch 3: deeper semantics
 
-- [ ] Anonymous types `new { Name = x, Age = 3 }`: value equality, `{ Name = ..., Age = ... }` printing, `with`
+- [x] Anonymous types `new { Name = x, Age = 3 }`: value equality, `{ Name = ..., Age = ... }` printing, `with`
 - [ ] Boxing: `object o = 5; (int)o; o is int n` (value types as `object`)
 - [ ] Multi-dimensional arrays `int[,]`, `new int[3, 4]`, `a[i, j]`, `GetLength`
 - [ ] Generic variance `in`/`out` on interfaces and delegates

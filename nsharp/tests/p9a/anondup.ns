@@ -1,0 +1,11 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var p = new { A = 1, A = 2 }; Console.WriteLine(p.A);
+        }
+    }
+}

@@ -2954,13 +2954,20 @@ proc recordMembers(l: Lowerer; n: NsNode; isClass: bool; into: var seq[PNode]) =
       newTree(nkElifExpr, info, anyNil, l.id("false", info)),
       newTree(nkElseExpr, info, cond))
   else: body = cond
-  into.add l.mkProc(l.alwaysExported("==", info),
-    newTree(nkFormalParams, info, l.id("bool", info), pairDefs()),
-    newTree(nkStmtList, info, body), info)
-  into.add l.mkProc(l.alwaysExported("Equals", info),
-    newTree(nkFormalParams, info, l.id("bool", info), pairDefs()),
-    newTree(nkStmtList, info, newTree(nkInfix, info, l.id("==", info), copyTree(a),
-                                      copyTree(b))), info)
+  if n.attrs.isAnon:
+    ## An anonymous type's `==` is the reference comparison; only `Equals`
+    ## compares the members.
+    into.add l.mkProc(l.alwaysExported("Equals", info),
+      newTree(nkFormalParams, info, l.id("bool", info), pairDefs()),
+      newTree(nkStmtList, info, body), info)
+  else:
+    into.add l.mkProc(l.alwaysExported("==", info),
+      newTree(nkFormalParams, info, l.id("bool", info), pairDefs()),
+      newTree(nkStmtList, info, body), info)
+    into.add l.mkProc(l.alwaysExported("Equals", info),
+      newTree(nkFormalParams, info, l.id("bool", info), pairDefs()),
+      newTree(nkStmtList, info, newTree(nkInfix, info, l.id("==", info), copyTree(a),
+                                        copyTree(b))), info)
   ## `hash`: the members' hashes mixed, so a record can key a dictionary.
   let hbody = newNodeI(nkStmtList, info)
   hbody.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id("h", info),
@@ -3020,7 +3027,9 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
         overridden = true
   if not overridden and n.attrs.isRecord:
     let shown = l.recordState(n).shown
-    var text: PNode = newAtom(nkStrLit, n.name & (if shown.len > 0: " { " else: " {"),
+    ## An anonymous type prints its members only: `{ A = 1 }`.
+    let head = (if n.attrs.isAnon: "" else: n.name & " ")
+    var text: PNode = newAtom(nkStrLit, head & (if shown.len > 0: "{ " else: "{"),
                               info)
     for i, f in shown:
       let label = (if i > 0: ", " else: "") & f & " = "

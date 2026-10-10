@@ -527,7 +527,7 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 | Object initializer `new T { A = 1 }` | init props | ✅ v1 | sem (rewritten into assignments over a temporary, checked as such) + desugar (a block expression) |
 | Collection initializer `new List<int>{1,2}`, index initializer `{ [k] = v }`, nested `A = { ... }` | init | ✅ v1 | sem (`Add` calls / indexer assignments) + desugar |
 | Collection expressions `[a, b, ..xs]` (C# 12) | target-typed collection | ✅ v1 | sem: into an array (or `IEnumerable<T>`, `IList<T>`, `IReadOnlyList<T>`...) an array literal, or with spreads a sequence built element by element; into a collection type `new C { a, b }`, or with spreads `new C(array)`. Without a target type NS9176 |
-| Anonymous types `new { A = 1 }` | inferred type | 🔜 later | desugar |
+| Anonymous types `new { A = 1 }` | inferred type | ✅ v1 | sem + desugar: one sealed record-like class per shape (member names and types, in order), synthesized once the values are typed; `new { x, p.Name }` takes the value's name (else NS0746). It prints `{ A = 1 }`, `Equals` compares members while `==` compares references, and `with` copies. A duplicate name is NS0833, a `null` or lambda member NS0828; no `Deconstruct`. Its properties are `init`, so assigning one outside `with` reports NS8852 where C# reports CS0200 |
 | `typeof(T)` | type object | ✅ v1 | lib + desugar: `nsTypeOf(T)`, declared by the library for the built-in types and by lowering for each class, struct and enum, yields a `System.Type` that knows the type's name (`Name`, `FullName`, `Namespace`, `==`); `x.GetType()` asks a class value through a `method` every class overrides, and a value its static type. No reflection beyond the name; a generic, array or tuple type is NS9999 |
 | `nameof(x)` | name string | ✅ v1 | front, a literal of the written name |
 | `default(T)` | default value | ✅ v1 | desugar (→ Nim `default`) |
@@ -1017,6 +1017,7 @@ code:
 | `NS0305`/`NS0308` | CS0305/CS0308 | an attribute's type arguments do not match its class |
 | `NS9054` | CS9054 | a `file` type nested in another type |
 | `NS9023`/`NS9024`/`NS9025` | CS9023/CS9024/CS9025 | a `checked` operator that cannot be checked, or has no unchecked version |
+| `NS0746`/`NS0828`/`NS0833` | CS0746/CS0828/CS0833 | an anonymous type member with no name, no type, or a repeated name |
 | `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
 | `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
 | `NS0070` | CS0070 | an event used outside its type other than by `+=`/`-=` |

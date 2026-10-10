@@ -1,0 +1,7 @@
+Ann 30
+{ Name = Ann, Age = 30 }
+true
+false
+{ Name = Ann, Age = 31 }
+5Ann
+2

@@ -69,6 +69,11 @@ type
     extensions*: Table[string, seq[NsMemberSymbol]]
       ## The extension methods in scope, by name: `x.M()` reaches one when `x`'s own
       ## type has no member `M`.
+    anonTypes*: Table[string, string]
+      ## The anonymous types sema has synthesized, by shape (names and types in
+      ## order): C# gives two `new { ... }` of one shape one type.
+    anonDecls*: seq[NsNode]
+      ## ... and their declarations, which the module gains once it is checked.
     namespaces*: HashSet[string]
       ## Every name that stands for a namespace in scope: `using A.B.C;` makes `A`,
       ## `A.B` and `A.B.C` all name it, and `using P = A.B.C;` adds `P`.
@@ -155,7 +160,7 @@ proc noteNamespace(scope: NsModuleScope; ns: string) =
     cur = if cur.len == 0: part else: cur & "." & part
     scope.namespaces.incl cur
 
-proc collect(decl: NsNode; scope: NsModuleScope) =
+proc collect*(decl: NsNode; scope: NsModuleScope) =
   case decl.kind
   of nsnClassDecl:
     scope.collectClass(decl)
@@ -252,7 +257,7 @@ proc mergePartials(module: NsNode) =
     list = kept
   visit(module.sons, "")
 
-proc synthesizeRecord(cls: NsNode) =
+proc synthesizeRecord*(cls: NsNode) =
   ## What C# generates for `record R(T1 A, T2 B)`: a public property per
   ## positional parameter the body does not declare itself (`{ get; init; }`, or
   ## `{ get; set; }` in a record struct), a constructor assigning them -- passing
@@ -291,6 +296,11 @@ proc synthesizeRecord(cls: NsNode) =
     ctor.initArgs = cls.initArgs
     cls.initArgs = @[]
   cls.add ctor
+  if cls.attrs.isAnon:
+    ## An anonymous type has no `Deconstruct`.
+    cls.primary = cls.params
+    cls.params = @[]
+    return
   let dec = nsn(nsnMethodDecl, info)
   dec.name = "Deconstruct"
   dec.typ = nsn(nsnVoidType, info)

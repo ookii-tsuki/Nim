@@ -57,6 +57,9 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndAnonDeclarator
+    ndAnonDuplicate
+    ndAnonBadValue
     ndCheckedNotAllowed
     ndCheckedImplicit
     ndCheckedNeedsUnchecked
@@ -156,6 +159,11 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndAnonDeclarator: (code: "0746", msg: "Invalid anonymous type member declarator. Anonymous type" &
+                     " members must be declared with a member assignment, simple name or member access."),
+    ndAnonDuplicate: (code: "0833", msg: "An anonymous type cannot have multiple properties with the" &
+                    " same name"),
+    ndAnonBadValue: (code: "0828", msg: "Cannot assign '$1' to anonymous type property"),
     ndCheckedNotAllowed: (code: "9023", msg: "User-defined operator '$1' cannot be declared checked"),
     ndCheckedImplicit: (code: "9024", msg: "An 'implicit' user-defined conversion operator cannot" &
                       " be declared checked"),

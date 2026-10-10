@@ -1105,6 +1105,25 @@ proc parseNew(p: var NsParser, kw: NsToken): NsNode =
   ## `new T[n]` -> `nsnNewArray`; `new T[] { .. }` and `new[] { .. }` -> `nsnArrayLit`.
   ## The type name is kept verbatim; `desugar` maps it.
   let info = p.infoOf(kw)
+  if p.at(nsLBrace):
+    ## `new { Name = x, y, p.Z }`: an anonymous type. A member written without a
+    ## name takes the last name of its value (CS0746 when it has none).
+    discard p.advance
+    result = nsn(nsnAnonNew, info)
+    while not p.at(nsRBrace) and not p.at(nsEof):
+      let m = nsn(nsnNamedArg, p.here())
+      if p.at(nsIdent) and p.peekAhead(1).kind == nsAssign:
+        m.name = p.advance.text
+        discard p.advance
+        m.body = p.parseExpr()
+      else:
+        m.body = p.parseExpr()
+        if m.body.kind in {nsnIdent, nsnMember}: m.name = m.body.name
+        else: nsError(p.config, m.info, ndAnonDeclarator)
+      result.add m
+      if p.at(nsComma): discard p.advance else: break
+    discard p.expect(nsRBrace)
+    return
   if p.at(nsLBracket) and p.peekAhead(1).kind == nsRBracket:
     ## `new[] { 1, 2 }`: the element type is inferred from the elements.
     discard p.advance
