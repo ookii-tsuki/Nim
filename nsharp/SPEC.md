@@ -385,12 +385,12 @@ and the namespaces must be merged or layered.
 | Primary constructors (C# 12) | `class C(int x)` | 🔜 later | desugar |
 | **Destructor/Finalizer** `~C() { }` | cleanup | 🔜 later | sem (`=destroy`) |
 | **Properties** (see §5.4) | accessors | ✅ v1 | desugar |
-| `this[...]` indexer | indexer | ✅ v1 | desugar (→ `[]`) |
+| `this[...]` indexer | indexer | ✅ v1 | desugar (→ `[]`/`[]=` over the receiver and the index parameters; several indices allowed) |
 | Named indexers | C# 13 | ✅ v1 (ext) | desugar |
 | **Events** `event D E;` | pub/sub | 🔜 later | lib |
-| **Operators** `operator +` | overload | ✅ v1 | front (→ `proc \`+\``) |
-| Conversion ops `implicit`/`explicit` | casts | ✅ v1 | front (→ converter/`)` proc) |
-| `++`/`--` overloads | C# 11 | 🔜 later | front |
+| **Operators** `operator +` | overload | ✅ v1 | desugar (→ the Nim proc of that operator; `%`/`&`/`\|`/`^`/`<<`/`>>`/`!` are `mod`/`and`/`or`/`xor`/`shl`/`shr`/`not`); `operator true/false` is NS9999 |
+| Conversion ops `implicit`/`explicit` | casts | ✅ v1 | desugar (implicit → `converter nsImplicit_T`, explicit → a proc a cast calls; using an explicit one implicitly is NS0266) |
+| `++`/`--` overloads | `operator ++` | ✅ v1 | desugar (→ `inc`/`dec` over a `var` operand) |
 | Nested/partial members | - | 🚫 / 🔜 | - |
 
 ### 5.4 Properties (flagship C# feature)
@@ -409,7 +409,7 @@ and the namespaces must be merged or layered.
 | Init-only `R P { get; init; }` | set in ctor only | 🔜 later | sem/desugar |
 | `required` members | must-init | 🔜 later | sem |
 | Static properties | type-level | ✅ v1 | desugar (getter/setter over `typedesc[C]`, backing in a module global) |
-| Accessor visibility `{ get; private set; }` | per-accessor | ✅ v1 | desugar |
+| Accessor visibility `{ get; private set; }` | per-accessor | ✅ v1 | front (accessors may also be `=> e`; `init` is accepted as a setter) |
 | Abstract/virtual properties | dispatch | ✅ v1 | sem |
 | Interface properties | contract | ✅ v1 | desugar (getter/setter table entries) |
 
@@ -572,6 +572,8 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `.Value` / `.HasValue` / `GetValueOrDefault()` / `x == null` | members of `Nullable<T>` | `get` / `isSome`, structural `==` | ordinary procs over `Option` reached by Nim's own dot-call, the way `int.high` reaches `high(int32)`; `== null` lowers to a comparison against `none(T)` | lib |
 | `(T)x` on a `T?` | unwraps, throwing `InvalidOperationException` when absent | `get` raises `UnpackDefect` | unwrapped in lowering; the thrown type is the recorded divergence | front |
 | A bare value or `null` for a `T?` target | implicit conversion wherever a value is bound: an argument, an initialiser, an assignment, a `return` | - | `sema.nim` matches a call against the *declared* parameter lists (every overload, not just the first declaration) and records the conversion the winning one needs on the argument node; `desugar.nim` spells it as `some(T)(v)` or `none(T)`. An argument the scope cannot match is left to Nim, so a library method or a type from a module the frontend does not cover is never a false refusal | front |
+| Mutating a struct | a struct method may assign to `this`'s fields; the caller's variable changes | a parameter is immutable | a struct member that assigns to `this` (sema marks it) takes `var self`, as do struct constructors, setters and indexer setters; a read-only member keeps `self` by value, so it can be called on an rvalue | sem/desugar |
+| `x++` as a value | the old value; `++x` the new one | `inc` is a statement | a statement increment is `inc`/`dec`; in an expression the intrinsics' `nsPostInc`/`nsPreInc` (and `Dec`) | desugar/lib |
 | Discarding a result | any expression statement may drop a result | unused result is an error | every generated proc is `{.discardable.}` (and the collection shims `{.push discardable.}`) | front/lib |
 
 > The overflow / `checked` / `unchecked` rows all ride on **one** mechanism:

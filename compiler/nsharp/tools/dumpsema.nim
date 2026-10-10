@@ -17,7 +17,7 @@
 
 import std/[os, algorithm, strutils, syncio]
 import ../../idents, ../../lineinfos, ../../msgs, ../../options, ../../pathutils
-import ../ast as nsast, ../parser, ../bcl, ../sema, ../nsgen
+import ../ast as nsast, ../parser, ../bcl, ../sema, ../nsgen, ../symbols
 
 # --- the shared vocabulary ---------------------------------------------------
 #
@@ -82,8 +82,8 @@ proc nsOf(path: string): string =
 
 # --- walking ----------------------------------------------------------------
 
-proc walk(n: NsNode; surface: NsBclSurface; facts: var seq[string];
-         usings: var seq[string]) =
+proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
+          facts: var seq[string]; usings: var seq[string]) =
   ## Visits every node once, collecting the projected facts.
   if n == nil: return
   case n.kind
@@ -103,6 +103,11 @@ proc walk(n: NsNode; surface: NsBclSurface; facts: var seq[string];
         if isProjected(tok):
           facts.add "member " & recv & "." & n.name & " = " &
                     nsOf(m.path) & " | " & tok
+    elif isValueKind(rk) and n.body != nil and
+         scope.findMemberInfo(n.body.typeName, n.name).name.len > 0:
+      ## A member the program declares (an override of `ToString`) is not the
+      ## library's, as Roslyn's side says too.
+      discard
     elif isValueKind(rk):
       let recv = recvSpelling(n.body)
       let m = surface.member(recv, rk, n.name)
@@ -112,11 +117,11 @@ proc walk(n: NsNode; surface: NsBclSurface; facts: var seq[string];
           facts.add "member " & recv & "." & n.name & " = " &
                     nsOf(m.path) & " | " & tok
   else: discard
-  walk(n.typ, surface, facts, usings)
-  for p in n.params: walk(p, surface, facts, usings)
-  walk(n.body, surface, facts, usings)
-  for s in n.sons: walk(s, surface, facts, usings)
-  for a in n.initArgs: walk(a, surface, facts, usings)
+  walk(n.typ, surface, scope, facts, usings)
+  for p in n.params: walk(p, surface, scope, facts, usings)
+  walk(n.body, surface, scope, facts, usings)
+  for s in n.sons: walk(s, surface, scope, facts, usings)
+  for a in n.initArgs: walk(a, surface, scope, facts, usings)
 
 proc main() =
   var path = ""
@@ -151,7 +156,7 @@ proc main() =
   checkModule(module, scope, conf)
   var facts: seq[string] = @[]
   var usings: seq[string] = @[]
-  walk(module, surface, facts, usings)
+  walk(module, surface, scope, facts, usings)
   ## Usings first, then the facts; each block sorted so the output is stable.
   usings.sort()
   facts.sort()

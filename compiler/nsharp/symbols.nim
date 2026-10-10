@@ -39,6 +39,7 @@ type
     libInterfaces*: seq[NsNode]    ## library interfaces it names (`IComparable<T>`)
     decl*: NsNode                  ## its declaration
     members*: seq[NsMemberSymbol]
+    operators*: seq[NsNode]        ## its `operator` declarations, conversions included
     ctorArities*: seq[int]
     ctorParams*: seq[seq[NsNode]]  ## one parameter list per declared constructor
 
@@ -55,6 +56,9 @@ type
     namespaces*: HashSet[string]
       ## Every name that stands for a namespace in scope: `using A.B.C;` makes `A`,
       ## `A.B` and `A.B.C` all name it, and `using P = A.B.C;` adds `P`.
+
+const NsIndexerName* = "this[]"
+  ## The member name an indexer is recorded under; no C# identifier can collide.
 
 proc addMember(c: var NsClassSymbol; m: NsNode) =
   ## Records a field, method or property. Every declaration is kept: C# lets a type
@@ -96,6 +100,13 @@ proc collectClass(scope: NsModuleScope; cls: NsNode) =
     case m.kind
     of nsnFieldDecl, nsnMethodDecl, nsnPropertyDecl:
       sym.addMember(m)
+    of nsnIndexerDecl:
+      ## An indexer is the member `this[]`: its element type and index parameters.
+      sym.members.add NsMemberSymbol(name: NsIndexerName, access: m.attrs.access,
+                                     isProperty: true, typ: m.typ, params: m.params,
+                                     owner: cls.name)
+    of nsnOperatorDecl:
+      sym.operators.add m
     of nsnCtorDecl:
       if m.attrs.isStatic: continue   ## a static constructor is never called
       sym.ctorArities.add m.params.len
@@ -226,6 +237,28 @@ proc directInterfaces*(scope: NsModuleScope; clsName: string): seq[string] =
     result.add i
     if scope.classes.hasKey(i):
       for j in scope.classes[i].interfaces: work.add j
+
+proc conversionOp*(scope: NsModuleScope; src, dst: string;
+                   implicitOnly: bool): NsNode =
+  ## A user-defined conversion from `src` to `dst`, declared in either type: the
+  ## `operator` declaration, or nil. `implicitOnly` leaves explicit ones out.
+  for owner in [src, dst]:
+    if not scope.classes.hasKey(owner): continue
+    for op in scope.classes[owner].operators:
+      if op.name notin ["implicit", "explicit"]: continue
+      if implicitOnly and op.name != "implicit": continue
+      if op.params.len != 1 or op.params[0].typ == nil or op.typ == nil: continue
+      if canonicalTypeName(op.params[0].typ.name) == src and
+         canonicalTypeName(op.typ.name) == dst:
+        return op
+  nil
+
+proc userOperator*(scope: NsModuleScope; cls, op: string; arity: int): NsNode =
+  ## The `operator op` with `arity` operands that class `cls` declares, or nil.
+  if not scope.classes.hasKey(cls): return nil
+  for o in scope.classes[cls].operators:
+    if o.name == op and o.params.len == arity: return o
+  nil
 
 proc mangleType*(t: NsNode): string =
   ## A type as part of an identifier: `IRepo<int>` is `IRepo_int`.

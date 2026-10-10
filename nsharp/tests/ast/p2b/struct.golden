@@ -99,7 +99,8 @@ nkStmtList
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Vec'
+        nkVarTy
+          nkIdent 'Vec'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -247,7 +248,8 @@ nkStmtList
       nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Vec'
+        nkVarTy
+          nkIdent 'Vec'
         nkEmpty
     nkEmpty
     nkEmpty
