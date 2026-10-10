@@ -2059,6 +2059,14 @@ proc checkBaseCtors(ctx: NsCheckContext; cls: NsNode) =
   if not anyCtor:
     nsError(ctx.config, cls.info, ndConstructorRequired, cls.name, baseName)
 
+proc declarePrimary(ctx: var NsCheckContext; m: NsNode) =
+  ## An instance initialiser sees the class's primary constructor parameters.
+  if m.attrs.isStatic or not ctx.scope.classes.hasKey(ctx.clsName): return
+  let decl = ctx.scope.classes[ctx.clsName].decl
+  if decl == nil: return
+  for p in decl.primary:
+    ctx.declare(p.name, ctx.classifyType(p.typ), declTypeName(p.typ), p.typ)
+
 proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
   ctx.curMember = m
   ctx.yieldHost = (case m.kind
@@ -2130,7 +2138,10 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     ctx.isStaticCtx = m.attrs.isStatic
     if m.body != nil:
       ## `{ get; set; } = value;`, converted like a field initialiser.
+      ctx.pushScope()
+      ctx.declarePrimary(m)
       discard ctx.walkExpr(m.body)
+      ctx.popScope()
       ctx.checkConvertible(m.body, ctx.targetOfType(m.typ), m.body.info)
       ctx.coerce(m.body, declTypeName(m.typ), m.body.info)
     for i in 0 ..< m.params.len:
@@ -2146,6 +2157,9 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
   of nsnFieldDecl:
     ## A field initialiser is a conversion to the field's type, like a local's.
     if m.body != nil:
+      ctx.pushScope()
+      ctx.declarePrimary(m)
+      defer: ctx.popScope()
       ctx.isStaticCtx = m.attrs.isStatic
       ctx.targetTyped(m.body, m.typ)
       if m.body.kind == nsnLambda:
@@ -2183,6 +2197,11 @@ proc checkInheritance(ctx: NsCheckContext; cls: NsNode) =
   ## (CS0239), an abstract member needs an abstract class (CS0513) and no body
   ## (CS0500), a non-abstract one a body (CS0501), and a concrete class must fill
   ## every abstract slot it inherits (CS0534).
+  if cls.primary.len > 0:
+    for m in cls.sons:
+      if m.kind == nsnCtorDecl and not m.attrs.isPrimary and not m.attrs.isStatic and
+         m.initKind != "this":
+        nsError(ctx.config, m.info, ndPrimaryNotChained)
   for m in cls.sons:
     if m.kind == nsnPropertyDecl and m.attrs.isEvent:
       nsError(ctx.config, m.info, ndUnsupported, "an event with add/remove accessors")

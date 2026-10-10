@@ -1,0 +1,52 @@
+using System;
+namespace Demo
+{
+    class Point(int x, int y)
+    {
+        public int X => x;
+        public int Y { get; } = y;
+        public int Sum() => x + y;
+        public void Move(int dx) { x += dx; }
+        public override string ToString() => "(" + x + ", " + y + ")";
+    }
+
+    class Named(string name) : Point(name.Length, 0)
+    {
+        public string Name => name.ToUpper();
+    }
+
+    class Counter(int start)
+    {
+        private int count = start * 10;
+        public Counter() : this(1) { }
+        public int Next() => ++count;
+    }
+
+    struct Size(int w, int h)
+    {
+        public int Area => w * h;
+    }
+
+    record Box(int W)
+    {
+        public int Twice { get; } = W * 2;
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var p = new Point(1, 2);
+            Console.WriteLine(p.X + p.Y + p.Sum());
+            p.Move(10);
+            Console.WriteLine(p + " " + p.X + " " + p.Y);
+            var n = new Named("abc");
+            Console.WriteLine(n.Name + " " + n.X);
+            var c = new Counter();
+            Console.WriteLine(c.Next() + c.Next());
+            Console.WriteLine(new Counter(5).Next());
+            Console.WriteLine(new Size(3, 4).Area);
+            Console.WriteLine(new Box(21).Twice);
+        }
+    }
+}

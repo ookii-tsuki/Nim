@@ -55,6 +55,7 @@ type
     ndSealedNotOverride
     ndAbstractNotImplemented
     ndInterfaceNotImplemented
+    ndPrimaryNotChained
     ndWithNotRecord
     ndRequiredMember
     ndReadOnlyProperty
@@ -145,6 +146,8 @@ const
     ndAbstractNotImplemented: (code: "0534", msg: "'$1' does not implement inherited abstract member '$2'"),
     ndInterfaceNotImplemented: (code: "0535", msg: "'$1' does not implement interface" &
                         " member '$2'"),
+    ndPrimaryNotChained: (code: "8862", msg: "A constructor declared in a type with parameter list must" &
+                        " have 'this' constructor initializer."),
     ndWithNotRecord: (code: "8858", msg: "The receiver type '$1' is not a valid record type and is not" &
                         " a struct type."),
     ndRequiredMember: (code: "9035", msg: "Required member '$1' must be set in the object initializer or" &

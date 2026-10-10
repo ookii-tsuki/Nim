@@ -276,7 +276,7 @@ proc synthesizeRecord(cls: NsNode) =
   cls.sons = props & cls.sons
   let ctor = nsn(nsnCtorDecl, info)
   ctor.name = cls.name
-  ctor.attrs = NsAttrs(access: aPublic)
+  ctor.attrs = NsAttrs(access: aPublic, isPrimary: true)
   ctor.body = nsn(nsnBlock, info)
   for p in cls.params:
     ctor.params.add nsnParam(p.name, p.typ, p.info)
@@ -284,8 +284,10 @@ proc synthesizeRecord(cls: NsNode) =
     a.sons = @[nsnMember(nsn(nsnThis, p.info), p.name, p.info), nsnIdent(p.name, p.info)]
     ctor.body.add a
   if cls.initArgs.len > 0:
+    ## Moved, not shared: the tree has one copy of each expression.
     ctor.initKind = "base"
     ctor.initArgs = cls.initArgs
+    cls.initArgs = @[]
   cls.add ctor
   let dec = nsn(nsnMethodDecl, info)
   dec.name = "Deconstruct"
@@ -300,12 +302,48 @@ proc synthesizeRecord(cls: NsNode) =
     a.sons = @[nsnIdent(p.name, p.info), nsnMember(nsn(nsnThis, p.info), p.name, p.info)]
     dec.body.add a
   cls.add dec
+  cls.primary = cls.params
+  cls.params = @[]
+
+proc synthesizePrimary(cls: NsNode) =
+  ## A class's or struct's primary constructor (C# 12): its parameters are in scope
+  ## in the whole body. Each one a member does not declare itself is captured in a
+  ## private field of its name, initialised from it -- an initialiser runs inside
+  ## the constructor, where the parameters are -- and the constructor passes the
+  ## base list's arguments on. Any other constructor must chain to it (CS8862).
+  if cls.params.len == 0: return
+  let info = cls.info
+  var declared: seq[string] = @[]
+  for m in cls.sons: declared.add m.name
+  var fields: seq[NsNode] = @[]
+  for p in cls.params:
+    if p.name in declared: continue
+    let f = nsn(nsnFieldDecl, p.info)
+    f.name = p.name
+    f.typ = p.typ
+    f.attrs = NsAttrs(access: aPrivate)
+    f.body = nsnIdent(p.name, p.info)
+    fields.add f
+  cls.sons = fields & cls.sons
+  let ctor = nsn(nsnCtorDecl, info)
+  ctor.name = cls.name
+  ctor.attrs = NsAttrs(access: aPublic, isPrimary: true)
+  ctor.body = nsn(nsnBlock, info)
+  for p in cls.params: ctor.params.add nsnParam(p.name, p.typ, p.info)
+  if cls.initArgs.len > 0:
+    ## Moved, not shared: the tree has one copy of each expression.
+    ctor.initKind = "base"
+    ctor.initArgs = cls.initArgs
+    cls.initArgs = @[]
+  cls.add ctor
+  cls.primary = cls.params
   cls.params = @[]
 
 proc synthesizeRecords(list: seq[NsNode]) =
   for d in list:
     if d.kind == nsnNamespace and d.body != nil: synthesizeRecords(d.body.sons)
     elif d.kind == nsnClassDecl and d.attrs.isRecord: synthesizeRecord(d)
+    elif d.kind == nsnClassDecl: synthesizePrimary(d)
 
 proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Builds the module scope from a parsed module.

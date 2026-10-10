@@ -35,6 +35,7 @@ type
     isEvent*: bool          ## `event`: a delegate field outsiders may only `+=`/`-=`
     isRequired*: bool       ## `required`: every object initializer must set it
     isRecord*: bool         ## a `record`: value equality, printing, `with`
+    isPrimary*: bool        ## a constructor synthesized from a primary parameter list
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.
@@ -214,6 +215,7 @@ type
     alias*: string            ## nsnUsing only: the name an alias gives the target
     outer*: string            ## a nested type: its enclosing types, `A+B`, as .NET names them
     attributes*: seq[NsNode]  ## the `[...]` attributes written on a declaration
+    primary*: seq[NsNode]     ## nsnClassDecl: a primary constructor's parameters
     initKind*: string         ## nsnCtorDecl only: "", "base" or "this"
     initArgs*: seq[NsNode]    ## nsnCtorDecl only: initializer arguments
     bases*: seq[NsNode]       ## nsnClassDecl: every base type as written, in order

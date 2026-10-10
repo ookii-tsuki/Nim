@@ -1,0 +1,10 @@
+using System;
+namespace Demo
+{
+    class C(int x)
+    {
+        public C() { }
+        public int X => x;
+    }
+    class Program { static void Main() { Console.WriteLine(new C(1).X); } }
+}

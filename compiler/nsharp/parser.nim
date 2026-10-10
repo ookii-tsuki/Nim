@@ -2004,9 +2004,10 @@ proc parseTypeDecl(p: var NsParser): NsNode =
   result.typeParams = p.parseTypeParams()
   let savedTps = p.typeParams
   for t in result.typeParams: p.typeParams.add t.name
-  if isRecord and p.at(nsLParen):
+  if p.at(nsLParen) and ckind != ckInterface:
     ## `record R(int X, string Y)`: the positional parameters, which become the
-    ## record's properties, constructor and `Deconstruct`.
+    ## record's properties, constructor and `Deconstruct`; `class C(int x)`: a
+    ## primary constructor (C# 12), whose parameters the whole body sees.
     result.params = p.parseParams()
   result.attrs = NsAttrs(access: accessOfTopLevel(mods), isAbstract: "abstract" in mods,
                          isSealed: "sealed" in mods, isStatic: "static" in mods,
@@ -2016,8 +2017,8 @@ proc parseTypeDecl(p: var NsParser): NsNode =
     ## `symbols.nim` decides, once every type is known.
     discard p.advance
     result.bases.add p.parseType()
-    if isRecord and p.at(nsLParen):
-      ## `: Base(X)`: the base record's constructor arguments.
+    if result.params.len > 0 and p.at(nsLParen):
+      ## `: Base(X)`: the base's constructor arguments, from the primary ones.
       discard p.advance
       while not p.at(nsRParen) and not p.at(nsEof):
         result.initArgs.add p.parseArgument()
@@ -2029,8 +2030,8 @@ proc parseTypeDecl(p: var NsParser): NsNode =
     result.typ = result.bases[0]
   result.constraints = p.parseWhereClauses()
   result.attrs.isRecord = isRecord
-  if isRecord and p.at(nsSemi):
-    ## `record R(int X);` has no body.
+  if (isRecord or result.params.len > 0) and p.at(nsSemi):
+    ## `record R(int X);` and `class C(int x);` have no body.
     discard p.advance
     p.typeParams = savedTps
     return
