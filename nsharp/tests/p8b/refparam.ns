@@ -1,0 +1,9 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static ref int First(int[] xs) => ref xs[0];
+        static void Main() { int[] a = { 1, 2 }; First(a) = 9; Console.WriteLine(a[0]); }
+    }
+}

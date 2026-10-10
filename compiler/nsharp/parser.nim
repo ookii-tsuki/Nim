@@ -21,6 +21,8 @@ type
     condSeq: int            ## counts `?.` markers, so each chain link gets its own
     surface: NsBclSurface   ## the library's declarations, for telling a cast apart
     typeParams: seq[string]  ## the type parameters in scope, which are type names
+    refReturn: bool
+      ## The member just parsed returns by reference (`ref int F()`).
     inGuard: bool
       ## Parsing a switch arm's `when` guard: the arm's `=>` follows it, so a name
       ## before it is not a lambda's parameter.
@@ -580,6 +582,12 @@ proc parsePrimary(p: var NsParser): NsNode =
     of "false": result = nsnBoolLit(false, p.infoOf(t))
     of "nameof": result = p.parseNameof(t)
     of "default": result = p.parseDefault(t)
+    of "ref":
+      ## `ref x` where a reference is taken: a `ref` local's initialiser, a `ref`
+      ## return.
+      result = nsn(nsnRefArg, p.infoOf(t))
+      result.name = "ref"
+      result.body = p.parseUnary()
     of "delegate":
       ## An anonymous method: `delegate (int x) { ... }`, or `delegate { ... }`,
       ## which converts to any delegate type whatever its parameters.
@@ -1413,7 +1421,7 @@ proc looksLikeLocalFunc(p: NsParser): bool =
   ## `R F(...) { }` / `R F<T>(...) => e;` inside a body, optionally `static`.
   var start = 0
   while p.peekAhead(start).kind == nsIdent and
-        p.peekAhead(start).text in ["static", "async", "unsafe"]:
+        p.peekAhead(start).text in ["static", "async", "unsafe", "ref", "readonly"]:
     inc start
   let e = p.typeShapeEnd(start)
   if e < 0 or p.peekAhead(e).kind != nsIdent: return false
@@ -1465,6 +1473,16 @@ proc parseStatement(p: var NsParser): NsNode =
     of "using":
       if p.peekAhead(1).kind == nsLParen or p.peekAhead(1).kind == nsIdent:
         return p.parseUsingStmt()
+    of "ref":
+      if p.peekAhead(1).kind == nsIdent:
+        ## `ref int r = ref a[0];` / `ref var r = ...`: a reference local.
+        discard p.advance
+        if p.at(nsIdent) and p.peek.text == "readonly": discard p.advance
+        result = p.parseVarDecl()
+        if result.kind == nsnMultiDecl:
+          for d in result.sons: d.paramMod = "ref"
+        else: result.paramMod = "ref"
+        return
     of "lock":
       if p.peekAhead(1).kind == nsLParen: return p.parseLock()
     of "goto":
@@ -1863,7 +1881,13 @@ proc parseClassMember(p: var NsParser; clsName: string;
                       isInterface = false): NsNode =
   ## A member, with the attributes written before it.
   let attrs = p.parseAttributes()
+  p.refReturn = false
   result = p.parseClassMemberInner(clsName, isInterface)
+  if result != nil and p.refReturn and result.kind == nsnMethodDecl:
+    result.paramMod = "ref"
+  elif result != nil and p.refReturn:
+    p.err(p.peek, ndUnsupported, "a reference return from this member")
+  p.refReturn = false
   if result != nil:
     if result.kind == nsnMultiDecl:
       for f in result.sons: f.attributes = attrs
@@ -1934,6 +1958,12 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
     p.parseOperatorBody(result)
     return
 
+  if p.at(nsIdent) and p.peek.text == "ref" and p.peekAhead(1).kind == nsIdent:
+    ## `ref T M()` / `ref readonly T M()`: a reference return.
+    discard p.advance
+    if p.at(nsIdent) and p.peek.text == "readonly" and p.peekAhead(1).kind == nsIdent:
+      discard p.advance
+    p.refReturn = true
   let ty = p.parseType()
   if p.at(nsIdent) and p.peek.text == "operator":
     ## `public static Vec operator +(Vec a, Vec b)`
