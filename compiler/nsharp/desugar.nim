@@ -1561,6 +1561,8 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
   ## receiver that is a plain name, so no receiver is evaluated twice.
   var bare = l
   bare.nilChecks = false
+  if n.strVal == "discard":
+    return newTree(nkDiscardStmt, n.info, l.expr(n.sons[1]))
   let lhs = bare.expr(n.sons[0])
   var value: PNode
   if n.strVal == "event":

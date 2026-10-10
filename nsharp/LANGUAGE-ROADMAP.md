@@ -10,7 +10,8 @@ Tick an item when it is merged into `nsharp`.
 
 ## Batch 1: small, common syntax
 
-- [ ] `out var` / `out _` everywhere, typed from the parameter, library methods included
+- [x] `out var` / `out _` everywhere, typed from the parameter (generic methods too). A library method
+      with an `out` parameter needs the library to declare one first, which is library work
 - [ ] Index-from-end and ranges: `a[^1]`, `a[1..^1]`, `s[..3]` (arrays, strings, lists)
 - [ ] Null-forgiving `x!` (checked, no runtime effect)
 - [ ] Anonymous methods `delegate (int x) { ... }`

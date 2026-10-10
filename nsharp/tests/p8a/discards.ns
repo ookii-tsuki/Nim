@@ -1,0 +1,32 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static bool Split(string s, out string head, out int rest)
+        {
+            head = s.Substring(0, 1);
+            rest = s.Length - 1;
+            return s.Length > 0;
+        }
+        static void Pair<T>(T x, out T a, out T b) { a = x; b = x; }
+        static void Main()
+        {
+            if (Split("hello", out var h, out var r)) Console.WriteLine(h + r);
+            Split("ab", out _, out int r2);
+            Console.WriteLine(r2);
+            Split("xyz", out var h2, out _);
+            Console.WriteLine(h2);
+            Pair(3, out var p1, out var p2);
+            Console.WriteLine(p1 + p2);
+            Pair("s", out _, out var p3);
+            Console.WriteLine(p3);
+            _ = Split("q", out _, out _);
+            Func<int, int, int> first = (a, _) => a;
+            Func<int, int, int> seven = (_, _) => 7;
+            Console.WriteLine(first(4, 5) + seven(1, 2));
+            var (d1, _) = (8, "x");
+            Console.WriteLine(d1);
+        }
+    }
+}
