@@ -1,0 +1,15 @@
+using System;
+using System.Collections.Generic;
+
+var names = new List<string> { "a", "b" };
+foreach (var n in names) Console.Write(n);
+Console.WriteLine();
+Console.WriteLine(Helper.Twice(Add(1, 2)));
+Console.WriteLine(args.Length);
+
+static int Add(int a, int b) => a + b;
+
+class Helper
+{
+    public static int Twice(int x) => x * 2;
+}

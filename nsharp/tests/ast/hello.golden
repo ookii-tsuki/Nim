@@ -113,6 +113,12 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkLetSection
+        nkIdentDefs
+          nkIdent 'args'
+          nkEmpty
+          nkCall
+            nkIdent 'nsCommandLine'
       nkCall
         nkIdent 'WriteLine'
         nkStrLit "hello from N#"

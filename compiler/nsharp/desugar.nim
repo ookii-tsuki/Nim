@@ -47,6 +47,8 @@ type
     curBase: string         ## its base class, for `base.M()`
     curIsException: bool    ## whether it is lowered as a value object raised by `ref`
     curNamespace: string    ## the enclosing namespace, for `object.ToString()`
+    ownNamespaces: HashSet[string]
+      ## the namespaces this module declares itself, which a `using` need not import
     clsTypeParams: seq[string]
       ## the type parameters of the class being lowered: its own name is `C[T]`
     procTypeParams: seq[string]
@@ -361,7 +363,7 @@ proc isUserStatic(l: Lowerer; m: NsNode): bool =
   let owner = m.body.typeName
   if not l.scope.classes.hasKey(owner): return false
   let info = l.scope.findMemberInfo(owner, m.name)
-  info.isMethod and info.isStatic and m.name != "Main"
+  info.isMethod and info.isStatic and not info.isExtension and m.name != "Main"
 
 proc typeRef(l: Lowerer; t: NsNode): PNode =
   ## A type used as a value (a static member's receiver): `C`, or `C[int32]` when it
@@ -379,6 +381,20 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
     var args: seq[PNode] = @[]
     for a in l.argsToNim(n): args.add a
     return l.baseCall(callee.name, args, n.info)
+  if callee != nil and callee.kind == nsnMember and callee.strVal == "extension":
+    ## `x.M(args)` through an extension method: `M(x, args)`. C# calls it on a
+    ## null `x` too, so the receiver is not checked.
+    var bare = l
+    bare.nilChecks = false
+    let head =
+      if callee.typeArgs.len > 0:
+        let h = newTree(nkBracketExpr, n.info, l.id(callee.name, n.info))
+        for t in callee.typeArgs: h.add l.typeToNim(t, n.info)
+        h
+      else: l.id(callee.name, n.info)
+    result = newTree(nkCall, n.info, head, bare.expr(callee.body))
+    for a in l.argsToNim(n): result.add a
+    return
   ## `Class.Method(...)` / `Console.WriteLine(...)`: the qualifier is dropped,
   ## because it is a namespace or a static class. `sema.nim` decides this and
   ## records it as `tkType`.
@@ -851,15 +867,24 @@ proc expr(l: Lowerer; n: NsNode): PNode =
 
 proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode
 
-proc stmtSeq(l: Lowerer; blk: NsNode): PNode =
-  ## Lowers a `nsnBlock` to an `nkStmtList`.
-  result = newNodeI(nkStmtList, if blk == nil: unknownLineInfo else: blk.info)
-  if blk != nil:
-    for s in blk.sons: result.add l.stmt(s)
+proc localFuncToNim(l: Lowerer; n: NsNode): PNode
 
 proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode =
+  ## A block's statements. C# lets a local function be called anywhere in its
+  ## block, Nim only after its definition, so each is declared forward first; its
+  ## captures are still resolved where it is defined.
   result = newNodeI(nkStmtList, info)
+  for s in stmts:
+    if s != nil and s.kind == nsnLocalFunc:
+      let fwd = l.localFuncToNim(s)
+      fwd[6] = empty(s.info)
+      result.add fwd
   for s in stmts: result.add l.stmt(s)
+
+proc stmtSeq(l: Lowerer; blk: NsNode): PNode =
+  ## Lowers a `nsnBlock` to an `nkStmtList`.
+  if blk == nil: return newNodeI(nkStmtList, unknownLineInfo)
+  result = l.stmtsToNode(blk.sons, blk.info)
 
 proc throwToNim(l: Lowerer; n: NsNode): PNode =
   ## `throw new T(msg)`:
@@ -2604,6 +2629,10 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         # entry point: parameters are ignored, it is called as `Main()`
         params = newNodeI(nkFormalParams, m.info)
         params.add l.typeToNim(m.typ, m.info)
+      elif m.attrs.isStatic and m.params.len > 0 and m.params[0].paramMod == "this":
+        ## An extension method is a plain proc over its `this` parameter, so
+        ## `M(x, args)` and Nim's own `x.M(args)` both reach it.
+        discard
       else:
         ## An instance method takes `self`; a static one its class's `typedesc`,
         ## so it is called `M(C, args)` and never competes, through Nim's dot-call,
@@ -2625,6 +2654,13 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
                                              inner.memberBody(m.typ, m.body),
                                              m.info, withPragmas = true))
       into.add pd
+      if m.name == "Main" and m.attrs.isStatic and m.params.len > 0 and
+         pd[6].kind == nkStmtList:
+        ## `Main(string[] args)` is called without arguments; `args` is the
+        ## command line, read where the body starts.
+        pd[6].sons.insert(newTree(nkLetSection, m.info, newTree(nkIdentDefs, m.info,
+          l.id(m.params[0].name, m.info), empty(m.info),
+          newTree(nkCall, m.info, l.id("nsCommandLine", m.info)))), 0)
       if m.name == "Main" and l.entryPoint == nil: l.entryPoint = pd
     of nsnPropertyDecl:
       inner.thisName = (if m.attrs.isStatic: "" else: "self")
@@ -2721,7 +2757,10 @@ proc lowerDecl(l: var Lowerer; d: NsNode; into: var seq[PNode]) =
     ## Lowers `using A.B;` to `import "A/B"`, so the namespace is in scope only
     ## where the directive appears. Recorded as well, so a member reached in this
     ## module is not named again by a `from` when its namespace is already here.
-    if d.name.len > 0:
+    if d.name.len > 0 and d.name in l.ownNamespaces:
+      ## A namespace this file declares is lowered into this module already.
+      discard
+    elif d.name.len > 0:
       l.usingPaths.incl namespaceModulePath(d.name)
       into.add newTree(nkImportStmt, d.info,
                        newAtom(nkStrLit, namespaceModulePath(d.name), d.info))
@@ -2764,6 +2803,12 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
                   usingPaths: initHashSet[string](),
                   nilChecks: optNilCheck in config.options)
   var stmts: seq[PNode] = @[]
+  proc noteOwn(n: NsNode; into: var HashSet[string]) =
+    if n.kind == nsnNamespace:
+      into.incl n.name
+      if n.body != nil:
+        for x in n.body.sons: noteOwn(x, into)
+  for d in module.sons: noteOwn(d, l.ownNamespaces)
   for d in module.sons:
     l.lowerDecl(d, stmts)
   result = newNodeI(nkStmtList, module.info)

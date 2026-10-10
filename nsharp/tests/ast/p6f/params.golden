@@ -704,6 +704,34 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkProcDef
+        nkIdent 'Square'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 'v'
+            nkIdent 'int32'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkIdent 'Fact'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 'v'
+            nkIdent 'int32'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkEmpty
       nkStmtList
         nkVarSection
           nkIdentDefs

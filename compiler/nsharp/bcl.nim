@@ -289,6 +289,26 @@ proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
     for m in s.members.getOrDefault(cur):
       if m.name == name: return m
 
+proc resultAgrees*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
+                   name: string): bool =
+  ## Whether every overload of a library member yields the same type, so the result
+  ## is known without choosing one (`Math.Abs` has one per numeric type; which one a
+  ## call takes is left to Nim).
+  var keys: seq[string] = @[]
+  let nim = s.nimSpellingOf(recvName)
+  if nim.len > 0: keys.add nim
+  let kk = kindKey(recvKind)
+  if kk.len > 0: keys.add kk
+  var ret = ""
+  var seen = false
+  for key in keys:
+    for m in s.members.getOrDefault(key):
+      if m.name != name: continue
+      if seen and m.ret != ret: return false
+      ret = m.ret
+      seen = true
+  true
+
 proc noteMember(s: var NsBclSurface; m: NsBclMember) =
   ## Files a declaration under its receiver, and under that receiver's type class
   ## unless the prelude declares the receiver as a type in its own right.
@@ -439,6 +459,9 @@ proc applyStatics(s: var NsBclSurface; config: ConfigRef) =
     else:
       for c in cands:
         if s.kindOfSpelling(c.recv) == targetKind: chosen.add c
+      ## Overloads over different parameter types (`Math.Max(int, int)`,
+      ## `Math.Max(double, double)`) are all the static member.
+      if chosen.len == 0: chosen = cands
     if chosen.len == 0:
       internalError(config, "nsStatic: the prelude declares no member '" & e.member &
                     "' of '" & e.typ & "' (" & e.module & ")")

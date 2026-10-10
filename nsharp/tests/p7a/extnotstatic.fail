@@ -1,0 +1,2 @@
+An extension method must be declared in a non-generic static class.
+code: NS1106
