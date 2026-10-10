@@ -223,7 +223,7 @@ are excluded: N# has no `void` type and no decimal.
 | `[Flags] enum` | bit flags | 🔜 later | `set` |
 | `delegate` declaration | named function type | ✅ v1 | `proc` type alias |
 | Generic types | `List<T>` | ✅ v1 | Nim generics |
-| Nested types | inner class | 🔜 later | - |
+| Nested types | inner class | ✅ v1 | front (hoisted beside the enclosing type, which C#'s `Outer.Inner` already resolves by its last name; the runtime name stays `Ns.Outer+Inner`, and the enclosing type's statics are reachable bare). A type nested in a generic type is NS9999; a nested type's name must not collide with a top-level one of its namespace |
 
 ### 4.4 Strings, `char`, and `object`
 
@@ -357,8 +357,8 @@ and the namespaces must be merged or layered.
 | `enum E { A, B }` | enum | ✅ v1 | front |
 | `delegate R D(args);` | func type | ✅ v1 | front |
 | `record`, `record struct` | data classes | 🔜 later | desugar |
-| `partial class` | split decl | 🚫 out (argue) | - |
-| Nested types | inner | 🔜 later | - |
+| `partial class` | split decl | ✅ v1 | symbols (the declarations, in any file or namespace block of the namespace, merge into one: members and base lists) |
+| Nested types | inner | ✅ v1 | see §4.3 |
 | `abstract class` | non-instantiable | ✅ v1 | sem (`new` is NS0144; an unfilled abstract slot NS0534) |
 | `sealed class` | non-inheritable | ✅ v1 | sem (deriving is NS0509) |
 | `static class` | no instances | ✅ v1 | sem (a class like any other whose members are static; `new` of one is NS0712, an instance member NS0708) |
@@ -391,7 +391,7 @@ and the namespaces must be merged or layered.
 | **Operators** `operator +` | overload | ✅ v1 | desugar (→ the Nim proc of that operator; `%`/`&`/`\|`/`^`/`<<`/`>>`/`!` are `mod`/`and`/`or`/`xor`/`shl`/`shr`/`not`); `operator true/false` is NS9999 |
 | Conversion ops `implicit`/`explicit` | casts | ✅ v1 | desugar (implicit → `converter nsImplicit_T`, explicit → a proc a cast calls; using an explicit one implicitly is NS0266) |
 | `++`/`--` overloads | `operator ++` | ✅ v1 | desugar (→ `inc`/`dec` over a `var` operand) |
-| Nested/partial members | - | 🚫 / 🔜 | - |
+| Nested/partial members | - | 🔜 later (partial methods) | - |
 
 ### 5.4 Properties (flagship C# feature)
 
@@ -577,7 +577,10 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `(T)x` on a `T?` | unwraps, throwing `InvalidOperationException` when absent | `get` raises `UnpackDefect` | unwrapped in lowering; the thrown type is the recorded divergence | front |
 | A bare value or `null` for a `T?` target | implicit conversion wherever a value is bound: an argument, an initialiser, an assignment, a `return` | - | `sema.nim` matches a call against the *declared* parameter lists (every overload, not just the first declaration) and records the conversion the winning one needs on the argument node; `desugar.nim` spells it as `some(T)(v)` or `none(T)`. An argument the scope cannot match is left to Nim, so a library method or a type from a module the frontend does not cover is never a false refusal | front |
 | Mutating a struct | a struct method may assign to `this`'s fields; the caller's variable changes | a parameter is immutable | a struct member that assigns to `this` (sema marks it) takes `var self`, as do struct constructors, setters and indexer setters; a read-only member keeps `self` by value, so it can be called on an rvalue | sem/desugar |
-| `x++` as a value | the old value; `++x` the new one | `inc` is a statement | a statement increment is `inc`/`dec`; in an expression the intrinsics' `nsPostInc`/`nsPreInc` (and `Dec`) | desugar/lib |
+| `x++` as a value | the old value; `++x` the new one | `inc` is a statement | a statement increment of an integer variable, field or array element is `inc`/`dec`; of a property, an indexer or a float, `nsInc`/`nsDec`, which assign the stepped value (so the setter runs); in an expression the intrinsics' `nsPostInc`/`nsPreInc` (and `Dec`) | desugar/lib |
+| Evaluation order | operands and arguments left to right: `x + F()` reads `x` before `F` runs | a variable operand is read when the operation happens, after the calls in it | an operand that is a variable, field or element, followed by one that may call, assign or step, is read first through `nsVal(x)` | desugar/lib |
+| Assignment as a value | `(x = e)` has the assigned value | an assignment is a statement | a parenthesised assignment lowers to a block expression that assigns and reads `x` back; an unparenthesised one in an expression is still a parse error | front/desugar |
+| Multiple declarators | `int a = 1, b;` (locals and fields) | one name per `var` | one declaration per declarator, same type and modifiers | front |
 | Discarding a result | any expression statement may drop a result | unused result is an error | every value-returning method, local function and generated proc is `{.discardable.}` (and the collection shims `{.push discardable.}`) | front/lib |
 | `null` string | a string may be null | a Nim string cannot be nil | **divergence**: `null` converted to `string` is `""`, so `s == null` is `s == ""`, `s ?? b` is `b` for an empty `s`, and `s.Length` on a null string is 0 rather than a `NullReferenceException` | sem/desugar |
 
@@ -1117,12 +1120,12 @@ UFCS, tuples/multiple returns, variant types, `defer`, compile-time functions,
 `async`/`await`, LINQ (query + method), records, advanced pattern matching,
 `init`/`required`, events/multicast delegates, `decimal`, variance, dynamic
 interface values, universal value boxing, `fixed`/`stackalloc`/`ref struct`,
-reflection, `lock`/threads, nested/partial types, static constructors,
+reflection, threads, static constructors,
 finalizers, `Span<T>`, `StringBuilder`-adjacent IO, `Result<T,E>`, formatter, REPL.
 
 ### 🚫 Out
 `dynamic`, expression trees, `goto`, runtime attribute reflection, `GC.*`,
-`#region`, .NET BCL, assemblies, `partial` types.
+`#region`, .NET BCL, assemblies.
 
 ---
 

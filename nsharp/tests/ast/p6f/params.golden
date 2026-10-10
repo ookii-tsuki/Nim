@@ -1090,7 +1090,9 @@ nkStmtList
               nkElseExpr
                 nkInfix
                   nkIdent '*'
-                  nkIdent 'v'
+                  nkCall
+                    nkIdent 'nsVal'
+                    nkIdent 'v'
                   nkCall
                     nkIdent 'Fact'
                     nkInfix

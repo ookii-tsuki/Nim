@@ -230,6 +230,7 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
 proc expr(l: Lowerer; n: NsNode): PNode
 proc throwToNim(l: Lowerer; n: NsNode): PNode
 proc checkedExprToNim(l: Lowerer; n: NsNode): PNode
+proc assignToNim(l: Lowerer; n: NsNode): PNode
 
 proc paramDef(l: Lowerer; p: NsNode): PNode =
   ## One parameter: `ref`/`out` are Nim `var` parameters (`in` is a read-only
@@ -314,10 +315,47 @@ proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
   result[3] = fp
   result[6] = if n.body != nil: l.stmtSeq(n.body) else: emptyList(n.info)
 
+proc mayMutate(n: NsNode): bool =
+  ## Whether evaluating `n` may change a variable: it calls something, assigns, or
+  ## steps one. A lambda's body does not run where the lambda is written.
+  if n == nil or n.kind in {nsnLambda, nsnLocalFunc}: return false
+  if n.kind in {nsnCall, nsnAssign, nsnIncDec, nsnNew}: return true
+  if mayMutate(n.body): return true
+  for x in n.sons:
+    if mayMutate(x): return true
+  false
+
+proc isLocation(n: NsNode): bool =
+  ## A variable, field or element: something Nim reads where it is used rather
+  ## than where it is written.
+  n != nil and n.typeKind != tkType and
+    (n.kind == nsnIdent or n.kind == nsnIndex or
+     (n.kind == nsnMember and n.body != nil))
+
+proc ordered(l: Lowerer; operand: NsNode; later: openArray[NsNode]): PNode =
+  ## C# evaluates operands left to right, so `x + F()` reads `x` before `F` runs.
+  ## Nim reads a variable operand only when the operation happens, after every
+  ## call in it, so one that a later operand may change is copied first by `nsVal`.
+  result = l.expr(operand)
+  if not isLocation(operand): return
+  for x in later:
+    if mayMutate(x):
+      return newTree(nkCall, operand.info, l.id("nsVal", operand.info), result)
+
 proc argsToNim(l: Lowerer; call: NsNode): seq[PNode] =
-  ## A call's arguments, each with the conversion `sema.nim` chose.
+  ## A call's arguments, each with the conversion `sema.nim` chose, read in order
+  ## (see `ordered`); a `ref`/`out` argument is the variable itself.
   result = @[]
-  for a in call.sons: result.add l.wrappedArg(a)
+  for i, a in call.sons:
+    var arg = l.wrappedArg(a)
+    let v = (if a.kind == nsnNamedArg: a.body else: a)
+    if v != nil and v.kind != nsnRefArg and v.conv.len == 0 and v.argConv == acNone and
+       isLocation(v):
+      for x in call.sons[i + 1 .. ^1]:
+        if mayMutate(x):
+          arg = newTree(nkCall, a.info, l.id("nsVal", a.info), arg)
+          break
+    result.add arg
 
 proc newToNim(l: Lowerer; n: NsNode): PNode
 proc stmt(l: Lowerer; n: NsNode): PNode
@@ -809,6 +847,12 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     ## Nim's `raise` is `noreturn`, so it stands where a value is expected.
     result = l.throwToNim(n)
   of nsnCheckedExpr: result = l.checkedExprToNim(n)
+  of nsnAssign:
+    ## `(x = e)` as a value: the assignment, then the variable read back.
+    var bare = l
+    bare.nilChecks = false
+    result = newTree(nkBlockExpr, n.info, empty(n.info), newTree(nkStmtList, n.info,
+      l.assignToNim(n), bare.expr(n.sons[0])))
   of nsnBinary:
     if n.name in ["==", "!="] and (l.isIfaceValue(n.sons[0]) or l.isIfaceValue(n.sons[1])):
       ## An interface value is equal to another, or to null, by its object.
@@ -834,11 +878,11 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       ## than used as an infix operator.
       result = newNodeI(nkCall, n.info)
       result.add l.id(n.name, n.info)
-      result.add l.expr(n.sons[0])
+      result.add l.ordered(n.sons[0], n.sons[1 .. 1])
       result.add l.expr(n.sons[1])
     else:
       result = newTree(nkInfix, n.info, l.id(n.name, n.info),
-                       l.expr(n.sons[0]), l.expr(n.sons[1]))
+                       l.ordered(n.sons[0], n.sons[1 .. 1]), l.expr(n.sons[1]))
   of nsnNullDot: result = l.nullDotToNim(n)
   of nsnNullCoalesce: result = l.nullCoalesceToNim(n)
   of nsnTernary:
@@ -1713,6 +1757,22 @@ proc enumeratorLoop(l: Lowerer; n: NsNode): PNode =
     newTree(nkDotExpr, info, l.id(e, info), l.id("MoveNext", info))), body)
   result = newTree(nkBlockStmt, info, empty(info), sl)
 
+proc isPlainVariable(l: Lowerer; t: NsNode): bool =
+  ## Whether Nim's `inc` can take `t`: an integer local, parameter, field or array
+  ## element, rather than a property or indexer (a getter's result) or a float.
+  if t == nil or t.typeKind in {tkFloat, tkUnknown, tkNullable}: return false
+  case t.kind
+  of nsnIdent: true
+  of nsnIndex: t.body != nil and t.body.typeKind == tkSequence
+  of nsnMember:
+    if t.body == nil: return false
+    let owner = (if t.body.kind == nsnThis and l.curClass != nil: l.curClass.name
+                 else: t.body.typeName)
+    if not l.scope.classes.hasKey(owner): return false
+    let m = l.scope.findMemberInfo(owner, t.name)
+    m.name.len > 0 and not m.isProperty and not m.isMethod
+  else: false
+
 proc stmtInner(l: Lowerer; n: NsNode): PNode =
   case n.kind
   of nsnLocalFunc: result = l.localFuncToNim(n)
@@ -1729,7 +1789,12 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
   of nsnLocalDecl: result = l.localDeclToNim(n)
   of nsnExprStmt:
     if n.body != nil and n.body.kind == nsnIncDec:
-      return newTree(nkCommand, n.info, l.id(n.body.name, n.info), l.expr(n.body.body))
+      let target = n.body.body
+      if l.isPlainVariable(target):
+        return newTree(nkCommand, n.info, l.id(n.body.name, n.info), l.expr(target))
+      ## A property, an indexer or a float: the stepped value is assigned.
+      return newTree(nkCall, n.info, l.id(if n.body.name == "inc": "nsInc" else: "nsDec",
+                                          n.info), l.expr(target))
     result = l.expr(n.body)
     if n.body != nil and n.body.kind == nsnCall and n.body.body != nil and
        n.body.body.kind != nsnMember and n.body.body.typeKind == tkDelegate:
@@ -2508,7 +2573,8 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
     for m in l.scope.classes[c].members:
       if m.name == "ToString" and m.isMethod and not m.isStatic: overridden = true
   let info = n.info
-  let full = (if l.curNamespace.len > 0: l.curNamespace & "." & n.name else: n.name)
+  let local = (if n.outer.len > 0: n.outer & "+" & n.name else: n.name)
+  let full = (if l.curNamespace.len > 0: l.curNamespace & "." & local else: local)
   let selfDefs = newNodeI(nkIdentDefs, info)
   selfDefs.add l.id("self", info)
   selfDefs.add l.clsType(n.name, info)

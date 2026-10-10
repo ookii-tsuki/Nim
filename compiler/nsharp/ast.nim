@@ -31,6 +31,7 @@ type
     isAbstract*: bool       ## `abstract`: a slot (or a class) with no implementation
     isSealed*: bool         ## `sealed`: closes a slot or a class
     isNew*: bool            ## `new`: hides a base member instead of overriding it
+    isPartial*: bool        ## `partial`: one of several declarations of one type
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.
@@ -98,7 +99,8 @@ type
     nsnElseBranch      # body = statements
     nsnLocalDecl       # name, typ (or nil), body = initializer (or nil), attrs
     nsnExprStmt        # body = expression
-    nsnAssign          # name = compound op ("" for plain), sons = [lhs, rhs]
+    nsnAssign          # name = compound op ("" for plain), sons = [lhs, rhs];
+                       #   intVal = 1 when used as a value (`(x = e)`)
     nsnIf              # sons = nsnIfBranch..., optionally trailing nsnBlock
     nsnIfBranch        # body = condition, sons = statements
     nsnWhile           # body = condition, sons = statements
@@ -199,6 +201,7 @@ type
     declKind*: NsDeclKind     ## nsnLocalDecl only
     classKind*: NsClassKind   ## nsnClassDecl only
     alias*: string            ## nsnUsing only: the name an alias gives the target
+    outer*: string            ## a nested type: its enclosing types, `A+B`, as .NET names them
     initKind*: string         ## nsnCtorDecl only: "", "base" or "this"
     initArgs*: seq[NsNode]    ## nsnCtorDecl only: initializer arguments
     bases*: seq[NsNode]       ## nsnClassDecl: every base type as written, in order

@@ -33,6 +33,7 @@ type
     isAbstract*: bool
     isSealed*: bool
     isStatic*: bool                ## a `static class`: no instances, no instance members
+    enclosing*: string             ## the type a nested type is declared in
     interfaces*: seq[string]       ## the interfaces it names directly
     typeParams*: seq[string]       ## a generic class's `<T, U>`
     written*: seq[string]          ## its base list as written, before resolution
@@ -95,7 +96,9 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
 proc collectClass(scope: NsModuleScope; cls: NsNode) =
   var sym = NsClassSymbol(name: cls.name, classKind: cls.classKind,
                           isAbstract: cls.attrs.isAbstract, isSealed: cls.attrs.isSealed,
-                          isStatic: cls.attrs.isStatic, decl: cls)
+                          isStatic: cls.attrs.isStatic, decl: cls,
+                          enclosing: (if cls.outer.len > 0: cls.outer.split('+')[^1]
+                                      else: ""))
   for t in cls.typeParams: sym.typeParams.add t.name
   for b in cls.bases:
     if b.kind == nsnTypeName:
@@ -191,8 +194,44 @@ proc iteratorElement*(t: NsNode): NsNode =
     return t.sons[0]
   nil
 
+proc mergePartials(module: NsNode) =
+  ## C# merges the `partial` declarations of a type -- in one file or several,
+  ## in any namespace block of the same name -- into one type: the members and the
+  ## base list of all of them. The first declaration keeps them, the rest leave the
+  ## tree, so every later stage sees one class.
+  var first = initTable[string, NsNode]()
+  proc visit(list: var seq[NsNode]; ns: string) =
+    var kept: seq[NsNode] = @[]
+    for d in list:
+      if d.kind == nsnNamespace and d.body != nil:
+        visit(d.body.sons, d.name)
+        kept.add d
+      elif d.kind == nsnClassDecl and d.attrs.isPartial:
+        let key = ns & "." & d.name
+        if first.hasKey(key):
+          let f = first[key]
+          for m in d.sons: f.add m
+          for b in d.bases:
+            var dup = false
+            for x in f.bases:
+              if x.kind == nsnTypeName and b.kind == nsnTypeName and x.name == b.name:
+                dup = true
+            if not dup: f.bases.add b
+          if f.typ == nil and d.typ != nil: f.typ = d.typ
+          f.attrs.isAbstract = f.attrs.isAbstract or d.attrs.isAbstract
+          f.attrs.isSealed = f.attrs.isSealed or d.attrs.isSealed
+          f.attrs.isStatic = f.attrs.isStatic or d.attrs.isStatic
+          if d.attrs.access != aInternal: f.attrs.access = d.attrs.access
+        else:
+          first[key] = d
+          kept.add d
+      else: kept.add d
+    list = kept
+  visit(module.sons, "")
+
 proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Builds the module scope from a parsed module.
+  mergePartials(module)
   result = NsModuleScope(classes: initTable[string, NsClassSymbol](),
                          delegates: initTable[string, NsNode](),
                          extensions: initTable[string, seq[NsMemberSymbol]](),
@@ -346,6 +385,17 @@ proc findMemberInfo*(scope: NsModuleScope; clsName, member: string): NsMemberSym
     for c in scope.lookupChain(clsName):
       for m in scope.classes[c].members:
         if m.name == member: return m
+
+proc enclosingStatic*(scope: NsModuleScope; clsName, member: string): NsMemberSymbol =
+  ## A static member of a type enclosing `clsName`, which a nested type names bare.
+  result = NsMemberSymbol()
+  var c = (if scope.classes.hasKey(clsName): scope.classes[clsName].enclosing else: "")
+  var hops = 0
+  while c.len > 0 and scope.classes.hasKey(c) and hops < 32:
+    let m = scope.findMemberInfo(c, member)
+    if m.name.len > 0 and (m.isStatic or m.isConst): return m
+    c = scope.classes[c].enclosing
+    inc hops
 
 proc memberNames*(scope: NsModuleScope; clsName: string): seq[string] =
   ## Every member name along the chain, for bare-name resolution.

@@ -52,6 +52,9 @@ const
   ## The prelude's location in the library, and the module every N# module gets.
   NsLibRoot* = "pure/ns"
   NsIntrinsicsPath* = "nsharp/intrinsics"
+  NsParamKey* = "#param"
+    ## The receiver key of a member declared over an unconstrained type parameter,
+    ## which any value has (`ToString`).
 
   ## C# type names whose Nim spelling differs; the rest pass through unchanged.
   NsPrimitiveTypes*: array[17, NsRename] = [
@@ -408,7 +411,7 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
   if constraints.hasKey(recv):
     ## An unconstrained type parameter names no type; `nsStatic` gives it one.
     let c = constraints[recv]
-    recv = (if c.len > 0: c else: "#param")
+    recv = (if c.len > 0: c else: NsParamKey)
   var ptypes: seq[PNode] = @[]
   for i in 1 ..< fp.len:
     let defs = fp[i]

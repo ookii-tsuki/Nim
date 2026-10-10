@@ -15,7 +15,7 @@
 #
 # Normally exercised through nsharp/tests/run_sema.sh.
 
-import std/[os, algorithm, strutils, syncio]
+import std/[os, algorithm, strutils, syncio, sets, tables]
 import ../../idents, ../../lineinfos, ../../msgs, ../../options, ../../pathutils
 import ../ast as nsast, ../parser, ../bcl, ../sema, ../nsgen, ../symbols
 
@@ -108,6 +108,18 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
       ## A member the program declares (an override of `ToString`) is not the
       ## library's, as Roslyn's side says too.
       discard
+    elif rk == tkUnknown and n.body != nil and scope.enums.contains(n.body.typeName):
+      ## A member of an enum value: what the prelude declares for any value
+      ## (`ToString`), filed under the type-parameter receiver key.
+      for key, ms in surface.members:
+        for m in ms:
+          if m.name == n.name and not m.isStatic and m.genParams.len > 0 and
+             key == NsParamKey:
+            let tok = (if m.ret.len == 0: "void" else: canonicalTypeName(m.ret))
+            if isProjected(tok):
+              facts.add "member " & n.body.typeName & "." & n.name & " = " &
+                        nsOf(m.path) & " | " & tok
+            break
     elif isValueKind(rk):
       let recv = recvSpelling(n.body)
       let m = surface.member(recv, rk, n.name)

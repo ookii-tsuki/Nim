@@ -32,14 +32,14 @@ const
     "virtual", "override", "abstract", "sealed", "readonly", "const", "unsafe",
     "extern", "new", "implicit", "explicit"]
   NsTypeModifiers = ["public", "private", "protected", "internal", "abstract",
-    "sealed", "static"]
+    "sealed", "static", "partial"]
   ## Modifiers N# actually implements. Anything else recognised but unimplemented
   ## is reported by `parseModifierList` instead of being silently dropped.
   NsMemberModifiers = ["public", "private", "protected", "internal", "static",
     "const", "readonly", "virtual", "override", "abstract", "sealed", "new",
     "implicit", "explicit"]
   NsClassModifiers = ["public", "private", "protected", "internal", "abstract",
-    "sealed", "static"]
+    "sealed", "static", "partial"]
 
 # --- token helpers ----------------------------------------------------------
 
@@ -244,6 +244,23 @@ proc parseTypeArgs(p: var NsParser): seq[NsNode] =
 
 proc parseExpr(p: var NsParser): NsNode
 proc parseBlock(p: var NsParser): NsNode
+
+proc compoundOpOf(k: NsTokenKind): string =
+  ## The operator of a compound assignment token (`+=` is `+`), or "".
+  case k
+  of nsPlusEq: "+"
+  of nsMinusEq: "-"
+  of nsStarEq: "*"
+  of nsSlashEq: "/"
+  of nsPercentEq: "mod"
+  of nsQuestionQuestionEq: "??"
+  of nsAmpEq: "and"
+  of nsPipeEq: "or"
+  of nsCaretEq: "xor"
+  of nsShlEq: "shl"
+  of nsShrEq: "shr"
+  else: ""
+
 proc parseStatement(p: var NsParser): NsNode
 proc parseSimpleStmt(p: var NsParser): NsNode
 proc parseNew(p: var NsParser, kw: NsToken): NsNode
@@ -543,6 +560,15 @@ proc parsePrimary(p: var NsParser): NsNode =
       discard p.expect(nsRParen)
       return
     result = first
+    if p.at(nsAssign) or compoundOpOf(p.peek.kind).len > 0:
+      ## `(x = e)`: an assignment whose value is the assigned one, as in
+      ## `while ((line = Next()) != null)`.
+      let op = (if p.at(nsAssign): "" else: compoundOpOf(p.peek.kind))
+      discard p.advance
+      result = nsn(nsnAssign, first.info)
+      result.name = op
+      result.intVal = 1
+      result.sons = @[first, p.parseExpr()]
     discard p.expect(nsRParen)
   else:
     p.err(t, ndInvalidExpressionTerm, t.text)
@@ -1196,19 +1222,7 @@ proc parseSimpleStmt(p: var NsParser): NsNode =
     result = nsn(nsnAssign, lhs.info)
     result.sons = @[lhs, p.parseExpr()]
     return
-  let compound = case p.peek.kind
-    of nsPlusEq: "+"
-    of nsMinusEq: "-"
-    of nsStarEq: "*"
-    of nsSlashEq: "/"
-    of nsPercentEq: "mod"
-    of nsQuestionQuestionEq: "??"
-    of nsAmpEq: "and"
-    of nsPipeEq: "or"
-    of nsCaretEq: "xor"
-    of nsShlEq: "shl"
-    of nsShrEq: "shr"
-    else: ""
+  let compound = compoundOpOf(p.peek.kind)
   if compound.len > 0:
     discard p.advance
     result = nsn(nsnAssign, lhs.info)
@@ -1665,8 +1679,29 @@ proc parseAccessors(p: var NsParser; info: TLineInfo): (NsNode, NsNode) =
   discard p.expect(nsRBrace)
   (getter, setter)
 
+proc parseTypeDecl(p: var NsParser): NsNode
+proc parseEnumDecl(p: var NsParser): NsNode
+proc parseDelegateDecl(p: var NsParser): NsNode
+
 proc parseClassMember(p: var NsParser; clsName: string;
                       isInterface = false): NsNode =
+  block nestedType:
+    ## A type declared inside a type. It stays a member here, as C# writes it;
+    ## `hoistNestedTypes` moves it out once the file is parsed.
+    var k = 0
+    while p.peekAhead(k).kind == nsIdent and
+          p.peekAhead(k).text in NsTypeModifiers or
+          (p.peekAhead(k).kind == nsIdent and p.peekAhead(k).text == "new"):
+      inc k
+    let head = p.peekAhead(k)
+    if head.kind != nsIdent or p.peekAhead(k + 1).kind != nsIdent: break nestedType
+    case head.text
+    of "class", "struct", "interface":
+      if k > 0 and p.peekAhead(k - 1).text == "new": break nestedType
+      return p.parseTypeDecl()
+    of "enum": return p.parseEnumDecl()
+    of "delegate": return p.parseDelegateDecl()
+    else: discard
   let modInfo = p.here()
   let mods = p.parseModifierList(NsModifierWords, NsMemberModifiers)
   let isConst = "const" in mods
@@ -1808,6 +1843,22 @@ proc parseClassMember(p: var NsParser; clsName: string;
     if p.at(nsAssign):
       discard p.advance
       result.body = p.parseInitializer(ty)
+    if p.at(nsComma) and p.peekAhead(1).kind == nsIdent:
+      ## `int a = 1, b;`: one field per declarator, with the same type and
+      ## modifiers; the class takes them as separate members.
+      let group = nsn(nsnMultiDecl, info)
+      group.add result
+      while p.at(nsComma) and p.peekAhead(1).kind == nsIdent:
+        discard p.advance
+        let f = nsn(nsnFieldDecl, p.here())
+        f.name = p.advance.text
+        f.typ = ty
+        f.attrs = attrs
+        if p.at(nsAssign):
+          discard p.advance
+          f.body = p.parseInitializer(ty)
+        group.add f
+      result = group
     if p.at(nsSemi): discard p.advance
 
 proc parseTypeDecl(p: var NsParser): NsNode =
@@ -1827,7 +1878,8 @@ proc parseTypeDecl(p: var NsParser): NsNode =
   let savedTps = p.typeParams
   for t in result.typeParams: p.typeParams.add t.name
   result.attrs = NsAttrs(access: accessOfTopLevel(mods), isAbstract: "abstract" in mods,
-                         isSealed: "sealed" in mods, isStatic: "static" in mods)
+                         isSealed: "sealed" in mods, isStatic: "static" in mods,
+                         isPartial: "partial" in mods)
   if p.at(nsColon):
     ## `: Base, I1, I2`. Which of them is a class is not the grammar's to say:
     ## `symbols.nim` decides, once every type is known.
@@ -1853,7 +1905,9 @@ proc parseTypeDecl(p: var NsParser): NsNode =
       discard p.advance
       continue
     let m = p.parseClassMember(nameTok.text, ckind == ckInterface)
-    if m != nil: result.add m
+    if m != nil and m.kind == nsnMultiDecl:
+      for f in m.sons: result.add f
+    elif m != nil: result.add m
   discard p.expect(nsRBrace)
   p.typeParams = savedTps
 
@@ -1983,6 +2037,34 @@ proc parseTopLevelDecl(p: var NsParser; nsPrefix: string): NsNode =
 
 # --- entry point ------------------------------------------------------------
 
+proc hoistNestedTypes(list: var seq[NsNode]; config: ConfigRef) =
+  ## A nested type becomes a sibling of the type that declares it, recording the
+  ## enclosing types for its runtime name (`Demo.Outer+Inner`). C# resolves
+  ## `Outer.Inner` by its last name already, so the qualifier needs no lowering. A
+  ## generic enclosing type would lend the nested one its type parameters, which a
+  ## sibling cannot see, so that is reported.
+  var i = 0
+  while i < list.len:
+    let d = list[i]
+    if d.kind == nsnNamespace and d.body != nil:
+      hoistNestedTypes(d.body.sons, config)
+    elif d.kind == nsnClassDecl:
+      var kept: seq[NsNode] = @[]
+      var nested: seq[NsNode] = @[]
+      for m in d.sons:
+        if m.kind in {nsnClassDecl, nsnEnumDecl, nsnDelegateDecl}:
+          m.outer = (if d.outer.len > 0: d.outer & "+" else: "") & d.name
+          nested.add m
+        else: kept.add m
+      d.sons = kept
+      if nested.len > 0 and d.typeParams.len > 0:
+        nsError(config, nested[0].info, ndUnsupported, "a type nested in a generic type")
+      var j = i + 1
+      for m in nested:
+        list.insert(m, j)
+        inc j
+    inc i
+
 proc synthesizeEntryPoint(module: NsNode) =
   ## C# 9 top-level statements: the statements written outside any type are the
   ## body of a `static void Main(string[] args)` in a class `Program` of the global
@@ -2056,6 +2138,7 @@ proc parseNsModule*(source: string; fileIdx: FileIndex;
       ## than report anything.
       p.err(p.peek, ndParserStalled)
       discard p.advance
+  hoistNestedTypes(result.sons, config)
   synthesizeEntryPoint(result)
 
 

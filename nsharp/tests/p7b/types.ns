@@ -1,0 +1,79 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    partial class Account
+    {
+        int deposits = 0, withdrawals = 0;
+        public int Balance { get; private set; } = 100;
+        public void Deposit(int n) { Balance += n; deposits++; }
+    }
+
+    partial class Account
+    {
+        public void Withdraw(int n) { Balance -= n; withdrawals++; }
+        public string Summary() => deposits + "/" + withdrawals + " " + Balance;
+    }
+
+    class Grid
+    {
+        int[] cells = new int[4];
+        public int this[int i] { get { return cells[i]; } set { cells[i] = value; } }
+    }
+
+    class Outer
+    {
+        static int created = 0;
+        static int Next() => ++created;
+
+        public class Node
+        {
+            public int Id = Next();
+            public class Leaf { public double Weight = 1.5; }
+        }
+
+        enum Kind { Small, Large }
+
+        public static string Describe(int size) => (size > 10 ? Kind.Large : Kind.Small).ToString();
+    }
+
+    class Program
+    {
+        static int counter = 10;
+        static int Tick() { counter += 5; return counter; }
+        static string Pair(int a, int b) => a + "," + b;
+
+        static void Main()
+        {
+            var acct = new Account();
+            acct.Deposit(50);
+            acct.Withdraw(30);
+            acct.Deposit(5);
+            Console.WriteLine(acct.Summary());
+
+            var g = new Grid();
+            g[1]++;
+            g[1]++;
+            ++g[2];
+            Console.WriteLine(g[1] + g[2]);
+
+            double d = 1.25;
+            d++;
+            Console.WriteLine(d);
+
+            var n1 = new Outer.Node();
+            var n2 = new Outer.Node();
+            Console.WriteLine(n1.Id + " " + n2.Id);
+            Console.WriteLine(new Outer.Node.Leaf().Weight);
+            Console.WriteLine(new Outer.Node.Leaf());
+            Console.WriteLine(Outer.Describe(3) + " " + Outer.Describe(30));
+
+            Console.WriteLine(counter + Tick());
+            Console.WriteLine(Pair(counter, Tick()));
+            int x = 1;
+            int y = x + (x = 5) * 2;
+            Console.WriteLine(y + " " + x);
+        }
+    }
+}

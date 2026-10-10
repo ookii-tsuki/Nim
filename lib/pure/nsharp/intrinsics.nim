@@ -143,15 +143,25 @@ template nsStmt*(x: untyped) =
   when typeof(x) is void: x
   else: discard x
 
-# `x++` / `++x` used as a value. Statement increments are Nim's own `inc`/`dec`.
+# `x++` / `++x` used as a value, and on a target Nim's `inc` cannot take: a property
+# or an indexer (whose getter's result is no variable) or a float. The new value is
+# assigned, so a property's setter runs. A plain integer statement increment is
+# Nim's own `inc`/`dec`.
+template nsStepped(v: typed; up: static bool): untyped =
+  when typeof(v) is SomeFloat: (when up: v + 1 else: v - 1)
+  else: (when up: succ(v) else: pred(v))
 template nsPostInc*(x: untyped): untyped =
-  (let nsOld = x; inc x; nsOld)
+  (let nsOld = x; x = nsStepped(nsOld, true); nsOld)
 template nsPostDec*(x: untyped): untyped =
-  (let nsOld = x; dec x; nsOld)
+  (let nsOld = x; x = nsStepped(nsOld, false); nsOld)
 template nsPreInc*(x: untyped): untyped =
-  (inc x; x)
+  (x = nsStepped(x, true); x)
 template nsPreDec*(x: untyped): untyped =
-  (dec x; x)
+  (x = nsStepped(x, false); x)
+template nsInc*(x: untyped) =
+  x = nsStepped(x, true)
+template nsDec*(x: untyped) =
+  x = nsStepped(x, false)
 
 type
   SwitchExpressionException* = object of CatchableError
@@ -172,3 +182,9 @@ import std/cmdline
 proc nsCommandLine*(): seq[string] =
   ## `Main`'s `string[] args`: the command line without the program's name.
   commandLineParams()
+
+proc nsVal*[T](x: T): T {.inline.} =
+  ## A variable's value read now: `x + F()` in C# reads `x` before `F` runs, while
+  ## Nim reads a variable operand after the call. The compiler wraps an operand in
+  ## this when a later one may change it.
+  x
