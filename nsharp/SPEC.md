@@ -621,7 +621,8 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Method overloading | same name, diff sig | ✅ v1 | sem (Nim overloads) |
 | Named/optional/default args | `M(x: 1)` | ✅ v1 | sem (arguments mapped to parameters for overload matching, NS7036 for a missing one) + desugar (Nim's own named and default arguments) |
 | `params` arrays | variadic | ✅ v1 | desugar (→ `varargs[T]`, which takes elements or one array) |
-| `ref` / `out` / `in` params | by-ref | ✅ v1 | desugar (`ref`/`out` → `var T`, `in` → a plain parameter; `out T x` at a call is declared before the statement; `out var x` takes the parameter's type, NS9999 when the method is the library's) |
+| `ref` / `out` / `in` params | by-ref | ✅ v1 | desugar (`ref`/`out` → `var T`, `in` → a plain parameter; `out T x` at a call is declared before the statement; `out var x` takes the parameter's type -- for a generic method's type parameter, the type another argument of that parameter type gives it -- and is NS9999 when the method is the library's, which declares no `out` parameters yet) |
+| Discards `_` | `out _`, `_ = e;`, `(a, _) =>`, `var (x, _) = t` | ✅ v1 | sem + desugar (`out _` is a temporary of the parameter's type; `_ = e;` is `discard e`; both only while no variable `_` is in scope) |
 | Extension methods | `static void M(this T)` | ✅ v1 | sem + desugar: declared in a non-generic static class (else NS1106), lowered as a plain proc over its `this` parameter (no typedesc), so `x.M(a)` is `M(x, a)` -- reached when `x`'s own type has no `M`, as C# prefers -- and `C.M(x, a)` names the same proc. A null receiver is not checked |
 | `IDisposable` / `using` | deterministic cleanup | ✅ v1 | desugar/lib |
 | `IEnumerable<T>` / `foreach` | iteration protocol | ✅ v1 | sem/lib |

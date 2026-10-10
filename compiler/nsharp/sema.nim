@@ -587,6 +587,15 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
   ## overload's parameter is recorded on each argument, which `out var` declarations
   ## and lambda arguments take their types from.
   if cands.len == 0: return
+  for a in args:
+    if a.kind == nsnRefArg and a.name == "out" and a.body != nil and
+       a.body.kind == nsnIdent and a.body.name == "_" and not ctx.types.hasKey("_"):
+      ## `out _` discards: a temporary of the parameter's type takes the value.
+      inc ctx.tmpCounter
+      a.kind = nsnOutDecl
+      a.name = "nsDiscard" & $ctx.tmpCounter
+      a.body = nil
+      a.typ = nil
   let (ok, idx, _, map) = ctx.resolveOverload(cands, args)
   if ok:
     for j in 0 ..< args.len:
@@ -596,8 +605,20 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
       a.argElement = map.element[j]
       let v = argValue(a)
       if v.kind == nsnOutDecl:
-        ## `out var x` takes the parameter's type.
+        ## `out var x` takes the parameter's type -- for a type parameter, the type
+        ## an argument for another parameter of that type gives it.
         if v.typ == nil and pt != nil: v.typ = pt
+        if v.typ != nil and ctx.isTypeParamRef(v.typ):
+          for k in 0 ..< args.len:
+            let o = argValue(args[k])
+            if k == j or o == nil or o.kind in {nsnOutDecl, nsnLambda}: continue
+            let ot = slotType(cands[idx], map, k)
+            if ot != nil and ot.kind == nsnTypeName and ot.name == v.typ.name:
+              let vt = valueType(o)
+              if vt != nil:
+                v.typ = (if vt.kind == nsnTypeName and vt.name == "int" and
+                            o.kind == nsnIntLit: nsnTypeName("int", vt.info) else: vt)
+                break
         ctx.declare(v.name, ctx.classifyType(v.typ), declTypeName(v.typ), v.typ)
         continue
       if a.kind == nsnRefArg: continue
@@ -1841,6 +1862,12 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     ctx.typeParams = savedTps
   of nsnExprStmt: discard ctx.walkExpr(n.body)
   of nsnAssign:
+    if n.name.len == 0 and n.sons.len == 2 and n.sons[0].kind == nsnIdent and
+       n.sons[0].name == "_" and not ctx.types.hasKey("_") and "_" notin ctx.members:
+      ## `_ = e;` evaluates `e` and discards it.
+      n.strVal = "discard"
+      discard ctx.walkExpr(n.sons[1])
+      return
     discard ctx.walkExpr(n.sons[0])
     if n.sons.len > 1: ctx.targetTyped(n.sons[1], n.sons[0].rtype)
     if n.sons.len > 1 and n.sons[1] != nil and n.sons[1].kind == nsnLambda:
