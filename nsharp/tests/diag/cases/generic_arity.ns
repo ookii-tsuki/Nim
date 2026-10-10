@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class Box<T> {}
+    class Program
+    {
+        static void Main()
+        {
+            var b = new Box<int, int>();
+        }
+    }
+}

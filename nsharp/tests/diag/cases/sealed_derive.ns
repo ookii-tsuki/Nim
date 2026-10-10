@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    sealed class A {} class B : A {}
+    class Program
+    {
+        static void Main()
+        {
+            
+        }
+    }
+}

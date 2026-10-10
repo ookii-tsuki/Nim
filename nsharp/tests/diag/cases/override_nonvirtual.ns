@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class A { public void M() {} } class B : A { public override void M() {} }
+    class Program
+    {
+        static void Main()
+        {
+            
+        }
+    }
+}

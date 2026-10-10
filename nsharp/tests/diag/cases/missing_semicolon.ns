@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            int x = 1
+            Console.WriteLine(x);
+        }
+    }
+}

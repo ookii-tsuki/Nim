@@ -109,6 +109,13 @@ if [ -z "${NS_SKIP_SEMA:-}" ] && [ -x "$here/run_sema.sh" ]; then
   "$here/run_sema.sh" || fail=1
 fi
 
+# Diagnostics gate: wrong programs must keep reporting Roslyn's error codes.
+# Set NS_SKIP_DIAG=1 to skip.
+if [ -z "${NS_SKIP_DIAG:-}" ] && [ -x "$here/run_diag.sh" ]; then
+  echo "--- diagnostics ---"
+  NIM1="$NIM" "$here/run_diag.sh" || fail=1
+fi
+
 echo "ran $count test(s)"
 exit $fail
 

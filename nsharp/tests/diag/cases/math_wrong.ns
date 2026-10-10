@@ -1,0 +1,11 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var x = Math.Max("a", 1);
+        }
+    }
+}

@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class A {} class B {}
+    class Program
+    {
+        static void Main()
+        {
+            var b = (B)new A();
+        }
+    }
+}

@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class A { public int P { get; } }
+    class Program
+    {
+        static void Main()
+        {
+            var a = new A(); a.P = 2;
+        }
+    }
+}

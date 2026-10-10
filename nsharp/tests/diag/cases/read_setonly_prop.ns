@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class A { int v; public int P { set { v = value; } } }
+    class Program
+    {
+        static void Main()
+        {
+            var a = new A(); Console.WriteLine(a.P);
+        }
+    }
+}
