@@ -1,0 +1,9 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static int F() => throw new InvalidOperationException("x");
+        static void Main() { try { F(); } catch (InvalidOperationException e) { Console.WriteLine(e.Message); } }
+    }
+}

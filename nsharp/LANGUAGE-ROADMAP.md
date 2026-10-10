@@ -28,7 +28,7 @@ Tick an item when it is merged into `nsharp`.
 - [x] Default interface methods; static abstract interface members
 - [x] `file`-local types
 - [x] generic attributes `[Attr<T>]`
-- [ ] user-defined `checked` operators
+- [x] user-defined `checked` operators
 
 ## Batch 3: deeper semantics
 

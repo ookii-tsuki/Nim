@@ -415,7 +415,7 @@ proc directInterfaces*(scope: NsModuleScope; clsName: string): seq[string] =
       for j in scope.classes[i].interfaces: work.add j
 
 proc conversionOp*(scope: NsModuleScope; src, dst: string;
-                   implicitOnly: bool): NsNode =
+                   implicitOnly: bool; checked = false): NsNode =
   ## A user-defined conversion from `src` to `dst`, declared in either type: the
   ## `operator` declaration, or nil. `implicitOnly` leaves explicit ones out.
   for owner in [src, dst]:
@@ -423,17 +423,21 @@ proc conversionOp*(scope: NsModuleScope; src, dst: string;
     for op in scope.classes[owner].operators:
       if op.name notin ["implicit", "explicit"]: continue
       if implicitOnly and op.name != "implicit": continue
+      if op.attrs.isChecked != checked: continue
       if op.params.len != 1 or op.params[0].typ == nil or op.typ == nil: continue
       if canonicalTypeName(op.params[0].typ.name) == src and
          canonicalTypeName(op.typ.name) == dst:
         return op
   nil
 
-proc userOperator*(scope: NsModuleScope; cls, op: string; arity: int): NsNode =
-  ## The `operator op` with `arity` operands that class `cls` declares, or nil.
+proc userOperator*(scope: NsModuleScope; cls, op: string; arity: int;
+                   checked = false): NsNode =
+  ## The `operator op` with `arity` operands that class `cls` declares, or nil;
+  ## `checked` asks for its `operator checked op` instead.
   if not scope.classes.hasKey(cls): return nil
   for o in scope.classes[cls].operators:
-    if o.name == op and o.params.len == arity: return o
+    if o.name == op and o.params.len == arity and o.attrs.isChecked == checked:
+      return o
   nil
 
 proc mangleType*(t: NsNode): string =

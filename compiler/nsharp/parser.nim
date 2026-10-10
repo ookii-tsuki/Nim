@@ -1039,7 +1039,10 @@ proc parseArrowBody(p: var NsParser; info: TLineInfo; asReturn: bool): NsNode =
   ## never a returned value.
   result = nsn(nsnBlock, info)
   let s = p.parseSimpleStmt()
-  if s.kind == nsnExprStmt and asReturn:
+  if s.kind == nsnExprStmt and s.body != nil and s.body.kind == nsnThrow:
+    ## `=> throw e`: the body throws, whatever the member returns.
+    result.add s.body
+  elif s.kind == nsnExprStmt and asReturn:
     let r = nsn(nsnReturn, s.info)
     r.body = s.body
     result.add r
@@ -1958,8 +1961,13 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
     result = nsn(nsnOperatorDecl, p.here())
     discard p.advance
     result.name = (if "implicit" in mods: "implicit" else: "explicit")
+    var cattrs = attrs
+    if p.at(nsIdent) and p.peek.text == "checked" and p.peekAhead(1).kind == nsIdent:
+      ## `explicit operator checked int(Money m)` (C# 11).
+      discard p.advance
+      cattrs.isChecked = true
     result.typ = p.parseType()
-    result.attrs = attrs
+    result.attrs = cattrs
     result.params = p.parseParams()
     p.parseOperatorBody(result)
     return
@@ -1975,6 +1983,11 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
     ## `public static Vec operator +(Vec a, Vec b)`
     result = nsn(nsnOperatorDecl, p.here())
     discard p.advance
+    var cattrs = attrs
+    if p.at(nsIdent) and p.peek.text == "checked":
+      ## `operator checked +` (C# 11): the version a `checked` context calls.
+      discard p.advance
+      cattrs.isChecked = true
     let opTok = p.advance
     result.name = opTok.text
     if opTok.kind == nsGt and p.at(nsGt):
@@ -1982,7 +1995,7 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
       discard p.advance
       result.name = ">>"
     result.typ = ty
-    result.attrs = attrs
+    result.attrs = cattrs
     result.params = p.parseParams()
     p.parseOperatorBody(result)
     return
