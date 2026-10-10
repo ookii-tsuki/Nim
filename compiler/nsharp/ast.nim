@@ -160,6 +160,9 @@ type
     nsnCheckedExpr     # name = "checked" / "unchecked", body = operand
     nsnTypeOf          # typ = the type                       (from `typeof(T)`)
     nsnFromEnd         # body = distance from the end         (from `^k`)
+    nsnCollection      # sons = elements and nsnSpread; typ = target type, set by
+                       #   sema                                (from `[a, ..b]`)
+    nsnSpread          # body = the collection spread          (from `..xs`)
     nsnRange           # sons = [start, end], either nil      (from `a..b` in `x[...]`)
     nsnSizeOf          # typ = the type                       (from `sizeof(T)`)
     nsnWith            # body = record value, inits = member initialisers

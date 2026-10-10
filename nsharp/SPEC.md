@@ -520,6 +520,7 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 | Anonymous methods `delegate { }` | older lambdas | ✅ v1 | front (a lambda with typed parameters and a block body; `delegate { }` without a list takes its delegate's parameters, unnamed) |
 | Object initializer `new T { A = 1 }` | init props | ✅ v1 | sem (rewritten into assignments over a temporary, checked as such) + desugar (a block expression) |
 | Collection initializer `new List<int>{1,2}`, index initializer `{ [k] = v }`, nested `A = { ... }` | init | ✅ v1 | sem (`Add` calls / indexer assignments) + desugar |
+| Collection expressions `[a, b, ..xs]` (C# 12) | target-typed collection | ✅ v1 | sem: into an array (or `IEnumerable<T>`, `IList<T>`, `IReadOnlyList<T>`...) an array literal, or with spreads a sequence built element by element; into a collection type `new C { a, b }`, or with spreads `new C(array)`. Without a target type NS9176 |
 | Anonymous types `new { A = 1 }` | inferred type | 🔜 later | desugar |
 | `typeof(T)` | type object | ✅ v1 | lib + desugar: `nsTypeOf(T)`, declared by the library for the built-in types and by lowering for each class, struct and enum, yields a `System.Type` that knows the type's name (`Name`, `FullName`, `Namespace`, `==`); `x.GetType()` asks a class value through a `method` every class overrides, and a value its static type. No reflection beyond the name; a generic, array or tuple type is NS9999 |
 | `nameof(x)` | name string | ✅ v1 | front, a literal of the written name |
@@ -1006,6 +1007,7 @@ code:
 | `NS9035` | CS9035 | an object initialiser omits a `required` member |
 | `NS8858` | CS8858 | `with` on a class that is not a record |
 | `NS8862` | CS8862 | a constructor of a type with a primary constructor that does not chain to it |
+| `NS9176` | CS9176 | a collection expression without a target type |
 | `NS1674` | CS1674 | what `using` disposes does not implement `IDisposable` |
 | `NS1621` | CS1621 | `yield` inside a lambda |
 | `NS1624` | CS1624 | `yield` in a member whose return type is not `IEnumerable<T>`/`IEnumerator<T>` |
