@@ -1988,6 +1988,26 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
     of "enum": return p.parseEnumDecl()
     of "delegate": return p.parseDelegateDecl()
     else: discard
+  if p.at(nsTilde) and p.peekAhead(1).kind == nsIdent and p.peekAhead(2).kind == nsLParen:
+    ## `~C() { ... }`: a finalizer, kept as the method `nsFinalize`.
+    discard p.advance
+    let nameTok = p.advance
+    result = nsn(nsnMethodDecl, p.infoOf(nameTok))
+    result.name = "nsFinalize"
+    result.strVal = "finalizer"
+    result.typ = nsnVoidType(result.info)
+    result.attrs = NsAttrs(access: aProtected)
+    result.params = p.parseParams()
+    if nameTok.text != clsName:
+      p.err(nameTok, ndFinalizerName)
+    if p.at(nsArrow):
+      let info = p.here()
+      discard p.advance
+      result.body = p.parseArrowBody(info, false)
+      if p.at(nsSemi): discard p.advance
+    else:
+      result.body = p.parseBlock()
+    return
   let modInfo = p.here()
   let mods = p.parseModifierList(NsModifierWords, NsMemberModifiers)
   let isConst = "const" in mods

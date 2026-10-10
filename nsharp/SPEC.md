@@ -393,7 +393,7 @@ and the namespaces must be merged or layered.
 | `base(...)` in ctor | base ctor | ✅ v1 | desugar |
 | Static constructor `static C() { }` | type init | ✅ v1 | desugar (→ `nsStaticInitC`, run after the static field initialisers and before any statement of the program; C# runs it lazily, before first use) |
 | Primary constructors (C# 12) | `class C(int x)` | ✅ v1 | symbols + sema: a constructor of the parameters (passing `: Base(args)` on), each parameter a member does not declare itself captured in a private field of its name, initialised from it; instance initialisers see the parameters themselves, as a record's do. Another constructor must chain to it (NS8862) |
-| **Destructor/Finalizer** `~C() { }` | cleanup | 🔜 later | sem (`=destroy`) |
+| **Destructor/Finalizer** `~C() { }` | cleanup | ⚠️ v1 (never runs) | sem: the body is checked as a method, but N# has no collector to call it, so it never runs, and NS9998 warns. .NET runs a finalizer only when the collector reclaims the object, which in a short program is typically never, so the observable output usually agrees; a Nim `=destroy` was ruled out because ORC cannot bind one to a type whose destructor an upcast of `this` has already required. Only a class has one (NS0575), named after it (NS0574) |
 | **Properties** (see §5.4) | accessors | ✅ v1 | desugar |
 | `this[...]` indexer | indexer | ✅ v1 | desugar (→ `[]`/`[]=` over the receiver and the index parameters; several indices allowed) |
 | Named indexers | C# 13 | ✅ v1 (ext) | desugar |
@@ -1036,6 +1036,8 @@ code:
 | `NS1960`/`NS1961` | CS1960/CS1961 | variance where it may not stand, or a variant parameter used against its variance |
 | `NS8795` | CS8795 | a partial method that must be implemented has no implementation |
 | `NS0065`/`NS0079` | CS0065/CS0079 | an event with accessors that lacks one, or is used other than by `+=`/`-=` |
+| `NS0574`/`NS0575` | CS0574/CS0575 | a finalizer not named after its class, or in a struct |
+| `NS9998` | - | warning: a finalizer, which never runs in N# |
 | `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
 | `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
 | `NS0070` | CS0070 | an event used outside its type other than by `+=`/`-=` |

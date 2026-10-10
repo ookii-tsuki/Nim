@@ -2446,6 +2446,18 @@ proc checkCheckedOperator(ctx: NsCheckContext; m: NsNode) =
 
 proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
   ctx.curMember = m
+  if m.kind == nsnMethodDecl and m.strVal == "finalizer":
+    ## C# runs a finalizer when the collector reclaims the object -- for a short
+    ## program, typically never. N# has no collector to run it, so it never does;
+    ## the body is still checked. Only a class has one (CS0575), without
+    ## parameters (CS1026 is the parse).
+    let cls = ctx.scope.classes.getOrDefault(ctx.clsName)
+    if cls.classKind != ckClass:
+      nsError(ctx.config, m.info, ndFinalizerInStruct)
+    elif m.params.len > 0:
+      nsError(ctx.config, m.info, ndCloseParenExpected)
+    else:
+      nsWarn(ctx.config, m.info, ndFinalizerNeverRuns, ctx.clsName)
   ctx.yieldHost = (case m.kind
                    of nsnMethodDecl, nsnPropertyDecl, nsnIndexerDecl: yhMember
                    of nsnOperatorDecl: yhUnsupported
