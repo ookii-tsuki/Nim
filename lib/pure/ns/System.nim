@@ -204,6 +204,8 @@ proc Compare*(a, b: string): int32 {.nsStatic: "String".} = int32(cmp(a, b))
 
 proc Length*[T](a: openArray[T]): int32 = int32(a.len)
 proc Clone*[T](a: openArray[T]): seq[T] = @a
+proc Rank*[T](a: openArray[T]): int32 = 1
+  ## A `T[]` has one dimension; a `T[,]` is the intrinsics' `NsMdArray`.
 proc GetLength*[T](a: openArray[T]; dimension: int32): int32 =
   if dimension == 0: int32(a.len) else: 0
 proc IndexOf*[T](a: openArray[T]; value: T): int32 {.nsStatic: "Array".} =

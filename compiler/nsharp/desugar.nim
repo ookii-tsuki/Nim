@@ -194,7 +194,9 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   of nsnEmpty, nsnVoidType:
     result = empty(info)
   of nsnArrayType:
-    result = newTree(nkBracketExpr, info, l.id("seq", info),
+    ## `T[,]` is the library's `NsMdArray[T]`, a `T[]` a `seq[T]`.
+    result = newTree(nkBracketExpr, info,
+                     l.id((if t.intVal > 1: "NsMdArray" else: "seq"), info),
                      l.typeToNim(t.typ, info))
   of nsnTupleType:
     ## A C# tuple is a Nim tuple whose fields are `Item1..ItemN`; element names are
@@ -887,6 +889,11 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     for i in n.sons: result.add l.indexArgToNim(i)
   of nsnNew: result = l.newToNim(n)
   of nsnNewArray:
+    if n.sons.len > 1:
+      ## `new T[n, m]`: every element the default.
+      result = newTree(nkCall, n.info, l.id("nsNewMd", n.info), l.typeToNim(n.typ, n.info))
+      for s in n.sons: result.add l.expr(s)
+      return
     let typ = newTree(nkBracketExpr, n.info, l.id("newSeq", n.info),
                       l.typeToNim(n.typ, n.info))
     result = newNodeI(nkCall, n.info)
@@ -932,6 +939,12 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       else:
         br.add l.expr(e)
     result = newTree(nkPrefix, n.info, l.id("@", n.info), br)
+    if n.intVal > 1:
+      ## `{ {1, 2}, {3, 4} }`: the row-major elements and the lengths.
+      let dims = newNodeI(nkBracket, n.info)
+      for d in n.params: dims.add newIntNode(nkIntLit, d.intVal)
+      result = newTree(nkCall, n.info, l.id("nsMdOf", n.info), result,
+                       newTree(nkPrefix, n.info, l.id("@", n.info), dims))
   of nsnUnary:
     if isCheckedOp(n):
       result = newTree(nkCall, n.info, l.id(checkedOperatorName(n.argParam), n.info),

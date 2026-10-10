@@ -1,4 +1,3 @@
-// Valid C# that N# rejects: rectangular arrays are not lowered yet.
 using System;
 
 namespace Demo

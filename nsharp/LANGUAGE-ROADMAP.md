@@ -34,7 +34,7 @@ Tick an item when it is merged into `nsharp`.
 
 - [x] Anonymous types `new { Name = x, Age = 3 }`: value equality, `{ Name = ..., Age = ... }` printing, `with`
 - [x] Boxing: `object o = 5; (int)o; o is int n` (value types as `object`)
-- [ ] Multi-dimensional arrays `int[,]`, `new int[3, 4]`, `a[i, j]`, `GetLength`
+- [x] Multi-dimensional arrays `int[,]`, `new int[3, 4]`, `a[i, j]`, `GetLength`
 - [ ] Generic variance `in`/`out` on interfaces and delegates
 - [ ] Clear the current NS9999 rejections:
   - [ ] type tests and casts to generic interfaces

@@ -57,6 +57,7 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndArrayInitLength
     ndAnonDeclarator
     ndAnonDuplicate
     ndAnonBadValue
@@ -159,6 +160,7 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndArrayInitLength: (code: "0847", msg: "An array initializer of length '$1' is expected"),
     ndAnonDeclarator: (code: "0746", msg: "Invalid anonymous type member declarator. Anonymous type" &
                      " members must be declared with a member assignment, simple name or member access."),
     ndAnonDuplicate: (code: "0833", msg: "An anonymous type cannot have multiple properties with the" &

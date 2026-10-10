@@ -1,0 +1,13 @@
+// Valid C# that N# rejects: a multi-dimensional array of arrays.
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            int[,][] grid = null;
+            Console.WriteLine(grid == null);
+        }
+    }
+}

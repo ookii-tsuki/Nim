@@ -1,0 +1,18 @@
+using System
+member Console.Write = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member array.GetLength = System | int
+member array.GetLength = System | int
+member array.GetLength = System | int
+member array.Length = System | int
+member array.Length = System | int
+member array.Rank = System | int

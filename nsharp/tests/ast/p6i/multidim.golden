@@ -185,16 +185,13 @@ nkStmtList
         nkIdentDefs
           nkIdent 'grid'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsMdArray'
             nkIdent 'int32'
           nkCall
-            nkBracketExpr
-              nkIdent 'newSeq'
-              nkIdent 'int32'
+            nkIdent 'nsNewMd'
+            nkIdent 'int32'
             nkIntLit 2
-      nkEmpty
-      nkIntLit 2
-      nkEmpty
+            nkIntLit 2
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
