@@ -1464,6 +1464,55 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     n.rtype = at
     n.setType(tkSequence, (if at != nil: declTypeName(at) else: ""))
     result = tkSequence
+  of nsnAnonNew:
+    ## `new { Name = x, Age = 3 }`: a sealed record-like class per shape (names
+    ## and types, in order), synthesized here because only now are the values'
+    ## types known. The expression becomes a `new` of it.
+    var params: seq[NsNode] = @[]
+    var key = ""
+    var ok = true
+    for e in n.sons:
+      discard ctx.walkExpr(e.body)
+      if e.body.kind == nsnIntLit and e.body.typeName.len == 0: e.body.conv = "int"
+      var t = valueType(e.body)
+      if t == nil and e.body.kind == nsnCast: t = e.body.typ
+      if e.body.kind == nsnNull or e.body.kind == nsnLambda:
+        nsError(ctx.config, e.info, ndAnonBadValue,
+                (if e.body.kind == nsnNull: "<null>" else: "lambda expression"))
+        ok = false
+      elif t == nil:
+        nsError(ctx.config, e.info, ndUnsupported,
+                "an anonymous type member whose type is not known")
+        ok = false
+      for q in params:
+        if q.name == e.name and e.name.len > 0:
+          nsError(ctx.config, e.info, ndAnonDuplicate)
+          ok = false
+      params.add nsnParam(e.name, t, e.info)
+      key.add e.name & ":" & mangleType(t) & ";"
+    if not ok:
+      n.setType(tkUnknown)
+      return tkUnknown
+    var cn = ctx.scope.anonTypes.getOrDefault(key)
+    if cn.len == 0:
+      cn = "nsAnon" & $ctx.scope.anonTypes.len
+      ctx.scope.anonTypes[key] = cn
+      let cls = nsn(nsnClassDecl, n.info)
+      cls.name = cn
+      cls.classKind = ckClass
+      cls.attrs = NsAttrs(access: aInternal, isSealed: true, isRecord: true, isAnon: true)
+      for q in params: cls.params.add nsnParam(q.name, copyNsTree(q.typ), q.info)
+      synthesizeRecord(cls)
+      collect(cls, ctx.scope)
+      ctx.scope.anonDecls.add cls
+    var values: seq[NsNode] = @[]
+    for e in n.sons: values.add e.body
+    n.kind = nsnNew
+    n.sons = values
+    n.typ = nsnTypeName(cn, n.info)
+    n.rtype = n.typ
+    n.setType(tkClass, cn)
+    result = tkClass
   of nsnTupleLit:
     ## `(1, "one")`: a tuple whose element types are its values'; a C# int
     ## literal is an `int`, which Nim's would not be.
@@ -2616,6 +2665,11 @@ proc checkModule*(module: NsNode; scope: NsModuleScope; config: ConfigRef) =
   if fileTypes.len > 0:
     for d in module.sons: checkFileTypeUses(d, config, fileTypes)
   for d in module.sons: ctx.walkTop(d)
+  ## The anonymous types the walk synthesized, checked as the declarations they
+  ## now are; checking one cannot synthesize another.
+  for d in ctx.scope.anonDecls:
+    ctx.walkTop(d)
+    module.add d
   ## After the walk, so every declaration is looked at exactly once: a `MyObj?` on a
   ## reference type is only an annotation, and C# warns about it.
   warnNullableRefs(ctx, module)

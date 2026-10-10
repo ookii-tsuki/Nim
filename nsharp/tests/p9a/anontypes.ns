@@ -1,0 +1,23 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var p = new { Name = "Ann", Age = 30 };
+            Console.WriteLine(p.Name + " " + p.Age);
+            Console.WriteLine(p);
+            var q = new { Name = "Ann", Age = 30 };
+            Console.WriteLine(p.Equals(q));
+            Console.WriteLine(p == q);
+            var r = p with { Age = 31 };
+            Console.WriteLine(r);
+            int x = 5;
+            var s = new { x, p.Name };
+            Console.WriteLine(s.x + s.Name);
+            var arr = new[] { new { A = 1 }, new { A = 2 } };
+            Console.WriteLine(arr[1].A);
+        }
+    }
+}

@@ -38,6 +38,7 @@ type
     isPrimary*: bool        ## a constructor synthesized from a primary parameter list
     isFile*: bool           ## `file` (C# 11): a top-level type only its own file may name
     isChecked*: bool        ## `operator checked +` (C# 11): used in a `checked` context
+    isAnon*: bool           ## a class sema synthesized for an anonymous type
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.
@@ -170,6 +171,7 @@ type
     nsnWith            # body = record value, inits = member initialisers
                        #   (from `r with { A = 1 }`); strVal = sema's temporary
     nsnNamedArg        # name, body = value                   (from `f(name: v)`)
+    nsnAnonNew         # sons = nsnNamedArg per member      (from `new { A = 1, x }`)
     nsnRefArg          # name = "ref" / "out" / "in", body = the variable
     nsnOutDecl         # typ (nil for `var`), name            (from `f(out int x)`)
     nsnLocalFunc       # a nsnMethodDecl declared inside a body (C# 7 local function)
