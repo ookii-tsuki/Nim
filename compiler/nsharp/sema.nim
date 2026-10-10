@@ -53,6 +53,8 @@ type
     types: TableRef[string, NsTypeInfo]        ## locals, params, loop variables
     undo: seq[seq[(string, NsTypeInfo, bool)]] ## one frame per open scope
     inChecked: bool                            ## inside `checked`: `operator checked` applies
+    lambdaDepth: int                           ## inside a lambda: `return` is the lambda's
+    inIterator: bool                           ## the body walked yields: `return` ends it
 
 const NsLocalFuncMark = "#local"
   ## The type name a local function is declared under, so a call can find it.
@@ -862,6 +864,135 @@ proc noteMutation(ctx: NsCheckContext; target: NsNode) =
   if t != nil and t.kind == nsnThis: ctx.curMember.strVal = "mutating"
 
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind
+
+# --- control flow -----------------------------------------------------------
+#
+# Reachability as C# defines it, over the statements alone: whether control can
+# reach the end of a body, which a value-returning member must not (CS0161) and a
+# switch section must not (CS0163). Only a literal `true` counts as constant.
+
+proc isTrueLit(n: NsNode): bool = n != nil and n.kind == nsnBoolLit and n.intVal == 1
+
+proc hasYieldStmt(n: NsNode): bool =
+  ## Whether a body yields: an iterator block, whose end is always fine.
+  if n == nil or n.kind in {nsnLambda, nsnLocalFunc}: return false
+  if n.kind == nsnYield: return true
+  if hasYieldStmt(n.body): return true
+  for x in n.sons:
+    if hasYieldStmt(x): return true
+  false
+
+proc breaksOut(n: NsNode): bool =
+  ## Whether a `break` in `n` leaves the loop or switch `n` is the body of: one
+  ## not inside a nested loop, switch, lambda or local function.
+  if n == nil: return false
+  case n.kind
+  of nsnBreak: true
+  of nsnWhile, nsnDoWhile, nsnFor, nsnForeach, nsnSwitch, nsnLambda, nsnLocalFunc: false
+  else:
+    if n.kind in {nsnIf, nsnIfBranch, nsnBlock, nsnBlockStmt, nsnElseBranch, nsnTry,
+                  nsnCatch, nsnFinally, nsnChecked, nsnUnchecked, nsnUsingStmt, nsnLock}:
+      if breaksOut(n.body): return true
+      for x in n.sons:
+        if breaksOut(x): return true
+    false
+
+proc anyBreaksOut(stmts: seq[NsNode]): bool =
+  for x in stmts:
+    if breaksOut(x): return true
+  false
+
+proc endReachable(stmts: seq[NsNode]): bool
+
+proc stmtEndReachable(n: NsNode): bool =
+  if n == nil: return true
+  case n.kind
+  of nsnReturn, nsnThrow, nsnBreak, nsnContinue: false
+  of nsnYield: n.name != "break"
+  of nsnBlock, nsnBlockStmt, nsnChecked, nsnUnchecked, nsnLock: endReachable(n.sons)
+  of nsnElseBranch: stmtEndReachable(n.body)
+  of nsnUsingStmt: n.body == nil or stmtEndReachable(n.body)
+  of nsnIf:
+    var hasElse = false
+    for b in n.sons:
+      if b.kind == nsnIfBranch:
+        if isTrueLit(b.body): return endReachable(b.sons)
+        if endReachable(b.sons): return true
+      else:
+        hasElse = true
+        if stmtEndReachable(b): return true
+    not hasElse
+  of nsnWhile, nsnDoWhile:
+    not isTrueLit(n.body) or anyBreaksOut(n.sons)
+  of nsnFor:
+    let cond = (if n.body != nil and n.body.sons.len > 1: n.body.sons[1] else: nil)
+    (cond != nil and cond.kind != nsnEmpty and not isTrueLit(cond)) or
+      anyBreaksOut(n.sons)
+  of nsnSwitch:
+    var hasDefault = false
+    for sec in n.sons:
+      if sec.name == "default": hasDefault = true
+      if sec.body != nil and breaksOut(sec.body): return true
+    not hasDefault
+  of nsnTry:
+    var fin: NsNode = nil
+    var any = false
+    for i, x in n.sons:
+      if x.kind == nsnFinally: fin = x
+      elif i == 0: any = any or stmtEndReachable(x)
+      elif x.kind == nsnCatch: any = any or stmtEndReachable(x.body)
+    if fin != nil and not stmtEndReachable(fin.body): return false
+    any
+  else: true
+
+proc endReachable(stmts: seq[NsNode]): bool =
+  for s in stmts:
+    if not stmtEndReachable(s): return false
+  true
+
+proc checkJumps(ctx: NsCheckContext; stmts: seq[NsNode]; inLoop, inSwitch: bool) =
+  ## `break` outside a loop or switch, `continue` outside a loop (CS0139).
+  for s in stmts:
+    if s == nil: continue
+    case s.kind
+    of nsnBreak:
+      if not inLoop and not inSwitch: nsError(ctx.config, s.info, ndNoEnclosingLoop)
+    of nsnContinue:
+      if not inLoop: nsError(ctx.config, s.info, ndNoEnclosingLoop)
+    of nsnWhile, nsnDoWhile, nsnFor, nsnForeach:
+      ctx.checkJumps(s.sons, true, inSwitch)
+    of nsnSwitch:
+      for sec in s.sons:
+        if sec.body != nil: ctx.checkJumps(sec.body.sons, inLoop, true)
+    of nsnLocalFunc:
+      if s.body != nil: ctx.checkJumps(s.body.sons, false, false)
+    of nsnIf:
+      for b in s.sons:
+        if b.kind == nsnIfBranch: ctx.checkJumps(b.sons, inLoop, inSwitch)
+        elif b.kind == nsnElseBranch and b.body != nil:
+          ctx.checkJumps(b.body.sons, inLoop, inSwitch)
+        else: ctx.checkJumps(b.sons, inLoop, inSwitch)
+    of nsnTry:
+      for x in s.sons:
+        if x.kind in {nsnCatch, nsnFinally}:
+          if x.body != nil: ctx.checkJumps(x.body.sons, inLoop, inSwitch)
+        else: ctx.checkJumps(x.sons, inLoop, inSwitch)
+    of nsnBlock, nsnBlockStmt, nsnChecked, nsnUnchecked, nsnLock:
+      ctx.checkJumps(s.sons, inLoop, inSwitch)
+    of nsnUsingStmt:
+      if s.body != nil: ctx.checkJumps(s.body.sons, inLoop, inSwitch)
+    else: discard
+
+proc checkBodyFlow(ctx: NsCheckContext; body: NsNode; ret: NsNode; what: string;
+                   info: TLineInfo) =
+  ## A member body: its jumps, and for a value-returning one that is not an
+  ## iterator, that its end cannot be reached (CS0161).
+  if body == nil or body.kind != nsnBlock: return
+  ctx.checkJumps(body.sons, false, false)
+  if ret != nil and ret.kind != nsnVoidType and not hasYieldStmt(body) and
+     endReachable(body.sons):
+    nsError(ctx.config, info, ndNotAllPathsReturn, what)
+
 
 proc initStatements(tmp: string; inits: seq[NsNode]; info: TLineInfo;
                     recvPath: seq[string] = @[]): seq[NsNode] =
@@ -2103,6 +2234,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## type during lowering) but the body must still be walked, otherwise names
     ## inside it are never resolved.
     ctx.pushScope()
+    inc ctx.lambdaDepth
     let savedHost = ctx.yieldHost
     ctx.yieldHost = yhNone
     for p in n.params:
@@ -2112,6 +2244,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     if n.body != nil:
       ctx.walkInScope(n.body.sons)
     ctx.yieldHost = savedHost
+    dec ctx.lambdaDepth
     ctx.popScope()
     n.setType(tkDelegate)
     result = tkDelegate
@@ -2247,9 +2380,35 @@ proc walkTry(ctx: var NsCheckContext; n: NsNode) =
     elif c.kind == nsnFinally:
       walkBody(ctx, c.body)
 
+proc caseKey(p: NsNode): string =
+  ## A constant case label's value as text, or "" for any other pattern.
+  var c = p
+  if c != nil and c.kind == nsnPatConst: c = c.body
+  if c == nil: return ""
+  case c.kind
+  of nsnIntLit, nsnCharLit, nsnBoolLit: $c.intVal
+  of nsnStrLit: "\"" & c.strVal & "\""
+  of nsnMember:
+    if c.body != nil and c.body.kind == nsnIdent: c.body.name & "." & c.name else: ""
+  else: ""
+
 proc walkSwitch(ctx: var NsCheckContext; n: NsNode) =
-  ## A section's pattern variables are in scope in that section only.
+  ## A section's pattern variables are in scope in that section only. A section's
+  ## end must be unreachable (CS0163; the last one CS8070), and two sections may
+  ## not have one constant label (CS0152).
   discard ctx.walkExpr(n.body)
+  var seen: seq[string] = @[]
+  for i, sec in n.sons:
+    if sec.body != nil and endReachable(sec.body.sons):
+      let label = (if sec.name == "default": "default:" else: "case:")
+      nsError(ctx.config, sec.info,
+              (if i == n.sons.len - 1: ndFallOut else: ndFallThrough), label)
+    for lab in sec.sons:
+      if lab.kind == nsnCaseLabel and lab.sons.len == 0:
+        let k = caseKey(lab.body)
+        if k.len > 0:
+          if k in seen: nsError(ctx.config, lab.info, ndDuplicateCase, k)
+          seen.add k
   for sec in n.sons:
     ctx.pushScope()
     for lab in sec.sons:
@@ -2341,7 +2500,12 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     let savedTps = ctx.typeParams
     for t in n.typeParams: ctx.typeParams.add t.name
     ctx.retType = n.typ
+    ctx.checkBodyFlow(n.body, n.typ, n.name, n.info)
     let savedHost = ctx.yieldHost
+    let savedIter = ctx.inIterator
+    let savedLambda = ctx.lambdaDepth
+    ctx.inIterator = hasYieldStmt(n.body)
+    ctx.lambdaDepth = 0
     ctx.yieldHost = yhMember
     ctx.pushScope()
     for p in n.params: ctx.walkDecl(p)
@@ -2349,6 +2513,8 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       ctx.walkInScope(n.body.sons)
     ctx.popScope()
     ctx.yieldHost = savedHost
+    ctx.inIterator = savedIter
+    ctx.lambdaDepth = savedLambda
     ctx.retType = savedRet
     ctx.typeParams = savedTps
   of nsnExprStmt: discard ctx.walkExpr(n.body)
@@ -2475,6 +2641,14 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
           if prm.name == root.name and prm.typ != nil and prm.typ.kind == nsnArrayType:
             nsError(ctx.config, n.body.info, ndUnsupported,
                     "a reference into an array parameter")
+    if n.kind == nsnReturn and ctx.lambdaDepth == 0 and not ctx.inIterator and
+       (n.body == nil or n.body.kind != nsnRefArg):
+      let isVoid = ctx.retType == nil or ctx.retType.kind == nsnVoidType
+      let what = (if ctx.curMember != nil: ctx.clsName & "." & ctx.curMember.name else: "")
+      if n.body != nil and isVoid:
+        nsError(ctx.config, n.info, ndReturnInVoid, what)
+      elif n.body == nil and not isVoid:
+        nsError(ctx.config, n.info, ndReturnNeedsValue, typeSpelling(ctx.retType))
     if n.body != nil:
       if n.kind == nsnReturn: ctx.targetTyped(n.body, ctx.retType)
       discard ctx.walkExpr(n.body)
@@ -2571,6 +2745,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     if m.attrs.isChecked: ctx.checkCheckedOperator(m)
     let savedRet = ctx.retType
     ctx.retType = m.typ
+    ctx.checkBodyFlow(m.body, m.typ, ctx.clsName & ".operator " & m.name, m.info)
     ctx.isStaticCtx = true
     ctx.pushScope()
     for p in m.params: ctx.walkDecl(p)
@@ -2601,10 +2776,14 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     for t in m.typeParams: ctx.typeParams.add t.name
     ctx.isStaticCtx = m.attrs.isStatic
     ctx.retType = m.typ
+    ctx.checkBodyFlow(m.body, m.typ, ctx.clsName & "." & m.name, m.info)
+    let savedIter = ctx.inIterator
+    ctx.inIterator = hasYieldStmt(m.body)
     ctx.pushScope()
     for p in m.params: ctx.walkDecl(p)
     if m.body != nil:
       ctx.walkInScope(m.body.sons)
+    ctx.inIterator = savedIter
     ctx.popScope()
     ctx.members = saved
     ctx.retType = savedRet
@@ -2613,6 +2792,8 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
   of nsnCtorDecl:
     let savedRet = ctx.retType
     ctx.retType = nil
+    ctx.inIterator = false
+    ctx.checkBodyFlow(m.body, nil, ctx.clsName, m.info)
     ctx.inCtor = true
     ctx.ctorIsStatic = m.attrs.isStatic
     ctx.isStaticCtx = m.attrs.isStatic
@@ -2644,7 +2825,9 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
       ctx.pushScope()
       ## The setter's implicit parameter is `value`; an event's `add` and
       ## `remove` both take the handler as `value` and give nothing back.
-      if m.attrs.isEvent: ctx.retType = nil
+      ctx.retType = (if i == 1 or m.attrs.isEvent: nil else: m.typ)
+      ctx.checkBodyFlow(acc, ctx.retType, ctx.clsName & "." & m.name & ".get", acc.info)
+      ctx.inIterator = i == 0 and hasYieldStmt(acc)
       if i == 1 or m.attrs.isEvent:
         ctx.declare("value", ctx.classifyType(m.typ), declTypeName(m.typ), m.typ)
       ctx.walkInScope(acc.sons)

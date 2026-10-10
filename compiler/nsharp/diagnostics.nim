@@ -57,6 +57,13 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndNoEnclosingLoop
+    ndNotAllPathsReturn
+    ndFallThrough
+    ndFallOut
+    ndDuplicateCase
+    ndReturnInVoid
+    ndReturnNeedsValue
     ndNoMember
     ndStaticViaInstance
     ndNameNotFound
@@ -173,6 +180,16 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndNoEnclosingLoop: (code: "0139", msg: "No enclosing loop out of which to break or continue"),
+    ndNotAllPathsReturn: (code: "0161", msg: "'$1': not all code paths return a value"),
+    ndFallThrough: (code: "0163", msg: "Control cannot fall through from one case label ('$1') to" &
+                  " another"),
+    ndFallOut: (code: "8070", msg: "Control cannot fall out of switch from final case label ('$1')"),
+    ndDuplicateCase: (code: "0152", msg: "The switch statement contains multiple cases with the label" &
+                    " value '$1'"),
+    ndReturnInVoid: (code: "0127", msg: "Since '$1' returns void, a return keyword must not be" &
+                   " followed by an object expression"),
+    ndReturnNeedsValue: (code: "0126", msg: "An object of a type convertible to '$1' is required"),
     ndNoMember: (code: "1061", msg: "'$1' does not contain a definition for '$2' and no accessible" &
                " extension method '$2' accepting a first argument of type '$1' could be found"),
     ndStaticViaInstance: (code: "0176", msg: "Member '$1' cannot be accessed with an instance" &
