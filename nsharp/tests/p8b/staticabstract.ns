@@ -1,0 +1,54 @@
+using System;
+namespace Demo
+{
+    interface IMonoid<T> where T : IMonoid<T>
+    {
+        static abstract T Zero { get; }
+        static abstract T Combine(T a, T b);
+        static abstract string Label();
+    }
+    struct Sum : IMonoid<Sum>
+    {
+        public int V;
+        public Sum(int v) { V = v; }
+        public static Sum Zero => new Sum(0);
+        public static Sum Combine(Sum a, Sum b) => new Sum(a.V + b.V);
+        public static string Label() => "sum";
+    }
+    class Text : IMonoid<Text>
+    {
+        public string S;
+        public Text(string s) { S = s; }
+        public static Text Zero => new Text("");
+        public static Text Combine(Text a, Text b) => new Text(a.S + b.S);
+        public static string Label() => "text";
+    }
+    interface IAddable<T> where T : IAddable<T>
+    {
+        static abstract T operator +(T a, T b);
+    }
+    struct Money : IAddable<Money>
+    {
+        public int Cents;
+        public Money(int c) { Cents = c; }
+        public static Money operator +(Money a, Money b) => new Money(a.Cents + b.Cents);
+    }
+    class Program
+    {
+        static T Twice<T>(T x) where T : IAddable<T> => x + x;
+        static T Fold<T>(T[] xs) where T : IMonoid<T>
+        {
+            T acc = T.Zero;
+            foreach (var x in xs) acc = T.Combine(acc, x);
+            return acc;
+        }
+        static string Name<T>() where T : IMonoid<T> => T.Label();
+        static void Main()
+        {
+            Console.WriteLine(Fold(new[] { new Sum(1), new Sum(2), new Sum(3) }).V);
+            Console.WriteLine(Fold(new[] { new Text("a"), new Text("b") }).S);
+            Console.WriteLine(Name<Sum>() + " " + Name<Text>());
+            Console.WriteLine(Twice(new Money(21)).Cents);
+        }
+    }
+}
