@@ -208,10 +208,16 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkYieldStmt
-        nkIntLit 1
-      nkYieldStmt
-        nkIntLit 2
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsEnumerable'
+          nkIdent 'int32'
+          nkStmtList
+            nkYieldStmt
+              nkIntLit 1
+            nkYieldStmt
+              nkIntLit 2
   nkProcDef
     nkIdent 'Main'
     nkEmpty

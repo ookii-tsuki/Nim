@@ -42,7 +42,7 @@ Tick an item when it is merged into `nsharp`.
   - [x] `typeof` of generic types
   - [x] `-=` on plain delegate variables
   - [ ] classes implementing `IEnumerable<T>`
-  - [ ] iterator property getters
+  - [x] iterator property getters
   - [ ] finalizers `~C()`
   - [x] partial methods
   - [ ] `event` add/remove accessors

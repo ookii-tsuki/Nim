@@ -1,0 +1,37 @@
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Range
+    {
+        int lo, hi;
+        public Range(int lo, int hi) { this.lo = lo; this.hi = hi; }
+        public IEnumerable<int> Values
+        {
+            get
+            {
+                for (int i = lo; i <= hi; i++) yield return i;
+            }
+        }
+        public IEnumerable<int> this[int step]
+        {
+            get
+            {
+                for (int i = lo; i <= hi; i += step) yield return i;
+            }
+        }
+    }
+    class Program
+    {
+        static void Main()
+        {
+            var r = new Range(3, 7);
+            foreach (var v in r.Values) Console.Write(v + " ");
+            Console.WriteLine();
+            foreach (var v in r[2]) Console.Write(v + " ");
+            Console.WriteLine();
+            foreach (var v in r.Values) Console.Write(v * 10 + " ");
+            Console.WriteLine();
+        }
+    }
+}

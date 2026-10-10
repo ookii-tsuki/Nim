@@ -1,2 +1,0 @@
-Valid C# that N# rejects: an iterator block in a property getter.
-code: NS9999

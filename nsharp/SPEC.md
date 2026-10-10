@@ -468,7 +468,7 @@ v2.
 | `lock (o) { }` | mutual exclusion | ✅ v1 | desugar (a block that evaluates `o`; a program has one thread, so the lock is always free) |
 | `yield return e;` | iterator | ✅ v1 | desugar (→ Nim `yield` inside the closure iterator below) |
 | `yield break;` | end iterator | ✅ v1 | desugar (→ `return` from the closure iterator) |
-| Iterator methods (`IEnumerable` return) | lazy seq | ✅ v1 | sem + desugar: a method or local function returning `IEnumerable<T>`/`IEnumerator<T>` whose body yields becomes `result = nsEnumerable(T): body` -- a closure iterator started afresh per enumeration, so the body runs lazily as C#'s does. An iterator getter/indexer/operator is NS9999; `yield` in a lambda is NS1621, in a non-iterator member NS1624. A class implementing `IEnumerable<T>` itself is NS9999 (the `GetEnumerator` pattern works without it) |
+| Iterator methods (`IEnumerable` return) | lazy seq | ✅ v1 | sem + desugar: a method or local function returning `IEnumerable<T>`/`IEnumerator<T>` whose body yields becomes `result = nsEnumerable(T): body` -- a closure iterator started afresh per enumeration, so the body runs lazily as C#'s does. A property's or indexer's getter may be an iterator the same way; an iterator operator is NS9999; `yield` in a lambda is NS1621, in a non-iterator member NS1624. A class implementing `IEnumerable<T>` itself is NS9999 (the `GetEnumerator` pattern works without it) |
 | `checked { }` / `unchecked { }` | ovf checks | ✅ v1 | desugar (→ `{.push overflowChecks.}`, §7.3) |
 | `unsafe { }` blocks (pointers, `&`, `*`) | unsafe | ✅ v1 | front |
 | `fixed`, `stackalloc` | stack-only | 🚫 out | front |

@@ -2320,8 +2320,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
   of nsnYield:
     case ctx.yieldHost
     of yhUnsupported:
-      nsError(ctx.config, n.info, ndUnsupported,
-              "an iterator in a property, indexer or operator")
+      nsError(ctx.config, n.info, ndUnsupported, "an iterator in an operator")
     of yhNone:
       nsError(ctx.config, n.info, ndYieldHere)
     of yhMember:
@@ -2426,8 +2425,8 @@ proc checkCheckedOperator(ctx: NsCheckContext; m: NsNode) =
 proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
   ctx.curMember = m
   ctx.yieldHost = (case m.kind
-                   of nsnMethodDecl: yhMember
-                   of nsnPropertyDecl, nsnIndexerDecl, nsnOperatorDecl: yhUnsupported
+                   of nsnMethodDecl, nsnPropertyDecl, nsnIndexerDecl: yhMember
+                   of nsnOperatorDecl: yhUnsupported
                    else: yhNone)
   case m.kind
   of nsnOperatorDecl:

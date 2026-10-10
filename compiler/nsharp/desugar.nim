@@ -2359,7 +2359,7 @@ proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[P
   if getter != nil:
     let gbody =
       if getter.kind == nsnEmpty: copyTree(backing)
-      else: l.stmtSeq(getter)
+      else: l.memberBody(m.typ, getter)
     let gp = newNodeI(nkFormalParams, m.info)
     gp.add l.typeToNim(m.typ, m.info)
     gp.add copyTree(recvDefs)
@@ -2439,7 +2439,8 @@ proc lowerIndexer(l: Lowerer; cls, m: NsNode; isException: bool): seq[PNode] =
     fp.add l.typeToNim(m.typ, info)
     fp.add l.selfDefs(cls.name, isException, info)
     for p in m.params: fp.add l.paramDef(p)
-    result.add l.mkProc(l.exportedName(m.attrs, "[]", info), fp, l.stmtSeq(getter), info)
+    result.add l.mkProc(l.exportedName(m.attrs, "[]", info), fp, l.memberBody(m.typ, getter),
+                        info)
   if setter != nil:
     let fp = newNodeI(nkFormalParams, info)
     fp.add empty(info)
