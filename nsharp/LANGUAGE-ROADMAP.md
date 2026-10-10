@@ -1,0 +1,53 @@
+# N# language roadmap
+
+The C# language features still to implement, in order. Library (BCL) work is out
+of scope here: each item is a language feature, implemented through the
+`nsharp-language-feature` workflow (parse, tree, symbols, sema, desugar; tests
+with `.out`/`.csout`/`.fail`/`.unsupported`; all gates; SPEC rows, added where
+SPEC has none), and committed on its own.
+
+Tick an item when it is merged into `nsharp`.
+
+## Batch 1: small, common syntax
+
+- [ ] `out var` / `out _` everywhere, typed from the parameter, library methods included
+- [ ] Index-from-end and ranges: `a[^1]`, `a[1..^1]`, `s[..3]` (arrays, strings, lists)
+- [ ] Null-forgiving `x!` (checked, no runtime effect)
+- [ ] Anonymous methods `delegate (int x) { ... }`
+- [ ] `protected internal`, `private protected`
+- [ ] Primary constructors (C# 12): `class C(int x) { ... }`, `x` captured in the body
+
+## Batch 2: newer syntax SPEC does not list yet
+
+- [ ] Collection expressions (C# 12): `int[] a = [1, 2, 3];`, spreads `[..xs, 4]`
+- [ ] List patterns (C# 11): `x is [1, _, ..]`, `[var first, .., var last]`
+- [ ] `ref` locals and `ref` returns: `ref int r = ref a[0];`, `ref T Find(...)`
+- [ ] Default interface methods; static abstract interface members
+- [ ] `file`-local types; generic attributes `[Attr<T>]`; user-defined `checked` operators
+
+## Batch 3: deeper semantics
+
+- [ ] Anonymous types `new { Name = x, Age = 3 }`: value equality, `{ Name = ..., Age = ... }` printing, `with`
+- [ ] Boxing: `object o = 5; (int)o; o is int n` (value types as `object`)
+- [ ] Multi-dimensional arrays `int[,]`, `new int[3, 4]`, `a[i, j]`, `GetLength`
+- [ ] Generic variance `in`/`out` on interfaces and delegates
+- [ ] Clear the current NS9999 rejections:
+  - [ ] type tests and casts to generic interfaces
+  - [ ] static constructors in generic classes
+  - [ ] `typeof` of generic types
+  - [ ] `-=` on plain delegate variables
+  - [ ] classes implementing `IEnumerable<T>`
+  - [ ] iterator property getters
+  - [ ] finalizers `~C()`
+  - [ ] partial methods
+  - [ ] `event` add/remove accessors
+
+## Last: `async` / `await`
+
+- [ ] `async`/`await` with the minimal `Task`/`Task<T>` runtime it needs, as compiler
+      support in the intrinsics. Check the design (synchronous single-thread vs Nim's
+      `asyncdispatch`) with the user before starting.
+
+## Housekeeping
+
+- [ ] Correct stale SPEC rows as they are met (§12 `lock` done)
