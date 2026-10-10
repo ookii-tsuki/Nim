@@ -39,6 +39,7 @@ type
     isStaticCtx: bool                          ## inside a static member: no `this`
     typeParams: seq[string]                    ## the generic parameters in scope
     curMember: NsNode                          ## the member whose body is walked
+    tmpCounter: int                            ## numbers the temporaries sema introduces
     inCtor: bool                               ## inside a constructor of `clsName`
     ctorIsStatic: bool                         ## ... and it is the static one
     types: TableRef[string, NsTypeInfo]        ## locals, params, loop variables
@@ -141,8 +142,12 @@ proc classifyType(ctx: NsCheckContext; t: NsNode): NsTypeKind =
   if t == nil: return tkUnknown
   case t.kind
   of nsnArrayType:
-    t.setType(tkSequence)
+    t.setType(tkSequence, declTypeName(t))
     result = tkSequence
+  of nsnTupleType:
+    for e in t.sons: discard ctx.classifyType(e.typ)
+    t.setType(tkTuple)
+    result = tkTuple
   of nsnNullableType:
     let inner = ctx.classifyType(t.typ)
     ## Only a value type needs `Option`: a reference is nullable already, so `Node?`
@@ -690,6 +695,53 @@ proc noteMutation(ctx: NsCheckContext; target: NsNode) =
   if t != nil and t.kind == nsnThis: ctx.curMember.strVal = "mutating"
 
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind
+
+proc initStatements(tmp: string; inits: seq[NsNode]; info: TLineInfo;
+                    recvPath: seq[string] = @[]): seq[NsNode] =
+  ## The statements an object or collection initialiser stands for, over the new
+  ## object `tmp`: `A = v` assigns, `A = { ... }` initialises the member in place,
+  ## `[k] = v` assigns through the indexer, and anything else is an `Add`.
+  result = @[]
+  proc recv(): NsNode =
+    result = nsnIdent(tmp, info)
+    for m in recvPath: result = nsnMember(result, m, info)
+  for it in inits:
+    case it.kind
+    of nsnInitMember:
+      if it.body != nil and it.body.kind == nsnInitList:
+        for st in initStatements(tmp, it.body.sons, it.info, recvPath & @[it.name]):
+          result.add st
+      else:
+        let a = nsn(nsnAssign, it.info)
+        a.sons = @[nsnMember(recv(), it.name, it.info), it.body]
+        result.add a
+    of nsnInitIndex:
+      let ix = nsn(nsnIndex, it.info)
+      ix.body = recv()
+      ix.sons = it.sons
+      let a = nsn(nsnAssign, it.info)
+      a.sons = @[ix, it.body]
+      result.add a
+    of nsnInitAdd:
+      let call = nsn(nsnCall, it.info)
+      call.body = nsnMember(recv(), "Add", it.info)
+      call.sons = it.sons
+      let st = nsn(nsnExprStmt, it.info)
+      st.body = call
+      result.add st
+    else: discard
+
+proc targetTyped(ctx: NsCheckContext; value, target: NsNode) =
+  ## `new()`, `default` and `{ ... }` take their type from what they convert to.
+  if value == nil or target == nil: return
+  case value.kind
+  of nsnNew, nsnDefault:
+    if value.typ == nil and target.kind != nsnVoidType:
+      value.typ = (if target.kind == nsnNullableType and value.kind == nsnNew: target.typ
+                   else: target)
+  of nsnArrayLit:
+    if value.typ == nil and target.kind == nsnArrayType: value.typ = target.typ
+  else: discard
 proc walkStmt(ctx: var NsCheckContext; n: NsNode)
 proc walkBody(ctx: var NsCheckContext; blk: NsNode)
 
@@ -799,6 +851,18 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         if k != tkUnknown:
           kind = k
           tname = declTypeName(mt)
+  of tkTuple:
+    ## `t.min` names `Item1`: a tuple element's name is an alias of its position.
+    let tt = n.body.rtype
+    if tt != nil and tt.kind == nsnTupleType:
+      for k, e in tt.sons:
+        if e.name == n.name or "Item" & $(k + 1) == n.name:
+          n.name = "Item" & $(k + 1)
+          if e.typ != nil:
+            kind = ctx.classifyType(e.typ)
+            tname = declTypeName(e.typ)
+            n.rtype = e.typ
+          break
   of tkSequence, tkString, tkException, tkNullable:
     kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
   of tkType:
@@ -825,9 +889,15 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   n.setType(kind, tname)
   result = kind
 
+proc isDeferred(v: NsNode): bool =
+  ## An argument typed by the parameter it is passed for: a lambda, or a `new()`,
+  ## `default` or array initialiser without a type of its own.
+  v != nil and (v.kind == nsnLambda or
+                v.kind in {nsnNew, nsnDefault, nsnArrayLit} and v.typ == nil)
+
 proc isLambdaArg(a: NsNode): bool =
-  a != nil and (a.kind == nsnLambda or
-                (a.kind == nsnNamedArg and a.body != nil and a.body.kind == nsnLambda))
+  a != nil and (isDeferred(a) or
+                (a.kind == nsnNamedArg and isDeferred(a.body)))
 
 proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   var kind = tkUnknown
@@ -879,6 +949,10 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## `x` a `List`); the surface path has already recorded its own.
     if kind != tkUnknown and tn.len == 0:
       tn = ctx.memberTypeName(owner, callee.name)
+    if n.rtype == nil and owner.len > 0:
+      ## The declared result type, which a tuple's element names need.
+      let info = ctx.scope.findMemberInfo(owner, callee.name)
+      if info.name.len > 0 and info.isMethod: n.rtype = info.typ
     callee.setType(kind)
   elif callee != nil and callee.kind == nsnIdent and ctx.types.hasKey(callee.name) and
        ctx.types[callee.name].name == NsLocalFuncMark:
@@ -900,7 +974,12 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   let sigs = callLambdaSigs(ctx.scope, ctx.surface, n)
   for j, a in n.sons:
     if isLambdaArg(a):
-      applySig((if a.kind == nsnNamedArg: a.body else: a), sigs[j])
+      let v = (if a.kind == nsnNamedArg: a.body else: a)
+      if v.kind == nsnLambda: applySig(v, sigs[j])
+      elif a.argParam != nil:
+        var pt = a.argParam.typ
+        if a.argElement and pt != nil and pt.kind == nsnArrayType: pt = pt.typ
+        ctx.targetTyped(v, pt)
       discard ctx.walkExpr(a)
   for a in n.sons:
     let v = argValue(a)
@@ -1044,6 +1123,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnMember: result = ctx.walkMember(n)
   of nsnCall: result = ctx.walkCall(n)
   of nsnNew:
+    if n.typ == nil:
+      ## `new()` whose target gave it no type.
+      nsError(ctx.config, n.info, ndUnsupported, "a target-typed 'new()' without a target")
+      return tkUnknown
     for a in n.sons: discard ctx.walkExpr(a)
     n.rtype = n.typ
     let k = ctx.classifyType(n.typ)
@@ -1057,11 +1140,46 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
            ctx.scope.classes[cn].classKind == ckInterface:
           nsError(ctx.config, n.info, ndAbstractInstance, cn)
         ctx.checkCallArgs(ctx.scope.ctorOverloads(cn), n.sons, cn, cn, true, n.info)
+    if n.inits.len > 0 and n.strVal.len == 0:
+      ## `new T(...) { A = 1, [k] = v, x }`: the initialiser becomes ordinary
+      ## statements over a temporary, checked like any other.
+      inc ctx.tmpCounter
+      n.strVal = "nsInit" & $ctx.tmpCounter
+      let stmts = initStatements(n.strVal, n.inits, n.info)
+      ctx.pushScope()
+      ctx.declare(n.strVal, k, (if n.typ != nil: canonicalTypeName(n.typ.name) else: ""),
+                  n.typ)
+      for st in stmts: ctx.walkStmt(st)
+      ctx.popScope()
+      n.inits = stmts
     result = k
   of nsnNewArray, nsnArrayLit:
-    for a in n.sons: discard ctx.walkExpr(a)
-    n.setType(tkSequence)
+    for a in n.sons:
+      if n.typ != nil and n.kind == nsnArrayLit: ctx.targetTyped(a, n.typ)
+      discard ctx.walkExpr(a)
+    if n.kind == nsnArrayLit and n.typ == nil:
+      ## `new[] { 1.5, 2.5 }`: the element type is the elements'.
+      for a in n.sons:
+        let vt = valueType(a)
+        if vt != nil:
+          n.typ = vt
+          break
+    let at = (if n.typ != nil: nsnArrayType(n.typ, n.info) else: nil)
+    n.rtype = at
+    n.setType(tkSequence, (if at != nil: declTypeName(at) else: ""))
     result = tkSequence
+  of nsnTupleLit:
+    ## `(1, "one")`: a tuple whose element types are its values'; a C# int
+    ## literal is an `int`, which Nim's would not be.
+    let tt = nsn(nsnTupleType, n.info)
+    for e in n.sons:
+      let v = (if e.kind == nsnNamedArg: e.body else: e)
+      discard ctx.walkExpr(e)
+      if v.kind == nsnIntLit and v.typeName.len == 0: v.conv = "int"
+      tt.add nsnParam((if e.kind == nsnNamedArg: e.name else: ""), valueType(v), e.info)
+    n.rtype = tt
+    n.setType(tkTuple)
+    result = tkTuple
   of nsnIndex:
     discard ctx.walkExpr(n.body)
     for a in n.sons: discard ctx.walkExpr(a)
@@ -1134,8 +1252,12 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     n.setType(target)
     result = target
   of nsnDefault:
+    if n.typ == nil:
+      nsError(ctx.config, n.info, ndUnsupported, "a 'default' literal without a target")
+      return tkUnknown
     result = ctx.classifyType(n.typ)
-    n.setType(result)
+    n.setType(result, declTypeName(n.typ))
+    n.rtype = n.typ
   of nsnBinary:
     var lk = ctx.walkExpr(n.sons[0])
     var rk = ctx.walkExpr(n.sons[1])
@@ -1297,6 +1419,7 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   ## type makes the initialiser a conversion C# may refuse.
   ctx.checkLibraryInterfaceValue(n.typ)
   var kind = ctx.classifyType(n.typ)
+  ctx.targetTyped(n.body, n.typ)
   if n.body != nil and n.body.kind == nsnLambda and n.typ != nil:
     ## `Func<int, int> f = x => ...;`: the declared delegate types the lambda.
     applySig(n.body, delegateSig(ctx.scope, ctx.surface, n.typ))
@@ -1393,6 +1516,33 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
   of nsnLocalDecl: ctx.walkDecl(n)
   of nsnMultiDecl:
     for d in n.sons: ctx.walkDecl(d)
+  of nsnDeconstruct:
+    ## `(a, b) = value`: each target takes the matching element -- of a tuple, or
+    ## the matching `out` parameter of the value's `Deconstruct` method.
+    discard ctx.walkExpr(n.body)
+    var elems: seq[NsNode] = @[]
+    let vt = n.body.rtype
+    if vt != nil and vt.kind == nsnTupleType:
+      for e in vt.sons: elems.add e.typ
+    elif n.body.typeKind == tkClass:
+      let d = ctx.scope.findMemberInfo(n.body.typeName, "Deconstruct")
+      if d.name.len > 0 and d.isMethod:
+        n.strVal = "Deconstruct"
+        for p in d.params: elems.add p.typ
+    for k, t in n.sons:
+      let et = (if k < elems.len: elems[k] else: nil)
+      case t.kind
+      of nsnLocalDecl:
+        if t.typ == nil: t.typ = et
+        if t.typ == nil:
+          nsError(ctx.config, t.info, ndUnsupported,
+                  "deconstructing a value whose element types N# cannot see")
+          continue
+        ctx.declare(t.name, ctx.classifyType(t.typ), declTypeName(t.typ), t.typ)
+      of nsnPatDiscard: discard
+      else:
+        discard ctx.walkExpr(t)
+        ctx.checkAssignable(t)
   of nsnLocalFunc:
     ## A local function's body, like a method's, sees the enclosing locals.
     let savedRet = ctx.retType
@@ -1409,6 +1559,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
   of nsnExprStmt: discard ctx.walkExpr(n.body)
   of nsnAssign:
     discard ctx.walkExpr(n.sons[0])
+    if n.sons.len > 1: ctx.targetTyped(n.sons[1], n.sons[0].rtype)
     if n.sons.len > 1 and n.sons[1] != nil and n.sons[1].kind == nsnLambda:
       ## `f = x => ...;`: the target's delegate type types the lambda.
       applySig(n.sons[1], delegateSig(ctx.scope, ctx.surface, n.sons[0].rtype))
@@ -1457,6 +1608,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
   of nsnTry: walkTry(ctx, n)
   of nsnReturn, nsnThrow:
     if n.body != nil:
+      if n.kind == nsnReturn: ctx.targetTyped(n.body, ctx.retType)
       discard ctx.walkExpr(n.body)
       if n.kind == nsnReturn:
         ## The declared return type is the conversion C# applies to `return`.
@@ -1577,6 +1729,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     ## A field initialiser is a conversion to the field's type, like a local's.
     if m.body != nil:
       ctx.isStaticCtx = m.attrs.isStatic
+      ctx.targetTyped(m.body, m.typ)
       if m.body.kind == nsnLambda:
         applySig(m.body, delegateSig(ctx.scope, ctx.surface, m.typ))
       discard ctx.walkExpr(m.body)

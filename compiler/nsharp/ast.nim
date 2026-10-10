@@ -63,6 +63,7 @@ type
     tkClass        ## a value of a user class
     tkType         ## a type or namespace name used as a receiver (`Console`)
     tkDelegate
+    tkTuple        ## a value tuple; element names are aliases of `Item1..ItemN`
 
   NsNodeKind* = enum
     nsnEmpty
@@ -149,6 +150,14 @@ type
     nsnOutDecl         # typ (nil for `var`), name            (from `f(out int x)`)
     nsnLocalFunc       # a nsnMethodDecl declared inside a body (C# 7 local function)
     nsnMultiDecl       # sons = nsnLocalDecl, one per declarator (`int a = 1, b = 2;`)
+    nsnInitMember      # name, body = value or nsnInitList    (`new T { A = 1 }`)
+    nsnInitIndex       # sons = indices, body = value         (`new T { [k] = v }`)
+    nsnInitAdd         # sons = arguments of one `Add`        (`new T { 1, {k, v} }`)
+    nsnInitList        # sons = nested initialisers           (`A = { 1, 2 }`)
+    nsnTupleLit        # sons = elements (nsnNamedArg for a named one)
+    nsnTupleType       # sons = nsnParam (name may be ""), one per element
+    nsnDeconstruct     # sons = targets (nsnLocalDecl to declare, else an lvalue
+                       #   or nsnPatDiscard), body = value     (`(a, b) = t`)
     nsnIsPattern       # body = subject, sons = [pattern]     (from `x is pattern`)
     nsnSwitchExpr      # body = subject, sons = nsnSwitchArm  (from `x switch { }`)
     nsnSwitchArm       # sons = [pattern, guard (or nil), value]
@@ -189,6 +198,8 @@ type
     typeParams*: seq[NsNode]  ## a generic declaration's `<T, U>`, as nsnTypeName
     constraints*: seq[NsNode] ## its `where` clauses, as nsnWhere
     typeArgs*: seq[NsNode]    ## nsnIdent / nsnMember: `M<int>` written at a call
+    inits*: seq[NsNode]       ## nsnNew: its object/collection initialiser, and after
+                              ## `sema.nim`, the statements that apply it
     explicitIface*: string    ## a member written `I.M`: the interface it implements
     paramMod*: string         ## nsnParam: "ref", "out", "in", "params", "this" or ""
     argParam*: NsNode         ## a call argument: the parameter it fills (set by sema)

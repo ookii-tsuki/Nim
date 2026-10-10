@@ -1,0 +1,78 @@
+// Object, collection and index initialisers, target-typed new(), array
+// initialisers, implicitly typed arrays, the default literal, tuples with named
+// elements, and deconstruction (declaring, assigning and swapping).
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Person
+    {
+        public string Name { get; set; }
+        public int Age;
+        public List<string> Tags = new List<string>();
+        public Person() { }
+        public Person(string name) { Name = name; }
+        public override string ToString() => Name + "(" + Age + ")";
+    }
+
+    struct Point
+    {
+        public int X;
+        public int Y;
+    }
+
+    class Program
+    {
+        static (int, string) Pair() => (1, "one");
+        static (int min, int max) MinMax(int[] xs)
+        {
+            int lo = xs[0], hi = xs[0];
+            foreach (var x in xs) { if (x < lo) lo = x; if (x > hi) hi = x; }
+            return (lo, hi);
+        }
+
+        static void Main()
+        {
+            Person p = new Person { Name = "Ann", Age = 30 };
+            Console.WriteLine(p);
+            var q = new Person("Bob") { Age = 4, Tags = { "a", "b" } };
+            Console.WriteLine(q + " " + q.Tags.Count);
+            Point pt = new Point { X = 1, Y = 2 };
+            Console.WriteLine(pt.X + pt.Y);
+            Person r = new() { Name = "Cy" };
+            Console.WriteLine(r);
+            List<int> xs = new List<int> { 3, 1, 2 };
+            Console.WriteLine(xs.Count);
+            Dictionary<string, int> d = new Dictionary<string, int> { { "a", 1 }, { "b", 2 } };
+            var d2 = new Dictionary<string, int> { ["c"] = 3 };
+            Console.WriteLine(d2["c"]);
+            Console.WriteLine(d["a"] + d["b"]);
+            List<Person> people = new() { new Person { Name = "D" }, new Person("E") };
+            Console.WriteLine(people[1]);
+            int[] arr = { 5, 6, 7 };
+            Console.WriteLine(arr.Length);
+            var nums = new[] { 1.5, 2.5 };
+            Console.WriteLine(nums[1]);
+            int z = default;
+            Console.WriteLine(z);
+            var t = Pair();
+            Console.WriteLine(t.Item1 + t.Item2);
+            (int a, string b) = Pair();
+            Console.WriteLine(a + b);
+            var mm = MinMax(new[] { 4, 9, 2 });
+            Console.WriteLine(mm.min + " " + mm.max);
+            var (lo, hi) = MinMax(arr);
+            Console.WriteLine(lo + hi);
+            (int, int) swap = (1, 2);
+            (swap.Item1, swap.Item2) = (swap.Item2, swap.Item1);
+            Console.WriteLine(swap.Item1);
+            var named = (Count: 3, Label: "x");
+            Console.WriteLine(named.Count + named.Label);
+            int u = 1, v = 2;
+            (u, v) = (v, u);
+            Console.WriteLine(u * 10 + v);
+            Console.WriteLine((1, "z"));
+        }
+    }
+}
