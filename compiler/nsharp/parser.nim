@@ -536,6 +536,20 @@ proc parsePrimary(p: var NsParser): NsNode =
     result = nsnCharLit(BiggestInt(v), p.infoOf(t))
   of nsInterpBegin:
     result = p.parseInterpolated()
+  of nsLBracket:
+    ## A collection expression (C# 12), `[a, b, ..xs]`, typed by its target.
+    discard p.advance
+    result = nsn(nsnCollection, p.infoOf(t))
+    while not p.at(nsRBracket) and not p.at(nsEof):
+      if p.at(nsDotDot):
+        let s = nsn(nsnSpread, p.here())
+        discard p.advance
+        s.body = p.parseExpr()
+        result.add s
+      else:
+        result.add p.parseExpr()
+      if p.at(nsComma): discard p.advance else: break
+    discard p.expect(nsRBracket)
   of nsIdent:
     discard p.advance
     case t.text

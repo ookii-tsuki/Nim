@@ -21,7 +21,7 @@ Tick an item when it is merged into `nsharp`.
 
 ## Batch 2: newer syntax SPEC does not list yet
 
-- [ ] Collection expressions (C# 12): `int[] a = [1, 2, 3];`, spreads `[..xs, 4]`
+- [x] Collection expressions (C# 12): `int[] a = [1, 2, 3];`, spreads `[..xs, 4]`
 - [ ] List patterns (C# 11): `x is [1, _, ..]`, `[var first, .., var last]`
 - [ ] `ref` locals and `ref` returns: `ref int r = ref a[0];`, `ref T Find(...)`
 - [ ] Default interface methods; static abstract interface members

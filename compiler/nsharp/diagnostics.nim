@@ -55,6 +55,7 @@ type
     ndSealedNotOverride
     ndAbstractNotImplemented
     ndInterfaceNotImplemented
+    ndNoCollectionTarget
     ndPrimaryNotChained
     ndWithNotRecord
     ndRequiredMember
@@ -146,6 +147,7 @@ const
     ndAbstractNotImplemented: (code: "0534", msg: "'$1' does not implement inherited abstract member '$2'"),
     ndInterfaceNotImplemented: (code: "0535", msg: "'$1' does not implement interface" &
                         " member '$2'"),
+    ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndPrimaryNotChained: (code: "8862", msg: "A constructor declared in a type with parameter list must" &
                         " have 'this' constructor initializer."),
     ndWithNotRecord: (code: "8858", msg: "The receiver type '$1' is not a valid record type and is not" &

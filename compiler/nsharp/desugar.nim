@@ -869,9 +869,36 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     result = newNodeI(nkCall, n.info)
     result.add typ
     result.add l.expr(n.sons[0])
+  of nsnCollection:
+    ## `[a, ..xs, b]` into an array: a sequence the elements and the spread
+    ## collections' elements are added to, in order.
+    let info = n.info
+    let t = l.fresh("nsColl")
+    let et = n.typ.typ
+    let sl = newNodeI(nkStmtList, info)
+    sl.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id(t, info), empty(info),
+      newTree(nkCall, info, newTree(nkBracketExpr, info, l.id("newSeq", info),
+                                    l.typeToNim(et, info)))))
+    for e in n.sons:
+      if e.kind == nsnSpread:
+        let x = l.fresh("nsElem")
+        sl.add newTree(nkForStmt, info, l.id(x, info), l.expr(e.body),
+          newTree(nkStmtList, info, newTree(nkCall, info, l.id("add", info), l.id(t, info),
+                                            l.id(x, info))))
+      else:
+        var v = l.expr(e)
+        if et.kind == nsnTypeName and e.kind != nsnNull:
+          v = newTree(nkCall, e.info, l.typeToNim(et, e.info), v)
+        sl.add newTree(nkCall, info, l.id("add", info), l.id(t, info), v)
+    sl.add l.id(t, info)
+    result = newTree(nkBlockExpr, info, empty(info), sl)
   of nsnArrayLit:
     ## `new T[] { a, b }`: each element converted to `T`, as C# converts it, which
     ## for an interface is its converter and for a base class an upcast.
+    if n.sons.len == 0 and n.typ != nil:
+      ## `[]`: Nim cannot infer an empty literal's element type.
+      return newTree(nkCall, n.info, newTree(nkBracketExpr, n.info, l.id("newSeq", n.info),
+                                             l.typeToNim(n.typ, n.info)))
     let br = newNodeI(nkBracket, n.info)
     for e in n.sons:
       if n.typ != nil and n.typ.kind == nsnTypeName and e.kind != nsnNull:

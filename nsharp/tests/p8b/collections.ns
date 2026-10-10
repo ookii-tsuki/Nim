@@ -1,0 +1,37 @@
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Program
+    {
+        static int Sum(int[] xs) { int t = 0; foreach (var x in xs) t += x; return t; }
+        static int Total(IEnumerable<int> xs) { int t = 0; foreach (var x in xs) t += x; return t; }
+        static List<string> Names() => ["a", "b"];
+        static string Show(int[] xs)
+        {
+            string r = "";
+            foreach (var x in xs) r += (r.Length > 0 ? "," : "") + x;
+            return "[" + r + "]";
+        }
+        static void Main()
+        {
+            int[] a = [1, 2, 3];
+            int[] empty = [];
+            int[] joined = [0, ..a, 4, ..empty, 5];
+            Console.WriteLine(Show(a) + " " + Show(empty) + " " + Show(joined));
+            List<int> list = [7, 8];
+            list.Add(9);
+            Console.WriteLine(list.Count + " " + list[2]);
+            List<int> more = [..a, ..list];
+            Console.WriteLine(more.Count);
+            Console.WriteLine(Sum([10, 20]) + Total([1, 1, 1]));
+            Console.WriteLine(Names()[1]);
+            double[] ds = [1, 2.5];
+            Console.WriteLine(ds[0] + ds[1]);
+            HashSet<int> set = [1, 1, 2];
+            Console.WriteLine(set.Count);
+            string[][] grid = [["x", "o"], ["o"]];
+            Console.WriteLine(grid[0][1] + grid[1].Length);
+        }
+    }
+}

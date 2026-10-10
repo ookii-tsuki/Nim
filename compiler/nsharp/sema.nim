@@ -799,6 +799,41 @@ proc targetTyped(ctx: NsCheckContext; value, target: NsNode) =
                    else: target)
   of nsnArrayLit:
     if value.typ == nil and target.kind == nsnArrayType: value.typ = target.typ
+  of nsnCollection:
+    if value.typ != nil or target.kind == nsnVoidType: return
+    var hasSpread = false
+    for e in value.sons:
+      if e.kind == nsnSpread: hasSpread = true
+    var t = target
+    if t.kind == nsnTypeName and t.sons.len == 1 and
+       canonicalTypeName(t.name) in ["IEnumerable", "IReadOnlyList", "IReadOnlyCollection",
+                                     "ICollection", "IList"]:
+      ## An interface target is an array of its element type.
+      t = nsnArrayType(t.sons[0], t.info)
+    if t.kind == nsnArrayType:
+      if hasSpread: value.typ = t
+      else:
+        ## `[a, b]` into an array is `new T[] { a, b }`.
+        value.kind = nsnArrayLit
+        value.typ = t.typ
+    elif t.kind == nsnTypeName:
+      ## Into a collection type: `new C { a, b }` -- with spreads, `new C(array)`,
+      ## through the constructor that takes a collection.
+      let elems = value.sons
+      value.kind = nsnNew
+      value.typ = t
+      value.sons = @[]
+      if hasSpread:
+        if t.sons.len != 1: return
+        let arr = nsn(nsnCollection, value.info)
+        arr.sons = elems
+        arr.typ = nsnArrayType(t.sons[0], value.info)
+        value.add arr
+      else:
+        for e in elems:
+          let add = nsn(nsnInitAdd, e.info)
+          add.add e
+          value.inits.add add
   else: discard
 proc walkStmt(ctx: var NsCheckContext; n: NsNode)
 proc walkBody(ctx: var NsCheckContext; blk: NsNode)
@@ -988,7 +1023,7 @@ proc isDeferred(v: NsNode): bool =
   ## An argument typed by the parameter it is passed for: a lambda, or a `new()`,
   ## `default` or array initialiser without a type of its own.
   v != nil and (v.kind == nsnLambda or
-                v.kind in {nsnNew, nsnDefault, nsnArrayLit} and v.typ == nil)
+                v.kind in {nsnNew, nsnDefault, nsnArrayLit, nsnCollection} and v.typ == nil)
 
 proc isLambdaArg(a: NsNode): bool =
   a != nil and (isDeferred(a) or
@@ -1146,6 +1181,10 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         var pt = a.argParam.typ
         if a.argElement and pt != nil and pt.kind == nsnArrayType: pt = pt.typ
         ctx.targetTyped(v, pt)
+        discard ctx.walkExpr(a)
+        ## The conversion to the parameter, as for any other argument.
+        if pt != nil: ctx.coerce(v, declTypeName(pt), v.info)
+        continue
       discard ctx.walkExpr(a)
   for a in n.sons:
     let v = argValue(a)
@@ -1621,6 +1660,23 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       for st in stmts: ctx.walkStmt(st)
       ctx.popScope()
       n.inits = stmts
+  of nsnCollection:
+    ## A collection expression into an array with spreads (the other targets were
+    ## rewritten by `targetTyped`); without a target it has no type (CS9176).
+    if n.typ == nil:
+      nsError(ctx.config, n.info, ndNoCollectionTarget)
+      return tkUnknown
+    let et = n.typ.typ
+    for e in n.sons:
+      if e.kind == nsnSpread: discard ctx.walkExpr(e.body)
+      else:
+        ctx.targetTyped(e, et)
+        discard ctx.walkExpr(e)
+        ctx.checkConvertible(e, ctx.targetOfType(et), e.info)
+        ctx.coerce(e, declTypeName(et), e.info)
+    n.rtype = n.typ
+    n.setType(tkSequence, declTypeName(n.typ))
+    result = tkSequence
   of nsnFromEnd, nsnRange:
     ## `^k` and `a..b` are `System.Index` / `System.Range` values outside an
     ## element access, which the library does not declare.
