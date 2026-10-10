@@ -1,0 +1,26 @@
+using System;
+namespace Demo
+{
+    interface IBox<T> { T Get(); string Kind { get; } }
+    class Both : IBox<int>, IBox<string>
+    {
+        int IBox<int>.Get() => 7;
+        string IBox<string>.Get() => "seven";
+        string IBox<int>.Kind => "int box";
+        public string Kind => "string box";
+    }
+    class Program
+    {
+        static void Main()
+        {
+            var b = new Both();
+            IBox<int> bi = b;
+            IBox<string> bs = b;
+            Console.WriteLine(bi.Get() + " " + bi.Kind);
+            Console.WriteLine(bs.Get() + " " + bs.Kind);
+            Console.WriteLine(b.Kind);
+            object o = b;
+            Console.WriteLine(((IBox<string>)o).Get());
+        }
+    }
+}

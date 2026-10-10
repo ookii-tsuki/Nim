@@ -690,9 +690,11 @@ they need no table slot. `is`, `as`, casts and type patterns against a generic i
 (`o is IBox<int>`) ask the object's class through `nsVtByKey`, a method every class
 implementing an instantiation of a generic interface overrides: it answers that
 instantiation's table by the type's name and passes any other name to its base.
-Deferred: default methods in a generic interface, static interface members with a
-body, and explicit implementations of a generic interface's members
-(`int IBox<int>.Get()`, a parse error today) (NS9999).
+An explicit implementation of one instantiation's member (`int IBox<int>.Get()`) is
+filed under the instantiation's mangled name (`nsIBox_int_Get`), so a class may
+implement `IBox<int>` and `IBox<string>` each its own way; explicit properties are
+named the same way (`nsI_P`). Deferred: default methods in a generic interface and
+static interface members with a body (NS9999).
 
 ---
 

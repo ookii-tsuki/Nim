@@ -2388,6 +2388,12 @@ proc lowerEventAccessors(l: Lowerer; cls, m: NsNode; isException: bool): seq[PNo
     result.add l.mkProc(l.exportedName(m.attrs, prefix & m.name, m.info), fp,
                         l.stmtSeq(m.params[i]), m.info)
 
+proc propName(l: Lowerer; m: NsNode; suffix: string; attrs = m.attrs): PNode =
+  ## A property accessor's proc: `P`/`P=`, or for `T I.P` the name only the
+  ## interface table uses, `nsI_P`.
+  if m.explicitIface.len > 0: l.id("ns" & m.explicitIface & "_" & m.name & suffix, m.info)
+  else: l.exportedName(attrs, m.name & suffix, m.info)
+
 proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[PNode] =
   ## A C# property becomes a getter named `P` and a setter named `P=`. An
   ## accessor written `get;`/`set;` reads and writes a generated `PBacking` field.
@@ -2412,7 +2418,7 @@ proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[P
     let gp = newNodeI(nkFormalParams, m.info)
     gp.add l.typeToNim(m.typ, m.info)
     gp.add copyTree(recvDefs)
-    result.add l.mkProc(l.exportedName(m.attrs, m.name, m.info), gp, gbody, m.info)
+    result.add l.mkProc(propName(l, m, ""), gp, gbody, m.info)
   if setter == nil and getter != nil and getter.kind == nsnEmpty:
     ## `{ get; }`: its constructors assign it, through a setter only this module
     ## sees (sema rejects any other assignment).
@@ -2432,7 +2438,7 @@ proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[P
     sp.add l.paramDef(nsnParam("value", m.typ, m.info))
     ## `private set;` keeps the setter in its module, as it does a private member.
     let sattrs = (if setter.strVal == "access": setter.attrs else: m.attrs)
-    result.add l.mkProc(l.exportedName(sattrs, m.name & "=", m.info), sp, sbody, m.info)
+    result.add l.mkProc(propName(l, m, "=", sattrs), sp, sbody, m.info)
 
 # --- operators and indexers ---------------------------------------------------
 
@@ -2775,10 +2781,12 @@ proc lowerInterface(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     into.add l.mkProc(l.exportId("nsTo_" & mangleType(b), info), fp,
                       newTree(nkStmtList, info, make), info, kind = nkConverterDef)
 
-proc implementerFor(l: Lowerer; cls, m: NsNode; iface: string): string =
-  ## The proc a table entry calls: the class's member, or its explicit `I.M`.
+proc implementerFor(l: Lowerer; cls, m: NsNode; iface, instance: string): string =
+  ## The proc a table entry calls: the class's member, or its explicit `I.M` --
+  ## for a generic interface, the instantiation's own (`IBox<int>.Get`).
   for c in cls.sons:
-    if c.name == m.name and c.explicitIface == iface: return "ns" & iface & "_" & m.name
+    if c.name == m.name and c.explicitIface in [iface, instance]:
+      return "ns" & c.explicitIface & "_" & m.name
   m.name
 
 proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
@@ -2841,7 +2849,7 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
                 else: newTree(nkCall, info, (if isException: newTree(nkPar, info,
                                                 copyTree(recvType)) else: copyTree(recvType)),
                               l.id("self", info)))
-      let target = l.implementerFor(n, m, iface)
+      let target = l.implementerFor(n, m, iface, mangleType(it))
       var body: PNode
       var implemented = false
       for c in l.scope.chain(n.name):
