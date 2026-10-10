@@ -56,6 +56,8 @@ type
     ndAbstractNotImplemented
     ndInterfaceNotImplemented
     ndNotDisposable
+    ndNotIteratorType
+    ndYieldHere
     ndErrorDirective
     ndWarningDirective
     ndUnsupported
@@ -133,6 +135,10 @@ const
                         " member '$2'"),
     ndNotDisposable: (code: "1674", msg: "'$1': type used in a using statement must implement" &
                         " 'System.IDisposable'"),
+    ndNotIteratorType: (code: "1624", msg: "The body cannot be an iterator block because" &
+                        " '$1' is not an iterator interface type"),
+    ndYieldHere: (code: "1621", msg: "The yield statement cannot be used inside an anonymous" &
+                        " method or lambda expression"),
     ndErrorDirective: (code: "1029", msg: "#error: '$1'"),
     ndWarningDirective: (code: "1030", msg: "#warning: '$1'"),
     ndUnsupported: (code: "9999", msg: "$1 is currently unsupported"),

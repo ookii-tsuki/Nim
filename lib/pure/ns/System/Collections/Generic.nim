@@ -51,8 +51,10 @@
 # Deliberately absent, with the reason:
 #   * `TryGetValue`, `TryDequeue`, `TryPeek`, `TryPop`, `Remove(key, out value)`:
 #     `out` parameters are not parsed yet.
-#   * the interfaces (`IEnumerable<T>`, `IList<T>`, `IComparer<T>`, ...) and the
-#     overloads that take them: N# classes cannot implement an interface yet.
+#   * the interfaces other than `IEnumerable<T>`/`IEnumerator<T>` (`IList<T>`,
+#     `IComparer<T>`, ...) and the overloads that take them. `IEnumerable<T>` is a
+#     concrete type here: iterator methods return it and collections convert to
+#     it, but a class cannot implement it.
 #   * `Comparer<T>`, `EqualityComparer<T>`, `Capacity`, `AsReadOnly`, collection
 #     initialisers (`new List<int> { 1, 2 }`, a language feature).
 #   * a constructor from `Keys`/`Values` (`new List<K>(d.Keys)`): the view has two
@@ -60,6 +62,8 @@
 
 import std/[tables, sets, deques, algorithm, sequtils]
 import ../../System
+import ../Collections
+export Collections
 
 type
   List*[T] = ref object
@@ -130,8 +134,16 @@ type
     nodes: seq[(E, P)]
     version: int
 
+  IEnumerator*[T] = ref object of NsEnumerator
+    ## C#'s `IEnumerator<T>`: `MoveNext` (inherited) steps, `Current` is the element
+    ## stepped to.
+    step: iterator(): T
+    current: T
+  IEnumerable*[T] = ref object
+    ## C#'s `IEnumerable<T>`: something that hands out enumerators.
+    make: proc(): IEnumerator[T]
   Enumerable[T] = seq[T] | List[T] | HashSet[T] | SortedSet[T] | Queue[T] |
-                  Stack[T] | LinkedList[T]
+                  Stack[T] | LinkedList[T] | IEnumerable[T]
     ## What a C# `IEnumerable<T>` parameter takes here: an array or a collection.
 
 const
@@ -242,6 +254,7 @@ template fromEnumerable(ctor, build: untyped) =
   proc ctor*[T](collection: Queue[T]): auto = build(snapshot(collection))
   proc ctor*[T](collection: Stack[T]): auto = build(snapshot(collection))
   proc ctor*[T](collection: LinkedList[T]): auto = build(snapshot(collection))
+  proc ctor*[T](collection: IEnumerable[T]): auto = build(snapshot(collection))
 
 fromEnumerable(newList, listOf)
 fromEnumerable(newHashSet, hashSetOf)
@@ -1062,3 +1075,62 @@ proc Clear*[E, P](q: PriorityQueue[E, P]) =
   touch q
 
 {.pop.}
+
+# --- IEnumerable<T> / IEnumerator<T> -------------------------------------------
+#
+# C#'s sequence interfaces, as the one shape every iterator method returns: an
+# `IEnumerable<T>` makes a fresh `IEnumerator<T>` per enumeration, and the
+# enumerator runs a closure iterator one step per `MoveNext`. An iterator method
+# (`yield return`) lowers to `nsEnumerable(T): body` (or `nsEnumerator`), and every
+# collection converts to `IEnumerable<T>` (`nsToIEnumerable`), enumerated live,
+# as .NET's interface views are.
+
+proc nsEnumeratorOf*[T](step: iterator(): T): IEnumerator[T] =
+  ## The enumerator that runs `step`, one element per `MoveNext`.
+  let e = IEnumerator[T](step: step)
+  e.nsStep = proc (): bool =
+    let v = e.step()
+    if finished(e.step): return false
+    e.current = v
+    true
+  e
+
+proc Current*[T](e: IEnumerator[T]): T = e.current
+
+proc Dispose*[T](e: IEnumerator[T]) = discard
+  ## An enumerator holds nothing to release.
+
+proc GetEnumerator*[T](s: IEnumerable[T]): IEnumerator[T] = s.make()
+
+iterator items*[T](s: IEnumerable[T]): T =
+  let e = s.make()
+  while e.MoveNext(): yield e.current
+
+template nsEnumerator*(T: typedesc; body: untyped): untyped =
+  ## The enumerator of an iterator block whose member returns `IEnumerator<T>`.
+  nsEnumeratorOf[T](iterator(): T {.closure.} =
+    body)
+
+template nsEnumerable*(T: typedesc; body: untyped): untyped =
+  ## The sequence of an iterator block whose member returns `IEnumerable<T>`: each
+  ## enumeration starts the block again.
+  IEnumerable[T](make: proc(): IEnumerator[T] =
+    nsEnumeratorOf[T](iterator(): T {.closure.} =
+      body))
+
+template nsSequenceView(xs: untyped; T: typedesc): untyped =
+  IEnumerable[T](make: proc(): IEnumerator[T] =
+    nsEnumeratorOf[T](iterator(): T {.closure.} =
+      for x in xs: yield x))
+
+# The compiler calls these where C# converts an array or a collection to
+# `IEnumerable<T>` implicitly, so the view is enumerated live. A Nim converter
+# would be tried, and fail to instantiate, wherever a ref value meets an
+# overloaded operator.
+proc nsToIEnumerable*[T](xs: seq[T]): IEnumerable[T] = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: List[T]): IEnumerable[T] = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: HashSet[T]): IEnumerable[T] = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: SortedSet[T]): IEnumerable[T] = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: Queue[T]): IEnumerable[T] = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: Stack[T]): IEnumerable[T] = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: LinkedList[T]): IEnumerable[T] = nsSequenceView(xs, T)
