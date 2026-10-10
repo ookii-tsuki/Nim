@@ -792,6 +792,9 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnEmpty: result = empty(n.info)
   of nsnIdent:
     result = l.id(n.name, n.info)
+    if n.paramMod == "deref":
+      ## A `ref` local reads and writes the variable it refers to.
+      return newTree(nkBracketExpr, n.info, result)
     if n.typeArgs.len > 0:
       ## `Max<string>` / `Box<int>.Made`: the explicit type arguments.
       result = newTree(nkBracketExpr, n.info, result)
@@ -1678,6 +1681,12 @@ proc presentOf(l: Lowerer; v: NsNode; info: TLineInfo): PNode =
   result.add l.expr(v)
 
 proc localDeclToNim(l: Lowerer; n: NsNode): PNode =
+  if n.paramMod == "ref" and n.body != nil and n.body.kind == nsnRefArg:
+    ## `ref T r = ref x;`: a pointer to `x`, which every use of `r` dereferences.
+    var bare = l
+    bare.nilChecks = false
+    return newTree(nkVarSection, n.info, newTree(nkIdentDefs, n.info, l.id(n.name, n.info),
+      empty(n.info), newTree(nkCall, n.info, l.id("addr", n.info), bare.expr(n.body.body))))
   let defs = newNodeI((if n.declKind == dkConst: nkConstDef else: nkIdentDefs), n.info)
   defs.add l.id(n.name, n.info)
   defs.add l.typeToNim(n.typ, n.info)
@@ -1711,6 +1720,11 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
   bare.nilChecks = false
   if n.strVal == "discard":
     return newTree(nkDiscardStmt, n.info, l.expr(n.sons[1]))
+  if n.strVal == "refAssign":
+    var bare = l
+    bare.nilChecks = false
+    return newTree(nkAsgn, n.info, l.id(n.sons[0].name, n.info),
+                   newTree(nkCall, n.info, l.id("addr", n.info), bare.expr(n.sons[1].body)))
   let lhs = bare.expr(n.sons[0])
   var value: PNode
   if n.strVal == "event":
@@ -1943,6 +1957,7 @@ proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   var inner = l
   for t in n.typeParams: inner.procTypeParams.add t.name
   let fp = inner.formalParams(n.typ, n.params, n.info)
+  if n.paramMod == "ref": fp[0] = newTree(nkVarTy, n.info, fp[0])
   inner.procTypeParams = @[]
   for t in n.typeParams: inner.procTypeParams.add t.name
   result = inner.mkProc(l.id(n.name, n.info), fp, inner.memberBody(n.typ, n.body),
@@ -3095,6 +3110,9 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       inner.thisName = if m.attrs.isStatic: "" else: "self"
       for t in m.typeParams: inner.procTypeParams.add t.name
       var params = l.formalParams(m.typ, m.params, m.info)
+      if m.paramMod == "ref":
+        ## `ref T M()`: a `var T` result, which a caller may assign or take.
+        params[0] = newTree(nkVarTy, m.info, params[0])
       if m.name == "Main" and m.attrs.isStatic:
         # entry point: parameters are ignored, it is called as `Main()`
         params = newNodeI(nkFormalParams, m.info)

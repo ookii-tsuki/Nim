@@ -1,0 +1,46 @@
+using System;
+namespace Demo
+{
+    class Store
+    {
+        int[] data = { 5, 6, 7 };
+        public ref int Find(int v)
+        {
+            for (int i = 0; i < data.Length; i++)
+                if (data[i] == v) return ref data[i];
+            return ref data[0];
+        }
+        public string Show() => data[0] + "," + data[1] + "," + data[2];
+    }
+    class Program
+    {
+        static void Main()
+        {
+            int[] a = { 1, 2, 3 };
+            ref int r = ref a[1];
+            r = 20;
+            r += 1;
+            r++;
+            Console.WriteLine(a[1] + " " + r);
+            int x = 1, y = 100;
+            ref int which = ref x;
+            which = 5;
+            which = ref y;
+            which = 7;
+            Console.WriteLine(x + " " + y);
+            var s = new Store();
+            s.Find(6) = 60;
+            ref var slot = ref s.Find(7);
+            slot *= 10;
+            Console.WriteLine(s.Show());
+            ref int Max()
+            {
+                int best = 0;
+                for (int i = 1; i < a.Length; i++) if (a[i] > a[best]) best = i;
+                return ref a[best];
+            }
+            Max() = 0;
+            Console.WriteLine(a[0] + "," + a[1] + "," + a[2]);
+        }
+    }
+}

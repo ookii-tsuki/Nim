@@ -34,6 +34,7 @@ type
     kind*: NsTypeKind
     name*: string              ## the type's name, when it has one
     node*: NsNode              ## the type as written, generic arguments included
+    isRef*: bool               ## a `ref` local: a reference to another variable
 
   NsCheckContext = object
     scope: NsModuleScope
@@ -916,6 +917,7 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     let info = ctx.types[n.name]
     n.setType(info.kind, info.name)
     n.rtype = info.node
+    if info.isRef: n.paramMod = "deref"
     result = info.kind
   elif ctx.scope.delegates.hasKey(n.name):
     n.setType(tkDelegate, n.name)
@@ -1370,6 +1372,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnNamedArg, nsnRefArg:
     result = ctx.walkExpr(n.body)
     n.setType(result, (if n.body != nil: n.body.typeName else: ""))
+    if n.body != nil: n.rtype = n.body.rtype
   of nsnOutDecl:
     ## Declared by the call once its overload is known (`out var` takes the type).
     result = (if n.typ != nil: ctx.classifyType(n.typ) else: tkUnknown)
@@ -1844,10 +1847,26 @@ proc walkStmts(ctx: var NsCheckContext; stmts: seq[NsNode]) =
   for s in stmts: ctx.walkStmt(s)
   ctx.popScope()
 
+proc walkDecl(ctx: var NsCheckContext; n: NsNode)
+
+proc walkRefDecl(ctx: var NsCheckContext; n: NsNode) =
+  ## `ref T r = ref x;`: `r` names the variable `x`, which must be given by `ref`.
+  if n.body == nil or n.body.kind != nsnRefArg:
+    nsError(ctx.config, n.info, ndUnsupported, "a 'ref' local without a 'ref' initialiser")
+    return
+  let k = ctx.walkExpr(n.body)
+  let t = (if n.typ != nil: n.typ else: n.body.rtype)
+  ctx.declare(n.name, (if n.typ != nil: ctx.classifyType(n.typ) else: k),
+              (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName), t)
+  ctx.types[n.name].isRef = true
+
 proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   ## Resolves a declaration's initialiser, then introduces the local (or the
   ## parameter) in the current scope so later statements see its type. A declared
   ## type makes the initialiser a conversion C# may refuse.
+  if n.paramMod == "ref" and n.kind == nsnLocalDecl:
+    ctx.walkRefDecl(n)
+    return
   ctx.checkLibraryInterfaceValue(n.typ)
   var kind = ctx.classifyType(n.typ)
   ctx.targetTyped(n.body, n.typ)
@@ -2054,6 +2073,11 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       discard ctx.walkExpr(n.sons[1])
       return
     discard ctx.walkExpr(n.sons[0])
+    if n.sons.len == 2 and n.sons[1].kind == nsnRefArg and n.sons[0].paramMod == "deref":
+      ## `r = ref y;` points the `ref` local at another variable.
+      n.strVal = "refAssign"
+      discard ctx.walkExpr(n.sons[1])
+      return
     if n.sons.len > 1: ctx.targetTyped(n.sons[1], n.sons[0].rtype)
     if n.sons.len > 1 and n.sons[1] != nil and n.sons[1].kind == nsnLambda:
       ## `f = x => ...;`: the target's delegate type types the lambda.
@@ -2147,6 +2171,16 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
   of nsnSwitch: walkSwitch(ctx, n)
   of nsnTry: walkTry(ctx, n)
   of nsnReturn, nsnThrow:
+    if n.kind == nsnReturn and n.body != nil and n.body.kind == nsnRefArg:
+      ## `return ref xs[i]` for an array parameter: N#'s array is a value, so a
+      ## parameter's elements belong to the callee's copy.
+      var root = n.body.body
+      while root != nil and root.kind == nsnIndex: root = root.body
+      if root != nil and root.kind == nsnIdent and ctx.curMember != nil:
+        for prm in ctx.curMember.params:
+          if prm.name == root.name and prm.typ != nil and prm.typ.kind == nsnArrayType:
+            nsError(ctx.config, n.body.info, ndUnsupported,
+                    "a reference into an array parameter")
     if n.body != nil:
       if n.kind == nsnReturn: ctx.targetTyped(n.body, ctx.retType)
       discard ctx.walkExpr(n.body)
