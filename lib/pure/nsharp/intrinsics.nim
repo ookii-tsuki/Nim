@@ -21,6 +21,19 @@ method ToString*(x: RootRef): string {.base.} =
 proc ToString*[T: not RootRef](x: T): string = $x
   ## A value's `ToString()` is its `$`.
 
+# `n.ToString("D2")`: a number in a .NET format, as an interpolation hole's. One
+# overload per numeric type, as .NET declares them.
+proc ToString*(x: int32; format: string): string = nsFormatNumber(x, format)
+proc ToString*(x: int64; format: string): string = nsFormatNumber(x, format)
+proc ToString*(x: int16; format: string): string = nsFormatNumber(x, format)
+proc ToString*(x: int8; format: string): string = nsFormatNumber(x, format)
+proc ToString*(x: uint32; format: string): string = nsFormatNumber(x, format)
+proc ToString*(x: uint64; format: string): string = nsFormatNumber(x, format)
+proc ToString*(x: uint16; format: string): string = nsFormatNumber(x, format)
+proc ToString*(x: uint8; format: string): string = nsFormatNumber(x, format)
+proc ToString*(x: float; format: string): string = nsFormatNumber(x, format)
+proc ToString*(x: float32; format: string): string = nsFormatNumber(x, format)
+
 proc `$`*[T: RootRef](x: T): string =
   ## Printing a class asks it, so an override is what `Console.WriteLine` shows.
   if x == nil: "" else: x.ToString()

@@ -1483,6 +1483,25 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ctx.checkThrow(n)
     n.setType(tkUnknown)
     result = tkUnknown
+  of nsnWith:
+    ## `r with { ... }`: the initialiser applies to a copy, checked as
+    ## assignments to a temporary of `r`'s type.
+    result = ctx.walkExpr(n.body)
+    n.setType(result, n.body.typeName)
+    n.rtype = n.body.rtype
+    let cn = canonicalTypeName(n.body.typeName)
+    if ctx.scope.classes.hasKey(cn) and ctx.scope.classes[cn].classKind == ckClass and
+       ctx.scope.classes[cn].decl != nil and not ctx.scope.classes[cn].decl.attrs.isRecord:
+      nsError(ctx.config, n.info, ndWithNotRecord, cn)
+    if n.strVal.len == 0:
+      inc ctx.tmpCounter
+      n.strVal = "nsInit" & $ctx.tmpCounter
+      let stmts = initStatements(n.strVal, n.inits, n.info)
+      ctx.pushScope()
+      ctx.declare(n.strVal, result, n.body.typeName, n.body.rtype)
+      for st in stmts: ctx.walkStmt(st)
+      ctx.popScope()
+      n.inits = stmts
   of nsnCheckedExpr:
     result = ctx.walkExpr(n.body)
     n.setType(result, n.body.typeName)

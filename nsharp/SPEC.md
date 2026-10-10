@@ -209,7 +209,7 @@ are excluded: N# has no `void` type and no decimal.
 | Pointers `T*`, `&`, `*`, `cast` | unsafe | ✅ v1 | front (→ `ptr`/`addr`/`[]`/`cast`) |
 | `Func<>`, `Action<>` | delegate types | ✅ v1 | lib (→ `proc` types) |
 | Tuples as return values | multiple returns | ✅ v1 | free |
-| `record` / `record struct` | value records | 🔜 later | desugar |
+| `record` / `record struct` | value records | ✅ v1 | symbols + desugar: a positional record gets a public property per parameter (`{ get; init; }`, `{ get; set; }` for a `record struct`), placed first, a constructor (passing `: Base(args)` on) and `Deconstruct`; lowering adds `==`/`Equals`/`hash` over its fields and auto-properties (a class record equal to itself, unequal to null), `nsClone` (a `method`, so a copy keeps the dynamic type) and `ToString` as `R { A = 1, B = x }` over the public members, base first, unless it declares one. Equality does not compare the dynamic type (C#'s `EqualityContract`) |
 | `ref struct`, `stackalloc`, `fixed` | stack-only | 🚫 out | front |
 
 ### 4.3 User-defined types
@@ -356,7 +356,7 @@ and the namespaces must be merged or layered.
 | `interface I { }` | contract | ✅ v1 | desugar → fat interface value (see §8) |
 | `enum E { A, B }` | enum | ✅ v1 | front |
 | `delegate R D(args);` | func type | ✅ v1 | front |
-| `record`, `record struct` | data classes | 🔜 later | desugar |
+| `record`, `record struct` | data classes | ✅ v1 | see §4 |
 | `partial class` | split decl | ✅ v1 | symbols (the declarations, in any file or namespace block of the namespace, merge into one: members and base lists) |
 | Nested types | inner | ✅ v1 | see §4.3 |
 | `abstract class` | non-instantiable | ✅ v1 | sem (`new` is NS0144; an unfilled abstract slot NS0534) |
@@ -528,7 +528,7 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 | `T.MaxValue` etc. | `static` field | ✅ v1 | lib (`lib/pure/ns/System.nim`) |
 | `sizeof(T)` | byte size | 🔜 later | needs an unsafe context |
 | String interpolation `$"{x}"` | format | ✅ v1 | desugar |
-| `with` expression (records) | copy-update | 🔜 later | desugar |
+| `with` expression (records) | copy-update | ✅ v1 | sem + desugar (a copy -- `nsClone` for a class record, the value for a struct -- with the initialiser applied as to a temporary; on a non-record class NS8858) |
 | Target-typed `new()` (C# 9) | infer type | ✅ v1 | sem (typed by the declaration, assignment, field, `return` or parameter it converts to) |
 | LINQ *method* syntax `.Where().Select()` | query | 🔜 later | lib |
 | LINQ *query* syntax `from..select` | query | 🚫 out (argue) | front |
@@ -1004,6 +1004,7 @@ code:
 | `NS0200` | CS0200 | a get-only property assigned outside its constructors |
 | `NS8852` | CS8852 | an `init` property assigned outside an initialiser or constructor |
 | `NS9035` | CS9035 | an object initialiser omits a `required` member |
+| `NS8858` | CS8858 | `with` on a class that is not a record |
 | `NS1674` | CS1674 | what `using` disposes does not implement `IDisposable` |
 | `NS1621` | CS1621 | `yield` inside a lambda |
 | `NS1624` | CS1624 | `yield` in a member whose return type is not `IEnumerable<T>`/`IEnumerator<T>` |

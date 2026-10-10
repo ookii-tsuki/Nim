@@ -1,0 +1,2 @@
+`with` copies a record or a struct, not a class.
+code: NS8858

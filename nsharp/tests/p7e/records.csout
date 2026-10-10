@@ -1,0 +1,21 @@
+Point { X = 1, Y = 2, Sum = 3 }
+True
+False
+True
+True
+3
+Point { X = 1, Y = 10, Sum = 11 } Point { X = 1, Y = 2, Sum = 3 }
+11
+Named { Name = home, At = Point { X = 1, Y = 2, Sum = 3 } }
+True
+Circle { Kind = circle, R = 3 }
+Circle { Kind = round, R = 3 }
+True
+Size { W = 2, H = 9 } Size { W = 5, H = 3 }
+True
+12.34 USD
+12.34 EUR
+2
+five
+True
+False

@@ -245,9 +245,67 @@ proc mergePartials(module: NsNode) =
     list = kept
   visit(module.sons, "")
 
+proc synthesizeRecord(cls: NsNode) =
+  ## What C# generates for `record R(T1 A, T2 B)`: a public property per
+  ## positional parameter the body does not declare itself (`{ get; init; }`, or
+  ## `{ get; set; }` in a record struct), a constructor assigning them -- passing
+  ## the base list's arguments to the base record -- and `Deconstruct(out A, out
+  ## B)`. Equality, printing and `with` are lowered from the `isRecord` flag. Runs
+  ## once: the parameters are consumed.
+  if cls.params.len == 0: return
+  let info = cls.info
+  var declared: seq[string] = @[]
+  for m in cls.sons: declared.add m.name
+  var props: seq[NsNode] = @[]
+  for p in cls.params:
+    if p.name in declared: continue
+    let prop = nsn(nsnPropertyDecl, p.info)
+    prop.name = p.name
+    prop.typ = p.typ
+    prop.attrs = NsAttrs(access: aPublic)
+    let setter = nsn(nsnEmpty, p.info)
+    if cls.classKind != ckStruct: setter.name = "init"
+    prop.params = @[nsn(nsnEmpty, p.info), setter]
+    props.add prop
+  ## The positional properties come first, as C# declares them.
+  cls.sons = props & cls.sons
+  let ctor = nsn(nsnCtorDecl, info)
+  ctor.name = cls.name
+  ctor.attrs = NsAttrs(access: aPublic)
+  ctor.body = nsn(nsnBlock, info)
+  for p in cls.params:
+    ctor.params.add nsnParam(p.name, p.typ, p.info)
+    let a = nsn(nsnAssign, p.info)
+    a.sons = @[nsnMember(nsn(nsnThis, p.info), p.name, p.info), nsnIdent(p.name, p.info)]
+    ctor.body.add a
+  if cls.initArgs.len > 0:
+    ctor.initKind = "base"
+    ctor.initArgs = cls.initArgs
+  cls.add ctor
+  let dec = nsn(nsnMethodDecl, info)
+  dec.name = "Deconstruct"
+  dec.typ = nsn(nsnVoidType, info)
+  dec.attrs = NsAttrs(access: aPublic)
+  dec.body = nsn(nsnBlock, info)
+  for p in cls.params:
+    let op = nsnParam(p.name, p.typ, p.info)
+    op.paramMod = "out"
+    dec.params.add op
+    let a = nsn(nsnAssign, p.info)
+    a.sons = @[nsnIdent(p.name, p.info), nsnMember(nsn(nsnThis, p.info), p.name, p.info)]
+    dec.body.add a
+  cls.add dec
+  cls.params = @[]
+
+proc synthesizeRecords(list: seq[NsNode]) =
+  for d in list:
+    if d.kind == nsnNamespace and d.body != nil: synthesizeRecords(d.body.sons)
+    elif d.kind == nsnClassDecl and d.attrs.isRecord: synthesizeRecord(d)
+
 proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Builds the module scope from a parsed module.
   mergePartials(module)
+  synthesizeRecords(module.sons)
   result = NsModuleScope(classes: initTable[string, NsClassSymbol](),
                          delegates: initTable[string, NsNode](),
                          extensions: initTable[string, seq[NsMemberSymbol]](),
