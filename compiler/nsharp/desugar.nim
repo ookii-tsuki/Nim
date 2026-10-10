@@ -2604,6 +2604,19 @@ proc lowerInterface(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       call.add l.id("value", info)
     let name = (if slot.setter: m.name & "=" else: m.name)
     into.add l.mkProc(l.exportId(name, info), fp, newTree(nkStmtList, info, call), info)
+  # default implementations (C# 8): `nsDefault_I_M(self: I, params)`, whose `this`
+  # is the interface value, so the members it calls dispatch through the table
+  for m in n.sons:
+    if m.kind != nsnMethodDecl or m.body == nil or m.attrs.isStatic: continue
+    var inner = l
+    inner.thisName = "self"
+    inner.nilChecks = false
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add l.typeToNim(m.typ, m.info)
+    fp.add copyTree(selfDefs)
+    for p in m.params: fp.add l.paramDef(p)
+    into.add l.mkProc(l.exportId("nsDefault_" & n.name & "_" & m.name, m.info), fp,
+                      inner.memberBody(m.typ, m.body), m.info, withPragmas = true)
   # printing
   for nm in ["$", "ToString"]:
     let fp = newNodeI(nkFormalParams, info)
@@ -2712,7 +2725,20 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
                               l.id("self", info)))
       let target = l.implementerFor(n, m, iface)
       var body: PNode
-      if slot.setter:
+      var implemented = false
+      for c in l.scope.chain(n.name):
+        for cm in l.scope.classes[c].members:
+          if cm.name == m.name and not cm.isStatic: implemented = true
+      let usesDefault = m.kind == nsnMethodDecl and m.body != nil and not implemented and
+                        target == m.name
+      if usesDefault:
+        ## Not implemented by the class: the interface's default, given the object
+        ## as the interface value.
+        let call = newTree(nkCall, info, l.id("nsDefault_" & iface & "_" & m.name, info),
+          newTree(nkCall, info, l.id("nsTo_" & mangleType(it), info), me))
+        for p in m.params: call.add l.id(p.name, info)
+        body = call
+      elif slot.setter:
         body = newTree(nkAsgn, info, newTree(nkDotExpr, info, me, l.id(m.name, info)),
                        l.id("value", info))
       else:

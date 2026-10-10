@@ -1,0 +1,34 @@
+using System;
+namespace Demo
+{
+    interface IGreeter
+    {
+        string Name { get; }
+        string Greet() => "Hello, " + Name + Suffix();
+        string Suffix() { return "!"; }
+    }
+    class Plain : IGreeter
+    {
+        public string Name => "plain";
+    }
+    class Custom : IGreeter
+    {
+        public string Name => "custom";
+        public string Greet() => "Hi " + Name;
+    }
+    class Loud : IGreeter
+    {
+        public string Name => "loud";
+        public string Suffix() => "!!!";
+    }
+    class Program
+    {
+        static void Main()
+        {
+            IGreeter[] all = { new Plain(), new Custom(), new Loud() };
+            foreach (var g in all) Console.WriteLine(g.Greet());
+            IGreeter p = new Plain();
+            Console.WriteLine(p.Suffix());
+        }
+    }
+}

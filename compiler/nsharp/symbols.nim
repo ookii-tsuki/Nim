@@ -27,6 +27,7 @@ type
     autoGetOnly*: bool        ## ... `{ get; }`, which its constructors may assign
     initOnly*: bool           ## a property whose setter is `init`
     isRequired*: bool         ## `required`: `new T { ... }` must set it
+    hasBody*: bool            ## a method with a body: in an interface, a default
     owner*: string            ## the class that declares it
     typeParams*: seq[string]  ## a generic method's own `<T>`
     typ*: NsNode              ## declared type of a field, or a method's return type
@@ -98,6 +99,7 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
     obsolete: m.attributeNamed("Obsolete"),
     isEvent: m.attrs.isEvent,
     isRequired: m.attrs.isRequired,
+    hasBody: m.kind == nsnMethodDecl and m.body != nil,
     noSetter: m.kind == nsnPropertyDecl and (m.params.len < 2 or m.params[1] == nil),
     autoGetOnly: m.kind == nsnPropertyDecl and m.params.len > 0 and m.params[0] != nil and
                  m.params[0].kind == nsnEmpty and (m.params.len < 2 or m.params[1] == nil),
