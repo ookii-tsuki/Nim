@@ -386,3 +386,13 @@ proc attributeNamed*(n: NsNode; name: string): NsNode =
 
 proc hasAttribute*(n: NsNode; name: string): bool =
   n.attributeNamed(name) != nil
+
+proc copyNsTree*(n: NsNode): NsNode =
+  ## A deep copy of a (type) node, for a name that stands for it in several places.
+  if n == nil: return nil
+  new(result)
+  result[] = n[]
+  result.typ = copyNsTree(n.typ)
+  result.body = copyNsTree(n.body)
+  result.sons = @[]
+  for x in n.sons: result.sons.add copyNsTree(x)

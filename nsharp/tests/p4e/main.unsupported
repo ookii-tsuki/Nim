@@ -1,3 +1,0 @@
-N# rejects this: `using A = List<int>;` aliases a type, which N# does not support
-yet. The marker makes run.sh require the rejection.
-code: NS9999

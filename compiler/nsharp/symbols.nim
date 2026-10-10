@@ -63,6 +63,8 @@ type
     libIfaces*: HashSet[string]
       ## The interfaces the library declares (`{.nsInterface.}`): a class may name
       ## one, which N# lowers as a duck-typed contract rather than a table.
+    staticUsings*: seq[string]
+      ## The types a `using static` names: their statics are reachable bare.
     extensions*: Table[string, seq[NsMemberSymbol]]
       ## The extension methods in scope, by name: `x.M()` reaches one when `x`'s own
       ## type has no member `M`.
@@ -160,9 +162,12 @@ proc collect(decl: NsNode; scope: NsModuleScope) =
   of nsnEnumDecl:
     scope.enums.incl decl.name
   of nsnUsing:
-    scope.usings.add decl.name
-    scope.noteNamespace(decl.name)
-    if decl.alias.len > 0: scope.namespaces.incl decl.alias
+    if decl.name.len > 0:
+      scope.usings.add decl.name
+      scope.noteNamespace(decl.name)
+    if decl.alias.len > 0 and decl.strVal != "type": scope.namespaces.incl decl.alias
+    if decl.strVal == "static" and decl.typ != nil:
+      scope.staticUsings.add canonicalTypeName(decl.typ.name)
   of nsnNamespace:
     if decl.body != nil:
       for d in decl.body.sons: collect(d, scope)

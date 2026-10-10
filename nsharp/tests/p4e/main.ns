@@ -1,4 +1,4 @@
-// Valid C# that N# rejects: an alias for a type rather than a namespace.
+// An alias for a type rather than a namespace.
 using System;
 using IntList = System.Collections.Generic.List<int>;
 

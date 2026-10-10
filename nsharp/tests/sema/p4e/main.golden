@@ -1,0 +1,5 @@
+using IntList = System.Collections.Generic.List<int>
+using System
+member Console.WriteLine = System | void
+member List.Add = System.Collections.Generic | void
+member List.Count = System.Collections.Generic | int

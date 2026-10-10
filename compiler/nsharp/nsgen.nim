@@ -11,7 +11,7 @@
 # section lets the files' types reference each other. Written to <nimcache>/.nsgen,
 # which is added to the module search path.
 
-import std/[os, syncio, algorithm, sets, tables]
+import std/[os, syncio, algorithm, sets, tables, strutils]
 import ../ast, ../idents, ../lineinfos, ../msgs, ../options, ../pathutils,
        ../renderer
 import ast, bcl, diagnostics, parser, lexer, symbols, sema, desugar
@@ -29,6 +29,9 @@ type
 
 var namespacesGenerated = false
   ## `parseModule` runs for every module; the first call drives discovery.
+
+var pendingAliases: seq[NsUsingSite]
+  ## `using A = X.Y;` sites, decided once every file is scanned.
 
 var namespaceModules: Table[string, seq[NsNode]]
   ## Parsed modules of each generated namespace, keyed by the namespace name, so a
@@ -139,8 +142,15 @@ proc scanFile(source: string; path: string; fileIdx: FileIndex;
         ## A directive sits at file or namespace level; a `using` in a method body
         ## is the statement. `using A = X.Y;` imports `X.Y`, so the target is what counts as used.
         var start = i + 1
+        var isAlias = false
+        var isStatic = false
+        if start < toks.len and toks[start].kind == nsIdent and toks[start].text == "static":
+          ## `using static N.T;` imports a type's statics: the namespace is `N`.
+          isStatic = true
+          inc start
         if start + 1 < toks.len and toks[start].kind == nsIdent and
            toks[start + 1].kind == nsAssign:
+          isAlias = true
           start += 2
         let name = dottedName(toks, start)
         ## A generic target aliases a type rather than a namespace, and the parser
@@ -150,12 +160,20 @@ proc scanFile(source: string; path: string; fileIdx: FileIndex;
         while k < toks.len and toks[k].kind notin {nsSemi, nsEof}:
           if toks[k].kind == nsLt: generic = true
           inc k
-        if name.len > 0 and not generic:
+        let site = newLineInfo(fileIdx, t.line, t.col)
+        if name.len > 0 and (isStatic or generic):
+          ## The target is a type; its namespace is what is used.
+          let dot = name.rfind('.')
+          if dot > 0: sites.add (ns: name[0 ..< dot], info: site, path: path)
+        elif name.len > 0 and isAlias:
+          ## `using A = X.Y;` aliases a namespace or a type, which only the whole
+          ## compilation's declarations tell apart (`resolveAliasSites`).
+          pendingAliases.add (ns: name, info: site, path: path)
+        elif name.len > 0:
           ## `using X.Y;` means the namespace `X.Y` exists, and a namespace name is
           ## reachable from every file once it does.
           noteDeclaredNamespace(name)
-          sites.add (ns: name, info: newLineInfo(fileIdx, t.line, t.col),
-                     path: path)
+          sites.add (ns: name, info: site, path: path)
     else: discard
     inc i
 
@@ -329,6 +347,19 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
     scanFile(source, path, config.fileInfoIdx(AbsoluteFile(path)), names, sites)
     for ns in names:
       declared.mgetOrPut(ns, @[]).add path
+  ## An alias of a declared or library type uses the type's namespace; any other
+  ## names a namespace.
+  let surface = bclSurface(config)
+  for a in pendingAliases:
+    let last = a.ns.split('.')[^1]
+    if not isDeclaredNamespace(a.ns) and
+       (isDeclaredType(last) or surface.isKnownTypeName(last)):
+      let dot = a.ns.rfind('.')
+      if dot > 0: sites.add (ns: a.ns[0 ..< dot], info: a.info, path: a.path)
+    else:
+      noteDeclaredNamespace(a.ns)
+      sites.add a
+  pendingAliases = @[]
 
   let genDir = getNimcacheDir(config).string / NsGenDirName
   createDir(AbsoluteDir(genDir))

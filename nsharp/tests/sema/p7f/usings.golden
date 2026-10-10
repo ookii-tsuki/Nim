@@ -1,0 +1,6 @@
+using Pt = Demo.Geometry.Point
+using System
+using System.Collections.Generic
+using Table = System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<int>>
+member List.Add = System.Collections.Generic | void
+member List.Count = System.Collections.Generic | int
