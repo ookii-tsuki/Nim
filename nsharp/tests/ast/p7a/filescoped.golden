@@ -497,7 +497,9 @@ nkStmtList
           nkIdent 'o'
           nkIdent 'RootRef'
           nkCall
-            nkIdent 'newThing'
+            nkIdent 'nsBox'
+            nkCall
+              nkIdent 'newThing'
       nkCall
         nkIdent 'WriteLine'
         nkIdent 'o'

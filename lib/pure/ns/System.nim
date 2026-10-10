@@ -4,6 +4,7 @@
 # dot-call, a static one through the qualifier the frontend drops.
 
 import std/[syncio, strutils, math]
+from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash
 
 # `{.nsStatic: "T".}` marks a proc C# reaches through a type qualifier
 # (`Console.WriteLine`, `String.Concat`) rather than a receiver; the frontend
@@ -139,6 +140,9 @@ proc CompareTo*(a, b: bool): int32 = int32(cmp(a, b))
 
 method Equals*(a, b: RootRef): bool {.base.} = a == b
 method GetHashCode*(x: RootRef): int32 {.base.} = int32(cast[int](x))
+method Equals*(a: NsBoxed; b: RootRef): bool = a.nsBoxEquals(b)
+  ## A boxed value is equal to a box of an equal value (see `NsBox`).
+method GetHashCode*(x: NsBoxed): int32 = x.nsBoxHash()
 proc ReferenceEquals*(a, b: RootRef): bool {.nsStatic: "object".} = a == b
 proc HasFlag*[E](a, b: E): bool = (int64(a) and int64(b)) == int64(b)
   ## `System.Enum.HasFlag`: every bit of `b` is set in `a`. An enum is its

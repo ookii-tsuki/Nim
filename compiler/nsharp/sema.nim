@@ -280,6 +280,13 @@ proc coerce(ctx: NsCheckContext; value: NsNode; target: string; info: TLineInfo)
     ## declares for it.
     value.conv = "nsToIEnumerable"
     return
+  if value != nil and canonicalTypeName(target) in ["object", "Object"] and
+     value.kind != nsnNull and value.conv.len == 0 and
+     not ctx.scope.isInterface(value.typeName):
+    ## A value used as an `object` is boxed; a reference passes through the same
+    ## library call unchanged.
+    value.conv = "nsBox"
+    return
   let dst = numericOfSpelling(target)
   if value == nil or dst.len == 0: return
   let src = numName(value)
@@ -1453,6 +1460,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     for a in n.sons:
       if n.typ != nil and n.kind == nsnArrayLit: ctx.targetTyped(a, n.typ)
       discard ctx.walkExpr(a)
+      if n.typ != nil and n.kind == nsnArrayLit:
+        ## Each element converts to the element type: `object[] { 1, "a" }` boxes.
+        ctx.coerce(a, declTypeName(n.typ), a.info)
     if n.kind == nsnArrayLit and n.typ == nil:
       ## `new[] { 1.5, 2.5 }`: the element type is the elements'.
       for a in n.sons:
@@ -1642,19 +1652,24 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
           n.setType(k, canonicalTypeName(n.typ.name))
           n.rtype = n.typ
           return k
-    ## `(T)x` converts, which covers numbers, enums and ref objects. Boxing a value
-    ## into `object` is the one case N# cannot express.
+    ## `(T)x` converts, which covers numbers, enums and ref objects; `(object)v`
+    ## boxes a value and `(T)o` unboxes one.
     let target = ctx.classifyType(n.typ)
-    let operand = ctx.walkExpr(n.body)
-    if isObjectTarget(n.typ) and operand in NsValueKinds:
-      nsError(ctx.config, n.info, ndUnsupported, "a cast of a value to 'object'")
+    discard ctx.walkExpr(n.body)
+    if isObjectTarget(n.typ):
+      ctx.coerce(n.body, "object", n.info)
+    elif canonicalTypeName(n.body.typeName) in ["object", "Object"] and
+         not ctx.scope.isInterface(declTypeName(n.typ)):
+      n.strVal = "unbox"
     n.setType(target)
     result = target
   of nsnIs:
     ctx.checkTypeTest(n)
     discard ctx.walkExpr(n.body)
-    ## A value type is tested statically and a class dynamically.
-    n.name = if ctx.classifyType(n.typ) in NsValueKinds: "is" else: "of"
+    ## A value type is tested statically and a class dynamically; an `object`
+    ## asks the library, since it may hold a box.
+    n.name = if canonicalTypeName(n.body.typeName) in ["object", "Object"]: "nsIsType"
+             elif ctx.classifyType(n.typ) in NsValueKinds: "is" else: "of"
     n.setType(tkBool)
     result = tkBool
   of nsnAs:

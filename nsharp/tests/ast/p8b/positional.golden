@@ -1820,7 +1820,9 @@ nkStmtList
         nkIdentDefs
           nkIdent 'o'
           nkIdent 'RootRef'
-          nkIdent 's'
+          nkCall
+            nkIdent 'nsBox'
+            nkIdent 's'
       nkStmtList
         nkVarSection
           nkIdentDefs
@@ -1844,8 +1846,8 @@ nkStmtList
                     nkIdent 'o'
                 nkInfix
                   nkIdent 'and'
-                  nkInfix
-                    nkIdent 'of'
+                  nkCall
+                    nkIdent 'nsIsType'
                     nkIdent 'nsSubj32'
                     nkIdent 'Seg'
                   nkBlockExpr
