@@ -3087,7 +3087,20 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
                         newTree(nkStmtList, info, newAtom(nkStrLit, full, info)), info,
                         kind = (if isClass: nkMethodDef else: nkProcDef))
   ## `typeof(C)` and, for a class, the dynamic type `GetType()` reads.
-  if n.typeParams.len == 0:
+  if n.typeParams.len > 0:
+    ## `typeof(Box<int>)`: ``Demo.Box`1[System.Int32]``, from the arguments' names.
+    let call = newTree(nkCall, info, l.id("nsGenericName", info), newAtom(nkStrLit, full, info))
+    for t in l.clsTypeParams:
+      call.add newTree(nkCall, info, l.id("FullName", info),
+                       newTree(nkCall, info, l.id("nsTypeOf", info), l.id(t, info)))
+    let pd = l.mkProc(l.alwaysExported("nsTypeOf", info),
+      newTree(nkFormalParams, info, l.id("Type", info), newTree(nkIdentDefs, info,
+        l.id("t", info), newTree(nkBracketExpr, info, l.id("typedesc", info),
+                                 l.clsType(n.name, info)), empty(info))),
+      newTree(nkStmtList, info, newTree(nkCall, info, l.id("nsTypeNamed", info), call)), info)
+    pd[2] = l.genericParams(l.clsTypeParams, info)
+    result.add pd
+  else:
     result.add l.mkProc(l.alwaysExported("nsTypeOf", info),
       newTree(nkFormalParams, info, l.id("Type", info), newTree(nkIdentDefs, info,
         l.id("t", info), newTree(nkBracketExpr, info, l.id("typedesc", info),

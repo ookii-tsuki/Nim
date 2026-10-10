@@ -1,2 +1,0 @@
-Valid C# that N# rejects: typeof of a constructed generic type.
-code: NS9999

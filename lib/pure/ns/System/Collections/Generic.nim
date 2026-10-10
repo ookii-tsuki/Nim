@@ -63,6 +63,7 @@
 import std/[tables, sets, deques, algorithm, sequtils]
 import ../../System
 import ../Collections
+from ../../../nsharp/intrinsics import Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName
 export Collections
 
 type
@@ -1134,3 +1135,29 @@ proc nsToIEnumerable*[T](xs: SortedSet[T]): IEnumerable[T] = nsSequenceView(xs, 
 proc nsToIEnumerable*[T](xs: Queue[T]): IEnumerable[T] = nsSequenceView(xs, T)
 proc nsToIEnumerable*[T](xs: Stack[T]): IEnumerable[T] = nsSequenceView(xs, T)
 proc nsToIEnumerable*[T](xs: LinkedList[T]): IEnumerable[T] = nsSequenceView(xs, T)
+
+# --- `typeof` -----------------------------------------------------------------
+#
+# `typeof(List<int>)`: .NET's name, the type arguments' names in brackets.
+
+const nsGenNs = "System.Collections.Generic."
+proc nsTypeOf*[T](t: typedesc[List[T]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "List", nsTypeOf(T).FullName))
+proc nsTypeOf*[T](t: typedesc[HashSet[T]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "HashSet", nsTypeOf(T).FullName))
+proc nsTypeOf*[T](t: typedesc[SortedSet[T]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "SortedSet", nsTypeOf(T).FullName))
+proc nsTypeOf*[T](t: typedesc[Queue[T]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "Queue", nsTypeOf(T).FullName))
+proc nsTypeOf*[T](t: typedesc[Stack[T]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "Stack", nsTypeOf(T).FullName))
+proc nsTypeOf*[T](t: typedesc[LinkedList[T]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "LinkedList", nsTypeOf(T).FullName))
+proc nsTypeOf*[K, V](t: typedesc[Dictionary[K, V]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "Dictionary", nsTypeOf(K).FullName, nsTypeOf(V).FullName))
+proc nsTypeOf*[K, V](t: typedesc[SortedDictionary[K, V]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "SortedDictionary", nsTypeOf(K).FullName,
+                            nsTypeOf(V).FullName))
+proc nsTypeOf*[K, V](t: typedesc[KeyValuePair[K, V]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "KeyValuePair", nsTypeOf(K).FullName,
+                            nsTypeOf(V).FullName))

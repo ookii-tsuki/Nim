@@ -1,0 +1,21 @@
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Box<T> { public T V; }
+    class Pair<A, B> { }
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(typeof(List<int>));
+            Console.WriteLine(typeof(Dictionary<string, List<int>>));
+            Console.WriteLine(typeof(Box<string>));
+            Console.WriteLine(typeof(Pair<int, Box<double>>));
+            Console.WriteLine(typeof(int[]));
+            Console.WriteLine(typeof(Box<int>) == typeof(Box<int>));
+            Console.WriteLine(typeof(Box<int>) == typeof(Box<long>));
+            Console.WriteLine(typeof(Box<int>).Name);
+        }
+    }
+}
