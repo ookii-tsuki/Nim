@@ -113,35 +113,25 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkCall
-        nkIdent 'WriteLine'
-        nkEmpty
-      nkCall
-        nkIdent 'WriteLine'
-        nkEmpty
       nkVarSection
         nkIdentDefs
-          nkIdent 'z'
-          nkIdent 'int32'
-          nkCall
-            nkIdent 'default'
+          nkIdent 'grid'
+          nkBracketExpr
+            nkIdent 'seq'
             nkIdent 'int32'
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'y'
-          nkIdent 'int32'
           nkCall
-            nkIdent 'checked'
-            nkInfix
-              nkIdent '+'
-              nkIntLit 1
-              nkIntLit 1
+            nkBracketExpr
+              nkIdent 'newSeq'
+              nkIdent 'int32'
+            nkIntLit 2
+      nkEmpty
+      nkIntLit 2
+      nkEmpty
       nkCall
         nkIdent 'WriteLine'
-        nkInfix
-          nkIdent '+'
-          nkIdent 'z'
-          nkIdent 'y'
+        nkDotExpr
+          nkIdent 'grid'
+          nkIdent 'Length'
   nkProcDef
     nkPostfix
       nkIdent '*'

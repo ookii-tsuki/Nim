@@ -195,6 +195,13 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   of nsnArrayType:
     result = newTree(nkBracketExpr, info, l.id("seq", info),
                      l.typeToNim(t.typ, info))
+  of nsnTupleType:
+    ## A C# tuple is a Nim tuple whose fields are `Item1..ItemN`; element names are
+    ## aliases `sema.nim` resolves to positions.
+    result = newNodeI(nkTupleTy, info)
+    for k, e in t.sons:
+      result.add newTree(nkIdentDefs, info, l.id("Item" & $(k + 1), info),
+                         l.typeToNim(e.typ, info), empty(info))
   of nsnNullableType:
     ## A value type needs `Option`; a reference is nullable already, so `Node?` is
     ## just `Node`, which is how C# reads it.
@@ -309,8 +316,27 @@ proc argsToNim(l: Lowerer; call: NsNode): seq[PNode] =
   result = @[]
   for a in call.sons: result.add l.wrappedArg(a)
 
+proc newToNim(l: Lowerer; n: NsNode): PNode
+proc stmt(l: Lowerer; n: NsNode): PNode
+
+proc newWithInits(l: Lowerer; n: NsNode): PNode =
+  ## `new T(...) { inits }`: `block: (var tmp = newT(...); <inits>; tmp)`, the
+  ## statements being the ones `sema.nim` derived from the initialiser.
+  let info = n.info
+  let inits = n.inits
+  n.inits = @[]
+  let created = l.newToNim(n)
+  n.inits = inits
+  let body = newNodeI(nkStmtList, info)
+  body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id(n.strVal, info),
+                                              empty(info), created))
+  for st in inits: body.add l.stmt(st)
+  body.add l.id(n.strVal, info)
+  result = newTree(nkBlockExpr, info, empty(info), body)
+
 proc newToNim(l: Lowerer; n: NsNode): PNode =
   ## `new T(args)` becomes `newT(args)`, carrying generic arguments over.
+  if n.inits.len > 0 and n.strVal.len > 0: return l.newWithInits(n)
   if n.typ != nil and n.typ.kind == nsnTypeName and n.typ.name in l.procTypeParams:
     ## `new T()` on a type parameter (`where T : new()`): every class declares
     ## `nsCreate` over its typedesc, and the intrinsics do for value types.
@@ -784,6 +810,12 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     result.add newTree(nkElseExpr, n.info, l.expr(n.sons[2]))
   of nsnLambda: result = l.lambdaToNim(n)
   of nsnNamedArg: result = l.wrappedArg(n)
+  of nsnTupleLit:
+    result = newNodeI(nkTupleConstr, n.info)
+    for k, e in n.sons:
+      let v = (if e.kind == nsnNamedArg: e.body else: e)
+      result.add newTree(nkExprColonExpr, e.info, l.id("Item" & $(k + 1), e.info),
+                         l.expr(v))
   of nsnIsPattern: result = l.isPatternToNim(n)
   of nsnSwitchExpr: result = l.switchExprToNim(n)
   of nsnRefArg: result = l.expr(n.body)
@@ -796,7 +828,6 @@ proc expr(l: Lowerer; n: NsNode): PNode =
 
 # --- statements -------------------------------------------------------------
 
-proc stmt(l: Lowerer; n: NsNode): PNode
 proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode
 
 proc stmtSeq(l: Lowerer; blk: NsNode): PNode =
@@ -1436,6 +1467,42 @@ proc stmt(l: Lowerer; n: NsNode): PNode =
     ## A loop's or a switch's variables are scoped to it, not to the block.
     result = newTree(nkBlockStmt, n.info, empty(n.info), result)
 
+proc deconstructToNim(l: Lowerer; n: NsNode): PNode =
+  ## `(a, b) = value`: the value read once, then each target bound or assigned from
+  ## its element -- after the whole value is read, so `(a, b) = (b, a)` swaps.
+  let info = n.info
+  result = newNodeI(nkStmtList, info)
+  let t = l.fresh("nsTup")
+  result.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(t, info),
+                                                empty(info), l.expr(n.body)))
+  var values: seq[PNode] = @[]
+  if n.strVal == "Deconstruct":
+    ## A class's `Deconstruct(out a, out b)` fills temporaries first.
+    let call = newTree(nkCall, info, newTree(nkDotExpr, info, l.id(t, info),
+                                             l.id("Deconstruct", info)))
+    let d = l.scope.findMemberInfo(n.body.typeName, "Deconstruct")
+    for k in 0 ..< n.sons.len:
+      let v = l.fresh("nsPart")
+      let pt = (if k < d.params.len: d.params[k].typ else: nil)
+      result.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id(v, info),
+                                                    l.typeToNim(pt, info), empty(info)))
+      call.add l.id(v, info)
+      values.add l.id(v, info)
+    result.add call
+  else:
+    for k in 0 ..< n.sons.len:
+      values.add newTree(nkDotExpr, info, l.id(t, info), l.id("Item" & $(k + 1), info))
+  for k, target in n.sons:
+    case target.kind
+    of nsnPatDiscard: discard
+    of nsnLocalDecl:
+      result.add newTree(nkVarSection, info, newTree(nkIdentDefs, info,
+        l.id(target.name, info), l.typeToNim(target.typ, info), values[k]))
+    else:
+      var bare = l
+      bare.nilChecks = false
+      result.add newTree(nkAsgn, info, bare.expr(target), values[k])
+
 proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   ## A local function is a nested proc, which captures what it names as a closure.
   var inner = l
@@ -1448,6 +1515,7 @@ proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
 proc stmtInner(l: Lowerer; n: NsNode): PNode =
   case n.kind
   of nsnLocalFunc: result = l.localFuncToNim(n)
+  of nsnDeconstruct: result = l.deconstructToNim(n)
   of nsnMultiDecl:
     result = newNodeI(nkStmtList, n.info)
     for d in n.sons: result.add l.stmt(d)

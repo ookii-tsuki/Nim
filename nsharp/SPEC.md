@@ -197,9 +197,9 @@ are excluded: N# has no `void` type and no decimal.
 | Feature | C# meaning | Disposition | Mechanism |
 |---|---|---|---|
 | Arrays `T[]` | 1-D array | ✅ v1 | front (→ `seq`/`array`) |
-| Multi-dim arrays `T[,]` | rectangular | 🔜 later | lib |
+| Multi-dim arrays `T[,]` | rectangular | 🔜 later (NS9999) | lib |
 | Jagged arrays `T[][]` | array of arrays | ✅ v1 | front/lib |
-| `ValueTuple` `(int, string)` | tuples | ✅ v1 | desugar (→ Nim tuple) |
+| `ValueTuple` `(int, string)`, named elements, deconstruction | tuples | ✅ v1 | desugar (→ a Nim tuple with fields `Item1..ItemN`; element names are aliases sema resolves; `(a, b) = v` reads `v` once; a class's `Deconstruct` is called). A whole tuple prints as Nim's `(Item1: 1, Item2: "z")`, not C#'s `(1, z)` |
 | `List<T>`, `Dictionary<K,V>`, `HashSet<T>`, `Queue<T>`, `Stack<T>` | collections | ✅ v1 | lib |
 | `Span<T>`, `Memory<T>` | views | 🔜 later | lib |
 | `Nullable<T>` / `int?` | nullable value | ✅ v1 | lib (→ `Option[T]`) |
@@ -516,17 +516,18 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 | `this`, `base` | self/base | ✅ v1 | desugar |
 | Lambdas `x => e`, `(a,b) => e` | closures | ✅ v1 | front (→ Nim closure) |
 | Anonymous methods `delegate { }` | older lambdas | 🔜 later | front |
-| Object initializer `new T { A = 1 }` | init props | 🔜 later | desugar |
-| Collection initializer `new List<int>{1,2}` | init | 🔜 later | desugar |
+| Object initializer `new T { A = 1 }` | init props | ✅ v1 | sem (rewritten into assignments over a temporary, checked as such) + desugar (a block expression) |
+| Collection initializer `new List<int>{1,2}`, index initializer `{ [k] = v }`, nested `A = { ... }` | init | ✅ v1 | sem (`Add` calls / indexer assignments) + desugar |
 | Anonymous types `new { A = 1 }` | inferred type | 🔜 later | desugar |
 | `typeof(T)` | type object | 🔜 later | needs a type value |
 | `nameof(x)` | name string | ✅ v1 | front, a literal of the written name |
 | `default(T)` | default value | ✅ v1 | desugar (→ Nim `default`) |
+| `default` literal, `int[] a = { 1, 2 }`, `new[] { 1, 2 }` | target-typed / inferred | ✅ v1 | sem (from the target; an implicitly typed array from its elements) |
 | `T.MaxValue` etc. | `static` field | ✅ v1 | lib (`lib/pure/ns/System.nim`) |
 | `sizeof(T)` | byte size | 🔜 later | needs an unsafe context |
 | String interpolation `$"{x}"` | format | ✅ v1 | desugar |
 | `with` expression (records) | copy-update | 🔜 later | desugar |
-| Target-typed `new()` (C# 9) | infer type | 🔜 later | front |
+| Target-typed `new()` (C# 9) | infer type | ✅ v1 | sem (typed by the declaration, assignment, field, `return` or parameter it converts to) |
 | LINQ *method* syntax `.Where().Select()` | query | 🔜 later | lib |
 | LINQ *query* syntax `from..select` | query | 🚫 out (argue) | front |
 | Expression trees | `Expression<T>` | 🚫 out | - |
@@ -536,7 +537,7 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 - `?.`/`??`/`??=` are the main "null" desugars (null model: §4.4/§7.3).
 - `nameof` and `default(T)` are trivial rewrites. `sizeof` needs an unsafe context
   and `typeof` a type value, so both report `NS9999`, as does the expression form of
-  `checked`/`unchecked` and a target-typed `default`.
+  `checked`/`unchecked`.
 
 ### 7.3 Semantic traps (must-pin C#↔Nim mismatches)
 

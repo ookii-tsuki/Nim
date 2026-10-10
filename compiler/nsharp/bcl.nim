@@ -130,7 +130,7 @@ proc kindKey*(k: NsTypeKind): string =
   of tkClass: "#class"
   of tkDelegate: "#delegate"
   of tkNullable: "#nullable"
-  of tkUnknown, tkType: ""
+  of tkUnknown, tkType, tkTuple: ""
 
 # --- the names the compilation declares --------------------------------------
 #

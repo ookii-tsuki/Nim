@@ -127,6 +127,26 @@ proc parseType(p: var NsParser): NsNode =
   ## and a name an `nsnTypeName` carrying its generic arguments and qualifier.
   ## Names are kept as written; mapping them to Nim spellings is `desugar`'s job.
   let t = p.peek
+  if t.kind == nsLParen:
+    ## `(int, string)` / `(int min, int max)`: a tuple type.
+    discard p.advance
+    result = nsn(nsnTupleType, p.infoOf(t))
+    while not p.at(nsRParen) and not p.at(nsEof):
+      let einfo = p.here()
+      let et = p.parseType()
+      var ename = ""
+      if p.peek.kind == nsIdent: ename = p.advance.text
+      result.add nsnParam(ename, et, einfo)
+      if p.at(nsComma): discard p.advance else: break
+    discard p.expect(nsRParen)
+    if p.at(nsQuestion):
+      discard p.advance
+      result = nsnNullableType(result, p.infoOf(t))
+    while p.at(nsLBracket) and p.peekAhead(1).kind == nsRBracket:
+      discard p.advance
+      discard p.advance
+      result = nsnArrayType(result, p.infoOf(t))
+    return
   if t.kind != nsIdent:
     return nsn(nsnEmpty, p.infoOf(t))
   if t.text == "void":
@@ -144,8 +164,12 @@ proc parseType(p: var NsParser): NsNode =
     ## read before `[]` because `int?[]` is an array of nullable ints in C#.
     discard p.advance
     result = nsnNullableType(result, p.infoOf(t))
-  while p.at(nsLBracket) and p.peekAhead(1).kind == nsRBracket:
-    discard p.advance
+  while p.at(nsLBracket) and p.peekAhead(1).kind in {nsRBracket, nsComma}:
+    if p.peekAhead(1).kind == nsComma:
+      p.err(p.peek, ndUnsupported, "a multi-dimensional array")
+      while not p.at(nsRBracket) and not p.at(nsEof): discard p.advance
+    else:
+      discard p.advance
     discard p.advance
     result = nsnArrayType(result, p.infoOf(t))
 
@@ -262,8 +286,8 @@ proc parseDefault(p: var NsParser; t: NsToken): NsNode =
   ## `default(T)`. The bare `default` is typed by its target, which the frontend
   ## does not track here.
   if not p.at(nsLParen):
-    p.err(t, ndUnsupported, "a target-typed 'default'")
-    return nsn(nsnEmpty, p.infoOf(t))
+    ## The `default` literal: typed by its target, which `sema.nim` fills in.
+    return nsn(nsnDefault, p.infoOf(t))
   discard p.advance
   let ty = p.parseType()
   discard p.expect(nsRParen)
@@ -494,8 +518,18 @@ proc parsePrimary(p: var NsParser): NsNode =
   of nsLParen:
     if looksLikeCast(p):
       return p.parseCast()
-    discard p.advance
-    result = p.parseExpr()
+    let open = p.advance
+    let first = p.parseArgument()
+    if p.at(nsComma) or first.kind == nsnNamedArg:
+      ## `(1, "one")`, `(Count: 3, Label: "x")`: a tuple.
+      result = nsn(nsnTupleLit, p.infoOf(open))
+      result.add first
+      while p.at(nsComma):
+        discard p.advance
+        result.add p.parseArgument()
+      discard p.expect(nsRParen)
+      return
+    result = first
     discard p.expect(nsRParen)
   else:
     p.err(t, ndInvalidExpressionTerm, t.text)
@@ -848,45 +882,101 @@ proc parseArrowBody(p: var NsParser; info: TLineInfo; asReturn: bool): NsNode =
   else:
     result.add s
 
-proc parseNew(p: var NsParser, kw: NsToken): NsNode =
-  ## `new T(args)` -> `nsnNew`; `new T[n]` -> `nsnNewArray`; `new T[] { .. }` ->
-  ## `nsnArrayLit`. The type name is kept verbatim; `desugar` maps it.
-  let info = p.infoOf(kw)
-  if p.peek.kind != nsIdent:
-    result = nsn(nsnCall, info)
-    result.body = nsnIdent("new", info)
-    return
-  let typeTok = p.advance
-  var typ = nsnTypeName(typeTok.text, info)
-  while p.at(nsDot) and p.peekAhead(1).kind == nsIdent:
-    discard p.advance
-    typ.name.add "."
-    typ.name.add p.advance.text
-  if p.at(nsLt):
-    discard p.advance
-    while not atGtClose(p) and not p.at(nsEof):
-      typ.add p.parseType()
-      if p.at(nsComma): discard p.advance else: break
-    p.expectGt()
-  elif p.at(nsLBracket):
-    discard p.advance
-    if p.at(nsRBracket):
-      discard p.advance
-      result = nsn(nsnArrayLit, info)
-      result.typ = typ
+proc parseInitializerList(p: var NsParser): seq[NsNode] =
+  ## `{ A = 1, B = { ... }, [k] = v, x, { k, v } }`: an object initialiser's member
+  ## assignments, an index initialiser's, and a collection initialiser's `Add`s.
+  result = @[]
+  discard p.expect(nsLBrace)
+  while not p.at(nsRBrace) and not p.at(nsEof):
+    let info = p.here()
+    if p.at(nsIdent) and p.peekAhead(1).kind == nsAssign:
+      let m = nsn(nsnInitMember, info)
+      m.name = p.advance.text
+      discard p.advance   # '='
       if p.at(nsLBrace):
-        discard p.advance
-        while not p.at(nsRBrace) and not p.at(nsEof):
-          result.add p.parseExpr()
-          if p.at(nsComma): discard p.advance else: break
-        discard p.expect(nsRBrace)
-      return
+        let lst = nsn(nsnInitList, p.here())
+        lst.sons = p.parseInitializerList()
+        m.body = lst
+      else:
+        m.body = p.parseExpr()
+      result.add m
+    elif p.at(nsLBracket):
+      let m = nsn(nsnInitIndex, info)
+      discard p.advance
+      while not p.at(nsRBracket) and not p.at(nsEof):
+        m.add p.parseExpr()
+        if p.at(nsComma): discard p.advance else: break
+      discard p.expect(nsRBracket)
+      discard p.expect(nsAssign)
+      m.body = p.parseExpr()
+      result.add m
+    elif p.at(nsLBrace):
+      let m = nsn(nsnInitAdd, info)
+      discard p.advance
+      while not p.at(nsRBrace) and not p.at(nsEof):
+        m.add p.parseExpr()
+        if p.at(nsComma): discard p.advance else: break
+      discard p.expect(nsRBrace)
+      result.add m
     else:
+      let m = nsn(nsnInitAdd, info)
+      m.add p.parseExpr()
+      result.add m
+    if p.at(nsComma): discard p.advance else: break
+  discard p.expect(nsRBrace)
+
+proc parseArrayElements(p: var NsParser; lit: NsNode) =
+  ## `{ a, b, c }` of an array initialiser.
+  discard p.expect(nsLBrace)
+  while not p.at(nsRBrace) and not p.at(nsEof):
+    lit.add p.parseExpr()
+    if p.at(nsComma): discard p.advance else: break
+  discard p.expect(nsRBrace)
+
+proc parseNew(p: var NsParser, kw: NsToken): NsNode =
+  ## `new T(args) { inits }` -> `nsnNew`; `new(args)` is target-typed (no `typ`);
+  ## `new T[n]` -> `nsnNewArray`; `new T[] { .. }` and `new[] { .. }` -> `nsnArrayLit`.
+  ## The type name is kept verbatim; `desugar` maps it.
+  let info = p.infoOf(kw)
+  if p.at(nsLBracket) and p.peekAhead(1).kind == nsRBracket:
+    ## `new[] { 1, 2 }`: the element type is inferred from the elements.
+    discard p.advance
+    discard p.advance
+    result = nsn(nsnArrayLit, info)
+    p.parseArrayElements(result)
+    return
+  var typ: NsNode = nil
+  if p.peek.kind == nsIdent:
+    let typeTok = p.advance
+    typ = nsnTypeName(typeTok.text, info)
+    while p.at(nsDot) and p.peekAhead(1).kind == nsIdent:
+      discard p.advance
+      typ.name.add "."
+      typ.name.add p.advance.text
+    if p.at(nsLt):
+      discard p.advance
+      while not atGtClose(p) and not p.at(nsEof):
+        typ.add p.parseType()
+        if p.at(nsComma): discard p.advance else: break
+      p.expectGt()
+    if p.at(nsLBracket):
+      discard p.advance
+      if p.at(nsComma):
+        p.err(p.peek, ndUnsupported, "a multi-dimensional array")
+      if p.at(nsRBracket):
+        discard p.advance
+        result = nsn(nsnArrayLit, info)
+        result.typ = typ
+        if p.at(nsLBrace): p.parseArrayElements(result)
+        return
       result = nsn(nsnNewArray, info)
       result.typ = typ
       result.add p.parseExpr()
       discard p.expect(nsRBracket)
       return
+  elif not p.at(nsLParen):
+    p.err(p.peek, ndInvalidExpressionTerm, p.peek.text)
+    return nsn(nsnEmpty, info)
   result = nsn(nsnNew, info)
   result.typ = typ
   if p.at(nsLParen):
@@ -895,6 +985,8 @@ proc parseNew(p: var NsParser, kw: NsToken): NsNode =
       result.add p.parseArgument()
       if p.at(nsComma): discard p.advance else: break
     discard p.expect(nsRParen)
+  if p.at(nsLBrace):
+    result.inits = p.parseInitializerList()
 
 # --- statements -------------------------------------------------------------
 
@@ -960,10 +1052,70 @@ proc looksLikeDecl(p: NsParser): bool =
     ## `int? x = ...`. A ternary in statement position still fails the declarator
     ## test below, so `x ? y : z;` stays an expression.
     inc i
-  while p.peekAhead(i).kind == nsLBracket and p.peekAhead(i + 1).kind == nsRBracket:
-    i += 2
+  while p.peekAhead(i).kind == nsLBracket and
+        p.peekAhead(i + 1).kind in {nsRBracket, nsComma}:
+    inc i
+    while p.peekAhead(i).kind == nsComma: inc i
+    if p.peekAhead(i).kind != nsRBracket: return false
+    inc i
   if p.peekAhead(i).kind != nsIdent: return false
   p.peekAhead(i + 1).kind in {nsAssign, nsSemi, nsComma, nsRParen, nsEof}
+
+proc parseInitializer(p: var NsParser; declared: NsNode): NsNode =
+  ## A declaration's initialiser: an expression, or `{ a, b }` for an array.
+  if p.at(nsLBrace):
+    result = nsn(nsnArrayLit, p.here())
+    if declared != nil and declared.kind == nsnArrayType: result.typ = declared.typ
+    p.parseArrayElements(result)
+  else:
+    result = p.parseExpr()
+
+proc matchingParen(p: NsParser; start: int): int =
+  ## The offset of the `)` closing the `(` at `start`, or -1.
+  var depth = 0
+  var i = start
+  while true:
+    case p.peekAhead(i).kind
+    of nsEof: return -1
+    of nsLParen: inc depth
+    of nsRParen:
+      dec depth
+      if depth == 0: return i
+    else: discard
+    inc i
+
+proc parseDeconstruction(p: var NsParser; allVar: bool): NsNode =
+  ## `(int a, var b, x, _) = value;` -- each element declares (with a type or
+  ## `var`), assigns an existing lvalue, or discards.
+  result = nsn(nsnDeconstruct, p.here())
+  discard p.expect(nsLParen)
+  while not p.at(nsRParen) and not p.at(nsEof):
+    let info = p.here()
+    if p.at(nsIdent) and p.peek.text == "_" and
+       p.peekAhead(1).kind in {nsComma, nsRParen}:
+      discard p.advance
+      result.add nsn(nsnPatDiscard, info)
+    elif allVar and p.at(nsIdent):
+      let d = nsn(nsnLocalDecl, info)
+      d.name = p.advance.text
+      result.add d
+    elif p.at(nsIdent) and p.peek.text == "var" and p.peekAhead(1).kind == nsIdent:
+      discard p.advance
+      let d = nsn(nsnLocalDecl, info)
+      d.name = p.advance.text
+      result.add d
+    elif p.typeShapeEnd(0) > 0 and p.peekAhead(p.typeShapeEnd(0)).kind == nsIdent and
+         p.peekAhead(p.typeShapeEnd(0) + 1).kind in {nsComma, nsRParen}:
+      let d = nsn(nsnLocalDecl, info)
+      d.typ = p.parseType()
+      d.name = p.advance.text
+      result.add d
+    else:
+      result.add p.parseExpr()
+    if p.at(nsComma): discard p.advance else: break
+  discard p.expect(nsRParen)
+  discard p.expect(nsAssign)
+  result.body = p.parseExpr()
 
 proc parseVarDecl(p: var NsParser): NsNode =
   ## `var`/`let`/`const` introduce an untyped declaration; otherwise the type is
@@ -984,12 +1136,15 @@ proc parseVarDecl(p: var NsParser): NsNode =
     discard p.advance
   if hasType:
     result.typ = p.parseType()
+  if not hasType and p.at(nsLParen):
+    ## `var (a, b) = t;`: a deconstruction declaring every element.
+    return p.parseDeconstruction(true)
   let nameTok = p.peek
   discard p.advance
   result.name = nameTok.text
   if p.at(nsAssign):
     discard p.advance
-    result.body = p.parseExpr()
+    result.body = p.parseInitializer(result.typ)
   if p.at(nsComma) and p.peekAhead(1).kind == nsIdent:
     ## `int a = 1, b = 2;`: one declaration per declarator, of the same type, in
     ## the same scope.
@@ -1003,14 +1158,26 @@ proc parseVarDecl(p: var NsParser): NsNode =
       d.name = p.advance.text
       if p.at(nsAssign):
         discard p.advance
-        d.body = p.parseExpr()
+        d.body = p.parseInitializer(result.typ)
       group.add d
     result = group
 
 proc parseSimpleStmt(p: var NsParser): NsNode =
+  if p.at(nsLParen):
+    let close = p.matchingParen(0)
+    if close > 0 and p.peekAhead(close + 1).kind == nsAssign:
+      ## `(a, b) = (b, a);`
+      return p.parseDeconstruction(false)
+    if close > 0 and p.peekAhead(close + 1).kind == nsIdent and
+       p.peekAhead(close + 2).kind in {nsAssign, nsSemi, nsComma}:
+      ## `(int, string) t = ...;`: a local of a tuple type.
+      return p.parseVarDecl()
   if looksLikeDecl(p):
     return p.parseVarDecl()
   let lhs = p.parseExpr()
+  if lhs == nil:
+    ## An invalid term, already reported.
+    return nsn(nsnEmpty, p.here())
   if p.at(nsAssign):
     discard p.advance
     result = nsn(nsnAssign, lhs.info)
@@ -1460,7 +1627,7 @@ proc parseClassMember(p: var NsParser; clsName: string;
     result.body = p.parseBlock()
     return
 
-  if p.peek.kind != nsIdent:
+  if p.peek.kind != nsIdent and not p.at(nsLParen):
     p.err(p.peek, ndMemberDeclarationExpected, p.peek.text)
     discard p.advance
     return nsn(nsnEmpty, modInfo)
@@ -1571,7 +1738,7 @@ proc parseClassMember(p: var NsParser; clsName: string;
     result.attrs = attrs
     if p.at(nsAssign):
       discard p.advance
-      result.body = p.parseExpr()
+      result.body = p.parseInitializer(ty)
     if p.at(nsSemi): discard p.advance
 
 proc parseTypeDecl(p: var NsParser): NsNode =
