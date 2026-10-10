@@ -41,7 +41,7 @@ Tick an item when it is merged into `nsharp`.
   - [ ] static constructors in generic classes
   - [x] `typeof` of generic types
   - [x] `-=` on plain delegate variables
-  - [ ] classes implementing `IEnumerable<T>`
+  - [x] classes implementing `IEnumerable<T>`
   - [x] iterator property getters
   - [ ] finalizers `~C()`
   - [x] partial methods
