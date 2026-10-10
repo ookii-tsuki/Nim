@@ -57,6 +57,8 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndNoMember
+    ndStaticViaInstance
     ndNameNotFound
     ndObjectRefRequired
     ndThisInStatic
@@ -171,6 +173,10 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndNoMember: (code: "1061", msg: "'$1' does not contain a definition for '$2' and no accessible" &
+               " extension method '$2' accepting a first argument of type '$1' could be found"),
+    ndStaticViaInstance: (code: "0176", msg: "Member '$1' cannot be accessed with an instance" &
+                        " reference; qualify it with a type name instead"),
     ndNameNotFound: (code: "0103", msg: "The name '$1' does not exist in the current context"),
     ndObjectRefRequired: (code: "0120", msg: "An object reference is required for the non-static" &
                         " field, method, or property '$1'"),

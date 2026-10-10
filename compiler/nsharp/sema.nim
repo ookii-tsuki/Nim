@@ -1000,6 +1000,67 @@ proc chainInScope(ctx: NsCheckContext; cls: string): bool =
   let last = ctx.scope.classes[ch[^1]].base
   last.len == 0 or last in ["object", "Object"]
 
+proc libraryHas(ctx: NsCheckContext; recv: string; kind: NsTypeKind; name: string): bool =
+  ## Whether the prelude gives a value of this type a member `name`: its own, or one
+  ## declared for any value (`ToString`, `GetType`), or an extension in scope.
+  if ctx.surface.member(recv, kind, name).name.len > 0: return true
+  for m in ctx.surface.members.getOrDefault(NsParamKey):
+    if m.name == name: return true
+  ctx.scope.extensions.hasKey(name)
+
+proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
+  ## `recv.name` on a value: the member must exist (CS1061), be an instance member
+  ## (CS0176), and be accessible from here (CS0122). Only where the receiver's
+  ## type, and everything it inherits, is known.
+  let recv = n.body
+  if recv == nil or recv.kind == nsnThis or recv.kind == nsnBase: return
+  let rk = recv.typeKind
+  let cn = canonicalTypeName(recv.typeName)
+  if rk == tkClass and ctx.scope.classes.hasKey(cn):
+    if not ctx.chainInScope(cn) and ctx.scope.classes[cn].classKind != ckInterface:
+      return
+    let m = ctx.scope.findMemberInfo(cn, n.name)
+    if m.name.len == 0:
+      if not ctx.libraryHas("object", tkClass, n.name):
+        nsError(ctx.config, n.info, ndNoMember, cn, n.name)
+      return
+    if m.isStatic or m.isConst:
+      nsError(ctx.config, n.info, ndStaticViaInstance, m.owner & "." & n.name)
+      return
+    var ok = true
+    ## An interface's members are public whatever they are written with; an
+    ## explicit implementation (`R I.M()`) is not a member of the class at all, so
+    ## the access that counts is that of an ordinary member of the name.
+    let ownerIsIface = ctx.scope.classes.hasKey(m.owner) and
+                       ctx.scope.classes[m.owner].classKind == ckInterface
+    var access = (if ownerIsIface: aPublic else: m.access)
+    block ordinary:
+      for c in ctx.scope.chain(cn):
+        let d = ctx.scope.classes[c].decl
+        if d == nil: continue
+        for x in d.sons:
+          if x.name == n.name and x.explicitIface.len == 0:
+            access = (if d.classKind == ckInterface: aPublic else: x.attrs.access)
+            break ordinary
+    case access
+    of aPrivate:
+      ## A nested type sees its enclosing types' private members.
+      ok = false
+      var c = ctx.clsName
+      var hops = 0
+      while c.len > 0 and hops < 32:
+        if c == m.owner: ok = true
+        c = (if ctx.scope.classes.hasKey(c): ctx.scope.classes[c].enclosing else: "")
+        inc hops
+    of aProtected:
+      ok = ctx.clsName.len > 0 and m.owner in ctx.scope.chain(ctx.clsName)
+    else: discard
+    if not ok:
+      nsError(ctx.config, n.info, ndNotAccessible, m.owner & "." & n.name)
+  elif rk == tkString and cn in ["string", "String", ""]:
+    if not ctx.libraryHas("string", tkString, n.name):
+      nsError(ctx.config, n.info, ndNoMember, "string", n.name)
+
 proc unknownName(ctx: NsCheckContext; n: NsNode) =
   ## A bare name nothing in scope declares (CS0103); an instance member named in a
   ## static member, which needs an object (CS0120). Only reported where every
@@ -1093,6 +1154,7 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   case rk
   of tkClass:
     ctx.checkMemberAccess(n)
+    ctx.checkMemberUse(n)
     kind = ctx.memberKind(n.body.typeName, n.name)
     if ctx.scope.findMemberInfo(n.body.typeName, n.name).isMethod:
       ## A method named without a call is a method group: a delegate value.
@@ -1131,6 +1193,7 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
             n.rtype = e.typ
           break
   of tkSequence, tkString, tkException, tkNullable:
+    if rk == tkString: ctx.checkMemberUse(n)
     kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
   of tkType:
     ## A namespace's member is a type (`System.Console`); a declared type's member
@@ -1248,7 +1311,10 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
           tn = m.ret
           n.rtype = nsnTypeName(m.ret, n.info)
           break
+    elif rk == tkString:
+      ctx.checkMemberUse(callee)
     elif rk == tkClass:
+      ctx.checkMemberUse(callee)
       owner = callee.body.typeName
       kind = ctx.memberKind(owner, callee.name)
       let mt = ctx.memberTypeOf(callee.body, owner, callee.name)

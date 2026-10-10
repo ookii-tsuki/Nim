@@ -50,10 +50,10 @@ missing_paren CS1026 match
 missing_semicolon CS1002 accepted
 named_before_positional CS1501 nim
 new_on_interface_gen CS0144 nim
-no_member CS1061 nim
-no_member_call CS1061 nim
+no_member CS1061 match
+no_member_call CS1061 match
 no_member_list CS1061 nim
-no_member_string CS1061 nim
+no_member_string CS1061 match
 not_all_paths CS0161 accepted
 null_to_int CS0037 match
 op_bad_types CS0019 nim
@@ -62,8 +62,8 @@ op_string_minus CS0019 nim
 out_missing CS1620 accepted
 out_unassigned CS0177 accepted
 override_nonvirtual CS0506 match
-private_access CS0122 accepted
-private_method CS0122 accepted
+private_access CS0122 match
+private_method CS0122 match
 prop_void CS0547 nim
 read_setonly_prop CS0154 nim
 ref_missing CS1620 accepted
@@ -72,7 +72,7 @@ return_value_void CS0127 accepted
 return_wrong_type CS0029 match
 sealed_derive CS0509 match
 static_class_instance CS0712 match
-static_via_instance CS0176 nim
+static_via_instance CS0176 match
 string_char CS0029 match
 string_index_assign CS0200 accepted
 struct_null CS0037 nim
