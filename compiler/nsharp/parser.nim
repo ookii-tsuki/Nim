@@ -645,8 +645,33 @@ proc opName(k: NsTokenKind): string =
   of nsPercent: "mod"
   else: "?"
 
+proc parsePattern(p: var NsParser): NsNode
+
+proc parseSwitchExpr(p: var NsParser; subject: NsNode): NsNode =
+  ## `x switch { pattern [when guard] => value, ... }`
+  result = nsn(nsnSwitchExpr, p.here())
+  result.body = subject
+  discard p.advance   # 'switch'
+  discard p.expect(nsLBrace)
+  while not p.at(nsRBrace) and not p.at(nsEof):
+    let arm = nsn(nsnSwitchArm, p.here())
+    arm.add p.parsePattern()
+    var guard: NsNode = nil
+    if p.at(nsIdent) and p.peek.text == "when":
+      discard p.advance
+      guard = p.parseExpr()
+    arm.sons.add guard
+    discard p.expect(nsArrow)
+    arm.add p.parseExpr()
+    result.add arm
+    if p.at(nsComma): discard p.advance else: break
+  discard p.expect(nsRBrace)
+
 proc parseBinary(p: var NsParser; minPrec: int): NsNode =
   result = p.parseUnary()
+  while p.at(nsIdent) and p.peek.text == "switch" and p.peekAhead(1).kind == nsLBrace:
+    ## A switch expression binds tighter than any binary operator.
+    result = p.parseSwitchExpr(result)
   while true:
     var prec = binPrec(p.peek.kind)
     let typeOp = prec == 0 and p.at(nsIdent) and p.peek.text in ["is", "as"]
@@ -666,8 +691,22 @@ proc parseBinary(p: var NsParser; minPrec: int): NsNode =
       n.name = "??"
       n.sons = @[result, rhs]
       result = n
+    elif typeOp and opTok.text == "is":
+      ## `x is T` stays a type test; anything else (`is T t`, `is null`,
+      ## `is > 5`, `is { P: 1 }`, `is not ...`) is a pattern.
+      let pat = p.parsePattern()
+      if pat.kind == nsnPatType and pat.name.len == 0:
+        let n = nsn(nsnIs, p.infoOf(opTok))
+        n.body = result
+        n.typ = pat.typ
+        result = n
+      else:
+        let n = nsn(nsnIsPattern, p.infoOf(opTok))
+        n.body = result
+        n.add pat
+        result = n
     elif typeOp:
-      let n = nsn(if opTok.text == "is": nsnIs else: nsnAs, p.infoOf(opTok))
+      let n = nsn(nsnAs, p.infoOf(opTok))
       n.body = result
       n.typ = p.parseType()
       result = n
@@ -689,6 +728,112 @@ proc parseTernary(p: var NsParser): NsNode =
 
 proc parseExpr(p: var NsParser): NsNode =
   result = p.parseTernary()
+
+proc looksLikeTypePattern(p: NsParser): bool =
+  ## Whether a pattern starting here is a type (`Circle c`, `int`, `List<int>`)
+  ## rather than a constant (`Color.Red`, `MaxSize`): the name's last part must be a
+  ## type, by the same lookup a cast uses.
+  if p.peek.kind != nsIdent: return false
+  let e = p.typeShapeEnd(0)
+  if e < 0: return false
+  var last = p.peek.text
+  var i = 1
+  while p.peekAhead(i).kind == nsDot and p.peekAhead(i + 1).kind == nsIdent:
+    last = p.peekAhead(i + 1).text
+    i += 2
+  p.isTypeName(last) or p.peekAhead(e).kind == nsIdent and
+    p.peekAhead(e).text notin ["and", "or", "when"]
+
+proc parsePropertySubpatterns(p: var NsParser; n: NsNode) =
+  ## `{ Name: pattern, A.B: pattern }`
+  discard p.expect(nsLBrace)
+  while not p.at(nsRBrace) and not p.at(nsEof):
+    let f = nsn(nsnPatField, p.here())
+    f.name = p.parseDottedName()
+    discard p.expect(nsColon)
+    f.body = p.parsePattern()
+    n.add f
+    if p.at(nsComma): discard p.advance else: break
+  discard p.expect(nsRBrace)
+
+proc parsePrimaryPattern(p: var NsParser): NsNode =
+  let t = p.peek
+  let info = p.infoOf(t)
+  case t.kind
+  of nsLParen:
+    discard p.advance
+    result = p.parsePattern()
+    discard p.expect(nsRParen)
+  of nsLt, nsGt, nsLe, nsGe:
+    discard p.advance
+    result = nsn(nsnPatRel, info)
+    result.name = t.text
+    result.body = p.parseBinary(10)
+  of nsLBrace:
+    result = nsn(nsnPatProp, info)
+    p.parsePropertySubpatterns(result)
+    if p.at(nsIdent) and p.peek.text notin ["and", "or", "when"]:
+      result.name = p.advance.text
+  of nsLBracket:
+    p.err(t, ndUnsupported, "a list pattern")
+    discard p.advance
+    while not p.at(nsRBracket) and not p.at(nsEof): discard p.advance
+    discard p.advance
+    result = nsn(nsnPatDiscard, info)
+  else:
+    if t.kind == nsIdent and t.text == "_" :
+      discard p.advance
+      return nsn(nsnPatDiscard, info)
+    if t.kind == nsIdent and t.text == "var" and p.peekAhead(1).kind == nsIdent:
+      discard p.advance
+      result = nsn(nsnPatVar, info)
+      result.name = p.advance.text
+      return
+    if t.kind == nsIdent and t.text notin ["null", "true", "false", "default"] and
+       p.looksLikeTypePattern():
+      let ty = p.parseType()
+      if p.at(nsLBrace):
+        result = nsn(nsnPatProp, info)
+        result.typ = ty
+        p.parsePropertySubpatterns(result)
+      else:
+        result = nsn(nsnPatType, info)
+        result.typ = ty
+      if p.at(nsIdent) and p.peek.text notin ["and", "or", "when"]:
+        result.name = p.advance.text
+      return
+    result = nsn(nsnPatConst, info)
+    result.body = p.parseBinary(10)
+
+proc parseNotPattern(p: var NsParser): NsNode =
+  if p.at(nsIdent) and p.peek.text == "not":
+    let info = p.here()
+    discard p.advance
+    result = nsn(nsnPatNot, info)
+    result.body = p.parseNotPattern()
+  else:
+    result = p.parsePrimaryPattern()
+
+proc parseAndPattern(p: var NsParser): NsNode =
+  result = p.parseNotPattern()
+  while p.at(nsIdent) and p.peek.text == "and":
+    let info = p.here()
+    discard p.advance
+    let n = nsn(nsnPatAnd, info)
+    n.add result
+    n.add p.parseNotPattern()
+    result = n
+
+proc parsePattern(p: var NsParser): NsNode =
+  ## C# 9 patterns: `or` of `and` of `not` of a primary pattern.
+  result = p.parseAndPattern()
+  while p.at(nsIdent) and p.peek.text == "or":
+    let info = p.here()
+    discard p.advance
+    let n = nsn(nsnPatOr, info)
+    n.add result
+    n.add p.parseAndPattern()
+    result = n
 
 proc parseArrowBody(p: var NsParser; info: TLineInfo; asReturn: bool): NsNode =
   ## The body after `=>`: an expression, which C# also lets be an assignment
@@ -1133,9 +1278,12 @@ proc parseSwitch(p: var NsParser): NsNode =
       # stacked labels (`case 1: case 2:`) form one section
       while p.at(nsIdent) and p.peek.text == "case":
         discard p.advance
-        while true:
-          sec.add p.parseExpr()
-          if p.at(nsComma): discard p.advance else: break
+        let lab = nsn(nsnCaseLabel, p.here())
+        lab.body = p.parsePattern()
+        if p.at(nsIdent) and p.peek.text == "when":
+          discard p.advance
+          lab.add p.parseExpr()
+        sec.add lab
         discard p.expect(nsColon)
       let b = nsn(nsnBlock, sinfo)
       b.sons = p.parseSwitchBody()

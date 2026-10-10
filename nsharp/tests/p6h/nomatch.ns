@@ -1,0 +1,28 @@
+// A switch expression that matches nothing throws.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static string Pick(int n) => n switch { 1 => "one", 2 => "two" };
+
+        static void Main()
+        {
+            Console.WriteLine(Pick(1));
+            try
+            {
+                Console.WriteLine(Pick(3));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("no match");
+            }
+            for (int i = 0; i < 5; i++)
+            {
+                if (i % 2 == 0) continue;
+                Console.WriteLine(i);
+            }
+        }
+    }
+}
