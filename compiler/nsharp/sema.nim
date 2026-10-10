@@ -52,6 +52,7 @@ type
     yieldHost: NsYieldHost                     ## what a `yield` here would belong to
     types: TableRef[string, NsTypeInfo]        ## locals, params, loop variables
     undo: seq[seq[(string, NsTypeInfo, bool)]] ## one frame per open scope
+    inChecked: bool                            ## inside `checked`: `operator checked` applies
 
 const NsLocalFuncMark = "#local"
   ## The type name a local function is declared under, so a call can find it.
@@ -1561,6 +1562,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     result = ctx.walkExpr(n.body)
     n.setType(result, n.body.typeName)
     n.rtype = n.body.rtype
+    if ctx.inChecked and result == tkClass:
+      ## `-x` in a `checked` context calls `operator checked -` if the type has one.
+      let cop = ctx.scope.userOperator(n.body.typeName, n.name, 1, checked = true)
+      if cop != nil: n.argParam = cop
   of nsnIncDec:
     result = ctx.walkExpr(n.body)
     ctx.noteMutation(n.body)
@@ -1575,7 +1580,13 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       let src = (if n.body.typeName.len > 0: canonicalTypeName(n.body.typeName)
                  else: numName(n.body))
       if src.len > 0 and n.typ != nil and n.typ.kind == nsnTypeName:
-        let op = ctx.scope.conversionOp(src, canonicalTypeName(n.typ.name), false)
+        var op: NsNode = nil
+        if ctx.inChecked:
+          ## `explicit operator checked int` is the one a `checked` cast calls.
+          op = ctx.scope.conversionOp(src, canonicalTypeName(n.typ.name), false,
+                                      checked = true)
+        if op == nil:
+          op = ctx.scope.conversionOp(src, canonicalTypeName(n.typ.name), false)
         if op != nil:
           n.argParam = op
           let k = ctx.classifyType(n.typ)
@@ -1690,6 +1701,11 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
           result = ctx.classifyType(op.typ)
           n.setType(result, declTypeName(op.typ))
           n.rtype = op.typ
+          if ctx.inChecked:
+            ## ... and in a `checked` context, its `operator checked +` if it has one.
+            let cop = ctx.scope.userOperator(side.typeName, csOperatorOf(n.name), 2,
+                                             checked = true)
+            if cop != nil: n.argParam = cop
           break
   of nsnNullDot:
     ## `a?.B`: the guarded value goes back where the marker stood, so the tail is
@@ -1776,7 +1792,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     n.setType(tkInt, "int")
     result = tkInt
   of nsnCheckedExpr:
+    let savedChecked = ctx.inChecked
+    ctx.inChecked = n.name == "checked"
     result = ctx.walkExpr(n.body)
+    ctx.inChecked = savedChecked
     n.setType(result, n.body.typeName)
     n.rtype = n.body.rtype
     n.conv = n.body.conv
@@ -2094,6 +2113,11 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       if n.name in ["+", "-"]: n.strVal = "event"
       elif ev.owner != ctx.clsName:
         nsError(ctx.config, n.info, ndEventOutside, ev.owner & "." & ev.name, ev.owner)
+    elif ctx.inChecked and n.name in ["+", "-", "*", "/"] and
+         n.sons[0].typeKind == tkClass:
+      ## `x += y` in a `checked` context: `operator checked +`, if the type has one.
+      let cop = ctx.scope.userOperator(n.sons[0].typeName, n.name, 2, checked = true)
+      if cop != nil: n.argParam = cop
     elif n.name in ["+", "-"] and n.sons[0].typeKind == tkDelegate:
       ## `d += h` combines delegates; `d -= h` would need their invocation lists.
       if n.name == "+": n.strVal = "combine"
@@ -2136,7 +2160,10 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     ctx.checkCondition(n.body)
     walkStmts(ctx, n.sons)
   of nsnChecked, nsnUnchecked:
+    let savedChecked = ctx.inChecked
+    ctx.inChecked = n.kind == nsnChecked
     walkStmts(ctx, n.sons)
+    ctx.inChecked = savedChecked
   of nsnUsingStmt:
     ## The statement form scopes its resources to its body; `using var` declares
     ## them in the enclosing block.
@@ -2230,6 +2257,33 @@ proc declarePrimary(ctx: var NsCheckContext; m: NsNode) =
   for p in decl.primary:
     ctx.declare(p.name, ctx.classifyType(p.typ), declTypeName(p.typ), p.typ)
 
+proc checkCheckedOperator(ctx: NsCheckContext; m: NsNode) =
+  ## `operator checked op` (C# 11) exists for the operators that can overflow and
+  ## for explicit conversions (CS9023, CS9024), and only beside the unchecked
+  ## version, which every other context calls (CS9025).
+  if m.name == "implicit":
+    nsError(ctx.config, m.info, ndCheckedImplicit)
+    return
+  if m.name in ["++", "--"]:
+    nsError(ctx.config, m.info, ndUnsupported, "a checked '" & m.name & "' operator")
+    return
+  if m.name != "explicit" and
+     not (m.name in ["+", "-", "*", "/"] and m.params.len in 1 .. 2) or
+     (m.name in ["*", "/"] and m.params.len == 1):
+    nsError(ctx.config, m.info, ndCheckedNotAllowed, m.name)
+    return
+  var found = false
+  for o in ctx.scope.classes[ctx.clsName].operators:
+    if o.name == m.name and not o.attrs.isChecked and o.params.len == m.params.len:
+      if m.name == "explicit":
+        if o.typ != nil and m.typ != nil and declTypeName(o.typ) == declTypeName(m.typ):
+          found = true
+      else: found = true
+  if not found:
+    let shown = (if m.name == "explicit": "explicit operator " & declTypeName(m.typ)
+                 else: "operator " & m.name)
+    nsError(ctx.config, m.info, ndCheckedNeedsUnchecked, shown)
+
 proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
   ctx.curMember = m
   ctx.yieldHost = (case m.kind
@@ -2238,6 +2292,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
                    else: yhNone)
   case m.kind
   of nsnOperatorDecl:
+    if m.attrs.isChecked: ctx.checkCheckedOperator(m)
     let savedRet = ctx.retType
     ctx.retType = m.typ
     ctx.isStaticCtx = true

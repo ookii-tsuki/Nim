@@ -1,0 +1,50 @@
+using System;
+namespace Demo
+{
+    struct Small
+    {
+        public int V;
+        public Small(int v) { V = v; }
+        public static Small operator +(Small a, Small b) => new Small((a.V + b.V) % 100);
+        public static Small operator checked +(Small a, Small b)
+        {
+            int r = a.V + b.V;
+            if (r >= 100) throw new OverflowException("Small overflow");
+            return new Small(r);
+        }
+        public static Small operator -(Small a) => new Small(0);
+        public static Small operator checked -(Small a) => throw new OverflowException("neg");
+        public static explicit operator byte(Small s) => (byte)(s.V * 3);
+        public static explicit operator checked byte(Small s)
+        {
+            if (s.V * 3 > 255) throw new OverflowException("byte");
+            return (byte)(s.V * 3);
+        }
+    }
+    class Program
+    {
+        static void Main()
+        {
+            var a = new Small(60);
+            var b = new Small(70);
+            Console.WriteLine((a + b).V);
+            Console.WriteLine(unchecked(a + b).V);
+            try { Console.WriteLine(checked(a + b).V); }
+            catch (OverflowException e) { Console.WriteLine("caught " + e.Message); }
+            checked
+            {
+                var c = new Small(10) + new Small(20);
+                Console.WriteLine(c.V);
+                try { var d = -c; Console.WriteLine(d.V); }
+                catch (OverflowException e) { Console.WriteLine("caught " + e.Message); }
+                try { Console.WriteLine((byte)new Small(90)); }
+                catch (OverflowException e) { Console.WriteLine("caught " + e.Message); }
+                var x = a;
+                try { x += b; Console.WriteLine(x.V); }
+                catch (OverflowException e) { Console.WriteLine("caught " + e.Message); }
+            }
+            Console.WriteLine((-a).V);
+            Console.WriteLine((byte)new Small(90));
+        }
+    }
+}

@@ -1,0 +1,14 @@
+using System;
+namespace Demo
+{
+    struct S
+    {
+        public int V;
+        public static bool operator ==(S a, S b) => a.V == b.V;
+        public static bool operator !=(S a, S b) => a.V != b.V;
+        public static bool operator checked ==(S a, S b) => a.V == b.V;
+        public override bool Equals(object o) => false;
+        public override int GetHashCode() => 0;
+    }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

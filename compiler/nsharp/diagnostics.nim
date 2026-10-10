@@ -57,6 +57,9 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndCheckedNotAllowed
+    ndCheckedImplicit
+    ndCheckedNeedsUnchecked
     ndTypeArgCount
     ndNotGenericType
     ndPrimaryNotChained
@@ -153,6 +156,11 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndCheckedNotAllowed: (code: "9023", msg: "User-defined operator '$1' cannot be declared checked"),
+    ndCheckedImplicit: (code: "9024", msg: "An 'implicit' user-defined conversion operator cannot" &
+                      " be declared checked"),
+    ndCheckedNeedsUnchecked: (code: "9025", msg: "The operator '$1' requires a matching non-checked" &
+                            " version of the operator to also be defined"),
     ndTypeArgCount: (code: "0305", msg: "Using the generic type '$1' requires $2 type arguments"),
     ndNotGenericType: (code: "0308", msg: "The non-generic type '$1' cannot be used with type arguments"),
     ndPrimaryNotChained: (code: "8862", msg: "A constructor declared in a type with parameter list must" &

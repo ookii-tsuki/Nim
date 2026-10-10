@@ -1,0 +1,11 @@
+using System;
+namespace Demo
+{
+    struct S
+    {
+        public int V;
+        public static implicit operator int(S s) => s.V;
+        public static implicit operator checked int(S s) => s.V;
+    }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

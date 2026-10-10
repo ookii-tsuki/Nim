@@ -393,6 +393,7 @@ and the namespaces must be merged or layered.
 | **Operators** `operator +` | overload | ✅ v1 | desugar (→ the Nim proc of that operator; `%`/`&`/`\|`/`^`/`<<`/`>>`/`!` are `mod`/`and`/`or`/`xor`/`shl`/`shr`/`not`); `operator true/false` is NS9999 |
 | Conversion ops `implicit`/`explicit` | casts | ✅ v1 | desugar (implicit → `converter nsImplicit_T`, explicit → a proc a cast calls; using an explicit one implicitly is NS0266) |
 | `++`/`--` overloads | `operator ++` | ✅ v1 | desugar (→ `inc`/`dec` over a `var` operand) |
+| `checked` operators (C# 11) | `operator checked +`, `explicit operator checked int` | ✅ v1 | sem + desugar: inside `checked(...)`/`checked { }` a `+`, `-`, `*`, `/`, unary `-`, compound assignment or explicit cast on a type that declares the checked version calls it (`nsCheckedAdd`, `nsExplicitChecked_T`); elsewhere the unchecked one. Only those operators may be checked (NS9023), never an implicit conversion (NS9024), and only beside the unchecked version (NS9025); a checked `++`/`--` is NS9999 |
 | Nested/partial members | - | 🔜 later (partial methods) | - |
 
 ### 5.4 Properties (flagship C# feature)
@@ -510,7 +511,7 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 `"obj=" + obj` both work.
 | Null-forgiving `x!` | suppress NRT | ✅ v1 | front (a postfix with no effect: it only silences nullable warnings, which N# does not issue) |
 | `checked`/`unchecked` expr | ovf | ✅ v1 | desugar (a block expression: `push overflowChecks`, the operand into a temporary, `pop`) |
-| Throw expression `x ?? throw e` | raise as a value | ✅ v1 | desugar (`raise` is `noreturn`, so it stands where a value is expected) |
+| Throw expression `x ?? throw e` | raise as a value | ✅ v1 | desugar (`raise` is `noreturn`, so it stands where a value is expected); `=> throw e` as a member body is the statement, whatever the member returns) |
 | `stackalloc` | stack mem | 🚫 out | front |
 | Precedence | C# table | ✅ v1 | front |
 
@@ -1015,6 +1016,7 @@ code:
 | `NS0266` | CS0266 | a numeric value would narrow implicitly; a cast is needed |
 | `NS0305`/`NS0308` | CS0305/CS0308 | an attribute's type arguments do not match its class |
 | `NS9054` | CS9054 | a `file` type nested in another type |
+| `NS9023`/`NS9024`/`NS9025` | CS9023/CS9024/CS9025 | a `checked` operator that cannot be checked, or has no unchecked version |
 | `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
 | `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
 | `NS0070` | CS0070 | an event used outside its type other than by `+=`/`-=` |

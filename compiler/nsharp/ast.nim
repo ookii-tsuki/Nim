@@ -37,6 +37,7 @@ type
     isRecord*: bool         ## a `record`: value equality, printing, `with`
     isPrimary*: bool        ## a constructor synthesized from a primary parameter list
     isFile*: bool           ## `file` (C# 11): a top-level type only its own file may name
+    isChecked*: bool        ## `operator checked +` (C# 11): used in a `checked` context
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.

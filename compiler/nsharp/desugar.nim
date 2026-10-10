@@ -560,7 +560,23 @@ proc instanceMethodGroup(l: Lowerer; n: NsNode): PNode =
 proc conversionProcName*(op: NsNode): string =
   ## `implicit operator double(Vec)` is the converter `nsImplicit_double`; an
   ## explicit one an ordinary proc, called by a cast.
-  (if op.name == "implicit": "nsImplicit_" else: "nsExplicit_") & mangleType(op.typ)
+  (if op.name == "implicit": "nsImplicit_"
+   elif op.attrs.isChecked: "nsExplicitChecked_"
+   else: "nsExplicit_") & mangleType(op.typ)
+
+proc checkedOperatorName*(op: NsNode): string =
+  ## `operator checked +` is an ordinary proc, which a `checked` context calls by
+  ## name: Nim has one `+` per signature, and that one is the unchecked operator.
+  let word = case op.name
+             of "+": "Add"
+             of "-": (if op.params.len == 1: "Neg" else: "Sub")
+             of "*": "Mul"
+             else: "Div"
+  "nsChecked" & word
+
+proc isCheckedOp(n: NsNode): bool =
+  n.argParam != nil and n.argParam.kind == nsnOperatorDecl and
+    n.argParam.attrs.isChecked and n.argParam.name notin ["implicit", "explicit"]
 
 
 proc castToNim(l: Lowerer; n: NsNode): PNode =
@@ -876,6 +892,9 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     ## `[a, ..xs, b]` into an array: a sequence the elements and the spread
     ## collections' elements are added to, in order.
     let info = n.info
+    if n.typ == nil:
+      ## No target type: sema has reported it (NS9176); nothing to lower to.
+      return empty(info)
     let t = l.fresh("nsColl")
     let et = n.typ.typ
     let sl = newNodeI(nkStmtList, info)
@@ -910,7 +929,11 @@ proc expr(l: Lowerer; n: NsNode): PNode =
         br.add l.expr(e)
     result = newTree(nkPrefix, n.info, l.id("@", n.info), br)
   of nsnUnary:
-    result = newTree(nkPrefix, n.info, l.id(n.name, n.info), l.expr(n.body))
+    if isCheckedOp(n):
+      result = newTree(nkCall, n.info, l.id(checkedOperatorName(n.argParam), n.info),
+                       l.expr(n.body))
+    else:
+      result = newTree(nkPrefix, n.info, l.id(n.name, n.info), l.expr(n.body))
   of nsnIncDec:
     ## In an expression `x++` is the old value and `++x` the new one; the intrinsics
     ## carry both. As a statement it is Nim's own `inc`/`dec` (see `stmtInner`).
@@ -982,6 +1005,9 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       result.add l.id(n.name, n.info)
       result.add l.expr(probe)
       result.add l.noneFromName(probe.typeName, n.info)
+    elif isCheckedOp(n):
+      result = newTree(nkCall, n.info, l.id(checkedOperatorName(n.argParam), n.info),
+                       l.ordered(n.sons[0], n.sons[1 .. 1]), l.expr(n.sons[1]))
     elif n.name in ["nsDiv", "nsMod"]:
       ## Integer `/` and `%` go through library procs, which are called rather
       ## than used as an infix operator.
@@ -1752,7 +1778,10 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
     if n.strVal.len > 0:
       operand = newTree(nkCall, n.info, l.id(nimTypeName(n.strVal), n.info), operand)
     let rhs = l.expr(n.sons[1])
-    if n.typeKind == tkInt and n.name in ["/", "mod"]:
+    if isCheckedOp(n):
+      value = newTree(nkCall, n.info, l.id(checkedOperatorName(n.argParam), n.info),
+                      operand, rhs)
+    elif n.typeKind == tkInt and n.name in ["/", "mod"]:
       value = newTree(nkCall, n.info,
                       l.id((if n.name == "/": "nsDiv" else: "nsMod"), n.info),
                       operand, rhs)
@@ -2359,6 +2388,8 @@ proc lowerOperator(l: Lowerer; cls, m: NsNode): seq[PNode] =
                          newTree(nkCall, info, l.id(helper, info), l.id("x", info)))
     result.add l.mkProc(l.exportId((if m.name == "++": "inc" else: "dec"), info), ifp,
                         newTree(nkStmtList, info, assign), info)
+  elif m.attrs.isChecked:
+    result.add l.mkProc(l.exportId(checkedOperatorName(m), info), fp, body, info)
   else:
     result.add l.mkProc(l.exportId(nimOperatorName(m.name), info), fp, body, info)
 

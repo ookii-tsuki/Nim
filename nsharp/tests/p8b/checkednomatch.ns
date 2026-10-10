@@ -1,0 +1,10 @@
+using System;
+namespace Demo
+{
+    struct S
+    {
+        public int V;
+        public static S operator checked +(S a, S b) => a;
+    }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}
