@@ -1880,23 +1880,61 @@ proc isAutoProperty(m: NsNode): bool =
 
 # --- enum and delegate declarations -----------------------------------------
 
-proc lowerEnum(l: Lowerer; n: NsNode): PNode =
-  let enumTy = newNodeI(nkEnumTy, n.info)
-  enumTy.add empty(n.info)
+proc qualifySiblings(n: NsNode; enumName: string; names: seq[string]) =
+  ## In an enum member's value, a bare sibling (`All = Read | Write`) is `E.Read`.
+  if n == nil: return
+  if n.body != nil and n.body.kind == nsnIdent and n.body.name in names:
+    n.body = nsnMember(nsnIdent(enumName, n.body.info), n.body.name, n.body.info)
+  else: qualifySiblings(n.body, enumName, names)
+  for i in 0 ..< n.sons.len:
+    if n.sons[i] != nil and n.sons[i].kind == nsnIdent and n.sons[i].name in names:
+      n.sons[i] = nsnMember(nsnIdent(enumName, n.sons[i].info), n.sons[i].name,
+                            n.sons[i].info)
+    else: qualifySiblings(n.sons[i], enumName, names)
+
+proc lowerEnum(l: Lowerer; n: NsNode; into: var seq[PNode]) =
+  ## `enum E : U { A, B = 4 }` is `type E = distinct U`, each member a template
+  ## over `typedesc[E]` (so `E.A` reads as in C#) yielding its value, and
+  ## `nsEnum(E, U, flags, names)` for the operators and the printing. A member
+  ## without a value is the previous one plus one, the first zero, as in C#.
+  let info = n.info
+  let u = (if n.typ != nil: l.typeToNim(n.typ, info) else: l.id("int32", info))
+  let td = newTree(nkTypeDef, info, l.exportedName(n.attrs, n.name, info), empty(info),
+                   newTree(nkDistinctTy, info, u))
+  into.add newTree(nkTypeSection, info, td)
+  var names: seq[string] = @[]
+  for f in n.sons: names.add f.name
+  var prev = ""
+  let table = newNodeI(nkBracket, info)
   for f in n.sons:
-    var field: PNode = l.id(f.name, f.info)
+    var value: PNode
     if f.body != nil:
-      let fd = newNodeI(nkEnumFieldDef, f.info)
-      fd.add field
-      fd.add l.expr(f.body)
-      field = fd
-    enumTy.add field
-  let td = newNodeI(nkTypeDef, n.info)
-  td.add l.exportedName(n.attrs, n.name, n.info)
-  td.add empty(n.info)
-  td.add enumTy
-  result = newNodeI(nkTypeSection, n.info)
-  result.add td
+      let holder = nsn(nsnExprStmt, f.info)
+      holder.body = f.body
+      qualifySiblings(holder, n.name, names)
+      value = newTree(nkCall, f.info, l.id(n.name, f.info),
+        newTree(nkCall, f.info, copyTree(u), l.expr(holder.body)))
+    elif prev.len == 0:
+      value = newTree(nkCall, f.info, l.id(n.name, f.info), newIntNode(nkIntLit, 0))
+    else:
+      value = newTree(nkCall, f.info, l.id(n.name, f.info), newTree(nkInfix, f.info,
+        l.id("+", f.info), newTree(nkCall, f.info, copyTree(u),
+          newTree(nkDotExpr, f.info, l.id(n.name, f.info), l.id(prev, f.info))),
+        newIntNode(nkIntLit, 1)))
+    let fp = newTree(nkFormalParams, f.info, l.id(n.name, f.info),
+      newTree(nkIdentDefs, f.info, l.id("t", f.info),
+        newTree(nkBracketExpr, f.info, l.id("typedesc", f.info), l.id(n.name, f.info)),
+        empty(f.info)))
+    into.add newTree(nkTemplateDef, f.info, l.exportedName(n.attrs, f.name, f.info),
+      empty(f.info), empty(f.info), fp, empty(f.info), empty(f.info),
+      newTree(nkStmtList, f.info, value))
+    table.add newTree(nkTupleConstr, f.info, newStrNode(nkStrLit, f.name),
+      newTree(nkCall, f.info, l.id("int64", f.info), newTree(nkCall, f.info,
+        copyTree(u), newTree(nkDotExpr, f.info, l.id(n.name, f.info),
+                             l.id(f.name, f.info)))))
+    prev = f.name
+  into.add newTree(nkCall, info, l.id("nsEnum", info), l.id(n.name, info), copyTree(u),
+                   l.id(if n.hasAttribute("Flags"): "true" else: "false", info), table)
 
 proc lowerDelegate(l: Lowerer; n: NsNode): PNode =
   ## `delegate R D(args)` becomes a `{.closure.}` proc type, so both plain
@@ -2840,7 +2878,7 @@ proc lowerDecl(l: var Lowerer; d: NsNode; into: var seq[PNode]) =
   of nsnClassDecl:
     if d.classKind == ckInterface: lowerInterface(l, d, into)
     else: lowerClass(l, d, into)
-  of nsnEnumDecl: into.add l.lowerEnum(d)
+  of nsnEnumDecl: l.lowerEnum(d, into)
   of nsnDelegateDecl: into.add l.lowerDelegate(d)
   else: into.add l.stmt(d)
 

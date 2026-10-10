@@ -949,6 +949,18 @@ proc isLambdaArg(a: NsNode): bool =
   a != nil and (isDeferred(a) or
                 (a.kind == nsnNamedArg and isDeferred(a.body)))
 
+proc warnObsolete(ctx: NsCheckContext; attr: NsNode; what: string; info: TLineInfo) =
+  ## A use of an `[Obsolete]` declaration: CS0618 with the message, CS0612 without
+  ## one, and the error CS0619 when the attribute says `true`.
+  if attr == nil: return
+  let msg = (if attr.sons.len > 0 and attr.sons[0].kind == nsnStrLit: attr.sons[0].strVal
+             else: "")
+  let isError = attr.sons.len > 1 and attr.sons[1].kind == nsnBoolLit and
+                attr.sons[1].intVal == 1
+  if isError: nsError(ctx.config, info, ndObsoleteError, what, msg)
+  elif msg.len > 0: nsWarn(ctx.config, info, ndObsolete, what, msg)
+  else: nsWarn(ctx.config, info, ndObsoleteNoMessage, what)
+
 proc isExtensionCall(ctx: NsCheckContext; callee: NsNode; owner: string): bool =
   ## Whether `recv.M` names an extension method: one is in scope, and the
   ## receiver's own type -- a class this compilation declares, or a library type
@@ -1011,6 +1023,11 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## A receiver the scope does not know (`Console`, a name from a module it does
     ## not cover) has none, and the call is left to Nim.
     cands = ctx.scope.memberOverloads(owner, callee.name)
+    if ctx.scope.classes.hasKey(owner):
+      let mi = ctx.scope.findMemberInfo(owner, callee.name)
+      if mi.obsolete != nil:
+        ctx.warnObsolete(mi.obsolete, signature(mi.owner & "." & callee.name, mi.params),
+                         callee.info)
     if rk != tkType and ctx.isExtensionCall(callee, owner):
       ## `x.M(args)` where `x`'s type has no `M`: an extension method, which is
       ## `M(x, args)`. Its parameters after the `this` one take the arguments.
@@ -1216,6 +1233,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ## same way a method call's parameter lists are. A BCL type has none here.
       let cn = unqualified(n.typ.name)
       if ctx.scope.classes.hasKey(cn):
+        ctx.warnObsolete(ctx.scope.classes[cn].obsolete, cn, n.info)
         if ctx.scope.classes[cn].isStatic:
           nsError(ctx.config, n.info, ndStaticClassInstance, cn)
         elif ctx.scope.classes[cn].isAbstract or
@@ -2063,7 +2081,28 @@ proc walkClass(ctx: var NsCheckContext; cls: NsNode) =
   ctx.typeParams = savedTps
   ctx.checkBaseCtors(cls)
 
+proc checkAttributes(ctx: NsCheckContext; n: NsNode) =
+  ## Each `[A]` names an attribute class, `AAttribute` or `A` (CS0246), which must
+  ## derive from `Attribute` (CS0616). Its arguments have no effect N# can observe
+  ## without reflection, so they are not evaluated.
+  if n == nil: return
+  for a in n.attributes:
+    let short = a.name.split('.')[^1]
+    var found = ""
+    for c in [short & "Attribute", short]:
+      if ctx.scope.classes.hasKey(c) or ctx.surface.types.hasKey(c):
+        found = c
+        break
+    if found.len == 0:
+      nsError(ctx.config, a.info, ndNamespaceNotFound, short)
+    elif ctx.scope.classes.hasKey(found) and "Attribute" notin ctx.scope.baseChain(found):
+      nsError(ctx.config, a.info, ndNotAttributeClass, found)
+  for p in n.params: ctx.checkAttributes(p)
+  if n.kind in {nsnClassDecl, nsnEnumDecl}:
+    for m in n.sons: ctx.checkAttributes(m)
+
 proc walkTop(ctx: var NsCheckContext; d: NsNode) =
+  ctx.checkAttributes(d)
   case d.kind
   of nsnClassDecl: ctx.walkClass(d)
   of nsnNamespace:

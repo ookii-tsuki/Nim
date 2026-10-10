@@ -1,0 +1,2 @@
+An attribute class must derive from System.Attribute.
+code: NS0616
