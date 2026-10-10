@@ -1,0 +1,21 @@
+// Without an implicit conversion, a struct is not a double.
+using System;
+
+namespace Demo
+{
+    struct Meters
+    {
+        public double V;
+        public static explicit operator double(Meters m) => m.V;
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Meters m = new Meters();
+            double d = m;
+            Console.WriteLine(d);
+        }
+    }
+}

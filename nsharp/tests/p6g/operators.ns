@@ -1,0 +1,85 @@
+// Operator overloading (binary, unary, comparison, ++), user-defined implicit
+// and explicit conversions, indexers with one and several indices, accessor
+// forms, and struct members that mutate `this`.
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    struct Vec
+    {
+        public double X;
+        public double Y;
+        public Vec(double x, double y) { X = x; Y = y; }
+        public static Vec operator +(Vec a, Vec b) { return new Vec(a.X + b.X, a.Y + b.Y); }
+        public static Vec operator -(Vec a, Vec b) => new Vec(a.X - b.X, a.Y - b.Y);
+        public static Vec operator -(Vec a) => new Vec(-a.X, -a.Y);
+        public static Vec operator *(Vec a, double k) => new Vec(a.X * k, a.Y * k);
+        public static bool operator ==(Vec a, Vec b) => a.X == b.X && a.Y == b.Y;
+        public static bool operator !=(Vec a, Vec b) => !(a == b);
+        public static implicit operator double(Vec v) => v.X * v.X + v.Y * v.Y;
+        public static explicit operator Vec(double d) => new Vec(d, d);
+        public void Scale(double k) { X = X * k; Y *= k; }
+        public override string ToString() => $"({X}, {Y})";
+        public override bool Equals(object o) => false;
+        public override int GetHashCode() => 0;
+    }
+
+    class Counter
+    {
+        public int N;
+        public static Counter operator ++(Counter c) { Counter r = new Counter(); r.N = c.N + 1; return r; }
+        public static bool operator <(Counter a, Counter b) => a.N < b.N;
+        public static bool operator >(Counter a, Counter b) => a.N > b.N;
+    }
+
+    class Grid
+    {
+        int[] cells = new int[9];
+        Dictionary<string, int> named = new Dictionary<string, int>();
+        public int this[int r, int c]
+        {
+            get { return cells[r * 3 + c]; }
+            set { cells[r * 3 + c] = value; }
+        }
+        public int this[string key]
+        {
+            get => named.ContainsKey(key) ? named[key] : -1;
+            set => named[key] = value;
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Vec a = new Vec(1, 2);
+            Vec b = new Vec(3, 4);
+            Console.WriteLine((a + b).ToString());
+            Console.WriteLine((b - a).ToString());
+            Console.WriteLine((-a).ToString());
+            Console.WriteLine((a * 2).ToString());
+            Console.WriteLine(a == new Vec(1, 2));
+            Console.WriteLine(a != b);
+            double len2 = b;
+            Console.WriteLine(len2);
+            Vec c = (Vec)1.5;
+            Console.WriteLine(c.ToString());
+            a += b;
+            Console.WriteLine(a.ToString());
+            a.Scale(2);
+            Console.WriteLine(a.ToString());
+            Counter k = new Counter();
+            k++;
+            ++k;
+            Console.WriteLine(k.N);
+            Console.WriteLine(k > new Counter());
+            Grid g = new Grid();
+            g[1, 2] = 7;
+            g[1, 2] += 1;
+            Console.WriteLine(g[1, 2]);
+            g["x"] = 5;
+            Console.WriteLine(g["x"] + g["y"]);
+        }
+    }
+}

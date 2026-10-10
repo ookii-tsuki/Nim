@@ -84,6 +84,10 @@ type
                        #   sons = initializer arguments
     nsnPropertyDecl    # name, typ, params = [getBody, setBody], attrs
     nsnFieldDecl       # name, typ, body = initializer (or nil), attrs
+    nsnOperatorDecl    # name = C# operator ("+", "==", "++", ...) or "implicit" /
+                       #   "explicit" for a conversion; typ = result, params, body
+    nsnIndexerDecl     # typ = element type, params = index parameters,
+                       #   sons = [getter, setter] (either may be nil)
     nsnParam           # name, typ, body = default value (or nil), attrs
     nsnWhere           # name = type parameter, sons = constraints: types, or
                        #   nsnIdent "class" / "struct" / "new" / "notnull" / "unmanaged"

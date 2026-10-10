@@ -38,6 +38,7 @@ type
     retType: NsNode                            ## enclosing member's return type
     isStaticCtx: bool                          ## inside a static member: no `this`
     typeParams: seq[string]                    ## the generic parameters in scope
+    curMember: NsNode                          ## the member whose body is walked
     inCtor: bool                               ## inside a constructor of `clsName`
     ctorIsStatic: bool                         ## ... and it is the static one
     types: TableRef[string, NsTypeInfo]        ## locals, params, loop variables
@@ -207,6 +208,19 @@ proc memberKindOfSurface(ctx: NsCheckContext; rk: NsTypeKind; recv, name: string
 # `int` to `float`, nor for `char`. The conversion an operand or a value needs is
 # recorded on it (`conv`), and only when both types are known exactly, so an
 # expression the frontend cannot type is left to Nim as before.
+
+proc csOperatorOf*(nimOp: string): string =
+  ## The C# operator a lowered operator name came from.
+  case nimOp
+  of "mod", "nsMod": "%"
+  of "nsDiv": "/"
+  of "and": "&"
+  of "or": "|"
+  of "xor": "^"
+  of "shl": "<<"
+  of "shr": ">>"
+  of "not": "!"
+  else: nimOp
 
 proc numName(n: NsNode): string =
   ## The C# numeric type of an expression, or "" when it is not known exactly.
@@ -388,6 +402,11 @@ proc incompatible(ctx: NsCheckContext; arg: NsNode; t: NsTarget): bool =
     return
   let ak = arg.typeKind
   if ak == tkUnknown or t.kind == tkUnknown: return
+  let src = (if arg.typeName.len > 0: canonicalTypeName(arg.typeName) else: numName(arg))
+  if src.len > 0 and t.name.len > 0 and
+     ctx.scope.conversionOp(src, canonicalTypeName(t.name), true) != nil:
+    ## A user-defined implicit conversion (`implicit operator double(Vec v)`).
+    return
   case ak
   of tkClass:
     if t.kind == tkException: return          ## an exception class is one of these
@@ -518,7 +537,14 @@ proc checkConvertible(ctx: NsCheckContext; value: NsNode; t: NsTarget;
     ctx.markNull(value, t.name)
     return
   if ctx.incompatible(value, t):
-    nsError(ctx.config, info, ndCannotConvert, valueSpelling(value), t.spelling)
+    let src = (if value.typeName.len > 0: canonicalTypeName(value.typeName)
+               else: numName(value))
+    if src.len > 0 and t.name.len > 0 and
+       ctx.scope.conversionOp(src, canonicalTypeName(t.name), false) != nil:
+      ## Only an explicit conversion exists: C# says so (CS0266).
+      nsError(ctx.config, info, ndCannotConvertExplicit, valueSpelling(value), t.spelling)
+    else:
+      nsError(ctx.config, info, ndCannotConvert, valueSpelling(value), t.spelling)
 
 proc isTypeParamRef(ctx: NsCheckContext; t: NsNode): bool =
   ## A parameter typed by a type parameter: a bare name no declaration answers for.
@@ -652,6 +678,16 @@ proc checkMemberAccess(ctx: NsCheckContext; n: NsNode) =
   if n.body != nil and n.body.kind == nsnThis and ctx.clsName.len > 0:
     if not ctx.scope.accessibleFrom(ctx.clsName, n.name):
       ctx.inaccessible(n)
+
+proc noteMutation(ctx: NsCheckContext; target: NsNode) =
+  ## A struct member that assigns to `this` mutates the value it is called on, so it
+  ## takes `self` by `var` (`sema` marks it, lowering reads the mark).
+  if ctx.curMember == nil or ctx.clsName.len == 0 or
+     not ctx.scope.classes.hasKey(ctx.clsName) or
+     ctx.scope.classes[ctx.clsName].classKind != ckStruct: return
+  var t = target
+  while t != nil and t.kind in {nsnMember, nsnIndex}: t = t.body
+  if t != nil and t.kind == nsnThis: ctx.curMember.strVal = "mutating"
 
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind
 proc walkStmt(ctx: var NsCheckContext; n: NsNode)
@@ -968,17 +1004,40 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     elif n.body != nil and n.body.typeKind == tkString:
       result = tkChar
       n.setType(tkChar, "char")
+    elif n.body != nil and n.body.typeKind == tkClass and
+         ctx.scope.findMemberInfo(rn, NsIndexerName).name.len > 0:
+      ## A user indexer: its declared element type, seen through the receiver.
+      let mt = ctx.memberTypeOf(n.body, rn, NsIndexerName)
+      result = ctx.classifyType(mt)
+      n.setType(result, declTypeName(mt))
+      n.rtype = mt
     else:
       n.setType(tkUnknown)
   of nsnUnary:
     result = ctx.walkExpr(n.body)
-    n.setType(result)
+    n.setType(result, n.body.typeName)
+    n.rtype = n.body.rtype
   of nsnIncDec:
-    discard ctx.walkExpr(n.body)
-    n.setType(tkInt)
-    result = tkInt
+    result = ctx.walkExpr(n.body)
+    ctx.noteMutation(n.body)
+    n.setType(result, n.body.typeName)
+    n.rtype = n.body.rtype
   of nsnCast:
     ctx.checkTypeTest(n)
+    block userConversion:
+      ## `(T)x` through a user-defined conversion, implicit or explicit: lowering
+      ## calls the operator by name.
+      discard ctx.walkExpr(n.body)
+      let src = (if n.body.typeName.len > 0: canonicalTypeName(n.body.typeName)
+                 else: numName(n.body))
+      if src.len > 0 and n.typ != nil and n.typ.kind == nsnTypeName:
+        let op = ctx.scope.conversionOp(src, canonicalTypeName(n.typ.name), false)
+        if op != nil:
+          n.argParam = op
+          let k = ctx.classifyType(n.typ)
+          n.setType(k, canonicalTypeName(n.typ.name))
+          n.rtype = n.typ
+          return k
     ## `(T)x` converts, which covers numbers, enums and ref objects. Boxing a value
     ## into `object` is the one case N# cannot express.
     let target = ctx.classifyType(n.typ)
@@ -1071,6 +1130,15 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       n.setType(kindOfNumeric(numResult), numResult)
     else:
       n.setType(result)
+    for side in [n.sons[0], n.sons[1]]:
+      if side != nil and side.typeKind == tkClass:
+        let op = ctx.scope.userOperator(side.typeName, csOperatorOf(n.name), 2)
+        if op != nil:
+          ## `a + b` on a type that declares `operator +`.
+          result = ctx.classifyType(op.typ)
+          n.setType(result, declTypeName(op.typ))
+          n.rtype = op.typ
+          break
   of nsnNullDot:
     ## `a?.B`: the guarded value goes back where the marker stood, so the tail is
     ## checked like any other expression. C# makes a value-typed result `T?`, which
@@ -1217,6 +1285,7 @@ proc walkSwitch(ctx: var NsCheckContext; n: NsNode) =
     walkBody(ctx, sec.body)
 
 proc checkAssignable(ctx: NsCheckContext; target: NsNode) =
+  ctx.noteMutation(target)
   ## A `const` is never assigned (CS0131); a `readonly` field only by its own class's
   ## constructors -- the static one, for a static field (CS0191 / CS0198).
   if target == nil or target.kind != nsnMember or target.body == nil: return
@@ -1343,7 +1412,31 @@ proc checkBaseCtors(ctx: NsCheckContext; cls: NsNode) =
     nsError(ctx.config, cls.info, ndConstructorRequired, cls.name, baseName)
 
 proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
+  ctx.curMember = m
   case m.kind
+  of nsnOperatorDecl:
+    let savedRet = ctx.retType
+    ctx.retType = m.typ
+    ctx.isStaticCtx = true
+    ctx.pushScope()
+    for p in m.params: ctx.walkDecl(p)
+    if m.body != nil:
+      for s in m.body.sons: ctx.walkStmt(s)
+    ctx.popScope()
+    ctx.isStaticCtx = false
+    ctx.retType = savedRet
+  of nsnIndexerDecl:
+    let savedRet = ctx.retType
+    for i in 0 ..< m.sons.len:
+      let acc = m.sons[i]
+      if acc == nil or acc.kind == nsnEmpty: continue
+      ctx.retType = (if i == 0: m.typ else: nil)
+      ctx.pushScope()
+      for p in m.params: ctx.walkDecl(p)
+      if i == 1: ctx.declare("value", ctx.classifyType(m.typ), declTypeName(m.typ), m.typ)
+      for s in acc.sons: ctx.walkStmt(s)
+      ctx.popScope()
+    ctx.retType = savedRet
   of nsnMethodDecl:
     ## Instance methods see the class's members as bare names; static ones do
     ## not, matching the parse-time rewrite this pass replaces.
@@ -1416,6 +1509,9 @@ proc checkSupported(ctx: NsCheckContext; cls: NsNode) =
   ## Features the frontend can parse but does not lower are rejected loudly
   ## rather than dropped silently; ignoring `interface` or `override` produced
   ## programs that looked like they worked.
+  for m in cls.sons:
+    if m.kind == nsnOperatorDecl and m.name in ["true", "false"]:
+      nsError(ctx.config, m.info, ndUnsupported, "'operator " & m.name & "'")
   if cls.typeParams.len > 0:
     for m in cls.sons:
       if m.kind == nsnCtorDecl and m.attrs.isStatic:

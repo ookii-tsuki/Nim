@@ -142,3 +142,13 @@ template nsStmt*(x: untyped) =
   ## cannot be `{.discardable.}`, so a result is discarded here.
   when typeof(x) is void: x
   else: discard x
+
+# `x++` / `++x` used as a value. Statement increments are Nim's own `inc`/`dec`.
+template nsPostInc*(x: untyped): untyped =
+  (let nsOld = x; inc x; nsOld)
+template nsPostDec*(x: untyped): untyped =
+  (let nsOld = x; dec x; nsOld)
+template nsPreInc*(x: untyped): untyped =
+  (inc x; x)
+template nsPreDec*(x: untyped): untyped =
+  (dec x; x)

@@ -65,6 +65,14 @@ proc empty(info: TLineInfo): PNode {.inline.} = newNodeI(nkEmpty, info)
 
 proc emptyList(info: TLineInfo): PNode {.inline.} = newNodeI(nkStmtList, info)
 
+proc identDefs(l: Lowerer; name: string; typ: PNode; info: TLineInfo): PNode =
+  result = newTree(nkIdentDefs, info, l.id(name, info), typ, empty(info))
+
+
+proc exportId(l: Lowerer; name: string; info: TLineInfo): PNode =
+  newTree(nkPostfix, info, l.id("*", info), l.id(name, info))
+
+
 proc clsType(l: Lowerer; name: string; info: TLineInfo): PNode =
   ## The class being lowered as a type: `C`, or `C[T, U]` when it is generic.
   result = l.id(name, info)
@@ -442,9 +450,19 @@ proc instanceMethodGroup(l: Lowerer; n: NsNode): PNode =
     newTree(nkLetSection, n.info, newTree(nkIdentDefs, n.info, l.id("nsRecv", n.info),
                                          empty(n.info), recv)), lam))
 
+proc conversionProcName*(op: NsNode): string =
+  ## `implicit operator double(Vec)` is the converter `nsImplicit_double`; an
+  ## explicit one an ordinary proc, called by a cast.
+  (if op.name == "implicit": "nsImplicit_" else: "nsExplicit_") & mangleType(op.typ)
+
+
 proc castToNim(l: Lowerer; n: NsNode): PNode =
   ## `(T)x` is a Nim conversion, and also how a ref object is downcast. A `T?`
-  ## operand is unwrapped first, since the conversion applies to the value.
+  ## operand is unwrapped first, since the conversion applies to the value. A cast
+  ## through a user-defined conversion calls the operator.
+  if n.argParam != nil and n.argParam.kind == nsnOperatorDecl:
+    return newTree(nkCall, n.info, l.id(conversionProcName(n.argParam), n.info),
+                   l.expr(n.body))
   result = newNodeI(nkCall, n.info)
   result.add l.typeToNim(n.typ, n.info)
   if n.body != nil and n.body.typeKind == tkNullable:
@@ -685,7 +703,8 @@ proc expr(l: Lowerer; n: NsNode): PNode =
                        l.id(n.name, n.info))
   of nsnCall: result = l.callToNim(n)
   of nsnIndex:
-    result = newTree(nkBracketExpr, n.info, l.expr(n.body), l.expr(n.sons[0]))
+    result = newTree(nkBracketExpr, n.info, l.expr(n.body))
+    for i in n.sons: result.add l.expr(i)
   of nsnNew: result = l.newToNim(n)
   of nsnNewArray:
     let typ = newTree(nkBracketExpr, n.info, l.id("newSeq", n.info),
@@ -706,7 +725,11 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnUnary:
     result = newTree(nkPrefix, n.info, l.id(n.name, n.info), l.expr(n.body))
   of nsnIncDec:
-    result = newTree(nkCommand, n.info, l.id(n.name, n.info), l.expr(n.body))
+    ## In an expression `x++` is the old value and `++x` the new one; the intrinsics
+    ## carry both. As a statement it is Nim's own `inc`/`dec` (see `stmtInner`).
+    let tmpl = (if n.strVal == "prefix": "nsPre" else: "nsPost") &
+               (if n.name == "inc": "Inc" else: "Dec")
+    result = newTree(nkCall, n.info, l.id(tmpl, n.info), l.expr(n.body))
   of nsnCast, nsnIs, nsnAs:
     result = l.ifaceTypeOp(n)
     if result != nil: discard
@@ -1109,6 +1132,8 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
     result = blk
   of nsnLocalDecl: result = l.localDeclToNim(n)
   of nsnExprStmt:
+    if n.body != nil and n.body.kind == nsnIncDec:
+      return newTree(nkCommand, n.info, l.id(n.body.name, n.info), l.expr(n.body.body))
     result = l.expr(n.body)
     if n.body != nil and n.body.kind == nsnCall and n.body.body != nil and
        n.body.body.kind != nsnMember and n.body.body.typeKind == tkDelegate:
@@ -1156,13 +1181,18 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
 
 # --- declaration helpers ----------------------------------------------------
 
-proc selfDefs(l: Lowerer; clsName: string; isException: bool; info: TLineInfo): PNode =
+proc selfDefs(l: Lowerer; clsName: string; isException: bool; info: TLineInfo;
+              mutable = false): PNode =
   ## `self: ClsName`, as a `ref` for exception classes because those are lowered
-  ## as value objects.
+  ## as value objects. A struct member that assigns to `this` takes `var self`, since
+  ## a struct is a value and the caller's copy is the one that changes.
   result = newNodeI(nkIdentDefs, info)
   result.add l.id("self", info)
-  result.add (if isException: newTree(nkRefTy, info, l.clsType(clsName, info))
-              else: l.clsType(clsName, info))
+  var t = (if isException: newTree(nkRefTy, info, l.clsType(clsName, info))
+           else: l.clsType(clsName, info))
+  if mutable and l.curClass != nil and l.curClass.classKind == ckStruct:
+    t = newTree(nkVarTy, info, t)
+  result.add t
   result.add empty(info)
 
 proc isAutoProperty(m: NsNode): bool =
@@ -1330,9 +1360,73 @@ proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[P
         l.stmtSeq(setter)
     let sp = newNodeI(nkFormalParams, m.info)
     sp.add empty(m.info)
-    sp.add copyTree(recvDefs)
+    sp.add (if isStatic: copyTree(recvDefs)
+            else: l.selfDefs(cls.name, isException, m.info, mutable = true))
     sp.add l.paramDef(nsnParam("value", m.typ, m.info))
     result.add l.mkProc(l.exportedName(m.attrs, m.name & "=", m.info), sp, sbody, m.info)
+
+# --- operators and indexers ---------------------------------------------------
+
+proc nimOperatorName*(cs: string): string =
+  ## The Nim proc a C# operator declaration becomes.
+  case cs
+  of "%": "mod"
+  of "&": "and"
+  of "|": "or"
+  of "^": "xor"
+  of "<<": "shl"
+  of ">>": "shr"
+  of "!", "~": "not"
+  else: cs
+
+proc lowerOperator(l: Lowerer; cls, m: NsNode): seq[PNode] =
+  ## `operator +` is the Nim proc `+` over the declared operands; `++`/`--` are
+  ## `inc`/`dec` over a `var` operand, assigning the operator's result; a
+  ## conversion is a `converter` when implicit, a proc a cast calls when explicit.
+  result = @[]
+  let info = m.info
+  let fp = l.formalParams(m.typ, m.params, info)
+  let body = l.stmtSeq(m.body)
+  case m.name
+  of "implicit", "explicit":
+    result.add l.mkProc(l.exportId(conversionProcName(m), info), fp, body, info,
+                        kind = (if m.name == "implicit": nkConverterDef else: nkProcDef))
+  of "++", "--":
+    let helper = "nsOp" & (if m.name == "++": "Inc_" else: "Dec_") & cls.name
+    result.add l.mkProc(l.id(helper, info), fp, body, info)
+    let ifp = newNodeI(nkFormalParams, info)
+    ifp.add empty(info)
+    let pt = (if m.params.len > 0: l.typeToNim(m.params[0].typ, info) else: empty(info))
+    ifp.add newTree(nkIdentDefs, info, l.id("x", info), newTree(nkVarTy, info, pt),
+                    empty(info))
+    let assign = newTree(nkAsgn, info, l.id("x", info),
+                         newTree(nkCall, info, l.id(helper, info), l.id("x", info)))
+    result.add l.mkProc(l.exportId((if m.name == "++": "inc" else: "dec"), info), ifp,
+                        newTree(nkStmtList, info, assign), info)
+  else:
+    result.add l.mkProc(l.exportId(nimOperatorName(m.name), info), fp, body, info)
+
+proc lowerIndexer(l: Lowerer; cls, m: NsNode; isException: bool): seq[PNode] =
+  ## `this[...]` is Nim's `[]` and `[]=` over the receiver and the index parameters.
+  result = @[]
+  let info = m.info
+  let getter = (if m.sons.len > 0: m.sons[0] else: nil)
+  let setter = (if m.sons.len > 1: m.sons[1] else: nil)
+  if getter != nil:
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add l.typeToNim(m.typ, info)
+    fp.add l.selfDefs(cls.name, isException, info)
+    for p in m.params: fp.add l.paramDef(p)
+    result.add l.mkProc(l.exportedName(m.attrs, "[]", info), fp, l.stmtSeq(getter), info)
+  if setter != nil:
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add empty(info)
+    fp.add l.selfDefs(cls.name, isException, info, mutable = true)
+    for p in m.params: fp.add l.paramDef(p)
+    fp.add newTree(nkIdentDefs, info, l.id("value", info), l.typeToNim(m.typ, info),
+                   empty(info))
+    result.add l.mkProc(l.exportedName(m.attrs, "[]=", info), fp, l.stmtSeq(setter),
+                        info)
 
 # --- constructors -----------------------------------------------------------
 
@@ -1343,7 +1437,7 @@ proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
   ## constructor that chains to `this(...)`, whose target runs them.
   let ip = newNodeI(nkFormalParams, m.info)
   ip.add empty(m.info)
-  ip.add l.selfDefs(cls.name, isException, m.info)
+  ip.add l.selfDefs(cls.name, isException, m.info, mutable = true)
   for p in m.params: ip.add l.paramDef(p)
   let ibody = newNodeI(nkStmtList, m.info)
   if m.initKind != "this":
@@ -1457,12 +1551,6 @@ proc vtSlots(l: Lowerer; iface: string; params: seq[string];
           result.add (m: m, setter: false, params: src.params, args: src.args)
         if m.params.len > 1 and m.params[1] != nil:
           result.add (m: m, setter: true, params: src.params, args: src.args)
-
-proc identDefs(l: Lowerer; name: string; typ: PNode; info: TLineInfo): PNode =
-  result = newTree(nkIdentDefs, info, l.id(name, info), typ, empty(info))
-
-proc exportId(l: Lowerer; name: string; info: TLineInfo): PNode =
-  newTree(nkPostfix, info, l.id("*", info), l.id(name, info))
 
 proc subType(l: Lowerer; t: NsNode; slot: NsSlot; info: TLineInfo): PNode =
   l.typeToNim(substitute(t, slot.params, slot.args), info)
@@ -1937,7 +2025,8 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         let np = newNodeI(nkFormalParams, m.info)
         np.add params[0]
         np.add (if m.attrs.isStatic: l.typedescDefs(n.name, m.info)
-                else: l.selfDefs(n.name, isException, m.info))
+                else: l.selfDefs(n.name, isException, m.info,
+                                 mutable = m.strVal == "mutating"))
         for i in 1 ..< params.len: np.add params[i]
         params = np
       ## `R I.M()` is reachable only through `I`, so it gets a name of its own that
@@ -1952,6 +2041,12 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     of nsnPropertyDecl:
       inner.thisName = (if m.attrs.isStatic: "" else: "self")
       for p in inner.lowerProperty(n, m, isException): into.add l.asMethod(n, m, p)
+    of nsnOperatorDecl:
+      inner.thisName = ""
+      for p in inner.lowerOperator(n, m): into.add p
+    of nsnIndexerDecl:
+      inner.thisName = "self"
+      for p in inner.lowerIndexer(n, m, isException): into.add p
     of nsnCtorDecl:
       if m.attrs.isStatic:
         ## The static constructor runs once, after the static initialisers.
@@ -2002,7 +2097,7 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       0 in l.scope.classes[mappedBase].ctorArities
     let ip = newNodeI(nkFormalParams, info)
     ip.add empty(info)
-    ip.add l.selfDefs(n.name, isException, info)
+    ip.add l.selfDefs(n.name, isException, info, mutable = true)
     let ibody = newNodeI(nkStmtList, info)
     for f in fieldInits: ibody.add copyTree(f)
     if mappedBase.len > 0 and baseParamless and

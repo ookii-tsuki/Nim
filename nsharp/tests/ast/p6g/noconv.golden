@@ -12,7 +12,7 @@ nkStmtList
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'Vec'
+        nkIdent 'Meters'
       nkEmpty
       nkObjectTy
         nkEmpty
@@ -22,14 +22,8 @@ nkStmtList
           nkIdentDefs
             nkPostfix
               nkIdent '*'
-              nkIdent 'X'
-            nkIdent 'int32'
-            nkEmpty
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'Y'
-            nkIdent 'int32'
+              nkIdent 'V'
+            nkIdent 'float64'
             nkEmpty
     nkTypeDef
       nkPostfix
@@ -52,7 +46,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Vec'
+        nkIdent 'Meters'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -67,7 +61,22 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Vec'
+        nkIdent 'Meters'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsExplicit_double'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'm'
+        nkIdent 'Meters'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -79,12 +88,12 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Vec'
+      nkIdent 'Meters'
       nkIdentDefs
         nkIdent 't'
         nkBracketExpr
           nkIdent 'typedesc'
-          nkIdent 'Vec'
+          nkIdent 'Meters'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -92,7 +101,7 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initVec'
+      nkIdent 'initMeters'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -100,7 +109,7 @@ nkStmtList
       nkIdentDefs
         nkIdent 'self'
         nkVarTy
-          nkIdent 'Vec'
+          nkIdent 'Meters'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -108,11 +117,11 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newVec'
+      nkIdent 'newMeters'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Vec'
+      nkIdent 'Meters'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -195,12 +204,12 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Vec'
+        nkIdent 'Meters'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.Vec"
+      nkStrLit "Demo.Meters"
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -211,7 +220,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Vec'
+        nkIdent 'Meters'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -222,26 +231,45 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsExplicit_double'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'float64'
+      nkIdentDefs
+        nkIdent 'm'
+        nkIdent 'Meters'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkDotExpr
+          nkIdent 'm'
+          nkIdent 'V'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'nsCreate'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Vec'
+      nkIdent 'Meters'
       nkIdentDefs
         nkIdent 't'
         nkBracketExpr
           nkIdent 'typedesc'
-          nkIdent 'Vec'
+          nkIdent 'Meters'
         nkEmpty
     nkEmpty
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'newVec'
+        nkIdent 'newMeters'
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'initVec'
+      nkIdent 'initMeters'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -249,7 +277,7 @@ nkStmtList
       nkIdentDefs
         nkIdent 'self'
         nkVarTy
-          nkIdent 'Vec'
+          nkIdent 'Meters'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -257,17 +285,17 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'newVec'
+      nkIdent 'newMeters'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'Vec'
+      nkIdent 'Meters'
     nkPragma
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'initVec'
+        nkIdent 'initMeters'
         nkIdent 'result'
   nkMethodDef
     nkPostfix
@@ -296,30 +324,18 @@ nkStmtList
     nkStmtList
       nkVarSection
         nkIdentDefs
-          nkIdent 'v'
-          nkIdent 'Vec'
+          nkIdent 'm'
+          nkIdent 'Meters'
           nkCall
-            nkIdent 'newVec'
-      nkAsgn
-        nkDotExpr
-          nkIdent 'v'
-          nkIdent 'X'
-        nkIntLit 3
-      nkAsgn
-        nkDotExpr
-          nkIdent 'v'
-          nkIdent 'Y'
-        nkIntLit 4
+            nkIdent 'newMeters'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'd'
+          nkIdent 'float64'
+          nkIdent 'm'
       nkCall
         nkIdent 'WriteLine'
-        nkInfix
-          nkIdent '+'
-          nkDotExpr
-            nkIdent 'v'
-            nkIdent 'X'
-          nkDotExpr
-            nkIdent 'v'
-            nkIdent 'Y'
+        nkIdent 'd'
   nkProcDef
     nkPostfix
       nkIdent '*'

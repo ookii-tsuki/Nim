@@ -30,13 +30,14 @@ type
 const
   NsModifierWords = ["public", "private", "protected", "internal", "static",
     "virtual", "override", "abstract", "sealed", "readonly", "const", "unsafe",
-    "extern", "new"]
+    "extern", "new", "implicit", "explicit"]
   NsTypeModifiers = ["public", "private", "protected", "internal", "abstract",
     "sealed", "static"]
   ## Modifiers N# actually implements. Anything else recognised but unimplemented
   ## is reported by `parseModifierList` instead of being silently dropped.
   NsMemberModifiers = ["public", "private", "protected", "internal", "static",
-    "const", "readonly", "virtual", "override", "abstract", "sealed", "new"]
+    "const", "readonly", "virtual", "override", "abstract", "sealed", "new",
+    "implicit", "explicit"]
   NsClassModifiers = ["public", "private", "protected", "internal", "abstract",
     "sealed"]
 
@@ -220,6 +221,7 @@ proc parseTypeArgs(p: var NsParser): seq[NsNode] =
 proc parseExpr(p: var NsParser): NsNode
 proc parseBlock(p: var NsParser): NsNode
 proc parseStatement(p: var NsParser): NsNode
+proc parseSimpleStmt(p: var NsParser): NsNode
 proc parseNew(p: var NsParser, kw: NsToken): NsNode
 proc parseUnary(p: var NsParser): NsNode
 
@@ -349,8 +351,12 @@ proc parseLambda(p: var NsParser): NsNode =
   if p.at(nsLBrace):
     result.body = p.parseBlock()
   else:
+    ## The value of an expression-bodied lambda is its expression; one that assigns
+    ## is a statement. Whether the delegate returns is decided when it is typed.
+    let s = p.parseSimpleStmt()
     let b = nsn(nsnBlock, info)
-    b.add p.parseExpr()
+    if s.kind == nsnExprStmt: b.add s.body
+    else: b.add s
     result.body = b
 
 proc typeShapeEnd(p: NsParser; start: int): int =
@@ -561,7 +567,9 @@ proc parsePostfixTail(p: var NsParser; start: NsNode): NsNode =
       discard p.advance
       let idx = nsn(nsnIndex, info)
       idx.body = result
-      idx.add p.parseExpr()
+      while true:
+        idx.add p.parseExpr()
+        if p.at(nsComma): discard p.advance else: break
       discard p.expect(nsRBracket)
       result = idx
     elif p.at(nsPlusPlus) or p.at(nsMinusMinus):
@@ -583,6 +591,13 @@ proc parsePostfix(p: var NsParser): NsNode =
 proc parseUnary(p: var NsParser): NsNode =
   let t = p.peek
   case t.kind
+  of nsPlusPlus, nsMinusMinus:
+    ## `++x`: the increment, whose value is the new one.
+    discard p.advance
+    result = nsn(nsnIncDec, p.infoOf(t))
+    result.name = if t.kind == nsPlusPlus: "inc" else: "dec"
+    result.strVal = "prefix"
+    result.body = p.parseUnary()
   of nsMinus, nsPlus, nsBang, nsTilde:
     discard p.advance
     let operand = p.parseUnary()
@@ -674,6 +689,19 @@ proc parseTernary(p: var NsParser): NsNode =
 
 proc parseExpr(p: var NsParser): NsNode =
   result = p.parseTernary()
+
+proc parseArrowBody(p: var NsParser; info: TLineInfo; asReturn: bool): NsNode =
+  ## The body after `=>`: an expression, which C# also lets be an assignment
+  ## (`x => total += x`, `set => field = value`). An assignment is a statement here,
+  ## never a returned value.
+  result = nsn(nsnBlock, info)
+  let s = p.parseSimpleStmt()
+  if s.kind == nsnExprStmt and asReturn:
+    let r = nsn(nsnReturn, s.info)
+    r.body = s.body
+    result.add r
+  else:
+    result.add s
 
 proc parseNew(p: var NsParser, kw: NsToken): NsNode =
   ## `new T(args)` -> `nsnNew`; `new T[n]` -> `nsnNewArray`; `new T[] { .. }` ->
@@ -1199,6 +1227,60 @@ proc recoverToSemi(p: var NsParser) =
   while not p.at(nsSemi) and not p.at(nsEof) and not p.at(nsRBrace):
     discard p.advance
 
+proc parseOperatorBody(p: var NsParser; n: NsNode) =
+  ## An operator's body: a block, or `=> e;`.
+  if p.at(nsArrow):
+    let info = p.here()
+    discard p.advance
+    n.body = p.parseArrowBody(info, n.typ != nil and n.typ.kind != nsnVoidType)
+    if p.at(nsSemi): discard p.advance
+  else:
+    n.body = p.parseBlock()
+
+
+proc parseAccessors(p: var NsParser; info: TLineInfo): (NsNode, NsNode) =
+  ## A property's or indexer's accessors: `=> e`, or `{ get ...; set ...; }` where
+  ## each accessor is `;` (an auto accessor), a block, or `=> e;`, and may carry its
+  ## own access modifier (`private set;`). `init` is a setter C# restricts to object
+  ## initialisers and constructors.
+  var getter, setter: NsNode = nil
+  if p.at(nsArrow):
+    ## `R P => e;` is `R P { get { return e; } }`.
+    discard p.advance
+    getter = p.parseArrowBody(info, true)
+    if p.at(nsSemi): discard p.advance
+    return (getter, setter)
+  discard p.expect(nsLBrace)
+  while not p.at(nsRBrace) and not p.at(nsEof):
+    if p.at(nsSemi):
+      discard p.advance
+      continue
+    let mods = p.parseModifierList(["public", "private", "protected", "internal"],
+                                   ["public", "private", "protected", "internal"])
+    if p.at(nsIdent) and p.peek.text in ["get", "set", "init"]:
+      let isGet = p.peek.text == "get"
+      discard p.advance
+      var acc: NsNode
+      if p.at(nsLBrace):
+        acc = p.parseBlock()
+      elif p.at(nsArrow):
+        discard p.advance
+        acc = p.parseArrowBody(info, isGet)
+        if p.at(nsSemi): discard p.advance
+      else:
+        ## `get;` / `set;`: an auto-property accessor.
+        acc = nsn(nsnEmpty, info)
+        if p.at(nsSemi): discard p.advance
+      if mods.len > 0:
+        acc.attrs = NsAttrs(access: accessOf(mods))
+        acc.strVal = "access"
+      if isGet: getter = acc else: setter = acc
+    else:
+      p.err(p.peek, ndUnsupported, "this property accessor")
+      discard p.advance
+  discard p.expect(nsRBrace)
+  (getter, setter)
+
 proc parseClassMember(p: var NsParser; clsName: string;
                       isInterface = false): NsNode =
   let modInfo = p.here()
@@ -1235,7 +1317,52 @@ proc parseClassMember(p: var NsParser; clsName: string;
     discard p.advance
     return nsn(nsnEmpty, modInfo)
 
+  if p.peek.text == "operator" and ("implicit" in mods or "explicit" in mods):
+    ## `public static implicit operator double(Vec v)`: a conversion.
+    result = nsn(nsnOperatorDecl, p.here())
+    discard p.advance
+    result.name = (if "implicit" in mods: "implicit" else: "explicit")
+    result.typ = p.parseType()
+    result.attrs = attrs
+    result.params = p.parseParams()
+    p.parseOperatorBody(result)
+    return
+
   let ty = p.parseType()
+  if p.at(nsIdent) and p.peek.text == "operator":
+    ## `public static Vec operator +(Vec a, Vec b)`
+    result = nsn(nsnOperatorDecl, p.here())
+    discard p.advance
+    let opTok = p.advance
+    result.name = opTok.text
+    if opTok.kind == nsGt and p.at(nsGt):
+      ## `>>` is lexed as two tokens when it closed a generic list elsewhere.
+      discard p.advance
+      result.name = ">>"
+    result.typ = ty
+    result.attrs = attrs
+    result.params = p.parseParams()
+    p.parseOperatorBody(result)
+    return
+  if p.at(nsIdent) and p.peek.text == "this" and p.peekAhead(1).kind == nsLBracket:
+    ## `public T this[int i] { get ...; set ...; }`
+    result = nsn(nsnIndexerDecl, p.here())
+    discard p.advance
+    discard p.advance   # '['
+    result.typ = ty
+    result.attrs = attrs
+    while not p.at(nsRBracket) and not p.at(nsEof):
+      let pinfo = p.here()
+      let pty = p.parseType()
+      var pname = ""
+      if p.peek.kind == nsIdent: pname = p.advance.text
+      else: p.err(p.peek, ndIdentifierExpected)
+      result.params.add nsnParam(pname, pty, pinfo)
+      if p.at(nsComma): discard p.advance else: break
+    discard p.expect(nsRBracket)
+    let (getter, setter) = p.parseAccessors(result.info)
+    result.sons = @[getter, setter]
+    return
   if p.peek.kind != nsIdent:
     p.err(p.peek, ndIdentifierExpected)
     p.recoverToSemi()
@@ -1272,17 +1399,7 @@ proc parseClassMember(p: var NsParser; clsName: string;
       ## `R M() => e;` is `R M() { return e; }`, or the statement for `void`.
       let arrowInfo = p.here()
       discard p.advance
-      let e = p.parseExpr()
-      let b = nsn(nsnBlock, arrowInfo)
-      if ty.kind == nsnVoidType:
-        let st = nsn(nsnExprStmt, e.info)
-        st.body = e
-        b.add st
-      else:
-        let r = nsn(nsnReturn, e.info)
-        r.body = e
-        b.add r
-      result.body = b
+      result.body = p.parseArrowBody(arrowInfo, ty.kind != nsnVoidType)
       if p.at(nsSemi): discard p.advance
     else:
       result.body = p.parseBlock()
@@ -1292,47 +1409,12 @@ proc parseClassMember(p: var NsParser; clsName: string;
     result.explicitIface = explicitIface
     result.typ = ty
     result.attrs = attrs
-    var getter: NsNode = nil
-    var setter: NsNode = nil
-    if p.at(nsArrow):
-      ## `R P => e;` is `R P { get { return e; } }`.
+    let (getter, setter) = p.parseAccessors(info)
+    if p.at(nsAssign):
+      ## `{ get; set; } = value;` initialises the backing field.
       discard p.advance
-      let g = nsn(nsnBlock, info)
-      let r = nsn(nsnReturn, info)
-      r.body = p.parseExpr()
-      g.add r
-      getter = g
+      result.body = p.parseExpr()
       if p.at(nsSemi): discard p.advance
-    else:
-      discard p.advance   # '{'
-      while not p.at(nsRBrace) and not p.at(nsEof):
-        if p.at(nsSemi):
-          discard p.advance
-          continue
-        if p.at(nsIdent) and p.peek.text == "get":
-          discard p.advance
-          if p.at(nsLBrace):
-            getter = p.parseBlock()
-          else:
-            # `get;` - an auto-property accessor
-            getter = nsn(nsnEmpty, info)
-            if p.at(nsSemi): discard p.advance
-        elif p.at(nsIdent) and p.peek.text == "set":
-          discard p.advance
-          if p.at(nsLBrace):
-            setter = p.parseBlock()
-          else:
-            setter = nsn(nsnEmpty, info)
-            if p.at(nsSemi): discard p.advance
-        else:
-          p.err(p.peek, ndUnsupported, "this property accessor")
-          discard p.advance
-      discard p.expect(nsRBrace)
-      if p.at(nsAssign):
-        ## `{ get; set; } = value;` initialises the backing field.
-        discard p.advance
-        result.body = p.parseExpr()
-        if p.at(nsSemi): discard p.advance
     result.params = @[getter, setter]
   else:
     result = nsn(nsnFieldDecl, info)
