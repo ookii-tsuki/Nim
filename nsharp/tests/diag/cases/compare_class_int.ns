@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class A {}
+    class Program
+    {
+        static void Main()
+        {
+            if (new A() == 1) {}
+        }
+    }
+}

@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    enum E { A }
+    class Program
+    {
+        static void Main()
+        {
+            E e = 1;
+        }
+    }
+}

@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static int F(bool b) { if (b) return 1; }
+        static void Main()
+        {
+            F(true);
+        }
+    }
+}

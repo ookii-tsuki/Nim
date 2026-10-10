@@ -32,7 +32,10 @@ static class Program
     {
         // `--ledger` prints the skipped accesses instead of the projected facts.
         var ledgerMode = args.Length >= 1 && args[0] == "--ledger";
-        var fileArgs = ledgerMode ? args.Skip(1).ToArray() : args;
+        // `--diag` prints the errors Roslyn reports instead: the diagnostics gate
+        // compares their codes and lines with N#'s.
+        var diagMode = args.Length >= 1 && args[0] == "--diag";
+        var fileArgs = ledgerMode || diagMode ? args.Skip(1).ToArray() : args;
 
         if (fileArgs.Length < 1)
         {
@@ -80,6 +83,19 @@ static class Program
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
         var main = trees[0];
+        if (diagMode)
+        {
+            var rows = new List<string>();
+            foreach (var d in compilation.GetDiagnostics())
+            {
+                if (d.Severity != DiagnosticSeverity.Error) continue;
+                var pos = d.Location.GetLineSpan().StartLinePosition;
+                rows.Add(d.Id + " " + (pos.Line + 1) + ":" + (pos.Character + 1) + " " +
+                         d.GetMessage());
+            }
+            foreach (var r in rows) Console.Out.WriteLine(r);
+            return 0;
+        }
         var model = compilation.GetSemanticModel(main);
         var root = main.GetRoot();
 

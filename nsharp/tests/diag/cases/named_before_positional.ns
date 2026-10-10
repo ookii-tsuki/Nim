@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void F(int a, int b) {}
+        static void Main()
+        {
+            F(a: 1, 2, 3);
+        }
+    }
+}

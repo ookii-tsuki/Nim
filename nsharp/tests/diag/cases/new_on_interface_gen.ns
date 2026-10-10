@@ -1,0 +1,12 @@
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var l = new IList<int>();
+        }
+    }
+}
