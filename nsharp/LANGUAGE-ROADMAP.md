@@ -17,7 +17,7 @@ Tick an item when it is merged into `nsharp`.
 - [x] Null-forgiving `x!` (checked, no runtime effect)
 - [x] Anonymous methods `delegate (int x) { ... }`
 - [x] `protected internal`, `private protected`
-- [ ] Primary constructors (C# 12): `class C(int x) { ... }`, `x` captured in the body
+- [x] Primary constructors (C# 12): `class C(int x) { ... }`, `x` captured in the body
 
 ## Batch 2: newer syntax SPEC does not list yet
 

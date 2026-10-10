@@ -1,0 +1,2 @@
+Another constructor of a type with a primary constructor must chain to it.
+code: NS8862

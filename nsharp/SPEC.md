@@ -382,7 +382,7 @@ and the namespaces must be merged or layered.
 | `this(...)` chaining | ctor call | ✅ v1 | desugar |
 | `base(...)` in ctor | base ctor | ✅ v1 | desugar |
 | Static constructor `static C() { }` | type init | ✅ v1 | desugar (→ `nsStaticInitC`, run after the static field initialisers and before any statement of the program; C# runs it lazily, before first use) |
-| Primary constructors (C# 12) | `class C(int x)` | 🔜 later | desugar |
+| Primary constructors (C# 12) | `class C(int x)` | ✅ v1 | symbols + sema: a constructor of the parameters (passing `: Base(args)` on), each parameter a member does not declare itself captured in a private field of its name, initialised from it; instance initialisers see the parameters themselves, as a record's do. Another constructor must chain to it (NS8862) |
 | **Destructor/Finalizer** `~C() { }` | cleanup | 🔜 later | sem (`=destroy`) |
 | **Properties** (see §5.4) | accessors | ✅ v1 | desugar |
 | `this[...]` indexer | indexer | ✅ v1 | desugar (→ `[]`/`[]=` over the receiver and the index parameters; several indices allowed) |
@@ -1005,6 +1005,7 @@ code:
 | `NS8852` | CS8852 | an `init` property assigned outside an initialiser or constructor |
 | `NS9035` | CS9035 | an object initialiser omits a `required` member |
 | `NS8858` | CS8858 | `with` on a class that is not a record |
+| `NS8862` | CS8862 | a constructor of a type with a primary constructor that does not chain to it |
 | `NS1674` | CS1674 | what `using` disposes does not implement `IDisposable` |
 | `NS1621` | CS1621 | `yield` inside a lambda |
 | `NS1624` | CS1624 | `yield` in a member whose return type is not `IEnumerable<T>`/`IEnumerator<T>` |
