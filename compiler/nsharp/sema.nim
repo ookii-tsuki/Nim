@@ -270,9 +270,89 @@ proc needConv(n: NsNode; to: string) =
     return
   if numName(n) != to: n.conv = to
 
-proc coerce(ctx: NsCheckContext; value: NsNode; target: string; info: TLineInfo) =
+proc variantArgs(ctx: NsCheckContext; name: string): seq[string] =
+  ## The variance of each type parameter of a generic interface or delegate, ""
+  ## for an invariant one; `Func`'s and `Action`'s are .NET's.
+  let n = unqualified(name)
+  if ctx.scope.classes.hasKey(n) and ctx.scope.classes[n].decl != nil:
+    for t in ctx.scope.classes[n].decl.typeParams: result.add t.strVal
+  elif ctx.scope.delegates.hasKey(n):
+    for t in ctx.scope.delegates[n].typeParams: result.add t.strVal
+
+proc isRefConvertible(ctx: NsCheckContext; src, dst: NsNode): bool =
+  ## A reference conversion from class `src` to class `dst`, or to `object`: the
+  ## two share Nim's representation, which is what a variant conversion needs.
+  if src == nil or dst == nil or src.kind != nsnTypeName or dst.kind != nsnTypeName:
+    return false
+  let s = unqualified(src.name)
+  let d = unqualified(dst.name)
+  if not ctx.scope.classes.hasKey(s) or ctx.scope.classes[s].classKind != ckClass:
+    return false
+  if d in ["object", "Object"]: return true
+  ctx.scope.classes.hasKey(d) and ctx.scope.classes[d].classKind == ckClass and
+    d in ctx.scope.baseChain(s)
+
+type NsVariantConv = enum vcNone, vcOk, vcUnsupported
+
+proc isRefTypeArg(ctx: NsCheckContext; t: NsNode): bool =
+  ## A type argument C# variance would accept but N# holds by value or as an
+  ## interface's fat pointer: an interface, `string`, an array.
+  if t == nil: return false
+  if t.kind == nsnArrayType: return true
+  t.kind == nsnTypeName and (ctx.scope.isInterface(unqualified(t.name)) or
+    unqualified(t.name) in ["string", "String"])
+
+proc variantConversion(ctx: NsCheckContext; src, dst: NsNode): NsVariantConv =
+  ## `IProducer<Cat>` to `IProducer<Animal>` when `T` is `out`, and the reverse
+  ## for `in` (C# 4 variance), over reference type arguments only, as in C#.
+  if src == nil or dst == nil or src.kind != nsnTypeName or dst.kind != nsnTypeName:
+    return vcNone
+  if unqualified(src.name) != unqualified(dst.name) or src.sons.len != dst.sons.len or
+     src.sons.len == 0:
+    return vcNone
+  var variance = ctx.variantArgs(src.name)
+  let n = unqualified(src.name)
+  if n == "Func":
+    variance = @[]
+    for i in 0 ..< src.sons.len: variance.add(if i == src.sons.len - 1: "out" else: "in")
+  elif n == "Action":
+    variance = @[]
+    for i in 0 ..< src.sons.len: variance.add "in"
+  if variance.len != src.sons.len: return vcNone
+  var differs = false
+  var unsupported = false
+  for i in 0 ..< src.sons.len:
+    let a = src.sons[i]
+    let b = dst.sons[i]
+    if mangleType(a) == mangleType(b): continue
+    differs = true
+    let (f, t) = (if variance[i] == "in": (b, a) else: (a, b))
+    if variance[i] notin ["in", "out"]: return vcNone
+    if not ctx.isRefConvertible(f, t):
+      if ctx.isRefTypeArg(f) or ctx.isRefTypeArg(t): unsupported = true
+      else: return vcNone
+  if not differs: vcNone
+  elif unsupported: vcUnsupported
+  else: vcOk
+
+proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineInfo;
+            targetType: NsNode = nil) =
   ## The implicit numeric conversion C# applies where a value of one numeric type is
   ## used as another: recorded when C# allows it, CS0266 when only a cast would.
+  ## A variant interface or delegate conversion is recorded too.
+  if value != nil and targetType != nil and value.conv.len == 0:
+    case ctx.variantConversion(value.rtype, targetType)
+    of vcOk:
+      value.conv = "nsVariant"
+      value.convType = targetType
+      return
+    of vcUnsupported:
+      nsError(ctx.config, info, ndUnsupported,
+              "a variant conversion over an interface, string or array type argument")
+      return
+    of vcNone: discard
+  let target = (if targetName.len == 0 and targetType != nil and
+                   isObjectTarget(targetType): "object" else: targetName)
   if value != nil and canonicalTypeName(target).split('<')[0] == "IEnumerable" and
      (value.typeKind == tkSequence or
       ctx.surface.member(value.typeName, value.typeKind, "nsToIEnumerable").name.len > 0):
@@ -639,7 +719,7 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
         v.argConvType =
           declTypeName(if pt.kind == nsnNullableType: pt.typ else: pt)
       elif pt != nil:
-        ctx.coerce(v, declTypeName(pt), v.info)
+        ctx.coerce(v, declTypeName(pt), v.info, pt)
         ctx.markNull(v, declTypeName(pt))
         if ctx.isTypeParamRef(pt) and v.kind in {nsnIntLit, nsnFloatLit} and
            v.typeName.len == 0:
@@ -1196,7 +1276,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         ctx.targetTyped(v, pt)
         discard ctx.walkExpr(a)
         ## The conversion to the parameter, as for any other argument.
-        if pt != nil: ctx.coerce(v, declTypeName(pt), v.info)
+        if pt != nil: ctx.coerce(v, declTypeName(pt), v.info, pt)
         continue
       discard ctx.walkExpr(a)
   for a in n.sons:
@@ -1462,7 +1542,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       discard ctx.walkExpr(a)
       if n.typ != nil and n.kind == nsnArrayLit:
         ## Each element converts to the element type: `object[] { 1, "a" }` boxes.
-        ctx.coerce(a, declTypeName(n.typ), a.info)
+        ctx.coerce(a, declTypeName(n.typ), a.info, n.typ)
     if n.kind == nsnArrayLit and n.typ == nil:
       ## `new[] { 1.5, 2.5 }`: the element type is the elements'.
       for a in n.sons:
@@ -1829,7 +1909,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         ctx.targetTyped(e, et)
         discard ctx.walkExpr(e)
         ctx.checkConvertible(e, ctx.targetOfType(et), e.info)
-        ctx.coerce(e, declTypeName(et), e.info)
+        ctx.coerce(e, declTypeName(et), e.info, et)
     n.rtype = n.typ
     n.setType(tkSequence, declTypeName(n.typ))
     result = tkSequence
@@ -1964,7 +2044,7 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
     if n.typ == nil: kind = initKind
     else:
       ctx.checkConvertible(n.body, ctx.targetOfType(n.typ), n.body.info)
-      ctx.coerce(n.body, declTypeName(n.typ), n.body.info)
+      ctx.coerce(n.body, declTypeName(n.typ), n.body.info, n.typ)
   ## An inferred local (`var x = ...`) takes its type name from its initialiser,
   ## exactly as a `foreach` variable takes it from the collection it walks.
   ctx.declare(n.name, kind, (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName),
@@ -2193,7 +2273,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     if n.name.len == 0 and n.sons.len == 2:
       ctx.checkConvertible(n.sons[1], targetOfExpr(ctx, n.sons[0]), n.info)
       if n.sons[0].typeKind != tkNullable:
-        ctx.coerce(n.sons[1], numName(n.sons[0]), n.info)
+        ctx.coerce(n.sons[1], numName(n.sons[0]), n.info, n.sons[0].rtype)
     elif n.sons.len == 2 and n.name in ["+", "-", "*", "/", "mod", "and", "or", "xor",
                                         "shl", "shr"]:
       ## `x op= y` is `x = (T)(x op y)`: the operands are promoted as for `x op y`,
@@ -2259,7 +2339,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       discard ctx.walkExpr(n.body)
       if et != nil:
         ctx.checkConvertible(n.body, ctx.targetOfType(et), n.body.info)
-        ctx.coerce(n.body, declTypeName(et), n.body.info)
+        ctx.coerce(n.body, declTypeName(et), n.body.info, et)
   of nsnFor: walkFor(ctx, n)
   of nsnForeach: walkForeach(ctx, n)
   of nsnSwitch: walkSwitch(ctx, n)
@@ -2283,7 +2363,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
         if ctx.retType != nil:
           ctx.checkConvertible(n.body, ctx.targetOfType(ctx.retType), n.body.info)
           if ctx.retType.kind != nsnNullableType:
-            ctx.coerce(n.body, declTypeName(ctx.retType), n.body.info)
+            ctx.coerce(n.body, declTypeName(ctx.retType), n.body.info, ctx.retType)
       else:
         ctx.checkThrow(n)
   else:
@@ -2425,7 +2505,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
       discard ctx.walkExpr(m.body)
       ctx.popScope()
       ctx.checkConvertible(m.body, ctx.targetOfType(m.typ), m.body.info)
-      ctx.coerce(m.body, declTypeName(m.typ), m.body.info)
+      ctx.coerce(m.body, declTypeName(m.typ), m.body.info, m.typ)
     for i in 0 ..< m.params.len:
       let acc = m.params[i]
       if acc == nil or acc.kind == nsnEmpty: continue
@@ -2448,7 +2528,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
         applySig(m.body, delegateSig(ctx.scope, ctx.surface, m.typ))
       discard ctx.walkExpr(m.body)
       ctx.checkConvertible(m.body, ctx.targetOfType(m.typ), m.body.info)
-      ctx.coerce(m.body, declTypeName(m.typ), m.body.info)
+      ctx.coerce(m.body, declTypeName(m.typ), m.body.info, m.typ)
       ctx.isStaticCtx = false
     elif m.attrs.isConst:
       nsError(ctx.config, m.info, ndConstNeedsValue)
@@ -2632,8 +2712,51 @@ proc checkAttributes(ctx: NsCheckContext; n: NsNode) =
   if n.kind in {nsnClassDecl, nsnEnumDecl}:
     for m in n.sons: ctx.checkAttributes(m)
 
+proc checkVariance(ctx: NsCheckContext; d: NsNode) =
+  ## `in`/`out` stand only on an interface's or a delegate's type parameters
+  ## (CS1960), and an `out T` may not be taken nor an `in T` given back (CS1961).
+  ## Only `T` itself is checked in a position, not `T` inside another type.
+  proc variant(tps: seq[NsNode]; name: string): string =
+    for t in tps:
+      if t.name == name: return t.strVal
+    ""
+  proc misplaced(ctx: NsCheckContext; tps: seq[NsNode]; t: NsNode; asInput: bool;
+                 member: string) =
+    if t == nil or t.kind != nsnTypeName or t.sons.len > 0: return
+    let v = variant(tps, t.name)
+    if (asInput and v == "out") or (not asInput and v == "in"):
+      nsError(ctx.config, t.info, ndInvalidVariance, t.name,
+              (if asInput: "contravariantly" else: "covariantly"), member,
+              (if v == "out": "covariant" else: "contravariant"))
+  proc noVariance(ctx: NsCheckContext; tps: seq[NsNode]) =
+    for t in tps:
+      if t.strVal.len > 0: nsError(ctx.config, t.info, ndVarianceNotAllowed)
+  case d.kind
+  of nsnDelegateDecl:
+    for p in d.params:
+      if p.paramMod.len == 0: ctx.misplaced(d.typeParams, p.typ, true, d.name)
+    ctx.misplaced(d.typeParams, d.typ, false, d.name)
+  of nsnClassDecl:
+    if d.classKind != ckInterface: ctx.noVariance(d.typeParams)
+    for m in d.sons:
+      ctx.noVariance(m.typeParams)
+      if d.classKind != ckInterface: continue
+      case m.kind
+      of nsnMethodDecl:
+        for p in m.params:
+          if p.paramMod.len == 0: ctx.misplaced(d.typeParams, p.typ, true, m.name)
+        ctx.misplaced(d.typeParams, m.typ, false, m.name)
+      of nsnPropertyDecl:
+        let getter = m.params.len > 0 and m.params[0] != nil
+        let setter = m.params.len > 1 and m.params[1] != nil
+        if getter or m.params.len == 0: ctx.misplaced(d.typeParams, m.typ, false, m.name)
+        if setter: ctx.misplaced(d.typeParams, m.typ, true, m.name)
+      else: discard
+  else: discard
+
 proc walkTop(ctx: var NsCheckContext; d: NsNode) =
   ctx.checkAttributes(d)
+  ctx.checkVariance(d)
   case d.kind
   of nsnClassDecl: ctx.walkClass(d)
   of nsnNamespace:

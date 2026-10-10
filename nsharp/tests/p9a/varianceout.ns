@@ -1,0 +1,6 @@
+using System;
+namespace Demo
+{
+    interface IP<out T> { void Put(T x); }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

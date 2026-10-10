@@ -1,0 +1,38 @@
+using System;
+namespace Demo
+{
+    class Animal { public virtual string Name => "animal"; }
+    class Cat : Animal { public override string Name => "cat"; }
+    interface IProducer<out T> { T Make(); }
+    interface IConsumer<in T> { void Take(T x); }
+    class CatShop : IProducer<Cat> { public Cat Make() => new Cat(); }
+    class Vet : IConsumer<Animal> { public void Take(Animal a) => Console.WriteLine("vet sees " + a.Name); }
+    delegate T Factory<out T>();
+    delegate void Sink<in T>(T x);
+    class Program
+    {
+        static void Main()
+        {
+            IProducer<Cat> cats = new CatShop();
+            IProducer<Animal> animals = cats;
+            Console.WriteLine(animals.Make().Name);
+            IConsumer<Animal> vet = new Vet();
+            IConsumer<Cat> catVet = vet;
+            catVet.Take(new Cat());
+            Func<Cat> fc = () => new Cat();
+            Func<Animal> fa = fc;
+            Console.WriteLine(fa().Name);
+            Action<Animal> aa = a => Console.WriteLine("act " + a.Name);
+            Action<Cat> ac = aa;
+            ac(new Cat());
+            Factory<Cat> f1 = () => new Cat();
+            Factory<Animal> f2 = f1;
+            Console.WriteLine(f2().Name);
+            Sink<Animal> s1 = a => Console.WriteLine("sink " + a.Name);
+            Sink<Cat> s2 = s1;
+            s2(new Cat());
+            Func<object> fo = fc;
+            Console.WriteLine(fo());
+        }
+    }
+}

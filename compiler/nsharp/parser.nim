@@ -191,21 +191,22 @@ proc parseType(p: var NsParser): NsNode =
     if rank > 1: result.intVal = rank
 
 proc parseTypeParams(p: var NsParser): seq[NsNode] =
-  ## `<T, U>` after a declared name. C#'s variance markers (`in T`, `out T`) are
-  ## valid only on interfaces and delegates, and N# does not model variance.
+  ## `<T, U>` after a declared name. A variance marker (`in T`, `out T`) is kept
+  ## in the parameter's `strVal`; sema checks where it may stand.
   result = @[]
   if not p.at(nsLt): return
   discard p.advance
   while not atGtClose(p) and not p.at(nsEof):
+    var variance = ""
     if p.at(nsIdent) and p.peek.text in ["in", "out"] and
        p.peekAhead(1).kind == nsIdent:
-      p.err(p.peek, ndUnsupported, "variance ('" & p.peek.text & "')")
-      discard p.advance
+      variance = p.advance.text
     if p.peek.kind != nsIdent:
       p.err(p.peek, ndIdentifierExpected)
       break
     let t = p.advance
     result.add nsnTypeName(t.text, p.infoOf(t))
+    result[^1].strVal = variance
     if p.at(nsComma): discard p.advance else: break
   p.expectGt()
 

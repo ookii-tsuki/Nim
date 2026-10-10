@@ -248,6 +248,8 @@ type
     argConvType*: string      ## ... and the element type name it is spelled with
     rtype*: NsNode            ## set by `sema.nim`: the value's full type as written
                               ## (`Stack2<string>`), when it is known
+    convType*: NsNode         ## set by `sema.nim` with `conv = "nsVariant"`: the
+                              ## interface or delegate type a variant conversion makes
     conv*: string             ## set by `sema.nim`: the C# numeric type this value is
                               ## implicitly converted to where it is used ("" = none)
 

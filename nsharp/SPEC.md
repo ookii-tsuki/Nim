@@ -642,7 +642,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Extension methods | `static void M(this T)` | ✅ v1 | sem + desugar: declared in a non-generic static class (else NS1106), lowered as a plain proc over its `this` parameter (no typedesc), so `x.M(a)` is `M(x, a)` -- reached when `x`'s own type has no `M`, as C# prefers -- and `C.M(x, a)` names the same proc. A null receiver is not checked |
 | `IDisposable` / `using` | deterministic cleanup | ✅ v1 | desugar/lib |
 | `IEnumerable<T>` / `foreach` | iteration protocol | ✅ v1 | sem/lib |
-| Covariance/contravariance | `in`/`out` | 🔜 later | sem |
+| Covariance/contravariance | `in`/`out` | ✅ v1 | sem + lib: `interface I<out T>`/`delegate R D<in T>(T x)` record the variance; `IProducer<Cat>` converts to `IProducer<Animal>` (and `Func<Cat>` to `Func<Animal>`, `Action<Animal>` to `Action<Cat>`) through `nsVariant`, which rereads the value as the other instantiation, since C# allows variance only over reference type arguments and Nim represents those alike. Variance on a class, struct or method is NS1960; an `out T` taken as a parameter or an `in T` given back NS1961 (checked for `T` itself, not `T` inside another type). A variant conversion over an interface, `string` or array type argument, which Nim holds differently, is NS9999 |
 | `static class` | container | ✅ v1 | see §4 |
 | Object/collection `ToString` | `$` | ✅ v1 | desugar |
 
@@ -733,7 +733,7 @@ map directly. The cost is in **constraints**, which map to Nim
 | `event D E;` | pub/sub member | ✅ v1 | desugar + lib: the field holds `seq[D]`, its handlers; `E += h` / `E -= h` are `nsSubscribe`/`nsUnsubscribe` (the last equal handler leaves), raising it calls each in order, and with none it is null. Outside its type only `+=`/`-=` (NS0070). `EventHandler`, `EventHandler<T>`, `EventArgs` are declared |
 | `event` add/remove accessors | custom | 🔜 later (NS9999) | lib |
 | Anonymous methods `delegate { }` | - | ✅ v1 | see §7 |
-| Delegate variance | `Action<Base> = Action<Derived>` | 🔜 later | sem |
+| Delegate variance | `Action<Derived> = Action<Base>` | ✅ v1 | sem + lib (see §8 variance) |
 | Expression trees | `Expression<Func<>>` | 🚫 out | - |
 
 **Note:** Nim closures (`{.closure.}` procs) cover single-target delegates; a
@@ -1027,6 +1027,7 @@ code:
 | `NS9023`/`NS9024`/`NS9025` | CS9023/CS9024/CS9025 | a `checked` operator that cannot be checked, or has no unchecked version |
 | `NS0746`/`NS0828`/`NS0833` | CS0746/CS0828/CS0833 | an anonymous type member with no name, no type, or a repeated name |
 | `NS0847` | CS0847 | a multi-dimensional initializer whose rows differ in length |
+| `NS1960`/`NS1961` | CS1960/CS1961 | variance where it may not stand, or a variant parameter used against its variance |
 | `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
 | `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
 | `NS0070` | CS0070 | an event used outside its type other than by `+=`/`-=` |
