@@ -750,7 +750,7 @@ refined (the `cnif`/cgen machinery is exception-aware), so this is cheap.
 | `async` / `await` / `Task` / `Task<T>` | async model | 🔜 later | sem |
 | `await foreach` | async streams | 🔜 later | sem |
 | `Task.Run` | thread-pool | 🔜 later | lib |
-| `lock` statement | mutex | 🔜 later | lib |
+| `lock` statement | mutex | ✅ v1 (single-threaded: the lock is always free; see §7) | desugar |
 | `[ThreadStatic]` | TLS | 🔜 later | lib |
 | `Interlocked` | atomics | 🔜 later | lib |
 | Channels / actors | - | ➕ ext (later) | lib |
