@@ -2094,6 +2094,24 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
 
   var nameTok = p.advance
   var explicitIface = ""
+  if p.at(nsLt):
+    let close = skipBalancedGt(p, 0)
+    if close > 0 and p.peekAhead(close).kind == nsDot and
+       p.peekAhead(close + 1).kind == nsIdent:
+      ## `int IBox<int>.Get()`: an explicit implementation of one instantiation
+      ## of a generic interface, named as its table names it (`IBox_int`).
+      proc mangled(t: NsNode): string =
+        case t.kind
+        of nsnTypeName:
+          result = t.name.split('.')[^1]
+          for a in t.sons: result.add "_" & mangled(a)
+        of nsnArrayType: result = mangled(t.typ) & "Arr"
+        of nsnNullableType: result = mangled(t.typ) & "Opt"
+        else: result = "x"
+      explicitIface = nameTok.text
+      for a in p.parseTypeArgs(): explicitIface.add "_" & mangled(a)
+      discard p.advance
+      nameTok = p.advance
   while p.at(nsDot) and p.peekAhead(1).kind == nsIdent:
     ## `R IShape.Area()`: an explicit interface implementation.
     explicitIface = (if explicitIface.len > 0: explicitIface & "." else: "") &

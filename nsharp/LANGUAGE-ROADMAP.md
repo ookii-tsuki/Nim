@@ -38,7 +38,7 @@ Tick an item when it is merged into `nsharp`.
 - [x] Generic variance `in`/`out` on interfaces and delegates
 - [ ] Clear the current NS9999 rejections:
   - [x] type tests and casts to generic interfaces
-  - [ ] explicit implementations of generic interface members (`int IBox<int>.Get()`)
+  - [x] explicit implementations of generic interface members (`int IBox<int>.Get()`)
   - [x] static constructors in generic classes
   - [x] `typeof` of generic types
   - [x] `-=` on plain delegate variables

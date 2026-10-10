@@ -2672,7 +2672,10 @@ proc checkInterfaces(ctx: NsCheckContext; cls: NsNode) =
         if found: break
       if not found:
         for m in cls.sons:
-          if m.name == im.name and m.explicitIface == i: found = true
+          ## `IBox<int>.Get` is filed as `IBox_int`, one instantiation of `IBox`.
+          if m.name == im.name and (m.explicitIface == i or
+                                    m.explicitIface.startsWith(i & "_")):
+            found = true
       if not found:
         let what = (if im.isMethod: signature(i & "." & im.name, im.params)
                     else: i & "." & im.name)
