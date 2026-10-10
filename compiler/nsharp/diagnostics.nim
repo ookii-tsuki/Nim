@@ -57,6 +57,7 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndPartialNeedsImpl
     ndVarianceNotAllowed
     ndInvalidVariance
     ndArrayInitLength
@@ -162,6 +163,8 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndPartialNeedsImpl: (code: "8795", msg: "Partial method '$1' must have an implementation part" &
+                       " because it has accessibility modifiers."),
     ndVarianceNotAllowed: (code: "1960", msg: "Invalid variance modifier. Only interface and" &
                          " delegate type parameters can be specified as variant."),
     ndInvalidVariance: (code: "1961", msg: "Invalid variance: The type parameter '$1' must be" &

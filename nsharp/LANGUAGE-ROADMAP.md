@@ -44,7 +44,7 @@ Tick an item when it is merged into `nsharp`.
   - [ ] classes implementing `IEnumerable<T>`
   - [ ] iterator property getters
   - [ ] finalizers `~C()`
-  - [ ] partial methods
+  - [x] partial methods
   - [ ] `event` add/remove accessors
 
 ## Last: `async` / `await`

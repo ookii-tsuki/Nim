@@ -38,14 +38,14 @@ type
 const
   NsModifierWords = ["public", "private", "protected", "internal", "static",
     "virtual", "override", "abstract", "sealed", "readonly", "const", "unsafe",
-    "extern", "new", "implicit", "explicit", "event", "required"]
+    "extern", "new", "implicit", "explicit", "event", "required", "partial"]
   NsTypeModifiers = ["public", "private", "protected", "internal", "abstract",
     "sealed", "static", "partial", "file"]
   ## Modifiers N# actually implements. Anything else recognised but unimplemented
   ## is reported by `parseModifierList` instead of being silently dropped.
   NsMemberModifiers = ["public", "private", "protected", "internal", "static",
     "const", "readonly", "virtual", "override", "abstract", "sealed", "new",
-    "implicit", "explicit", "event", "required"]
+    "implicit", "explicit", "event", "required", "partial"]
   NsClassModifiers = ["public", "private", "protected", "internal", "abstract",
     "sealed", "static", "partial", "file"]
 
@@ -1993,7 +1993,8 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
                       isReadonly: "readonly" in mods, isVirtual: "virtual" in mods,
                       isOverride: "override" in mods, isAbstract: "abstract" in mods,
                       isSealed: "sealed" in mods, isNew: "new" in mods,
-                      isEvent: "event" in mods, isRequired: "required" in mods)
+                      isEvent: "event" in mods, isRequired: "required" in mods,
+                      isPartial: "partial" in mods)
 
   # constructor: `ClassName(params)` (no return type, as in C#)
   if p.at(nsIdent) and p.peek.text == clsName and p.peekAhead(1).kind == nsLParen:
