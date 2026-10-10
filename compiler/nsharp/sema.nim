@@ -506,6 +506,11 @@ proc targetOfType(ctx: NsCheckContext; target: NsNode): NsTarget =
   result.kind = ctx.classifyType(target)
   result.name = declTypeName(target)
   result.isNullOk = result.kind notin NsNullIntolerantKinds
+  let cn = canonicalTypeName(result.name)
+  if result.kind == tkClass and ctx.scope.classes.hasKey(cn) and
+     ctx.scope.classes[cn].classKind == ckStruct:
+    ## A struct is a value: `null` is not one (CS0037).
+    result.isNullOk = false
 
 proc targetOfExpr(ctx: NsCheckContext; e: NsNode): NsTarget =
   ## The target of an expression, which is all an assignment has to work with: the
@@ -2280,6 +2285,66 @@ proc walkRefDecl(ctx: var NsCheckContext; n: NsNode) =
               (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName), t)
   ctx.types[n.name].isRef = true
 
+const NsFrontendTypes = ["Func", "Action", "Predicate", "Comparison", "Converter",
+                         "Index", "Range", "Nullable", "Tuple", "ValueTuple",
+                         "IEnumerable", "IEnumerator", "dynamic", "var"]
+  ## Types the frontend gives meaning itself rather than finding in the library:
+  ## the delegate shapes, `Index`/`Range`, tuples.
+
+proc typeKnown(ctx: NsCheckContext; t: NsNode): bool =
+  ## Whether every name in a written type is one N# can place. Only a plain,
+  ## unqualified name is ever judged unknown; anything else is left to Nim.
+  if t == nil: return true
+  case t.kind
+  of nsnTypeName:
+    if '.' notin t.name and not ctx.isTypeName(t.name) and t.name notin ctx.typeParams and
+       t.name notin NsFrontendTypes:
+      return false
+    for a in t.sons:
+      if not ctx.typeKnown(a): return false
+    true
+  of nsnArrayType, nsnNullableType: ctx.typeKnown(t.typ)
+  of nsnTupleType:
+    for e in t.sons:
+      if not ctx.typeKnown(e.typ): return false
+    true
+  else: true
+
+proc firstUnknownType(ctx: NsCheckContext; t: NsNode): NsNode =
+  if t == nil: return nil
+  case t.kind
+  of nsnTypeName:
+    if not ctx.typeKnown(nsnTypeName(t.name, t.info)): return t
+    for a in t.sons:
+      let u = ctx.firstUnknownType(a)
+      if u != nil: return u
+  of nsnArrayType, nsnNullableType: return ctx.firstUnknownType(t.typ)
+  of nsnTupleType:
+    for e in t.sons:
+      let u = ctx.firstUnknownType(e.typ)
+      if u != nil: return u
+  else: discard
+  nil
+
+proc checkLocalDecl(ctx: NsCheckContext; n: NsNode) =
+  ## A local's declaration: its type exists (CS0246), its name is not taken in
+  ## this scope (CS0128) or an enclosing one (CS0136), and `var` has a value
+  ## that has a type (CS0818, CS0815).
+  let u = ctx.firstUnknownType(n.typ)
+  if u != nil and ctx.clsName.len > 0:
+    nsError(ctx.config, u.info, ndNamespaceNotFound, u.name)
+  if ctx.types.hasKey(n.name) and ctx.types[n.name].name != NsLocalFuncMark and
+     ctx.undo.len > 0:
+    var here = false
+    for d in ctx.undo[^1]:
+      if d[0] == n.name: here = true
+    nsError(ctx.config, n.info, (if here: ndDuplicateLocal else: ndLocalShadows), n.name)
+  if n.typ == nil:
+    if n.body == nil:
+      nsError(ctx.config, n.info, ndVarNeedsInit)
+    elif n.body.kind == nsnNull:
+      nsError(ctx.config, n.info, ndVarBadInit, "<null>")
+
 proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   ## Resolves a declaration's initialiser, then introduces the local (or the
   ## parameter) in the current scope so later statements see its type. A declared
@@ -2288,6 +2353,8 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
     ctx.walkRefDecl(n)
     return
   ctx.checkLibraryInterfaceValue(n.typ)
+  if n.kind == nsnLocalDecl:
+    ctx.checkLocalDecl(n)
   var kind = ctx.classifyType(n.typ)
   ctx.targetTyped(n.body, n.typ)
   if n.body != nil and n.body.kind == nsnLambda and n.typ != nil:
@@ -2299,6 +2366,9 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
     else:
       ctx.checkConvertible(n.body, ctx.targetOfType(n.typ), n.body.info)
       ctx.coerce(n.body, declTypeName(n.typ), n.body.info, n.typ)
+  if n.kind == nsnLocalDecl and n.typ == nil and n.body != nil and n.body.rtype != nil and
+     n.body.rtype.kind == nsnVoidType:
+    nsError(ctx.config, n.info, ndVarBadInit, "void")
   ## An inferred local (`var x = ...`) takes its type name from its initialiser,
   ## exactly as a `foreach` variable takes it from the collection it walks.
   ctx.declare(n.name, kind, (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName),
@@ -2517,7 +2587,13 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     ctx.lambdaDepth = savedLambda
     ctx.retType = savedRet
     ctx.typeParams = savedTps
-  of nsnExprStmt: discard ctx.walkExpr(n.body)
+  of nsnExprStmt:
+    discard ctx.walkExpr(n.body)
+    ## Only a call, an assignment, `++`/`--`, `await` or `new` is a statement
+    ## (CS0201); a value computed and dropped is a mistake.
+    if n.body != nil and n.body.kind notin {nsnCall, nsnAssign, nsnIncDec, nsnNew,
+        nsnNullDot, nsnThrow, nsnEmpty, nsnLambda, nsnRefArg} and n.body.info.line > 0:
+      nsError(ctx.config, n.body.info, ndNotAStatement)
   of nsnAssign:
     if n.name.len == 0 and n.sons.len == 2 and n.sons[0].kind == nsnIdent and
        n.sons[0].name == "_" and not ctx.types.hasKey("_") and "_" notin ctx.members:

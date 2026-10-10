@@ -57,6 +57,11 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndDuplicateLocal
+    ndLocalShadows
+    ndVarNeedsInit
+    ndVarBadInit
+    ndNotAStatement
     ndNoEnclosingLoop
     ndNotAllPathsReturn
     ndFallThrough
@@ -180,6 +185,15 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndDuplicateLocal: (code: "0128", msg: "A local variable or function named '$1' is already defined" &
+                     " in this scope"),
+    ndLocalShadows: (code: "0136", msg: "A local or parameter named '$1' cannot be declared in this" &
+                   " scope because that name is used in an enclosing local scope to define a local" &
+                   " or parameter"),
+    ndVarNeedsInit: (code: "0818", msg: "Implicitly-typed variables must be initialized"),
+    ndVarBadInit: (code: "0815", msg: "Cannot assign $1 to an implicitly-typed variable"),
+    ndNotAStatement: (code: "0201", msg: "Only assignment, call, increment, decrement, await, and new" &
+                    " object expressions can be used as a statement"),
     ndNoEnclosingLoop: (code: "0139", msg: "No enclosing loop out of which to break or continue"),
     ndNotAllPathsReturn: (code: "0161", msg: "'$1': not all code paths return a value"),
     ndFallThrough: (code: "0163", msg: "Control cannot fall through from one case label ('$1') to" &
