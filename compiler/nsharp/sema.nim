@@ -2438,18 +2438,18 @@ proc checkInheritance(ctx: NsCheckContext; cls: NsNode) =
 proc checkInterfaces(ctx: NsCheckContext; cls: NsNode) =
   ## A class or struct must implement every member of every interface it names
   ## (CS0535), implicitly by an instance member of that name or explicitly as `I.M`.
-  ## An interface's own members have no body (a default implementation is C# 8,
-  ## which N# does not lower yet).
+  ## A method the interface gives a body (C# 8) needs no implementation.
   if cls.classKind == ckInterface:
     for m in cls.sons:
-      if m.kind == nsnMethodDecl and m.body != nil:
-        nsError(ctx.config, m.info, ndUnsupported, "a default interface method")
+      if m.kind == nsnMethodDecl and m.body != nil and ctx.scope.classes[cls.name].typeParams.len > 0:
+        nsError(ctx.config, m.info, ndUnsupported, "a default method in a generic interface")
       elif m.attrs.isStatic:
         nsError(ctx.config, m.info, ndUnsupported, "a static interface member")
     return
   for i in ctx.scope.interfaceClosure(cls.name):
     if not ctx.scope.classes.hasKey(i): continue
     for im in ctx.scope.classes[i].members:
+      if im.hasBody: continue
       var found = false
       for c in ctx.scope.chain(cls.name):
         for m in ctx.scope.classes[c].members:

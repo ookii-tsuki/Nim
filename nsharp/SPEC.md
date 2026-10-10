@@ -354,6 +354,7 @@ and the namespaces must be merged or layered.
 | `class C : Base, IFoo { }` | class decl | ✅ v1 | front |
 | `struct S { }` | value type | ✅ v1 | front |
 | `interface I { }` | contract | ✅ v1 | desugar → fat interface value (see §8) |
+| Default interface methods (C# 8) | `interface I { void M() { ... } }` | ✅ v1 | desugar (see §8); in a generic interface NS9999 |
 | `enum E { A, B }` | enum | ✅ v1 | front |
 | `delegate R D(args);` | func type | ✅ v1 | front |
 | `record`, `record struct` | data classes | ✅ v1 | see §4 |
@@ -668,8 +669,11 @@ interface it extends through the pointers its table keeps (`up0`, ...). A librar
 interface (`IComparable<T>`, `IEquatable<T>`, `IDisposable`, declared
 `{.nsInterface.}` in the prelude) may be named in a base list; it is a contract the
 generic code calls by name, not a value type (NS9999 if a value is declared with
-one). Deferred: default interface methods, static interface members, and `is`/`as`/
-casts to a generic interface (NS9999).
+one). A default interface method (C# 8) is `nsDefault_I_M(self: I, ...)`, whose
+`this` is the interface value; a class that does not implement the member gets a
+table entry calling it, and needs no implementation of its own. Deferred: default
+methods in a generic interface, static interface members, and `is`/`as`/casts to a
+generic interface (NS9999).
 
 ---
 
