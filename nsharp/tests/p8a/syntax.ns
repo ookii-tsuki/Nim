@@ -1,0 +1,44 @@
+using System;
+namespace Demo
+{
+    class Base
+    {
+        protected internal int A = 1;
+        private protected int B = 2;
+        protected internal virtual string Who() => "base";
+    }
+    class Derived : Base
+    {
+        public int Sum() => A + B;
+        protected internal override string Who() => "derived";
+    }
+    class Node { public Node Next; public string Name = "n"; }
+    class Program
+    {
+        delegate int Op(int a, int b);
+        static void Main()
+        {
+            var d = new Derived();
+            Console.WriteLine(d.Sum() + d.A);
+            Console.WriteLine(d.Who());
+            string s = null;
+            Node n = new Node { Next = new Node { Name = "second" } };
+            Console.WriteLine(n.Next!.Name);
+            Console.WriteLine(n!.Name.Length);
+            string t = s!;
+            Console.WriteLine(t == null);
+            Op add = delegate (int a, int b) { return a + b; };
+            Console.WriteLine(add(2, 3));
+            Func<int, int> sq = delegate (int x) { return x * x; };
+            Console.WriteLine(sq(4));
+            Action hello = delegate { Console.WriteLine("hello"); };
+            hello();
+            Op any = delegate { return 42; };
+            Console.WriteLine(any(1, 2));
+            int captured = 10;
+            Func<int> get = delegate () { return captured; };
+            captured = 11;
+            Console.WriteLine(get());
+        }
+    }
+}

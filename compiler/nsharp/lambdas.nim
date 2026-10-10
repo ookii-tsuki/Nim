@@ -209,6 +209,10 @@ proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
 proc applySig*(lam: NsNode; sig: NsSig) =
   ## Writes a signature on a lambda's untyped parameters and its result.
   if lam == nil or lam.kind != nsnLambda or not sig.known: return
+  if lam.strVal == "anyParams" and lam.params.len == 0:
+    ## `delegate { ... }` takes whatever parameters its delegate has, unnamed.
+    for i, t in sig.params:
+      lam.addParam nsnParam("nsUnused" & $i, t, lam.info)
   for i, p in lam.params:
     if p.typ == nil and i < sig.params.len: p.typ = sig.params[i]
   if lam.typ == nil: lam.typ = sig.ret
