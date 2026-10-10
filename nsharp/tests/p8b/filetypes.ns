@@ -1,0 +1,22 @@
+using System;
+namespace Demo
+{
+    file class Helper
+    {
+        public static int Twice(int x) => x * 2;
+    }
+    file record Pt(int X, int Y);
+    file enum Color { Red, Green }
+    file struct Pair { public int A; public int B; }
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(Helper.Twice(21));
+            Console.WriteLine(new Pt(1, 2));
+            Console.WriteLine(Color.Green);
+            var p = new Pair { A = 3, B = 4 };
+            Console.WriteLine(p.A + p.B);
+        }
+    }
+}

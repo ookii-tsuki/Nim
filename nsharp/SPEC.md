@@ -424,6 +424,7 @@ and the namespaces must be merged or layered.
 | `protected` | type + derived | ✅ v1 (approx) | module-scoped in v1 (see note) |
 | `internal` | assembly | ✅ v1 | module-private |
 | `protected internal` | union | ✅ v1 | front (one compilation is one assembly, so it is `internal`) |
+| `file` types (C# 11) | `file class Helper { }` | ✅ v1 | front + sem (a top-level class, struct, record, interface, enum or delegate only its own file may name: a use from another file of the namespace is NS0246; nested NS9054; two file types of one name in one namespace NS9999, since a namespace's files lower as one module) |
 | `private protected` | intersection | ✅ v1 | front (within one assembly, `protected`) |
 | `file` | file-only | ➕ ext | Nim module-private |
 

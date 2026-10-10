@@ -56,6 +56,7 @@ type
     ndAbstractNotImplemented
     ndInterfaceNotImplemented
     ndNoCollectionTarget
+    ndNestedFileType
     ndPrimaryNotChained
     ndWithNotRecord
     ndRequiredMember
@@ -148,6 +149,8 @@ const
     ndInterfaceNotImplemented: (code: "0535", msg: "'$1' does not implement interface" &
                         " member '$2'"),
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
+    ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
+                     " '$1' is a nested type."),
     ndPrimaryNotChained: (code: "8862", msg: "A constructor declared in a type with parameter list must" &
                         " have 'this' constructor initializer."),
     ndWithNotRecord: (code: "8858", msg: "The receiver type '$1' is not a valid record type and is not" &

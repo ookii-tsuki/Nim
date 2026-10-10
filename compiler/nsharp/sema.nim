@@ -2515,12 +2515,43 @@ proc walkTop(ctx: var NsCheckContext; d: NsNode) =
   of nsnEnumDecl, nsnDelegateDecl, nsnUsing: discard
   else: ctx.walkStmt(d)
 
+proc collectFileTypes(list: seq[NsNode]; config: ConfigRef;
+                      owners: var Table[string, FileIndex]) =
+  ## The `file` types of a compilation and the file each belongs to. A namespace's
+  ## files are checked as one module, so two of them declaring a file type of one
+  ## name would be a single type; that is reported rather than merged.
+  for d in list:
+    if d.kind == nsnNamespace and d.body != nil:
+      collectFileTypes(d.body.sons, config, owners)
+    elif d.kind in {nsnClassDecl, nsnEnumDecl, nsnDelegateDecl} and d.attrs.isFile:
+      if owners.hasKey(d.name) and owners[d.name] != d.info.fileIndex:
+        nsError(config, d.info, ndUnsupported,
+                "two file-local types named '" & d.name & "' in one namespace")
+      owners[d.name] = d.info.fileIndex
+
+proc checkFileTypeUses(n: NsNode; config: ConfigRef;
+                       owners: Table[string, FileIndex]) =
+  ## A `file` type is unknown outside the file that declares it (CS0246).
+  if n == nil: return
+  if n.kind in {nsnIdent, nsnTypeName} and owners.hasKey(n.name) and
+     owners[n.name] != n.info.fileIndex:
+    nsError(config, n.info, ndNamespaceNotFound, n.name)
+  checkFileTypeUses(n.typ, config, owners)
+  checkFileTypeUses(n.body, config, owners)
+  for s in [n.params, n.sons, n.initArgs, n.bases, n.constraints, n.typeArgs,
+            n.inits, n.primary]:
+    for c in s: checkFileTypeUses(c, config, owners)
+
 proc checkModule*(module: NsNode; scope: NsModuleScope; config: ConfigRef) =
   ## Resolves names, enforces access control, checks the conversions and applies the
   ## base-constructor rule. Diagnostics go through `config`.
   var ctx = NsCheckContext(scope: scope, config: config,
                            surface: bclSurface(config),
                            types: newTable[string, NsTypeInfo]())
+  var fileTypes = initTable[string, FileIndex]()
+  collectFileTypes(module.sons, config, fileTypes)
+  if fileTypes.len > 0:
+    for d in module.sons: checkFileTypeUses(d, config, fileTypes)
   for d in module.sons: ctx.walkTop(d)
   ## After the walk, so every declaration is looked at exactly once: a `MyObj?` on a
   ## reference type is only an annotation, and C# warns about it.
