@@ -259,7 +259,7 @@ Storing value types (`int`, `struct`) in an `object` - real boxing - is deferred
 |---|---|---|---|
 | Compilation unit = file | one file = one unit | ✅ v1 | front |
 | `namespace X { ... }` | declaration space | ✅ v1 (→ module/scope) | front |
-| File-scoped namespace `namespace X;` | C# 10 | 🔜 later | front |
+| File-scoped namespace `namespace X;` | C# 10 | ✅ v1 | front (the rest of the file is the namespace's body) |
 | `using System;` | import namespace | ✅ v1 (becomes an `import`) | front |
 | `using Alias = X.Y;` | namespace alias | ✅ v1 (imports the target) | front |
 | `using Alias = SomeType;` | alias of a type | 🔜 later | front |
@@ -361,7 +361,7 @@ and the namespaces must be merged or layered.
 | Nested types | inner | 🔜 later | - |
 | `abstract class` | non-instantiable | ✅ v1 | sem (`new` is NS0144; an unfilled abstract slot NS0534) |
 | `sealed class` | non-inheritable | ✅ v1 | sem (deriving is NS0509) |
-| `static class` | no instances | 🔜 later (→ module) | front |
+| `static class` | no instances | ✅ v1 | sem (a class like any other whose members are static; `new` of one is NS0712, an instance member NS0708) |
 
 ### 5.3 Members
 
@@ -460,7 +460,7 @@ v2.
 | `checked { }` / `unchecked { }` | ovf checks | ✅ v1 | desugar (→ `{.push overflowChecks.}`, §7.3) |
 | `unsafe { }` blocks (pointers, `&`, `*`) | unsafe | ✅ v1 | front |
 | `fixed`, `stackalloc` | stack-only | 🚫 out | front |
-| Local functions | nested funcs | ✅ v1 | desugar (→ nested proc, a closure over what it names; callable before its declaration in sema) |
+| Local functions | nested funcs | ✅ v1 | desugar (→ nested proc, a closure over what it names, declared forward at the top of its block so a call may precede its declaration) |
 | `defer { }` | - | ➕ ext | front |
 | Statements as expressions (`if`/`switch` value) | C# 8 | 🔜 later | desugar |
 
@@ -620,11 +620,11 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Named/optional/default args | `M(x: 1)` | ✅ v1 | sem (arguments mapped to parameters for overload matching, NS7036 for a missing one) + desugar (Nim's own named and default arguments) |
 | `params` arrays | variadic | ✅ v1 | desugar (→ `varargs[T]`, which takes elements or one array) |
 | `ref` / `out` / `in` params | by-ref | ✅ v1 | desugar (`ref`/`out` → `var T`, `in` → a plain parameter; `out T x` at a call is declared before the statement; `out var x` takes the parameter's type, NS9999 when the method is the library's) |
-| Extension methods | `static void M(this T)` | ✅ v1 (ext) | free (UFCS) |
+| Extension methods | `static void M(this T)` | ✅ v1 | sem + desugar: declared in a non-generic static class (else NS1106), lowered as a plain proc over its `this` parameter (no typedesc), so `x.M(a)` is `M(x, a)` -- reached when `x`'s own type has no `M`, as C# prefers -- and `C.M(x, a)` names the same proc. A null receiver is not checked |
 | `IDisposable` / `using` | deterministic cleanup | ✅ v1 | desugar/lib |
 | `IEnumerable<T>` / `foreach` | iteration protocol | ✅ v1 | sem/lib |
 | Covariance/contravariance | `in`/`out` | 🔜 later | sem |
-| `static class` | container | 🔜 later | front |
+| `static class` | container | ✅ v1 | see §4 |
 | Object/collection `ToString` | `$` | ✅ v1 | desugar |
 
 **Interface model (D2, revised): interface values with dynamic dispatch.**
@@ -1068,7 +1068,7 @@ flag=True       # the .csout, which is what C# prints
 | **D2** | Interface model | ✅ **Static interfaces = concepts** (v1); dynamic values → v2 (§8) | sem |
 | **D3** | Method resolution | ✅ member-first, then UFCS fallback | sem |
 | **D4** | Namespace ↔ module | ✅ namespace = generated decl/impl/barrel (§5.1.1) | front |
-| **D5** | Entry point | ✅ both top-level statements and `Main` | parser |
+| **D5** | Entry point | ✅ both top-level statements and `Main` | parser (top-level statements become `static void Main(string[] args)` of a synthesized `Program` in the global namespace, as C# defines them; their local functions are `Main`'s, declared forward so a call may precede them) |
 | **D6** | Null model | ✅ `nil`-able refs, `?` annotation; `Option[T]` for `T?`; `null` deref → `NullReferenceException` (§4.4) | lib |
 | **D7** | `decimal` | ✅ later (lib), not core | lib |
 | **D8** | Error codes/style | ✅ codes mirror C#'s digits, `NS9xxx` for the rest (§17) | tooling |

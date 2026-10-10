@@ -3,7 +3,7 @@
 # Members are ordinary Nim procs: an instance member is reached by Nim's
 # dot-call, a static one through the qualifier the frontend drops.
 
-import std/[syncio, strutils]
+import std/[syncio, strutils, math]
 
 # `{.nsStatic: "T".}` marks a proc C# reaches through a type qualifier
 # (`Console.WriteLine`, `String.Concat`) rather than a receiver; the frontend
@@ -71,6 +71,8 @@ type
   IDisposable* {.nsInterface.} = object
     ## `void Dispose()`, which the `using` statement calls.
 
+  Math* = object
+    ## `System.Math`: its members are static (`{.nsStatic: "Math".}` below).
   Console* = object
     ## Declared so the frontend resolves the name as a type; nothing is ever an
     ## instance of it.
@@ -124,6 +126,9 @@ proc newRootRef*(): RootRef = RootRef()
 # --- System.String ----------------------------------------------------------
 
 proc Length*(s: string): int32 = int32(s.len)
+proc newstring*(c: char; count: int32): string = repeat(c, count)
+  ## `new string(c, n)`: `c` repeated `n` times. Spelled as the lowering spells
+  ## `new` + `string`; to Nim it is an overload of `newString`, told apart by arity.
 proc ToString*(s: string): string = s
 proc ToUpper*(s: string): string = s.toUpperAscii
 proc ToLower*(s: string): string = s.toLowerAscii
@@ -181,6 +186,35 @@ proc WriteLine*[T](x: T) {.nsStatic: "Console".} = echo x
 proc WriteLine*() {.nsStatic: "Console".} = echo ""
 proc Write*[T](x: T) {.nsStatic: "Console".} = stdout.write x
 proc ReadLine*(): string = stdin.readLine
+
+# --- System.Math ------------------------------------------------------------
+#
+# The integer overloads keep the argument's type, as C#'s do; `Abs` of the most
+# negative value throws `OverflowException` in .NET and wraps here only if checks
+# are off, which they are not inside the library. `Round` rounds a midpoint to the
+# even neighbour, .NET's default.
+
+# One overload per type, as .NET declares them.
+proc Abs*(x: int32): int32 {.nsStatic: "Math".} = abs(x)
+proc Abs*(x: int64): int64 {.nsStatic: "Math".} = abs(x)
+proc Abs*(x: float): float {.nsStatic: "Math".} = abs(x)
+proc Max*(a, b: int32): int32 {.nsStatic: "Math".} = max(a, b)
+proc Max*(a, b: int64): int64 {.nsStatic: "Math".} = max(a, b)
+proc Max*(a, b: float): float {.nsStatic: "Math".} = max(a, b)
+proc Min*(a, b: int32): int32 {.nsStatic: "Math".} = min(a, b)
+proc Min*(a, b: int64): int64 {.nsStatic: "Math".} = min(a, b)
+proc Min*(a, b: float): float {.nsStatic: "Math".} = min(a, b)
+proc Sign*(x: int32): int32 {.nsStatic: "Math".} = int32(cmp(x, int32(0)))
+proc Sign*(x: int64): int32 {.nsStatic: "Math".} = int32(cmp(x, int64(0)))
+proc Sign*(x: float): int32 {.nsStatic: "Math".} = int32(cmp(x, float(0)))
+proc Sqrt*(x: float): float {.nsStatic: "Math".} = sqrt(x)
+proc Pow*(x, y: float): float {.nsStatic: "Math".} = pow(x, y)
+proc Floor*(x: float): float {.nsStatic: "Math".} = floor(x)
+proc Ceiling*(x: float): float {.nsStatic: "Math".} = ceil(x)
+proc Round*(x: float): float {.nsStatic: "Math".} =
+  result = round(x)
+  if abs(x - trunc(x)) == 0.5 and floorMod(result, 2.0) != 0.0:
+    result = result - copySign(1.0, x)
 
 {.pop.}
 

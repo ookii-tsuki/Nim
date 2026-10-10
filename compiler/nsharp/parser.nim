@@ -39,7 +39,7 @@ const
     "const", "readonly", "virtual", "override", "abstract", "sealed", "new",
     "implicit", "explicit"]
   NsClassModifiers = ["public", "private", "protected", "internal", "abstract",
-    "sealed"]
+    "sealed", "static"]
 
 # --- token helpers ----------------------------------------------------------
 
@@ -1827,7 +1827,7 @@ proc parseTypeDecl(p: var NsParser): NsNode =
   let savedTps = p.typeParams
   for t in result.typeParams: p.typeParams.add t.name
   result.attrs = NsAttrs(access: accessOfTopLevel(mods), isAbstract: "abstract" in mods,
-                         isSealed: "sealed" in mods)
+                         isSealed: "sealed" in mods, isStatic: "static" in mods)
   if p.at(nsColon):
     ## `: Base, I1, I2`. Which of them is a class is not the grammar's to say:
     ## `symbols.nim` decides, once every type is known.
@@ -1937,8 +1937,22 @@ proc parseNamespace(p: var NsParser; nsPrefix = ""): NsNode =
     local.add p.advance.text
   result.name = if nsPrefix.len > 0 and local.len > 0: nsPrefix & "." & local
                 else: nsPrefix & local
-  discard p.expect(nsLBrace)
   result.body = nsn(nsnBlock, info)
+  if p.at(nsSemi):
+    ## `namespace A.B;`: the rest of the file is its body.
+    discard p.advance
+    while not p.at(nsEof):
+      if p.at(nsSemi):
+        discard p.advance
+        continue
+      let before = p.pos
+      let d = p.parseTopLevelDecl(result.name)
+      if d != nil: result.body.add d
+      if p.pos == before:
+        p.err(p.peek, ndParserStalled)
+        discard p.advance
+    return
+  discard p.expect(nsLBrace)
   while not p.at(nsRBrace) and not p.at(nsEof):
     if p.at(nsSemi):
       discard p.advance
@@ -1968,6 +1982,38 @@ proc parseTopLevelDecl(p: var NsParser; nsPrefix: string): NsNode =
     if p.at(nsSemi): discard p.advance
 
 # --- entry point ------------------------------------------------------------
+
+proc synthesizeEntryPoint(module: NsNode) =
+  ## C# 9 top-level statements: the statements written outside any type are the
+  ## body of a `static void Main(string[] args)` in a class `Program` of the global
+  ## namespace, which the C# compiler synthesizes. The tree gets that class, so the
+  ## later stages see an ordinary entry point; a local function among the
+  ## statements is a local function of `Main`, as in C#.
+  var stmts: seq[NsNode] = @[]
+  var kept: seq[NsNode] = @[]
+  for d in module.sons:
+    if d.kind in {nsnClassDecl, nsnEnumDecl, nsnDelegateDecl, nsnUsing, nsnNamespace,
+                  nsnEmpty}:
+      kept.add d
+    else: stmts.add d
+  if stmts.len == 0: return
+  let info = stmts[0].info
+  let main = nsn(nsnMethodDecl, info)
+  main.name = "Main"
+  main.typ = nsn(nsnVoidType, info)
+  main.attrs.isStatic = true
+  let args = nsn(nsnParam, info)
+  args.name = "args"
+  args.typ = nsnArrayType(nsnTypeName("string", info), info)
+  main.params = @[args]
+  main.body = nsn(nsnBlock, info)
+  main.body.sons = stmts
+  let cls = nsn(nsnClassDecl, info)
+  cls.name = "Program"
+  cls.attrs.access = aInternal
+  cls.add main
+  kept.add cls
+  module.sons = kept
 
 proc parseNsModule*(source: string; fileIdx: FileIndex;
                     config: ConfigRef): NsNode =
@@ -2010,6 +2056,7 @@ proc parseNsModule*(source: string; fileIdx: FileIndex;
       ## than report anything.
       p.err(p.peek, ndParserStalled)
       discard p.advance
+  synthesizeEntryPoint(result)
 
 
 

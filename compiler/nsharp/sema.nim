@@ -206,6 +206,7 @@ proc memberKindOfSurface(ctx: NsCheckContext; rk: NsTypeKind; recv, name: string
   ## Nim's to resolve.
   let m = ctx.surface.member(recv, rk, name)
   if m.name.len == 0: return tkUnknown
+  if not ctx.surface.resultAgrees(recv, rk, name): return tkUnknown
   if not m.retIsParam:
     tname = m.ret
     return ctx.surface.kindOfSpelling(m.ret)
@@ -935,6 +936,16 @@ proc isLambdaArg(a: NsNode): bool =
   a != nil and (isDeferred(a) or
                 (a.kind == nsnNamedArg and isDeferred(a.body)))
 
+proc isExtensionCall(ctx: NsCheckContext; callee: NsNode; owner: string): bool =
+  ## Whether `recv.M` names an extension method: one is in scope, and the
+  ## receiver's own type -- a class this compilation declares, or a library type
+  ## -- has no member `M`, which C# would prefer.
+  if not ctx.scope.extensions.hasKey(callee.name): return false
+  if owner.len > 0 and ctx.scope.classes.hasKey(owner):
+    return ctx.scope.findMemberInfo(owner, callee.name).name.len == 0
+  let recv = callee.body
+  ctx.surface.member(recv.typeName, recv.typeKind, callee.name).name.len == 0
+
 proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   var kind = tkUnknown
   var cands: seq[seq[NsNode]] = @[]
@@ -980,6 +991,19 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## A receiver the scope does not know (`Console`, a name from a module it does
     ## not cover) has none, and the call is left to Nim.
     cands = ctx.scope.memberOverloads(owner, callee.name)
+    if rk != tkType and ctx.isExtensionCall(callee, owner):
+      ## `x.M(args)` where `x`'s type has no `M`: an extension method, which is
+      ## `M(x, args)`. Its parameters after the `this` one take the arguments.
+      let ext = ctx.scope.extensions[callee.name][0]
+      callee.strVal = "extension"
+      owner = ext.owner
+      cands = @[]
+      for c in ctx.scope.memberOverloads(owner, callee.name):
+        if c.len > 0: cands.add c[1 .. ^1]
+      kind = ctx.classifyType(ext.typ)
+      tn = (if kind != tkUnknown: declTypeName(ext.typ) else: "")
+      n.rtype = (if ext.typeParams.len == 0: ext.typ else: nil)
+      if ext.typeParams.len > 0: kind = tkUnknown
     ## A member the module declares carries its declared result type name, which
     ## the surrounding `var x = ...` needs to name `x` (`List<int> Items()` makes
     ## `x` a `List`); the surface path has already recorded its own.
@@ -1172,7 +1196,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ## same way a method call's parameter lists are. A BCL type has none here.
       let cn = unqualified(n.typ.name)
       if ctx.scope.classes.hasKey(cn):
-        if ctx.scope.classes[cn].isAbstract or
+        if ctx.scope.classes[cn].isStatic:
+          nsError(ctx.config, n.info, ndStaticClassInstance, cn)
+        elif ctx.scope.classes[cn].isAbstract or
            ctx.scope.classes[cn].classKind == ckInterface:
           nsError(ctx.config, n.info, ndAbstractInstance, cn)
         ctx.checkCallArgs(ctx.scope.ctorOverloads(cn), n.sons, cn, cn, true, n.info)
@@ -1896,6 +1922,15 @@ proc checkInheritance(ctx: NsCheckContext; cls: NsNode) =
   ## (CS0239), an abstract member needs an abstract class (CS0513) and no body
   ## (CS0500), a non-abstract one a body (CS0501), and a concrete class must fill
   ## every abstract slot it inherits (CS0534).
+  for m in cls.sons:
+    if cls.attrs.isStatic and m.kind in {nsnFieldDecl, nsnMethodDecl, nsnPropertyDecl,
+                                         nsnIndexerDecl} and
+       not m.attrs.isStatic and not m.attrs.isConst:
+      nsError(ctx.config, m.info, ndStaticClassMember,
+              (if m.kind == nsnIndexerDecl: "this" else: m.name))
+    if m.kind == nsnMethodDecl and m.params.len > 0 and m.params[0].paramMod == "this" and
+       (not cls.attrs.isStatic or cls.typeParams.len > 0 or not m.attrs.isStatic):
+      nsError(ctx.config, m.info, ndExtensionNotStatic)
   for b in cls.bases:
     if b.kind == nsnTypeName and
        canonicalTypeName(b.name) in ["IEnumerable", "IEnumerator"]:

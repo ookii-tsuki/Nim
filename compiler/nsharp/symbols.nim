@@ -20,6 +20,7 @@ type
     isOverride*: bool
     isAbstract*: bool
     isSealed*: bool
+    isExtension*: bool        ## a static method whose first parameter is `this T`
     owner*: string            ## the class that declares it
     typeParams*: seq[string]  ## a generic method's own `<T>`
     typ*: NsNode              ## declared type of a field, or a method's return type
@@ -31,6 +32,7 @@ type
     classKind*: NsClassKind
     isAbstract*: bool
     isSealed*: bool
+    isStatic*: bool                ## a `static class`: no instances, no instance members
     interfaces*: seq[string]       ## the interfaces it names directly
     typeParams*: seq[string]       ## a generic class's `<T, U>`
     written*: seq[string]          ## its base list as written, before resolution
@@ -53,6 +55,9 @@ type
     libIfaces*: HashSet[string]
       ## The interfaces the library declares (`{.nsInterface.}`): a class may name
       ## one, which N# lowers as a duck-typed contract rather than a table.
+    extensions*: Table[string, seq[NsMemberSymbol]]
+      ## The extension methods in scope, by name: `x.M()` reaches one when `x`'s own
+      ## type has no member `M`.
     namespaces*: HashSet[string]
       ## Every name that stands for a namespace in scope: `using A.B.C;` makes `A`,
       ## `A.B` and `A.B.C` all name it, and `using P = A.B.C;` adds `P`.
@@ -77,6 +82,8 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
     isOverride: m.attrs.isOverride,
     isAbstract: m.attrs.isAbstract,
     isSealed: m.attrs.isSealed,
+    isExtension: m.kind == nsnMethodDecl and m.attrs.isStatic and m.params.len > 0 and
+                 m.params[0].paramMod == "this",
     owner: c.name,
     typeParams: (block:
       var tps: seq[string] = @[]
@@ -88,7 +95,7 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
 proc collectClass(scope: NsModuleScope; cls: NsNode) =
   var sym = NsClassSymbol(name: cls.name, classKind: cls.classKind,
                           isAbstract: cls.attrs.isAbstract, isSealed: cls.attrs.isSealed,
-                          decl: cls)
+                          isStatic: cls.attrs.isStatic, decl: cls)
   for t in cls.typeParams: sym.typeParams.add t.name
   for b in cls.bases:
     if b.kind == nsnTypeName:
@@ -112,6 +119,8 @@ proc collectClass(scope: NsModuleScope; cls: NsNode) =
       sym.ctorArities.add m.params.len
       sym.ctorParams.add m.params
     else: discard
+  for m in sym.members:
+    if m.isExtension: scope.extensions.mgetOrPut(m.name, @[]).add m
   scope.classes[cls.name] = sym
 
 proc noteNamespace(scope: NsModuleScope; ns: string) =
@@ -186,6 +195,7 @@ proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Builds the module scope from a parsed module.
   result = NsModuleScope(classes: initTable[string, NsClassSymbol](),
                          delegates: initTable[string, NsNode](),
+                         extensions: initTable[string, seq[NsMemberSymbol]](),
                          enums: initHashSet[string](),
                          namespaces: initHashSet[string](),
                          libIfaces: bclSurface(config).libraryInterfaces())

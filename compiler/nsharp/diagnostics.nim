@@ -55,6 +55,9 @@ type
     ndSealedNotOverride
     ndAbstractNotImplemented
     ndInterfaceNotImplemented
+    ndStaticClassInstance
+    ndStaticClassMember
+    ndExtensionNotStatic
     ndNotDisposable
     ndNotIteratorType
     ndYieldHere
@@ -133,6 +136,10 @@ const
     ndAbstractNotImplemented: (code: "0534", msg: "'$1' does not implement inherited abstract member '$2'"),
     ndInterfaceNotImplemented: (code: "0535", msg: "'$1' does not implement interface" &
                         " member '$2'"),
+    ndStaticClassInstance: (code: "0712", msg: "Cannot create an instance of the static class '$1'"),
+    ndStaticClassMember: (code: "0708", msg: "'$1': cannot declare instance members in a static class"),
+    ndExtensionNotStatic: (code: "1106", msg: "Extension method must be defined in a non-generic static" &
+                        " class"),
     ndNotDisposable: (code: "1674", msg: "'$1': type used in a using statement must implement" &
                         " 'System.IDisposable'"),
     ndNotIteratorType: (code: "1624", msg: "The body cannot be an iterator block because" &

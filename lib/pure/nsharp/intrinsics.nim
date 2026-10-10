@@ -166,3 +166,9 @@ template nsDispose*(x: typed) =
     if x.nsObj != nil: x.Dispose()
   else:
     x.Dispose()
+
+import std/cmdline
+
+proc nsCommandLine*(): seq[string] =
+  ## `Main`'s `string[] args`: the command line without the program's name.
+  commandLineParams()

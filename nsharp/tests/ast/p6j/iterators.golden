@@ -1294,6 +1294,22 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkProcDef
+        nkIdent 'Squares'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'IEnumerable'
+            nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 'n'
+            nkIdent 'int32'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkEmpty
       nkForStmt
         nkIdent 'e'
         nkCall
@@ -1347,7 +1363,7 @@ nkStmtList
         nkStmtList
           nkLetSection
             nkIdentDefs
-              nkIdent 'nsEnum4'
+              nkIdent 'nsEnum5'
               nkEmpty
               nkCall
                 nkDotExpr
@@ -1359,7 +1375,7 @@ nkStmtList
           nkWhileStmt
             nkCall
               nkDotExpr
-                nkIdent 'nsEnum4'
+                nkIdent 'nsEnum5'
                 nkIdent 'MoveNext'
             nkStmtList
               nkLetSection
@@ -1367,7 +1383,7 @@ nkStmtList
                   nkIdent 'i'
                   nkEmpty
                   nkDotExpr
-                    nkIdent 'nsEnum4'
+                    nkIdent 'nsEnum5'
                     nkIdent 'Current'
               nkCall
                 nkIdent 'Write'
@@ -1385,7 +1401,7 @@ nkStmtList
         nkStmtList
           nkLetSection
             nkIdentDefs
-              nkIdent 'nsEnum5'
+              nkIdent 'nsEnum6'
               nkEmpty
               nkCall
                 nkDotExpr
@@ -1396,7 +1412,7 @@ nkStmtList
           nkWhileStmt
             nkCall
               nkDotExpr
-                nkIdent 'nsEnum5'
+                nkIdent 'nsEnum6'
                 nkIdent 'MoveNext'
             nkStmtList
               nkLetSection
@@ -1404,7 +1420,7 @@ nkStmtList
                   nkIdent 'c'
                   nkEmpty
                   nkDotExpr
-                    nkIdent 'nsEnum5'
+                    nkIdent 'nsEnum6'
                     nkIdent 'Current'
               nkCall
                 nkIdent 'Write'

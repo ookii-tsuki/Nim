@@ -1,0 +1,6 @@
+using System;
+namespace Demo
+{
+    static class Util { public static int One() => 1; }
+    class Program { static void Main() { var u = new Util(); Console.WriteLine(Util.One()); } }
+}
