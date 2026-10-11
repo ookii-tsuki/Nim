@@ -63,6 +63,17 @@ proc setType(n: NsNode; kind: NsTypeKind; name = "") =
   n.typeKind = kind
   n.typeName = name
 
+proc kindSpelling(n: NsNode): string =
+  ## A value's type as C# spells it in a diagnostic.
+  if n.typeName.len > 0: return n.typeName
+  case n.typeKind
+  of tkInt: "int"
+  of tkFloat: "double"
+  of tkBool: "bool"
+  of tkChar: "char"
+  of tkString: "string"
+  else: "?"
+
 # --- scopes -----------------------------------------------------------------
 
 proc pushScope(ctx: var NsCheckContext) =
@@ -400,6 +411,9 @@ proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineI
     return
   if implicitlyConvertible(src, dst):
     value.conv = dst
+  elif value.kind == nsnFloatLit and src == "double" and dst in ["float", "decimal"]:
+    ## `float f = 1.5;`: the literal is a `double` (CS0664).
+    nsError(ctx.config, info, ndFloatLiteral, dst, (if dst == "float": "F" else: "M"))
   else:
     nsError(ctx.config, info, ndCannotConvertExplicit, src, dst)
 
@@ -678,6 +692,21 @@ proc checkConvertible(ctx: NsCheckContext; value: NsNode; t: NsTarget;
       nsError(ctx.config, info, ndCannotConvertNull, t.spelling)
     ctx.markNull(value, t.name)
     return
+  if value.typeKind == tkDelegate and t.kind notin {tkDelegate, tkUnknown} and
+     value.kind in {nsnIdent, nsnMember} and value.typeName.len == 0:
+    ## A method named without a call is a method group, not a value (CS0428).
+    nsError(ctx.config, info, ndMethodGroupConv, value.name, t.spelling)
+    return
+  let tcn = canonicalTypeName(t.name)
+  if ctx.scope.enums.contains(tcn) and value.typeKind in {tkInt, tkFloat} and
+     not (value.kind == nsnIntLit and value.intVal == 0):
+    ## An integer is no enum without a cast; `0` alone converts (CS0266).
+    nsError(ctx.config, info, ndCannotConvertExplicit, valueSpelling(value), t.spelling)
+    return
+  if ctx.scope.enums.contains(canonicalTypeName(value.typeName)) and
+     t.kind in {tkInt, tkFloat} and not ctx.scope.enums.contains(tcn):
+    nsError(ctx.config, info, ndCannotConvertExplicit, value.typeName, t.spelling)
+    return
   if ctx.incompatible(value, t):
     let src = (if value.typeName.len > 0: canonicalTypeName(value.typeName)
                else: numName(value))
@@ -687,6 +716,34 @@ proc checkConvertible(ctx: NsCheckContext; value: NsNode; t: NsTarget;
       nsError(ctx.config, info, ndCannotConvertExplicit, valueSpelling(value), t.spelling)
     else:
       nsError(ctx.config, info, ndCannotConvert, valueSpelling(value), t.spelling)
+
+proc checkCast(ctx: NsCheckContext; n: NsNode; target: NsTypeKind) =
+  ## `(T)x` with no conversion at all between the two (CS0030): a string and a
+  ## number, a bool and anything else, or two classes neither derives from.
+  let v = n.body
+  if v == nil or v.kind == nsnNull: return
+  let src = v.typeKind
+  const known = {tkInt, tkFloat, tkBool, tkChar, tkString, tkClass}
+  if src notin known or target notin known: return
+  let sn = canonicalTypeName(v.typeName)
+  let tn = canonicalTypeName(declTypeName(n.typ))
+  if ctx.scope.enums.contains(sn) or ctx.scope.enums.contains(tn): return
+  var ok = true
+  if src == tkBool or target == tkBool: ok = src == target
+  elif src == tkString or target == tkString: ok = src == target
+  elif src == tkClass and target == tkClass:
+    if ctx.scope.classes.hasKey(sn) and ctx.scope.classes.hasKey(tn) and
+       ctx.scope.classes[sn].classKind != ckInterface and
+       ctx.scope.classes[tn].classKind != ckInterface and
+       ctx.scope.classes[sn].classKind != ckStruct and
+       ctx.scope.classes[tn].classKind != ckStruct:
+      ok = sn in ctx.scope.chain(tn) or tn in ctx.scope.chain(sn)
+  elif (src == tkClass) != (target == tkClass):
+    let cn = (if src == tkClass: sn else: tn)
+    ok = not (ctx.scope.classes.hasKey(cn) and ctx.scope.classes[cn].operators.len == 0 and
+              ctx.scope.classes[cn].classKind == ckClass)
+  if not ok:
+    nsError(ctx.config, n.info, ndCannotCast, kindSpelling(v), typeSpelling(n.typ))
 
 proc isTypeParamRef(ctx: NsCheckContext; t: NsNode): bool =
   ## A parameter typed by a type parameter: a bare name no declaration answers for.
@@ -869,17 +926,6 @@ proc noteMutation(ctx: NsCheckContext; target: NsNode) =
   if t != nil and t.kind == nsnThis: ctx.curMember.strVal = "mutating"
 
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind
-
-proc kindSpelling(n: NsNode): string =
-  ## A value's type as C# spells it in a diagnostic.
-  if n.typeName.len > 0: return n.typeName
-  case n.typeKind
-  of tkInt: "int"
-  of tkFloat: "double"
-  of tkBool: "bool"
-  of tkChar: "char"
-  of tkString: "string"
-  else: "?"
 
 proc checkOperands(ctx: NsCheckContext; n: NsNode; lk, rk: NsTypeKind) =
   ## A built-in operator applied to operands it does not take (CS0019): only
@@ -1841,6 +1887,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       discard ctx.walkExpr(a)
       if n.typ != nil and n.kind == nsnArrayLit:
         ## Each element converts to the element type: `object[] { 1, "a" }` boxes.
+        ctx.checkConvertible(a, ctx.targetOfType(n.typ), a.info)
         ctx.coerce(a, declTypeName(n.typ), a.info, n.typ)
     if n.kind == nsnArrayLit and n.typ == nil:
       ## `new[] { 1.5, 2.5 }`: the element type is the elements'.
@@ -2040,6 +2087,8 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     elif canonicalTypeName(n.body.typeName) in ["object", "Object"] and
          not ctx.scope.isInterface(declTypeName(n.typ)):
       n.strVal = "unbox"
+    else:
+      ctx.checkCast(n, target)
     n.setType(target)
     result = target
   of nsnIs:
@@ -2283,6 +2332,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## inside it are never resolved.
     ctx.pushScope()
     inc ctx.lambdaDepth
+    let savedLamRet = ctx.retType
+    ## A lambda's `return` is the lambda's: its delegate's result, when known.
+    ctx.retType = (if n.typ != nil and not ctx.isTypeParamRef(n.typ): n.typ else: nil)
     let savedHost = ctx.yieldHost
     ctx.yieldHost = yhNone
     for p in n.params:
@@ -2293,6 +2345,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ctx.walkInScope(n.body.sons)
     ctx.yieldHost = savedHost
     dec ctx.lambdaDepth
+    ctx.retType = savedLamRet
     ctx.popScope()
     n.setType(tkDelegate)
     result = tkDelegate
@@ -2369,6 +2422,18 @@ proc firstUnknownType(ctx: NsCheckContext; t: NsNode): NsNode =
   else: discard
   nil
 
+proc checkTernaryTypes(ctx: NsCheckContext; n: NsNode) =
+  ## `var x = c ? 1 : "s";`: with no target type, one branch must convert to the
+  ## other's type (CS0173).
+  let a = n.sons[1]
+  let b = n.sons[2]
+  const known = {tkInt, tkFloat, tkBool, tkChar, tkString}
+  if a.typeKind notin known or b.typeKind notin known or a.kind == nsnNull or
+     b.kind == nsnNull: return
+  let num = {tkInt, tkFloat, tkChar}
+  if a.typeKind == b.typeKind or (a.typeKind in num and b.typeKind in num): return
+  nsError(ctx.config, n.info, ndTernaryTypes, kindSpelling(a), kindSpelling(b))
+
 proc checkLocalDecl(ctx: NsCheckContext; n: NsNode) =
   ## A local's declaration: its type exists (CS0246), its name is not taken in
   ## this scope (CS0128) or an enclosing one (CS0136), and `var` has a value
@@ -2405,7 +2470,16 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
     applySig(n.body, delegateSig(ctx.scope, ctx.surface, n.typ))
   if n.body != nil:
     let initKind = ctx.walkExpr(n.body)
-    if n.typ == nil: kind = initKind
+    if n.typ == nil:
+      kind = initKind
+      if n.body.kind == nsnTernary and n.body.sons.len == 3:
+        ctx.checkTernaryTypes(n.body)
+    elif n.typ.kind == nsnTupleType and n.body.kind == nsnTupleLit and
+         n.typ.sons.len == n.body.sons.len:
+      ## `(int, string) t = (1, 2);`: each element converts on its own.
+      for i, e in n.body.sons:
+        let v = (if e.kind == nsnNamedArg: e.body else: e)
+        ctx.checkConvertible(v, ctx.targetOfType(n.typ.sons[i].typ), v.info)
     else:
       ctx.checkConvertible(n.body, ctx.targetOfType(n.typ), n.body.info)
       ctx.coerce(n.body, declTypeName(n.typ), n.body.info, n.typ)

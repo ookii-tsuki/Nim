@@ -57,6 +57,10 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndMethodGroupConv
+    ndFloatLiteral
+    ndTernaryTypes
+    ndCannotCast
     ndOperatorTypes
     ndDuplicateLocal
     ndLocalShadows
@@ -186,6 +190,13 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndMethodGroupConv: (code: "0428", msg: "Cannot convert method group '$1' to non-delegate type" &
+                      " '$2'. Did you intend to invoke the method?"),
+    ndFloatLiteral: (code: "0664", msg: "Literal of type double cannot be implicitly converted to" &
+                   " type '$1'; use an '$2' suffix to create a literal of this type"),
+    ndTernaryTypes: (code: "0173", msg: "Type of conditional expression cannot be determined because" &
+                   " there is no implicit conversion between '$1' and '$2'"),
+    ndCannotCast: (code: "0030", msg: "Cannot convert type '$1' to '$2'"),
     ndOperatorTypes: (code: "0019", msg: "Operator '$1' cannot be applied to operands of type '$2'" &
                     " and '$3'"),
     ndDuplicateLocal: (code: "0128", msg: "A local variable or function named '$1' is already defined" &
