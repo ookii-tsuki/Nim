@@ -47,7 +47,7 @@ method_group_value CS0428 match
 missing_brace CS1513 match
 missing_iface_member CS0535 match
 missing_paren CS1026 match
-missing_semicolon CS1002 accepted
+missing_semicolon CS1002 match
 named_before_positional CS1501 nim
 new_on_interface_gen CS0144 nim
 no_member CS1061 match
@@ -60,7 +60,7 @@ op_bad_types CS0019 match
 op_class_plus CS0019 match
 op_string_minus CS0019 match
 out_missing CS1620 match
-out_unassigned CS0177 accepted
+out_unassigned CS0177 match
 override_nonvirtual CS0506 match
 private_access CS0122 match
 private_method CS0122 match
@@ -82,7 +82,7 @@ ternary_mismatch CS0173 match
 this_in_static CS0026 match
 tuple_wrong CS0029 match
 type_as_value CS0119 match
-unassigned_local CS0165 accepted
+unassigned_local CS0165 match
 undeclared_method CS0103 match
 undeclared_type CS0246 match
 undeclared_var CS0103 match

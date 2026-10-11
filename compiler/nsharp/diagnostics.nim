@@ -57,6 +57,8 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndUnassignedLocal
+    ndOutUnassigned
     ndRefArgMissing
     ndNoGetter
     ndNotIndexable
@@ -198,6 +200,9 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndUnassignedLocal: (code: "0165", msg: "Use of unassigned local variable '$1'"),
+    ndOutUnassigned: (code: "0177", msg: "The out parameter '$1' must be assigned to before control" &
+                    " leaves the current method"),
     ndRefArgMissing: (code: "1620", msg: "Argument $1 must be passed with the '$2' keyword"),
     ndNoGetter: (code: "0154", msg: "The property or indexer '$1' cannot be used in this context" &
                " because it lacks the get accessor"),

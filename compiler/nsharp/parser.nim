@@ -1518,6 +1518,10 @@ proc looksLikeLocalFunc(p: NsParser): bool =
 
 proc parseClassMember(p: var NsParser; clsName: string; isInterface = false): NsNode
 
+proc requireSemi(p: var NsParser) =
+  ## A simple statement ends with `;` (CS1002); the caller consumes it.
+  if not p.at(nsSemi): p.err(p.peek, ndSemicolonExpected)
+
 proc parseStatement(p: var NsParser): NsNode =
   let t = p.peek
   if t.kind == nsIdent and p.looksLikeLocalFunc():
@@ -1568,6 +1572,7 @@ proc parseStatement(p: var NsParser): NsNode =
         discard p.advance
         result.name = p.advance.text
         if result.name == "return": result.body = p.parseExpr()
+        p.requireSemi()
         return
     of "for": return p.parseFor()
     of "foreach": return p.parseForeach()
@@ -1576,24 +1581,31 @@ proc parseStatement(p: var NsParser): NsNode =
     of "throw":
       result = nsn(nsnThrow, p.infoOf(t))
       discard p.advance
-      result.body = p.parseExpr()
+      if not p.at(nsSemi): result.body = p.parseExpr()
+      p.requireSemi()
       return
     of "return":
       result = nsn(nsnReturn, p.infoOf(t))
       discard p.advance
       if not (p.at(nsSemi) or p.at(nsRBrace) or p.at(nsEof)):
         result.body = p.parseExpr()
+      p.requireSemi()
       return
     of "break":
       result = nsn(nsnBreak, p.infoOf(t))
       discard p.advance
+      p.requireSemi()
       return
     of "continue":
       result = nsn(nsnContinue, p.infoOf(t))
       discard p.advance
+      p.requireSemi()
       return
     else: discard
   result = p.parseSimpleStmt()
+  if result != nil and result.kind in {nsnExprStmt, nsnLocalDecl, nsnMultiDecl, nsnAssign,
+                                       nsnDeconstruct}:
+    p.requireSemi()
 
 proc parseEmbedded(p: var NsParser): seq[NsNode] =
   ## The body of `if`, `else`, `while`, `do`, `for` and `foreach`: a block, or the

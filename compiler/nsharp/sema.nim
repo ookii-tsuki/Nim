@@ -21,7 +21,7 @@
 
 import std/[tables, sets, strutils]
 import ../lineinfos, ../options
-import ast, bcl, diagnostics, lambdas, numeric, symbols
+import ast, bcl, diagnostics, flow, lambdas, numeric, symbols
 
 type
   NsYieldHost = enum
@@ -2770,6 +2770,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     for p in n.params: ctx.walkDecl(p)
     if n.body != nil:
       ctx.walkInScope(n.body.sons)
+    checkDefiniteAssignment(ctx.config, n.params, n.body)
     ctx.popScope()
     ctx.yieldHost = savedHost
     ctx.inIterator = savedIter
@@ -3018,6 +3019,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     for p in m.params: ctx.walkDecl(p)
     if m.body != nil:
       ctx.walkInScope(m.body.sons)
+    checkDefiniteAssignment(ctx.config, m.params, m.body)
     ctx.popScope()
     ctx.isStaticCtx = false
     ctx.retType = savedRet
@@ -3050,6 +3052,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     for p in m.params: ctx.walkDecl(p)
     if m.body != nil:
       ctx.walkInScope(m.body.sons)
+    checkDefiniteAssignment(ctx.config, m.params, m.body)
     ctx.inIterator = savedIter
     ctx.popScope()
     ctx.members = saved
@@ -3069,6 +3072,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     for a in m.initArgs: discard ctx.walkExpr(a)
     if m.body != nil:
       ctx.walkInScope(m.body.sons)
+    checkDefiniteAssignment(ctx.config, m.params, m.body)
     ctx.popScope()
     ctx.inCtor = false
     ctx.ctorIsStatic = false
@@ -3098,6 +3102,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
       if i == 1 or m.attrs.isEvent:
         ctx.declare("value", ctx.classifyType(m.typ), declTypeName(m.typ), m.typ)
       ctx.walkInScope(acc.sons)
+      checkDefiniteAssignment(ctx.config, @[], acc)
       ctx.popScope()
     ctx.retType = savedRet
     ctx.isStaticCtx = false
