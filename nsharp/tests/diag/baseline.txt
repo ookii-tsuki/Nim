@@ -8,7 +8,7 @@ assign_to_rvalue CS0131 match
 base_no_ctor CS7036 match
 break_outside CS0139 match
 call_non_method CS0149 match
-case_not_const CS9135 nim
+case_not_const CS9135 match
 cast_invalid CS0030 match
 cast_string_int CS0030 match
 char_string_cmp CS0019 match
@@ -26,8 +26,8 @@ enum_to_int CS0266 match
 expr_statement CS0201 match
 float_literal CS0664 match
 foreach_non_enum CS1579 match
-generic_arity CS0305 nim
-generic_constraint CS0452 accepted
+generic_arity CS0305 match
+generic_constraint CS0452 match
 if_non_bool CS0029 match
 implconv_bool_int CS0029 match
 implconv_class CS0029 match
@@ -38,7 +38,7 @@ index_non_array CS0021 match
 instance_from_static CS0120 match
 int_to_enum CS0266 match
 interface_instance CS0144 match
-lambda_arity CS1593 nim
+lambda_arity CS1593 match
 lambda_wrong_ret CS0029 nim
 list_add_wrong CS1503 nim
 long_to_int CS0266 match
@@ -64,7 +64,7 @@ out_unassigned CS0177 match
 override_nonvirtual CS0506 match
 private_access CS0122 match
 private_method CS0122 match
-prop_void CS0547 nim
+prop_void CS0547 match
 read_setonly_prop CS0154 match
 ref_missing CS1620 match
 return_missing_value CS0126 match
@@ -86,8 +86,8 @@ unassigned_local CS0165 match
 undeclared_method CS0103 match
 undeclared_type CS0246 match
 undeclared_var CS0103 match
-unreachable_named_arg CS1739 code:NS1501
-use_before_decl CS0841 code:NS0103
+unreachable_named_arg CS1739 match
+use_before_decl CS0841 match
 var_no_init CS0818 match
 var_null CS0815 match
 void_value CS0815 match

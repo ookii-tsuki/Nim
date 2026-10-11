@@ -422,7 +422,9 @@ proc parseLambda(p: var NsParser): NsNode =
     ## is a statement. Whether the delegate returns is decided when it is typed.
     let s = p.parseSimpleStmt()
     let b = nsn(nsnBlock, info)
-    if s.kind == nsnExprStmt: b.add s.body
+    if s.kind == nsnExprStmt:
+      b.add s.body
+      b.strVal = "expr"   ## the lambda's value, which sema checks against its result
     else: b.add s
     result.body = b
 
@@ -2177,6 +2179,9 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
     else:
       result.body = p.parseBlock()
   elif p.at(nsLBrace) or p.at(nsArrow):
+    if ty != nil and ty.kind == nsnVoidType:
+      ## A property's value has a type (CS0547).
+      p.err(nameTok, ndVoidProperty, nameTok.text)
     result = nsn(nsnPropertyDecl, info)
     result.name = nameTok.text
     result.explicitIface = explicitIface

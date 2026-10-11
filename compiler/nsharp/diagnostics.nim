@@ -57,6 +57,14 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndVoidProperty
+    ndConstantExpected
+    ndUsedBeforeDecl
+    ndNoNamedParam
+    ndLambdaArity
+    ndMethodGroupMismatch
+    ndRefTypeConstraint
+    ndValueTypeConstraint
     ndUnassignedLocal
     ndOutUnassigned
     ndRefArgMissing
@@ -200,6 +208,17 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndVoidProperty: (code: "0547", msg: "'$1': property or indexer cannot have void type"),
+    ndConstantExpected: (code: "9135", msg: "A constant value of type '$1' is expected"),
+    ndUsedBeforeDecl: (code: "0841", msg: "Cannot use local variable '$1' before it is declared"),
+    ndNoNamedParam: (code: "1739", msg: "The best overload for '$1' does not have a parameter named" &
+                   " '$2'"),
+    ndLambdaArity: (code: "1593", msg: "Delegate '$1' does not take $2 arguments"),
+    ndMethodGroupMismatch: (code: "0123", msg: "No overload for '$1' matches delegate '$2'"),
+    ndRefTypeConstraint: (code: "0452", msg: "The type '$1' must be a reference type in order to use" &
+                        " it as parameter '$2' in the generic type or method '$3'"),
+    ndValueTypeConstraint: (code: "0453", msg: "The type '$1' must be a non-nullable value type in" &
+                          " order to use it as parameter '$2' in the generic type or method '$3'"),
     ndUnassignedLocal: (code: "0165", msg: "Use of unassigned local variable '$1'"),
     ndOutUnassigned: (code: "0177", msg: "The out parameter '$1' must be assigned to before control" &
                     " leaves the current method"),

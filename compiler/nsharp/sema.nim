@@ -830,6 +830,16 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
                 $(j + 1), valueSpelling(v), typeSpelling(pt))
         return
     return
+  for a in args:
+    if a.kind == nsnNamedArg:
+      var known = false
+      for c in cands:
+        for p in c:
+          if p != nil and p.name == a.name: known = true
+      if not known:
+        ## No overload has a parameter of that name (CS1739).
+        nsError(ctx.config, a.info, ndNoNamedParam, displayName, a.name)
+        return
   ## No overload takes these arguments. Roslyn names the one short candidate and
   ## its first missing parameter when there is exactly one -- a constructor with a
   ## single declaration, or a method with no overloads -- and falls back to the arity
@@ -932,6 +942,7 @@ proc noteMutation(ctx: NsCheckContext; target: NsNode) =
   if t != nil and t.kind == nsnThis: ctx.curMember.strVal = "mutating"
 
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind
+proc checkTypeArgs(ctx: NsCheckContext; t: NsNode)
 
 proc checkOperands(ctx: NsCheckContext; n: NsNode; lk, rk: NsTypeKind) =
   ## A built-in operator applied to operands it does not take (CS0019): only
@@ -1315,6 +1326,18 @@ proc unknownName(ctx: NsCheckContext; n: NsNode) =
     if not m.isStatic and ctx.isStaticCtx:
       nsError(ctx.config, n.info, ndObjectRefRequired, m.owner & "." & n.name)
     return
+  proc declaredLater(x: NsNode; name: string): bool =
+    if x == nil: return false
+    if x.kind == nsnLocalDecl and x.name == name: return true
+    if x.kind in {nsnLambda, nsnLocalFunc}: return false
+    if declaredLater(x.body, name): return true
+    for y in x.sons:
+      if declaredLater(y, name): return true
+    false
+  if ctx.curMember != nil and declaredLater(ctx.curMember.body, n.name):
+    ## The local exists, further down (CS0841).
+    nsError(ctx.config, n.info, ndUsedBeforeDecl, n.name)
+    return
   nsError(ctx.config, n.info, ndNameNotFound, n.name)
 
 proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
@@ -1687,6 +1710,10 @@ proc walkPattern(ctx: var NsCheckContext; pat, subject: NsNode) =
       ctx.declare(pat.name, k, declTypeName(pat.typ), pat.typ)
   of nsnPatConst, nsnPatRel:
     discard ctx.walkExpr(pat.body)
+    if pat.body != nil and pat.body.kind == nsnIdent and ctx.types.hasKey(pat.body.name) and
+       ctx.types[pat.body.name].name != NsLocalFuncMark:
+      ## A variable is no constant to match against (CS9135).
+      nsError(ctx.config, pat.body.info, ndConstantExpected, kindSpelling(pat.body))
   of nsnPatAnd, nsnPatOr:
     for x in pat.sons: ctx.walkPattern(x, subject)
   of nsnPatNot:
@@ -1860,6 +1887,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnMember: result = ctx.walkMember(n)
   of nsnCall: result = ctx.walkCall(n)
   of nsnNew:
+    ctx.checkTypeArgs(n.typ)
     if n.typ == nil:
       ## `new()` whose target gave it no type.
       nsError(ctx.config, n.info, ndUnsupported, "a target-typed 'new()' without a target")
@@ -2377,6 +2405,11 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       else: ctx.declare(p.name, tkUnknown)
     if n.body != nil:
       ctx.walkInScope(n.body.sons)
+      if n.body.strVal == "expr" and n.body.sons.len == 1 and ctx.retType != nil and
+         ctx.retType.kind != nsnVoidType:
+        ## `() => "s"` for a `Func<int>`: the expression is the result (CS0029).
+        ctx.checkConvertible(n.body.sons[0], ctx.targetOfType(ctx.retType),
+                             n.body.sons[0].info)
     ctx.yieldHost = savedHost
     dec ctx.lambdaDepth
     ctx.retType = savedLamRet
@@ -2474,6 +2507,59 @@ proc checkValue(ctx: NsCheckContext; v: NsNode) =
      not ctx.types.hasKey(v.name):
     nsError(ctx.config, v.info, ndTypeAsValue, v.name)
 
+proc checkTypeArgs(ctx: NsCheckContext; t: NsNode) =
+  ## A generic type of this compilation written with the wrong number of type
+  ## arguments (CS0305, CS0308), or one breaking a `class`/`struct` constraint
+  ## (CS0452, CS0453).
+  if t == nil: return
+  case t.kind
+  of nsnArrayType, nsnNullableType: ctx.checkTypeArgs(t.typ)
+  of nsnTypeName:
+    for a in t.sons: ctx.checkTypeArgs(a)
+    let cn = canonicalTypeName(t.name)
+    if not ctx.scope.classes.hasKey(cn): return
+    let tps = ctx.scope.classes[cn].typeParams
+    if tps.len == 0 and t.sons.len > 0:
+      nsError(ctx.config, t.info, ndNotGenericType, cn)
+    elif tps.len != t.sons.len and t.sons.len > 0:
+      nsError(ctx.config, t.info, ndTypeArgCount, cn & "<" & tps.join(", ") & ">", $tps.len)
+    elif ctx.scope.classes[cn].decl != nil:
+      for w in ctx.scope.classes[cn].decl.constraints:
+        let i = tps.find(w.name)
+        if i < 0 or i >= t.sons.len: continue
+        let arg = t.sons[i]
+        let k = ctx.classifyType(arg)
+        let an = canonicalTypeName(declTypeName(arg))
+        let isValue = k in {tkInt, tkFloat, tkBool, tkChar} or
+          (ctx.scope.classes.hasKey(an) and ctx.scope.classes[an].classKind == ckStruct)
+        for c in w.sons:
+          if c.kind == nsnIdent and c.name == "class" and isValue:
+            nsError(ctx.config, arg.info, ndRefTypeConstraint, typeSpelling(arg), w.name,
+                    cn & "<" & tps.join(", ") & ">")
+          elif c.kind == nsnIdent and c.name == "struct" and not isValue and
+               k in {tkString, tkClass, tkSequence}:
+            nsError(ctx.config, arg.info, ndValueTypeConstraint, typeSpelling(arg), w.name,
+                    cn & "<" & tps.join(", ") & ">")
+  else: discard
+
+proc checkMethodGroup(ctx: NsCheckContext; v, target: NsNode) =
+  ## A method group assigned to a delegate must match its parameters (CS0123).
+  let sig = delegateSig(ctx.scope, ctx.surface, target)
+  if not sig.known or v.typeKind != tkDelegate: return
+  let owner = (if v.kind == nsnMember and v.body != nil: canonicalTypeName(v.body.typeName)
+               else: ctx.clsName)
+  if not ctx.scope.classes.hasKey(owner): return
+  let cands = ctx.scope.memberOverloads(owner, v.name)
+  if cands.len == 0: return
+  for ps in cands:
+    if ps.len != sig.params.len: continue
+    var ok = true
+    for i, p in ps:
+      if p == nil or sig.params[i] == nil: continue
+      if typeSpelling(p.typ) != typeSpelling(sig.params[i]): ok = false
+    if ok: return
+  nsError(ctx.config, v.info, ndMethodGroupMismatch, v.name, typeSpelling(target))
+
 proc checkLocalDecl(ctx: NsCheckContext; n: NsNode) =
   ## A local's declaration: its type exists (CS0246), its name is not taken in
   ## this scope (CS0128) or an enclosing one (CS0136), and `var` has a value
@@ -2507,7 +2593,15 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   ctx.targetTyped(n.body, n.typ)
   if n.body != nil and n.body.kind == nsnLambda and n.typ != nil:
     ## `Func<int, int> f = x => ...;`: the declared delegate types the lambda.
-    applySig(n.body, delegateSig(ctx.scope, ctx.surface, n.typ))
+    let sig = delegateSig(ctx.scope, ctx.surface, n.typ)
+    if sig.known and n.body.strVal != "anyParams" and n.body.params.len != sig.params.len:
+      ## The lambda takes another number of parameters than its delegate (CS1593).
+      nsError(ctx.config, n.body.info, ndLambdaArity, typeSpelling(n.typ), $n.body.params.len)
+    applySig(n.body, sig)
+  if n.kind == nsnLocalDecl and n.typ != nil and n.body != nil and
+     n.body.kind in {nsnIdent, nsnMember}:
+    ctx.checkMethodGroup(n.body, n.typ)
+  if n.kind == nsnLocalDecl: ctx.checkTypeArgs(n.typ)
   if n.body != nil:
     let initKind = ctx.walkExpr(n.body)
     if n.typ == nil:
