@@ -23,7 +23,7 @@ nkStmtList
             nkIdentDefs
               nkIdent 'data'
               nkBracketExpr
-                nkIdent 'seq'
+                nkIdent 'NsArray'
                 nkIdent 'int32'
               nkEmpty
     nkTypeDef
@@ -368,20 +368,24 @@ nkStmtList
                     nkIdent 'v'
                   nkStmtList
                     nkReturnStmt
-                      nkBracketExpr
-                        nkDotExpr
-                          nkIdent 'self'
-                          nkIdent 'data'
-                        nkIdent 'i'
+                      nkCall
+                        nkIdent 'nsElemRef'
+                        nkBracketExpr
+                          nkDotExpr
+                            nkIdent 'self'
+                            nkIdent 'data'
+                          nkIdent 'i'
               nkCommand
                 nkIdent 'inc'
                 nkIdent 'i'
       nkReturnStmt
-        nkBracketExpr
-          nkDotExpr
-            nkIdent 'self'
-            nkIdent 'data'
-          nkIntLit 0
+        nkCall
+          nkIdent 'nsElemRef'
+          nkBracketExpr
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'data'
+            nkIntLit 0
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -462,8 +466,10 @@ nkStmtList
         nkDotExpr
           nkIdent 'self'
           nkIdent 'data'
-        nkPrefix
-          nkIdent '@'
+        nkCall
+          nkBracketExpr
+            nkIdent 'nsArrayFrom'
+            nkIdent 'int32'
           nkBracket
             nkCall
               nkIdent 'int32'
@@ -568,10 +574,12 @@ nkStmtList
         nkIdentDefs
           nkIdent 'a'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'int32'
-          nkPrefix
-            nkIdent '@'
+          nkCall
+            nkBracketExpr
+              nkIdent 'nsArrayFrom'
+              nkIdent 'int32'
             nkBracket
               nkCall
                 nkIdent 'int32'
@@ -749,9 +757,11 @@ nkStmtList
                     nkIdent 'inc'
                     nkIdent 'i'
           nkReturnStmt
-            nkBracketExpr
-              nkIdent 'a'
-              nkIdent 'best'
+            nkCall
+              nkIdent 'nsElemRef'
+              nkBracketExpr
+                nkIdent 'a'
+                nkIdent 'best'
       nkAsgn
         nkCall
           nkIdent 'Max'

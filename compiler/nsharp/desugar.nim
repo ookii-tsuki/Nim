@@ -194,9 +194,10 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   of nsnEmpty, nsnVoidType:
     result = empty(info)
   of nsnArrayType:
-    ## `T[,]` is the library's `NsMdArray[T]`, a `T[]` a `seq[T]`.
+    ## `T[,]` is the library's `NsMdArray[T]`, a `T[]` its `NsArray[T]`: both
+    ## references, as C# arrays are.
     result = newTree(nkBracketExpr, info,
-                     l.id((if t.intVal > 1: "NsMdArray" else: "seq"), info),
+                     l.id((if t.intVal > 1: "NsMdArray" else: "NsArray"), info),
                      l.typeToNim(t.typ, info))
   of nsnTupleType:
     ## A C# tuple is a Nim tuple whose fields are `Item1..ItemN`; element names are
@@ -247,9 +248,13 @@ proc paramDef(l: Lowerer; p: NsNode; sink = false): PNode =
   case p.paramMod
   of "ref", "out": t = newTree(nkVarTy, p.info, t)
   of "params":
-    if p.typ != nil and p.typ.kind == nsnArrayType:
-      t = newTree(nkBracketExpr, p.info, l.id("varargs", p.info),
-                  l.typeToNim(p.typ.typ, p.info))
+    ## `params T[] xs` is an array the caller builds from its trailing arguments
+    ## (see `argsToNim`), or passes whole; none at all is an empty one.
+    if p.typ != nil and p.typ.kind == nsnArrayType and p.body == nil:
+      result.add t
+      result.add newTree(nkCall, p.info, l.id("nsNewArray", p.info),
+                         l.typeToNim(p.typ.typ, p.info), newIntNode(nkIntLit, 0))
+      return
   of "":
     if sink: t = newTree(nkBracketExpr, p.info, l.id("sink", p.info), t)
   else: discard
@@ -349,10 +354,40 @@ proc ordered(l: Lowerer; operand: NsNode; later: openArray[NsNode]): PNode =
     if mayMutate(x):
       return newTree(nkCall, operand.info, l.id("nsVal", operand.info), result)
 
+proc nameableType(l: Lowerer; t: NsNode): bool =
+  ## Whether the caller can spell `t`: not a type parameter of the callee.
+  if t == nil: return false
+  case t.kind
+  of nsnArrayType, nsnNullableType: l.nameableType(t.typ)
+  of nsnTypeName:
+    let n = canonicalTypeName(t.name)
+    if t.sons.len == 0 and n notin l.procTypeParams and n notin l.clsTypeParams and
+       not l.scope.classes.hasKey(n) and not l.scope.enums.contains(n) and
+       not l.scope.delegates.hasKey(n) and not l.surface.isKnownTypeName(n) and
+       nimTypeName(n) == n and
+       n notin ["int", "long", "short", "byte", "sbyte", "uint", "ulong", "ushort",
+                "float", "double", "decimal", "bool", "char", "string", "object"]:
+      return false
+    for x in t.sons:
+      if not l.nameableType(x): return false
+    true
+  else: true
+
+proc arrayOf(l: Lowerer; et: NsNode; elems: PNode; info: TLineInfo): PNode =
+  ## The array of the elements in the bracket `elems`: `nsArrayFrom[T]([...])`,
+  ## whose literal takes `T` as its element type, or with a type the caller cannot
+  ## name, Nim's inference over `@[...]`.
+  if et != nil and l.nameableType(et):
+    newTree(nkCall, info, newTree(nkBracketExpr, info, l.id("nsArrayFrom", info),
+                                  l.typeToNim(et, info)), elems)
+  else:
+    newTree(nkCall, info, l.id("nsArrayOf", info), newTree(nkPrefix, info, l.id("@", info), elems))
+
 proc argsToNim(l: Lowerer; call: NsNode): seq[PNode] =
   ## A call's arguments, each with the conversion `sema.nim` chose, read in order
   ## (see `ordered`); a `ref`/`out` argument is the variable itself.
   result = @[]
+  var pack: PNode = nil
   for i, a in call.sons:
     var arg = l.wrappedArg(a)
     let v = (if a.kind == nsnNamedArg: a.body else: a)
@@ -362,6 +397,19 @@ proc argsToNim(l: Lowerer; call: NsNode): seq[PNode] =
         if mayMutate(x):
           arg = newTree(nkCall, a.info, l.id("nsVal", a.info), arg)
           break
+    if a.argElement and a.argParam != nil and a.argParam.typ != nil and
+       a.argParam.typ.kind == nsnArrayType:
+      ## An element of a `params` array: the trailing arguments become one array.
+      if pack == nil:
+        pack = newNodeI(nkBracket, a.info)
+        let et = a.argParam.typ.typ
+        result.add l.arrayOf(et, pack, a.info)
+      let et = a.argParam.typ.typ
+      if et.kind == nsnTypeName and l.nameableType(et) and v != nil and v.kind != nsnNull:
+        ## Each element converted to the element type, as in an array literal.
+        arg = newTree(nkCall, a.info, l.typeToNim(et, a.info), arg)
+      pack.add arg
+      continue
     result.add arg
 
 proc newToNim(l: Lowerer; n: NsNode): PNode
@@ -916,11 +964,8 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       result = newTree(nkCall, n.info, l.id("nsNewMd", n.info), l.typeToNim(n.typ, n.info))
       for s in n.sons: result.add l.expr(s)
       return
-    let typ = newTree(nkBracketExpr, n.info, l.id("newSeq", n.info),
-                      l.typeToNim(n.typ, n.info))
-    result = newNodeI(nkCall, n.info)
-    result.add typ
-    result.add l.expr(n.sons[0])
+    result = newTree(nkCall, n.info, l.id("nsNewArray", n.info),
+                     l.typeToNim(n.typ, n.info), l.expr(n.sons[0]))
   of nsnCollection:
     ## `[a, ..xs, b]` into an array: a sequence the elements and the spread
     ## collections' elements are added to, in order.
@@ -945,15 +990,15 @@ proc expr(l: Lowerer; n: NsNode): PNode =
         if et.kind == nsnTypeName and e.kind != nsnNull:
           v = newTree(nkCall, e.info, l.typeToNim(et, e.info), v)
         sl.add newTree(nkCall, info, l.id("add", info), l.id(t, info), v)
-    sl.add l.id(t, info)
+    sl.add newTree(nkCall, info, l.id("nsArrayOf", info), l.id(t, info))
     result = newTree(nkBlockExpr, info, empty(info), sl)
   of nsnArrayLit:
     ## `new T[] { a, b }`: each element converted to `T`, as C# converts it, which
     ## for an interface is its converter and for a base class an upcast.
     if n.sons.len == 0 and n.typ != nil:
       ## `[]`: Nim cannot infer an empty literal's element type.
-      return newTree(nkCall, n.info, newTree(nkBracketExpr, n.info, l.id("newSeq", n.info),
-                                             l.typeToNim(n.typ, n.info)))
+      return newTree(nkCall, n.info, l.id("nsNewArray", n.info),
+                     l.typeToNim(n.typ, n.info), newIntNode(nkIntLit, 0))
     let br = newNodeI(nkBracket, n.info)
     for e in n.sons:
       if n.typ != nil and n.typ.kind == nsnTypeName and e.kind != nsnNull:
@@ -961,6 +1006,9 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       else:
         br.add l.expr(e)
     result = newTree(nkPrefix, n.info, l.id("@", n.info), br)
+    if n.intVal <= 1:
+      ## A `T[]`: the library's array over those elements.
+      result = l.arrayOf(n.typ, br, n.info)
     if n.intVal > 1:
       ## `{ {1, 2}, {3, 4} }`: the row-major elements and the lengths.
       let dims = newNodeI(nkBracket, n.info)
@@ -1076,7 +1124,13 @@ proc expr(l: Lowerer; n: NsNode): PNode =
                          l.expr(v))
   of nsnIsPattern: result = l.isPatternToNim(n)
   of nsnSwitchExpr: result = l.switchExprToNim(n)
-  of nsnRefArg: result = l.expr(n.body)
+  of nsnRefArg:
+    result = l.expr(n.body)
+    if n.body != nil and n.body.kind == nsnIndex and n.body.body != nil and
+       n.body.body.typeKind == tkSequence:
+      ## `ref a[i]`: the element lives in the array, not in a parameter, so it is
+      ## reached through a pointer, which a `ref` return may hand back.
+      result = newTree(nkCall, n.info, l.id("nsElemRef", n.info), result)
   of nsnOutDecl: result = l.id(n.name, n.info)   ## declared before the statement
   else: result = empty(n.info)
   if n.conv == "nsVariant":

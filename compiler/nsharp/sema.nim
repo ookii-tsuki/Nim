@@ -3242,16 +3242,6 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
   of nsnSwitch: walkSwitch(ctx, n)
   of nsnTry: walkTry(ctx, n)
   of nsnReturn, nsnThrow:
-    if n.kind == nsnReturn and n.body != nil and n.body.kind == nsnRefArg:
-      ## `return ref xs[i]` for an array parameter: N#'s array is a value, so a
-      ## parameter's elements belong to the callee's copy.
-      var root = n.body.body
-      while root != nil and root.kind == nsnIndex: root = root.body
-      if root != nil and root.kind == nsnIdent and ctx.curMember != nil:
-        for prm in ctx.curMember.params:
-          if prm.name == root.name and prm.typ != nil and prm.typ.kind == nsnArrayType:
-            nsError(ctx.config, n.body.info, ndUnsupported,
-                    "a reference into an array parameter")
     if n.kind == nsnReturn and ctx.lambdaDepth == 0 and not ctx.inIterator and
        (n.body == nil or n.body.kind != nsnRefArg):
       let isVoid = ctx.retType == nil or ctx.retType.kind == nsnVoidType

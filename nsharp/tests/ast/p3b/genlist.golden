@@ -824,7 +824,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'arr'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'int32'
           nkCall
             nkDotExpr
@@ -839,12 +839,11 @@ nkStmtList
         nkIdentDefs
           nkIdent 'buffer'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'int32'
           nkCall
-            nkBracketExpr
-              nkIdent 'newSeq'
-              nkIdent 'int32'
+            nkIdent 'nsNewArray'
+            nkIdent 'int32'
             nkIntLit 6
       nkCall
         nkDotExpr

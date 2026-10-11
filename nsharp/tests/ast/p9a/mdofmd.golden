@@ -185,7 +185,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'grid'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkBracketExpr
               nkIdent 'NsMdArray'
               nkIdent 'int32'

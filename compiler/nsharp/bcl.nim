@@ -78,13 +78,13 @@ const
   ]
 
   ## Nim types the prelude builds on, and how N# classifies them.
-  NsNimKinds*: array[37, NsTypeEntry] = [
+  NsNimKinds*: array[38, NsTypeEntry] = [
     ("int8", tkInt), ("int16", tkInt), ("int32", tkInt), ("int64", tkInt),
     ("uint8", tkInt), ("uint16", tkInt), ("uint32", tkInt), ("uint64", tkInt),
     ("int", tkInt), ("uint", tkInt),
     ("float32", tkFloat), ("float64", tkFloat),
     ("bool", tkBool), ("char", tkChar), ("string", tkString),
-    ("seq", tkSequence), ("openArray", tkSequence), ("array", tkSequence),
+    ("seq", tkSequence), ("NsArray", tkSequence), ("openArray", tkSequence), ("array", tkSequence),
     ("Table", tkSequence), ("OrderedTable", tkSequence), ("HashSet", tkSequence),
     ("OrderedSet", tkSequence), ("Deque", tkSequence),
     ("Option", tkNullable),

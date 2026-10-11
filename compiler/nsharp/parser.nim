@@ -1191,6 +1191,12 @@ proc parseNew(p: var NsParser, kw: NsToken): NsNode =
           discard p.advance
           inc rank
         discard p.expect(nsRBracket)
+        if rank == 1:
+          ## `new T[][] { .. }`: a jagged literal, whose elements are arrays.
+          while p.at(nsLBracket) and p.peekAhead(1).kind == nsRBracket:
+            discard p.advance
+            discard p.advance
+            typ = nsnArrayType(typ, info)
         result = nsn(nsnArrayLit, info)
         result.typ = typ
         if rank > 1: result.intVal = rank
@@ -1204,6 +1210,12 @@ proc parseNew(p: var NsParser, kw: NsToken): NsNode =
         discard p.advance
         result.add p.parseExpr()
       discard p.expect(nsRBracket)
+      if result.sons.len == 1:
+        ## `new T[n][]`: a jagged array, `n` null arrays of `T[]`.
+        while p.at(nsLBracket) and p.peekAhead(1).kind == nsRBracket:
+          discard p.advance
+          discard p.advance
+          result.typ = nsnArrayType(result.typ, info)
       if p.at(nsLBrace):
         ## `new T[2, 2] { {..}, {..} }`: the sizes restate the initialiser's.
         let lit = nsn(nsnArrayLit, info)

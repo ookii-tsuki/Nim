@@ -4,7 +4,8 @@
 # dot-call, a static one through the qualifier the frontend drops.
 
 import std/[syncio, strutils, math]
-from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash
+from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, NsArray, nsArrayOf, len,
+  items, `[]`, `[]=`
 
 # `{.nsStatic: "T".}` marks a proc C# reaches through a type qualifier
 # (`Console.WriteLine`, `String.Concat`) rather than a receiver; the frontend
@@ -177,12 +178,14 @@ proc IndexOf*(s, value: string): int32 = int32(s.find(value))
 proc Trim*(s: string): string = s.strip
 proc Replace*(s, oldValue, newValue: string): string =
   s.replace(oldValue, newValue)
-proc Split*(s: string; separator: char): seq[string] = s.split(separator)
+proc Split*(s: string; separator: char): NsArray[string] = nsArrayOf(s.split(separator))
 proc PadLeft*(s: string; totalWidth: int32): string = s.align(int(totalWidth))
 proc PadRight*(s: string; totalWidth: int32): string = s.alignLeft(int(totalWidth))
 proc CompareTo*(s, other: string): int32 = int32(cmp(s, other))
-proc ToCharArray*(s: string): seq[char] =
-  for c in s: result.add c
+proc ToCharArray*(s: string): NsArray[char] =
+  var cs = newSeq[char](s.len)
+  for i, c in s: cs[i] = c
+  nsArrayOf(cs)
 proc Insert*(s: string; startIndex: int32; value: string): string =
   s[0 ..< int(startIndex)] & value & s[int(startIndex) .. ^1]
 proc Remove*(s: string; startIndex: int32): string = s[0 ..< int(startIndex)]
@@ -196,16 +199,30 @@ proc IsNullOrWhiteSpace*(s: string): bool {.nsStatic: "String".} =
 proc Concat*(a, b: string): string {.nsStatic: "String".} = a & b
 proc Join*(separator: string; values: openArray[string]): string {.nsStatic: "String".} =
   values.join(separator)
+proc Join*(separator: string; values: NsArray[string]): string {.nsStatic: "String".} =
+  values.nsData.join(separator)
 proc Compare*(a, b: string): int32 {.nsStatic: "String".} = int32(cmp(a, b))
 
 # --- System.Array -----------------------------------------------------------
 #
-# A C# array is a Nim `seq`, so the members are `openArray` procs.
+# A C# array is the intrinsics' `NsArray`; a `params` parameter is a Nim
+# `varargs`, which the `openArray` overloads serve.
+
+proc Length*[T](a: NsArray[T]): int32 {.inline.} = int32(a.len)
+proc Clone*[T](a: NsArray[T]): NsArray[T] = nsArrayOf(a.nsData)
+  ## A new array of the same elements.
+proc Rank*[T](a: NsArray[T]): int32 = 1
+  ## A `T[]` has one dimension; a `T[,]` is the intrinsics' `NsMdArray`.
+proc GetLength*[T](a: NsArray[T]; dimension: int32): int32 =
+  if dimension == 0: int32(a.len) else: 0
+proc IndexOf*[T](a: NsArray[T]; value: T): int32 {.nsStatic: "Array".} =
+  result = -1
+  for i in 0 ..< a.len:
+    if a.nsData[i] == value: return int32(i)
 
 proc Length*[T](a: openArray[T]): int32 = int32(a.len)
-proc Clone*[T](a: openArray[T]): seq[T] = @a
+proc Clone*[T](a: openArray[T]): NsArray[T] = nsArrayOf(@a)
 proc Rank*[T](a: openArray[T]): int32 = 1
-  ## A `T[]` has one dimension; a `T[,]` is the intrinsics' `NsMdArray`.
 proc GetLength*[T](a: openArray[T]; dimension: int32): int32 =
   if dimension == 0: int32(a.len) else: 0
 proc IndexOf*[T](a: openArray[T]; value: T): int32 {.nsStatic: "Array".} =

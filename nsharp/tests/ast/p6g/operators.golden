@@ -64,7 +64,7 @@ nkStmtList
             nkIdentDefs
               nkIdent 'cells'
               nkBracketExpr
-                nkIdent 'seq'
+                nkIdent 'NsArray'
                 nkIdent 'int32'
               nkEmpty
             nkIdentDefs
@@ -1764,9 +1764,8 @@ nkStmtList
           nkIdent 'self'
           nkIdent 'cells'
         nkCall
-          nkBracketExpr
-            nkIdent 'newSeq'
-            nkIdent 'int32'
+          nkIdent 'nsNewArray'
+          nkIdent 'int32'
           nkIntLit 9
       nkAsgn
         nkDotExpr

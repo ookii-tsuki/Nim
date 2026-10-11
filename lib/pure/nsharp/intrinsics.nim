@@ -204,10 +204,6 @@ template nsDispose*(x: typed) =
 
 import std/cmdline
 
-proc nsCommandLine*(): seq[string] =
-  ## `Main`'s `string[] args`: the command line without the program's name.
-  commandLineParams()
-
 proc nsVal*[T](x: T): T {.inline.} =
   ## A variable's value read now: `x + F()` in C# reads `x` before `F` runs, while
   ## Nim reads a variable operand after the call. The compiler wraps an operand in
@@ -575,6 +571,85 @@ proc GetLowerBound*[T](a: NsMdArray[T]; d: SomeInteger): int32 = 0
 iterator items*[T](a: NsMdArray[T]): T =
   for x in a.nsData: yield x
 
+# --- arrays -------------------------------------------------------------------
+#
+# `T[]` is a reference, as a C# array is: assigning or passing one shares it, and
+# `null` is an array too. The elements are a `seq`, which the array never resizes.
+# An index out of range throws `IndexOutOfRangeException` (Nim's `IndexDefect`), a
+# null array `NullReferenceException`.
+
+type
+  NsArrayBase* = ref object of RootObj
+    nsName: proc (): string {.nimcall.}  ## `System.Int32[]`, what C# prints
+  NsArray*[T] = ref object of NsArrayBase
+    nsData*: seq[T]
+
+proc nsArrayName[T](): string {.nimcall.} =
+  mixin nsTypeOf
+  var name = "System.Object"
+  when compiles(nsTypeOf(T)): name = nsTypeOf(T).nsFull
+  name & "[]"
+
+method ToString*(a: NsArrayBase): string = a.nsName()
+method nsTypeName*(a: NsArrayBase): string = a.nsName()
+
+proc nsArrayOf*[T](data: sink seq[T]): NsArray[T] {.inline.} =
+  ## The array holding `data`: an array literal, or a library result.
+  NsArray[T](nsData: data, nsName: nsArrayName[T])
+
+proc nsNewArray*[T](t: typedesc[T]; n: SomeInteger): NsArray[T] =
+  ## `new T[n]`: `n` default elements.
+  if n < 0: raise newException(OverflowDefect, "Arithmetic operation resulted in an overflow.")
+  nsArrayOf(newSeq[T](int(n)))
+
+template nsArrCheck(a: untyped) =
+  ## The null test C# makes at every access to an array.
+  when not defined(danger):
+    if a == nil: nsNilFail()
+
+proc `[]`*[T](a: NsArray[T]; i: SomeInteger): var T {.inline.} =
+  nsArrCheck(a)
+  a.nsData[int(i)]
+proc `[]=`*[T](a: NsArray[T]; i: SomeInteger; v: sink T) {.inline.} =
+  nsArrCheck(a)
+  a.nsData[int(i)] = v
+proc `[]`*[T](a: NsArray[T]; i: BackwardsIndex): var T {.inline.} =
+  nsArrCheck(a)
+  a.nsData[i]
+proc `[]=`*[T](a: NsArray[T]; i: BackwardsIndex; v: sink T) {.inline.} =
+  nsArrCheck(a)
+  a.nsData[i] = v
+proc `[]`*[T; U, V: Ordinal | BackwardsIndex](a: NsArray[T]; r: HSlice[U, V]): NsArray[T] =
+  ## `a[1..^1]`: a new array of those elements, as C# copies a range.
+  nsArrCheck(a)
+  nsArrayOf(a.nsData[r])
+proc len*[T](a: NsArray[T]): int {.inline.} =
+  nsArrCheck(a)
+  a.nsData.len
+proc high*[T](a: NsArray[T]): int {.inline.} = a.len - 1
+
+iterator items*[T](a: NsArray[T]): T =
+  nsArrCheck(a)
+  for x in a.nsData: yield x
+iterator mitems*[T](a: NsArray[T]): var T =
+  nsArrCheck(a)
+  for x in a.nsData.mitems: yield x
+iterator pairs*[T](a: NsArray[T]): (int, T) =
+  nsArrCheck(a)
+  for i, x in a.nsData: yield (i, x)
+
+template nsElemRef*(x: untyped): untyped =
+  ## `ref a[i]`: the element as a location of its own, which a `ref` return or
+  ## a `ref` local may keep while the array lives.
+  cast[ptr typeof(x)](addr x)[]
+
+proc nsArrayFrom*[T](xs: openArray[T]): NsArray[T] = nsArrayOf(@xs)
+  ## A copy of `xs` as an array: `params` elements, a library collection's.
+
+proc nsCommandLine*(): NsArray[string] =
+  ## `Main`'s `string[] args`: the command line without the program's name.
+  nsArrayOf(commandLineParams())
+
 # --- variance -----------------------------------------------------------------
 
 proc nsVariant*[A, B](x: A; t: typedesc[B]): B =
@@ -591,7 +666,7 @@ proc nsGenericName*(base: string; args: varargs[string]): string =
   ## .NET's name of a constructed generic type: ``System.Collections.Generic.List`1[System.Int32]``.
   base & "`" & $args.len & "[" & args.join(",") & "]"
 
-proc nsTypeOf*[T](t: typedesc[seq[T]]): Type = nsTypeNamed(nsTypeOf(T).nsFull & "[]")
+proc nsTypeOf*[T](t: typedesc[NsArray[T]]): Type = nsTypeNamed(nsArrayName[T]())
   ## `typeof(int[])` is `System.Int32[]`.
 proc nsTypeOf*[T](t: typedesc[NsMdArray[T]]): Type = nsTypeNamed(nsMdName[T](2))
   ## `typeof(int[,])`; a rank above 2 is not told apart by the type.

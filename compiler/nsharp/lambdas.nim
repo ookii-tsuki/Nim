@@ -37,7 +37,7 @@ proc nimToCs(t: PNode; names: seq[string]; args: seq[NsNode];
   of nkBracketExpr:
     if t[0].kind != nkIdent: return nil
     let head = t[0].ident.s
-    if head in ["seq", "openArray", "varargs"] and t.len == 2:
+    if head in ["seq", "openArray", "varargs", "NsArray"] and t.len == 2:
       return nsnArrayType(nimToCs(t[1], names, args, info), info.info)
     result = nsnTypeName(head, info.info)
     for i in 1 ..< t.len: result.add nimToCs(t[i], names, args, info)
@@ -109,7 +109,7 @@ proc unifyNim(pt: PNode; at: NsNode; names: seq[string]; binding: var seq[NsNode
        pt[0].ident.s == nimTypeName(at.name) and pt.len - 1 == at.sons.len:
       for i in 1 ..< pt.len: unifyNim(pt[i], at.sons[i - 1], names, binding)
     elif at.kind == nsnArrayType and pt[0].kind == nkIdent and
-         pt[0].ident.s in ["seq", "openArray", "varargs"] and pt.len == 2:
+         pt[0].ident.s in ["seq", "openArray", "varargs", "NsArray"] and pt.len == 2:
       unifyNim(pt[1], at.typ, names, binding)
   else: discard
 

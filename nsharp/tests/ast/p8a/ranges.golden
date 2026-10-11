@@ -25,7 +25,7 @@ nkStmtList
             nkIdentDefs
               nkIdent 'items'
               nkBracketExpr
-                nkIdent 'seq'
+                nkIdent 'NsArray'
                 nkIdent 'int32'
               nkEmpty
     nkTypeDef
@@ -247,7 +247,7 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'NsArray'
         nkIdent 'int32'
       nkIdentDefs
         nkIdent 't'
@@ -274,7 +274,7 @@ nkStmtList
       nkIdentDefs
         nkIdent 'xs'
         nkBracketExpr
-          nkIdent 'seq'
+          nkIdent 'NsArray'
           nkIdent 'int32'
         nkEmpty
     nkPragma
@@ -472,8 +472,10 @@ nkStmtList
         nkDotExpr
           nkIdent 'self'
           nkIdent 'items'
-        nkPrefix
-          nkIdent '@'
+        nkCall
+          nkBracketExpr
+            nkIdent 'nsArrayFrom'
+            nkIdent 'int32'
           nkBracket
             nkCall
               nkIdent 'int32'
@@ -560,7 +562,7 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'NsArray'
         nkIdent 'int32'
       nkIdentDefs
         nkIdent 't'
@@ -578,8 +580,10 @@ nkStmtList
           nkIdent 'Program'
           nkIdent 'calls'
       nkReturnStmt
-        nkPrefix
-          nkIdent '@'
+        nkCall
+          nkBracketExpr
+            nkIdent 'nsArrayFrom'
+            nkIdent 'int32'
           nkBracket
             nkCall
               nkIdent 'int32'
@@ -611,7 +615,7 @@ nkStmtList
       nkIdentDefs
         nkIdent 'xs'
         nkBracketExpr
-          nkIdent 'seq'
+          nkIdent 'NsArray'
           nkIdent 'int32'
         nkEmpty
     nkPragma
@@ -661,10 +665,12 @@ nkStmtList
         nkIdentDefs
           nkIdent 'a'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'int32'
-          nkPrefix
-            nkIdent '@'
+          nkCall
+            nkBracketExpr
+              nkIdent 'nsArrayFrom'
+              nkIdent 'int32'
             nkBracket
               nkCall
                 nkIdent 'int32'

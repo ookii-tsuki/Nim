@@ -1,0 +1,105 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Holder
+    {
+        public int[] Items;
+        public Holder(int[] items) { Items = items; }
+        public void Bump() { for (int i = 0; i < Items.Length; i++) Items[i] += 10; }
+    }
+
+    class Program
+    {
+        static void Swap(int[] a, int i, int j)
+        {
+            int t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+
+        static void Fill(double[] dst, double v)
+        {
+            for (int i = 0; i < dst.Length; i++) dst[i] = v * i;
+        }
+
+        static int Sum(params int[] xs)
+        {
+            int s = 0;
+            foreach (var x in xs) s += x;
+            if (xs.Length > 0) xs[0] = 99;
+            return s;
+        }
+
+        static T First<T>(params T[] xs) => xs[0];
+
+        static void Main()
+        {
+            // assignment shares the array
+            int[] a = { 1, 2, 3 };
+            int[] b = a;
+            b[0] = 7;
+            Console.WriteLine(a[0]);
+            Console.WriteLine(a == b);
+
+            // a method writes through its parameter
+            Swap(a, 0, 2);
+            Console.WriteLine(a[0] + "," + a[1] + "," + a[2]);
+            var d = new double[4];
+            Fill(d, 1.5);
+            Console.WriteLine(d[3]);
+
+            // an object holds the same array
+            var h = new Holder(a);
+            h.Bump();
+            Console.WriteLine(a[1]);
+
+            // a copy is a new array
+            int[] c = (int[])a.Clone();
+            c[0] = -1;
+            Console.WriteLine(a[0] != c[0]);
+            Console.WriteLine(a == c);
+
+            // a range copies too
+            int[] r = a[1..];
+            r[0] = 0;
+            Console.WriteLine(a[1]);
+            Console.WriteLine(r.Length);
+            Console.WriteLine(a[^1]);
+
+            // params: expanded arguments, or the caller's own array
+            Console.WriteLine(Sum(1, 2, 3));
+            Console.WriteLine(Sum());
+            int[] mine = { 4, 5 };
+            Console.WriteLine(Sum(mine));
+            Console.WriteLine(mine[0]);
+            Console.WriteLine(First("x", "y"));
+
+            // null, out of range, printing, type tests
+            int[] none = null;
+            Console.WriteLine(none == null);
+            try { Console.WriteLine(none.Length); }
+            catch (NullReferenceException) { Console.WriteLine("null array"); }
+            try { Console.WriteLine(a[5]); }
+            catch (IndexOutOfRangeException) { Console.WriteLine("out of range"); }
+            Console.WriteLine(a);
+            object o = a;
+            Console.WriteLine(o is int[]);
+            Console.WriteLine(o.GetType().Name);
+            Console.WriteLine(((int[])o)[2]);
+
+            // jagged arrays, library arrays
+            int[][] grid = new int[2][];
+            grid[0] = new int[] { 1, 2 };
+            grid[1] = grid[0];
+            grid[1][1] = 5;
+            Console.WriteLine(grid[0][1]);
+            string[] parts = "a,b,c".Split(',');
+            Console.WriteLine(parts.Length + " " + parts[2]);
+            var list = new List<int>(a);
+            int[] back = list.ToArray();
+            back[0] = 100;
+            Console.WriteLine(list[0] != 100);
+            Console.WriteLine(Array.IndexOf(a, 13));
+        }
+    }
+}

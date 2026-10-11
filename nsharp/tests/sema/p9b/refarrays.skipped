@@ -1,0 +1,4 @@
+List.ToArray = type-parameter
+array.Clone = result:other
+object.GetType = result:other
+string.Split = result:other

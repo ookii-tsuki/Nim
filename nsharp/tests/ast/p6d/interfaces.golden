@@ -1235,7 +1235,7 @@ nkStmtList
       nkIdentDefs
         nkIdent 'shapes'
         nkBracketExpr
-          nkIdent 'seq'
+          nkIdent 'NsArray'
           nkIdent 'IShape'
         nkEmpty
     nkPragma
@@ -2872,7 +2872,7 @@ nkStmtList
       nkIdentDefs
         nkIdent 'shapes'
         nkBracketExpr
-          nkIdent 'seq'
+          nkIdent 'NsArray'
           nkIdent 'IShape'
         nkEmpty
     nkPragma
@@ -2968,8 +2968,10 @@ nkStmtList
         nkCall
           nkIdent 'Total'
           nkIdent 'Program'
-          nkPrefix
-            nkIdent '@'
+          nkCall
+            nkBracketExpr
+              nkIdent 'nsArrayFrom'
+              nkIdent 'IShape'
             nkBracket
               nkCall
                 nkIdent 'IShape'

@@ -280,9 +280,12 @@ nkStmtList
       nkIdentDefs
         nkIdent 'xs'
         nkBracketExpr
-          nkIdent 'varargs'
+          nkIdent 'NsArray'
           nkIdent 'int32'
-        nkEmpty
+        nkCall
+          nkIdent 'nsNewArray'
+          nkIdent 'int32'
+          nkIntLit 0
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -709,9 +712,12 @@ nkStmtList
       nkIdentDefs
         nkIdent 'xs'
         nkBracketExpr
-          nkIdent 'varargs'
+          nkIdent 'NsArray'
           nkIdent 'int32'
-        nkEmpty
+        nkCall
+          nkIdent 'nsNewArray'
+          nkIdent 'int32'
+          nkIntLit 0
     nkPragma
       nkIdent 'discardable'
     nkEmpty
@@ -944,16 +950,29 @@ nkStmtList
         nkCall
           nkIdent 'Sum'
           nkIdent 'Program'
-          nkIntLit 1
-          nkIntLit 2
-          nkIntLit 3
+          nkCall
+            nkBracketExpr
+              nkIdent 'nsArrayFrom'
+              nkIdent 'int32'
+            nkBracket
+              nkCall
+                nkIdent 'int32'
+                nkIntLit 1
+              nkCall
+                nkIdent 'int32'
+                nkIntLit 2
+              nkCall
+                nkIdent 'int32'
+                nkIntLit 3
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Sum'
           nkIdent 'Program'
-          nkPrefix
-            nkIdent '@'
+          nkCall
+            nkBracketExpr
+              nkIdent 'nsArrayFrom'
+              nkIdent 'int32'
             nkBracket
               nkCall
                 nkIdent 'int32'

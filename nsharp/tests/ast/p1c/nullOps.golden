@@ -685,12 +685,11 @@ nkStmtList
         nkIdentDefs
           nkIdent 'arr'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'Node'
           nkCall
-            nkBracketExpr
-              nkIdent 'newSeq'
-              nkIdent 'Node'
+            nkIdent 'nsNewArray'
+            nkIdent 'Node'
             nkIntLit 2
       nkAsgn
         nkBracketExpr

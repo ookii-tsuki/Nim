@@ -431,12 +431,11 @@ nkStmtList
         nkIdentDefs
           nkIdent 'a'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'int32'
           nkCall
-            nkBracketExpr
-              nkIdent 'newSeq'
-              nkIdent 'int32'
+            nkIdent 'nsNewArray'
+            nkIdent 'int32'
             nkIntLit 2
       nkTryStmt
         nkStmtList

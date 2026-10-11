@@ -1997,10 +1997,12 @@ nkStmtList
         nkIdentDefs
           nkIdent 'zoo'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'Animal'
-          nkPrefix
-            nkIdent '@'
+          nkCall
+            nkBracketExpr
+              nkIdent 'nsArrayFrom'
+              nkIdent 'Animal'
             nkBracket
               nkCall
                 nkIdent 'Animal'

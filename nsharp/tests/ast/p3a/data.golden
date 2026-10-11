@@ -534,12 +534,11 @@ nkStmtList
         nkIdentDefs
           nkIdent 'xs'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'int32'
           nkCall
-            nkBracketExpr
-              nkIdent 'newSeq'
-              nkIdent 'int32'
+            nkIdent 'nsNewArray'
+            nkIdent 'int32'
             nkIntLit 3
       nkAsgn
         nkBracketExpr
@@ -615,10 +614,12 @@ nkStmtList
         nkIdentDefs
           nkIdent 'ys'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'int32'
-          nkPrefix
-            nkIdent '@'
+          nkCall
+            nkBracketExpr
+              nkIdent 'nsArrayFrom'
+              nkIdent 'int32'
             nkBracket
               nkCall
                 nkIdent 'int32'

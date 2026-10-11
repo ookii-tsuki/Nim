@@ -1957,10 +1957,12 @@ nkStmtList
         nkIdentDefs
           nkIdent 'all'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'IGreeter'
-          nkPrefix
-            nkIdent '@'
+          nkCall
+            nkBracketExpr
+              nkIdent 'nsArrayFrom'
+              nkIdent 'IGreeter'
             nkBracket
               nkCall
                 nkIdent 'IGreeter'

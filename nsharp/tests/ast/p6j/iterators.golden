@@ -1915,8 +1915,10 @@ nkStmtList
           nkIdent 'Program'
           nkCall
             nkIdent 'nsToIEnumerable'
-            nkPrefix
-              nkIdent '@'
+            nkCall
+              nkBracketExpr
+                nkIdent 'nsArrayFrom'
+                nkIdent 'int32'
               nkBracket
                 nkCall
                   nkIdent 'int32'

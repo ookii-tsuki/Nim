@@ -63,7 +63,8 @@
 import std/[tables, sets, deques, algorithm, sequtils]
 import ../../System
 import ../Collections
-from ../../../nsharp/intrinsics import Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName
+from ../../../nsharp/intrinsics import Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName,
+  NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
 export Collections
 
 type
@@ -143,7 +144,7 @@ type
   IEnumerable*[T] = ref object
     ## C#'s `IEnumerable<T>`: something that hands out enumerators.
     make: proc(): IEnumerator[T]
-  Enumerable[T] = seq[T] | List[T] | HashSet[T] | SortedSet[T] | Queue[T] |
+  Enumerable[T] = NsArray[T] | seq[T] | List[T] | HashSet[T] | SortedSet[T] | Queue[T] |
                   Stack[T] | LinkedList[T] | IEnumerable[T]
     ## What a C# `IEnumerable<T>` parameter takes here: an array or a collection.
 
@@ -249,6 +250,7 @@ proc stackOf[T](s: seq[T]): Stack[T] = Stack[T](data: s)
 
 template fromEnumerable(ctor, build: untyped) =
   proc ctor*[T](collection: openArray[T]): auto = build(@collection)
+  proc ctor*[T](collection: NsArray[T]): auto = build(collection.nsData)
   proc ctor*[T](collection: List[T]): auto = build(snapshot(collection))
   proc ctor*[T](collection: HashSet[T]): auto = build(snapshot(collection))
   proc ctor*[T](collection: SortedSet[T]): auto = build(snapshot(collection))
@@ -421,11 +423,11 @@ proc ForEach*[T](l: List[T]; action: Action[T]) =
 proc ConvertAll*[T, U](l: List[T]; conv: Converter[T, U]): List[U] =
   result = List[U]()
   for x in l.data: result.data.add conv(x)
-proc CopyTo*[T](l: List[T]; arr: var openArray[T]) =
+proc CopyTo*[T](l: List[T]; arr: NsArray[T]) =
   for i in 0 ..< l.data.len: arr[i] = l.data[i]
-proc CopyTo*[T](l: List[T]; arr: var openArray[T]; arrayIndex: int) =
+proc CopyTo*[T](l: List[T]; arr: NsArray[T]; arrayIndex: int) =
   for i in 0 ..< l.data.len: arr[arrayIndex + i] = l.data[i]
-proc ToArray*[T](l: List[T]): seq[T] = l.data
+proc ToArray*[T](l: List[T]): NsArray[T] = nsArrayOf(l.data)
 proc TrimExcess*[T](l: List[T]) = discard
 
 # --- Dictionary<K, V> -------------------------------------------------------
@@ -503,8 +505,10 @@ proc RemoveWhere*[T](s: HashSet[T]; match: Predicate[T]): int32 =
   for x in gone: s.data.excl x
   if gone.len > 0: touch s
   int32(gone.len)
-proc ToArray*[T](s: HashSet[T]): seq[T] =
-  for x in sets.items(s.data): result.add x
+proc ToArray*[T](s: HashSet[T]): NsArray[T] =
+  var xs: seq[T] = @[]
+  for x in sets.items(s.data): xs.add x
+  nsArrayOf(xs)
 proc UnionWith*[T](s: HashSet[T]; other: Enumerable[T]) =
   for x in snapshot(other): s.data.incl x
   touch s
@@ -609,7 +613,7 @@ proc Reverse*[T](s: SortedSet[T]): List[T] =
   ## The elements in descending order.
   result = List[T]()
   for i in countdown(s.data.high, 0): result.data.add s.data[i]
-proc ToArray*[T](s: SortedSet[T]): seq[T] = s.data
+proc ToArray*[T](s: SortedSet[T]): NsArray[T] = nsArrayOf(s.data)
 proc UnionWith*[T](s: SortedSet[T]; other: Enumerable[T]) =
   for x in snapshot(other): discard s.Add(x)
   touch s
@@ -795,12 +799,12 @@ iterator items*[K, V](c: ValueCollection[K, V]): V =
   else:
     for kv in c.list: yield kv.Value
 
-proc CopyTo*[K, V](c: KeyCollection[K, V]; arr: var openArray[K]; index: int) =
+proc CopyTo*[K, V](c: KeyCollection[K, V]; arr: NsArray[K]; index: int) =
   var i = index
   for k in c:
     arr[i] = k
     inc i
-proc CopyTo*[K, V](c: ValueCollection[K, V]; arr: var openArray[V]; index: int) =
+proc CopyTo*[K, V](c: ValueCollection[K, V]; arr: NsArray[V]; index: int) =
   var i = index
   for v in c:
     arr[i] = v
@@ -840,9 +844,11 @@ proc Contains*[T](q: Queue[T]; x: T): bool = x in q.data
 proc Clear*[T](q: Queue[T]) =
   q.data.clear()
   touch q
-proc ToArray*[T](q: Queue[T]): seq[T] =
-  for x in q.data: result.add x
-proc CopyTo*[T](q: Queue[T]; arr: var openArray[T]; arrayIndex: int) =
+proc ToArray*[T](q: Queue[T]): NsArray[T] =
+  var xs: seq[T] = @[]
+  for x in q.data: xs.add x
+  nsArrayOf(xs)
+proc CopyTo*[T](q: Queue[T]; arr: NsArray[T]; arrayIndex: int) =
   var i = arrayIndex
   for x in q.data:
     arr[i] = x
@@ -875,10 +881,12 @@ proc Contains*[T](s: Stack[T]; x: T): bool = x in s.data
 proc Clear*[T](s: Stack[T]) =
   s.data.setLen(0)
   touch s
-proc ToArray*[T](s: Stack[T]): seq[T] =
+proc ToArray*[T](s: Stack[T]): NsArray[T] =
   ## Top first, as .NET orders it.
-  for i in countdown(s.data.high, 0): result.add s.data[i]
-proc CopyTo*[T](s: Stack[T]; arr: var openArray[T]; arrayIndex: int) =
+  var xs: seq[T] = @[]
+  for i in countdown(s.data.high, 0): xs.add s.data[i]
+  nsArrayOf(xs)
+proc CopyTo*[T](s: Stack[T]; arr: NsArray[T]; arrayIndex: int) =
   var i = arrayIndex
   for j in countdown(s.data.high, 0):
     arr[i] = s.data[j]
@@ -1013,7 +1021,7 @@ proc Clear*[T](l: LinkedList[T]) =
   l.tail = nil
   l.count = 0
   touch l
-proc CopyTo*[T](l: LinkedList[T]; arr: var openArray[T]; arrayIndex: int) =
+proc CopyTo*[T](l: LinkedList[T]; arr: NsArray[T]; arrayIndex: int) =
   var i = arrayIndex
   for x in l:
     arr[i] = x
@@ -1129,6 +1137,7 @@ template nsSequenceView(xs: untyped; T: typedesc): untyped =
 # would be tried, and fail to instantiate, wherever a ref value meets an
 # overloaded operator.
 proc nsToIEnumerable*[T](xs: seq[T]): IEnumerable[T] = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: NsArray[T]): IEnumerable[T] = nsSequenceView(xs, T)
 proc nsToIEnumerable*[T](xs: List[T]): IEnumerable[T] = nsSequenceView(xs, T)
 proc nsToIEnumerable*[T](xs: HashSet[T]): IEnumerable[T] = nsSequenceView(xs, T)
 proc nsToIEnumerable*[T](xs: SortedSet[T]): IEnumerable[T] = nsSequenceView(xs, T)
@@ -1169,14 +1178,14 @@ proc nsTypeOf*[K, V](t: typedesc[KeyValuePair[K, V]]): Type =
 
 proc nsToIEnumerator*[T](e: IEnumerator[T]): IEnumerator[T] = e
 
-proc nsToIEnumerator*[C: ref RootObj](c: C): auto =
+proc nsToIEnumerator*[C: ref RootObj and not NsArrayBase](c: C): auto =
   ## A user enumerator as the library's: each `MoveNext` steps the class's.
   mixin Current, MoveNext
   type E = typeof(c.Current)
   nsEnumeratorOf[E](iterator(): E {.closure.} =
     while c.MoveNext(): yield c.Current)
 
-proc nsToIEnumerable*[C: ref RootObj](c: C): auto =
+proc nsToIEnumerable*[C: ref RootObj and not NsArrayBase](c: C): auto =
   ## A user sequence as the library's: each enumeration asks it for a new
   ## enumerator.
   mixin GetEnumerator

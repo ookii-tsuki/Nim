@@ -1,2 +1,0 @@
-Valid C# that N# rejects: a reference into an array parameter (an N# array is a value).
-code: NS9999

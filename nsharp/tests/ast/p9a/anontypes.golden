@@ -947,8 +947,10 @@ nkStmtList
         nkIdentDefs
           nkIdent 'arr'
           nkEmpty
-          nkPrefix
-            nkIdent '@'
+          nkCall
+            nkBracketExpr
+              nkIdent 'nsArrayFrom'
+              nkIdent 'nsAnon2'
             nkBracket
               nkCall
                 nkIdent 'nsAnon2'

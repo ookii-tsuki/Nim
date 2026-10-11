@@ -737,10 +737,12 @@ nkStmtList
         nkIdentDefs
           nkIdent 'items'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'RootRef'
-          nkPrefix
-            nkIdent '@'
+          nkCall
+            nkBracketExpr
+              nkIdent 'nsArrayFrom'
+              nkIdent 'RootRef'
             nkBracket
               nkCall
                 nkIdent 'RootRef'

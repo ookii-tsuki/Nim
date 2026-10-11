@@ -324,12 +324,11 @@ nkStmtList
         nkIdentDefs
           nkIdent 'keyArray'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'string'
           nkCall
-            nkBracketExpr
-              nkIdent 'newSeq'
-              nkIdent 'string'
+            nkIdent 'nsNewArray'
+            nkIdent 'string'
             nkIntLit 4
       nkCall
         nkDotExpr

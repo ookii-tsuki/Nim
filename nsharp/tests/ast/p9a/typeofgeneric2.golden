@@ -854,7 +854,7 @@ nkStmtList
         nkCall
           nkIdent 'nsTypeOf'
           nkBracketExpr
-            nkIdent 'seq'
+            nkIdent 'NsArray'
             nkIdent 'int32'
       nkCall
         nkIdent 'WriteLine'

@@ -914,7 +914,7 @@ nkStmtList
       nkIdentDefs
         nkIdent 'xs'
         nkBracketExpr
-          nkIdent 'seq'
+          nkIdent 'NsArray'
           nkIdent 'T'
         nkEmpty
     nkPragma
@@ -2015,7 +2015,7 @@ nkStmtList
       nkIdentDefs
         nkIdent 'xs'
         nkBracketExpr
-          nkIdent 'seq'
+          nkIdent 'NsArray'
           nkIdent 'T'
         nkEmpty
     nkPragma
@@ -2083,8 +2083,10 @@ nkStmtList
           nkCall
             nkIdent 'Fold'
             nkIdent 'Program'
-            nkPrefix
-              nkIdent '@'
+            nkCall
+              nkBracketExpr
+                nkIdent 'nsArrayFrom'
+                nkIdent 'Sum'
               nkBracket
                 nkCall
                   nkIdent 'Sum'
@@ -2108,8 +2110,10 @@ nkStmtList
           nkCall
             nkIdent 'Fold'
             nkIdent 'Program'
-            nkPrefix
-              nkIdent '@'
+            nkCall
+              nkBracketExpr
+                nkIdent 'nsArrayFrom'
+                nkIdent 'Text'
               nkBracket
                 nkCall
                   nkIdent 'Text'
