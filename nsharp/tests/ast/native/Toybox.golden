@@ -222,6 +222,74 @@ nkStmtList
         nkEmpty
         nkEmpty
         nkRecList
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'NsH_Timer'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::TimerId<'0>"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Timer'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::Timer"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+          nkIdent 'inheritable'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'left'
+            nkIdent 'float32'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'fired'
+            nkIdent 'int32'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Timers'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::Timers"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
   nkStmtList
     nkProcDef
       nkPostfix
@@ -374,6 +442,8 @@ nkStmtList
       nkIdent 'NsH_Trait'
       nkIdent 'Trait'
       nkStrLit "toybox.hpp"
+      nkStrLit "static_cast<bool>(#)"
+      nkStrLit "Toybox::TraitRef<'1>()"
   nkStmtList
     nkProcDef
       nkPostfix
@@ -408,6 +478,8 @@ nkStmtList
       nkIdent 'NsH_Node'
       nkIdent 'Node'
       nkStrLit "toybox.hpp"
+      nkStrLit "static_cast<bool>(#)"
+      nkStrLit "Toybox::NodeRef<'1>()"
     nkProcDef
       nkPostfix
         nkIdent '*'
@@ -638,6 +710,74 @@ nkStmtList
         nkExprColonExpr
           nkIdent 'importcpp'
           nkStrLit "Toybox::Director::Play<'2>(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+  nkStmtList
+    nkCall
+      nkIdent 'nsHandleProcs'
+      nkIdent 'NsH_Timer'
+      nkIdent 'Timer'
+      nkStrLit "toybox.hpp"
+      nkStrLit "Toybox::Timers::Alive(#)"
+      nkStrLit "Toybox::TimerId<'1>::None()"
+  nkStmtList
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Start'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Timer'
+          nkIdent 'Timer'
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Timers'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'seconds'
+          nkIdent 'float32'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "Toybox::Timers::Start(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Stop'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Timers'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'timer'
+          nkBracketExpr
+            nkIdent 'NsH_Timer'
+            nkIdent 'Timer'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "Toybox::Timers::Stop(@)"
         nkExprColonExpr
           nkIdent 'header'
           nkStrLit "toybox.hpp"

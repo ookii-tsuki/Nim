@@ -1,0 +1,32 @@
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // A handle whose validity the engine's table decides (`Valid`), with its own
+    // empty value (`Null`): a stopped timer reads as null, and touching it throws.
+    static class Entry
+    {
+
+        [Export("nsStart")]
+        public static void Start()
+        {
+            Timer t = Timers.Start(2.5f);
+            t.fired = 3;
+            Console.Print($"alive: {t != null}, fired {t.fired}");
+            Timers.Stop(t);
+            Console.Print($"after stop: {t == null}");
+            try
+            {
+                t.fired = 4;
+                Console.Print("not reached");
+            }
+            catch
+            {
+                Console.Print("caught a stale timer");
+            }
+            Timer none = null;
+            Console.Print($"null is invalid: {none == null}, {none?.fired ?? -1}");
+        }
+    }
+}

@@ -19,7 +19,11 @@ type
     ## `null` is an invalid handle. `SelfHandle` is how a `this` pointer reaches its
     ## own handle: a C++ pattern over the object (`"#->GetId()"`), or a member name
     ## (`"id"`, short for `"#->id"`); it must be public or protected, since the code
-    ## that uses it is the derived class's. On an `extern` member,
+    ## that uses it is the derived class's. A handle is valid when its
+    ## `explicit operator bool` says so, unless `Valid` gives the test as a pattern
+    ## over it (`"#.IsAlive()"`, `"Ns::World::Exists(#)"`); using an invalid one
+    ## throws `NullReferenceException`. `null` is a default-constructed handle,
+    ## unless `Null` names the invalid one (`"Ns::Id<{0}>::Invalid()"`). On an `extern` member,
     ## `[Native("pattern")]` gives the C++ call as a Nim `importcpp` pattern.
   ExportAttribute* = ref object of Attribute
     ## `[Export("name")]` on a static method: C++ calls it by that name.

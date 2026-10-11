@@ -1,0 +1,4 @@
+alive: true, fired 3
+after stop: true
+caught a stale timer
+null is invalid: true, -1

@@ -62,4 +62,19 @@ namespace Toybox
     {
         public static extern void Play<T>() where T : Stage;
     }
+
+    [Native("Toybox::Timer", Header = "toybox.hpp", Handle = "Toybox::TimerId<{0}>",
+            Valid = "Toybox::Timers::Alive(#)", Null = "Toybox::TimerId<{0}>::None()")]
+    public class Timer
+    {
+        public float left;
+        public int fired;
+    }
+
+    [Native("Toybox::Timers", Header = "toybox.hpp")]
+    public static class Timers
+    {
+        public static extern Timer Start(float seconds);
+        public static extern void Stop(Timer timer);
+    }
 }

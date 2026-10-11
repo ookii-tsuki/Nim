@@ -1781,6 +1781,10 @@ proc catchVar(l: Lowerer; c: NsNode; exc: PNode): PNode =
       newTree(nkPar, c.info, newTree(nkRefTy, c.info, l.typeToNim(c.typ, c.info))),
       exc)))
 
+proc anyException(l: Lowerer; info: TLineInfo): PNode =
+  ## `system.Exception`: every exception, Nim's defects included.
+  newTree(nkDotExpr, info, l.id("system", info), l.id("Exception", info))
+
 proc filteredTryToNim(l: Lowerer; n: NsNode): PNode =
   ## A `try` with a `catch ... when (filter)`. Nim's `except` has no filter, so one
   ## branch takes every exception and picks the first clause that matches and whose
@@ -1792,7 +1796,7 @@ proc filteredTryToNim(l: Lowerer; n: NsNode): PNode =
   result.add l.stmtSeq(n.body)
   let exc = l.fresh("nsExc")
   let pick = l.fresh("nsPick")
-  let br = newNodeI(nkExceptBranch, info)
+  let br = newTree(nkExceptBranch, info, l.anyException(info))
   let body = newNodeI(nkStmtList, info)
   body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(exc, info),
     empty(info), newTree(nkCall, info, l.id("getCurrentException", info))))
@@ -1879,6 +1883,10 @@ proc tryToNim(l: Lowerer; n: NsNode): PNode =
         asNode.add l.typeToNim(c.typ, c.info)
         asNode.add l.id(c.name, c.info)
         br.add asNode
+      else:
+        ## `catch { }` takes everything, the runtime's errors too (a bare `except`
+        ## would leave out Nim's defects, `NullReferenceException` among them).
+        br.add l.anyException(c.info)
       br.add l.stmtSeq(c.body)
       result.add br
     elif c.kind == nsnFinally:
@@ -3539,8 +3547,14 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   # an `importcpp` proc has no body to follow, leave them alone
   let procs = newNodeI(nkStmtList, info)
   if nat.handle.len > 0:
+    ## Validity is the handle's `explicit operator bool` unless `Valid` says how to
+    ## test it; the invalid handle is a default-constructed one unless `Null` names it.
+    let valid = (if nat.valid.len > 0: nat.valid else: "static_cast<bool>(#)")
+    let null = (if nat.null.len > 0: nat.null.replace("{0}", "'1")
+                else: nat.handle.replace("{0}", "'1") & "()")
     procs.add newTree(nkCall, info, l.id("nsHandleProcs", info), l.id("NsH_" & n.name, info),
-                      l.id(n.name, info), strLit(header, info))
+                      l.id(n.name, info), strLit(header, info), strLit(valid, info),
+                      strLit(null, info))
   if nat.handle.len > 0 and nat.selfHandle.len > 0:
     ## `nsSelfOf_<Class>(self)`: an object's own handle, through `SelfHandle` -- a
     ## C++ pattern (`#->GetId()`), or a member name standing for `#->name`.
@@ -3721,7 +3735,7 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         let user = newTree(nkStmtList, c.info, inner.memberBody(nil, c.body),
                            newTree(nkDiscardStmt, c.info, empty(c.info)))
         body.add newTree(nkTryStmt, c.info, user,
-                         newTree(nkExceptBranch, c.info,
+                         newTree(nkExceptBranch, c.info, l.anyException(c.info),
                                  newTree(nkCall, c.info, l.id("nsEscaped", c.info),
                                          strLit(n.name, c.info))))
     let pd = newNodeI(nkProcDef, cinfo, 7)

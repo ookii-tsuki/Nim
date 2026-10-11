@@ -1,0 +1,8 @@
+using System
+member ArgumentException.Message = System | string
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member string.Length = System | int

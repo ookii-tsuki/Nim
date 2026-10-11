@@ -41,6 +41,8 @@ type
     header*: string
     handle*: string
     selfHandle*: string
+    valid*: string                 ## a handle's validity test (`#.IsAlive()`)
+    null*: string                  ## the invalid handle (`Ns::Id<{0}>::Invalid()`)
 
   NsClassSymbol* = object
     name*: string
@@ -138,6 +140,8 @@ proc nativeOf*(n: NsNode): NsNative =
       of "Header": result.header = x.body.strVal
       of "Handle": result.handle = x.body.strVal
       of "SelfHandle": result.selfHandle = x.body.strVal
+      of "Valid": result.valid = x.body.strVal
+      of "Null": result.null = x.body.strVal
       else: discard
 
 proc collectClass(scope: NsModuleScope; cls: NsNode) =

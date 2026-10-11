@@ -342,6 +342,8 @@ nkStmtList
       nkIdent 'NsH_Node'
       nkIdent 'Node'
       nkStrLit "toybox.hpp"
+      nkStrLit "static_cast<bool>(#)"
+      nkStrLit "Toybox::NodeRef<'1>()"
     nkProcDef
       nkPostfix
         nkIdent '*'

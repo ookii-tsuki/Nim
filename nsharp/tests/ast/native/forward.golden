@@ -430,6 +430,9 @@ nkStmtList
           nkDiscardStmt
             nkEmpty
         nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Crate"
@@ -508,6 +511,9 @@ nkStmtList
           nkDiscardStmt
             nkEmpty
         nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Crate"
@@ -621,6 +627,9 @@ nkStmtList
           nkDiscardStmt
             nkEmpty
         nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Crate"

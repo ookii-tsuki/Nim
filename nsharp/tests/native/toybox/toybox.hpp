@@ -257,4 +257,41 @@ public:
     }
 };
 
+// --- timers -------------------------------------------------------------------------
+//
+// A handle with no `operator bool`: whether it is alive is the timer table's to say,
+// and the empty one is `TimerId<T>::None()`.
+
+struct Timer {
+    float left = 0;
+    int fired = 0;
+};
+
+template <typename T>
+struct TimerId {
+    std::uint32_t id = 0;
+    static TimerId None() { return TimerId{}; }
+    T* operator->() const;
+};
+
+class Timers {
+public:
+    static std::vector<std::unique_ptr<Timer>>& Table() {
+        static std::vector<std::unique_ptr<Timer>> table(1);   // id 0 is no timer
+        return table;
+    }
+    static TimerId<Timer> Start(float seconds) {
+        auto t = std::make_unique<Timer>();
+        t->left = seconds;
+        Table().push_back(std::move(t));
+        return TimerId<Timer>{static_cast<std::uint32_t>(Table().size() - 1)};
+    }
+    static void Stop(TimerId<Timer> t) { if (Alive(t)) Table()[t.id].reset(); }
+    template <typename T>
+    static bool Alive(TimerId<T> t) { return t.id != 0 && t.id < Table().size() && Table()[t.id]; }
+};
+
+template <typename T>
+T* TimerId<T>::operator->() const { return static_cast<T*>(Timers::Table()[id].get()); }
+
 } // namespace Toybox

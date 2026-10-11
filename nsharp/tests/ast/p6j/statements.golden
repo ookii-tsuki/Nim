@@ -709,6 +709,9 @@ nkStmtList
               nkIdent 'InvalidOperationException'
               nkStrLit "bad"
         nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
           nkStmtList
             nkLetSection
               nkIdentDefs
@@ -1038,6 +1041,9 @@ nkStmtList
                   nkIdent 'ArgumentException'
                   nkStrLit "inner"
             nkExceptBranch
+              nkDotExpr
+                nkIdent 'system'
+                nkIdent 'Exception'
               nkStmtList
                 nkLetSection
                   nkIdentDefs
@@ -1114,6 +1120,9 @@ nkStmtList
                   nkIdent 'WriteLine'
                   nkStrLit "inner finally"
         nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
           nkStmtList
             nkLetSection
               nkIdentDefs

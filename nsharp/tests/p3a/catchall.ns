@@ -1,0 +1,41 @@
+// A catch-all `catch` takes the runtime's own errors too, with or without a filter
+// on the clauses before it.
+using System;
+
+namespace Demo
+{
+    class Gadget
+    {
+        public int Size;
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Gadget g = null;
+            try
+            {
+                Console.WriteLine(g.Size);
+            }
+            catch
+            {
+                Console.WriteLine("caught a null dereference");
+            }
+
+            int[] a = new int[1];
+            try
+            {
+                Console.WriteLine(a[3]);
+            }
+            catch (ArgumentException e) when (e.Message.Length > 0)
+            {
+                Console.WriteLine("not this one");
+            }
+            catch
+            {
+                Console.WriteLine("caught a bad index");
+            }
+        }
+    }
+}

@@ -88,6 +88,8 @@ nkStmtList
       nkIdent 'NsH_Unit'
       nkIdent 'Unit'
       nkStrLit "game.hpp"
+      nkStrLit "static_cast<bool>(#)"
+      nkStrLit "Game::UnitRef<'1>()"
   nkProcDef
     nkPostfix
       nkIdent '*'

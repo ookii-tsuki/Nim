@@ -700,9 +700,14 @@ proc nsAsByKey*[I](o: RootRef; t: typedesc[I]): I =
 # is invalid; using one throws `NullReferenceException`, as a null reference
 # does in C#, unless checks are off (`-d:danger`).
 
-template nsHandleProcs*(H, R: untyped; hdr: untyped) =
+template nsHandleProcs*(H, R: untyped; hdr, validPat, nullPat: untyped) =
+  ## A handle family's helpers: `validPat` tests a handle (`static_cast<bool>(#)`,
+  ## or the binding's `Valid`), and `nullPat` makes the invalid one, with `'1` the
+  ## class.
   proc nsRawDeref[T](h: H[T]): ptr T {.importcpp: "#.operator->()", header: hdr.}
-  proc nsValid*[T](h: H[T]): bool {.importcpp: "static_cast<bool>(#)", header: hdr, inject.}
+  proc nsValid*[T](h: H[T]): bool {.importcpp: validPat, header: hdr, inject.}
+  proc nsNullOf[T](t: typedesc[T]; h: typedesc[H[T]]): H[T] {.importcpp: nullPat, header: hdr.}
+    ## `h` keeps one family's from being taken for another's.
   proc nsDeref*[T](h: H[T]): ptr T {.inline, inject.} =
     when not defined(danger):
       if not nsValid(h): nsNilFail()
@@ -710,8 +715,9 @@ template nsHandleProcs*(H, R: untyped; hdr: untyped) =
   proc nsAs*[T, U](h: H[U]; t: typedesc[H[T]]): H[T] {.importcpp: "'0(#)", header: hdr, inject.}
     ## The handle as one of another class of its family: an upcast, or a downcast
     ## the engine may check.
-  proc nsNull*[T](t: typedesc[H[T]]): H[T] {.importcpp: "'0()", header: hdr, inject.}
+  proc nsNull*[T](t: typedesc[H[T]]): H[T] {.inline, inject.} =
     ## The invalid handle, C#'s `null`.
+    nsNullOf(T, H[T])
   converter nsToRoot*[U](h: H[U]): H[R] {.inject.} = nsAs(h, H[R])
     ## Any handle of the family is one of its root class: an upcast C# makes
     ## implicitly, which a library call (`List<Node>.Add(coin)`) relies on.
