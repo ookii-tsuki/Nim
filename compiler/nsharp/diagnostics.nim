@@ -57,6 +57,14 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndRefArgMissing
+    ndNoGetter
+    ndNotIndexable
+    ndNotEnumerable
+    ndTypeAsValue
+    ndNotCallable
+    ndDuplicateMember
+    ndDuplicateMethod
     ndMethodGroupConv
     ndFloatLiteral
     ndTernaryTypes
@@ -190,6 +198,18 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndRefArgMissing: (code: "1620", msg: "Argument $1 must be passed with the '$2' keyword"),
+    ndNoGetter: (code: "0154", msg: "The property or indexer '$1' cannot be used in this context" &
+               " because it lacks the get accessor"),
+    ndNotIndexable: (code: "0021", msg: "Cannot apply indexing with [] to an expression of type '$1'"),
+    ndNotEnumerable: (code: "1579", msg: "foreach statement cannot operate on variables of type '$1'" &
+                    " because '$1' does not contain a public instance or extension definition for" &
+                    " 'GetEnumerator'"),
+    ndTypeAsValue: (code: "0119", msg: "'$1' is a type, which is not valid in the given context"),
+    ndNotCallable: (code: "0149", msg: "Method name expected"),
+    ndDuplicateMember: (code: "0102", msg: "The type '$1' already contains a definition for '$2'"),
+    ndDuplicateMethod: (code: "0111", msg: "Type '$1' already defines a member called '$2' with the" &
+                      " same parameter types"),
     ndMethodGroupConv: (code: "0428", msg: "Cannot convert method group '$1' to non-delegate type" &
                       " '$2'. Did you intend to invoke the method?"),
     ndFloatLiteral: (code: "0664", msg: "Literal of type double cannot be implicitly converted to" &

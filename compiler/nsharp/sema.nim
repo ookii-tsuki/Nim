@@ -55,6 +55,7 @@ type
     inChecked: bool                            ## inside `checked`: `operator checked` applies
     lambdaDepth: int                           ## inside a lambda: `return` is the lambda's
     inIterator: bool                           ## the body walked yields: `return` ends it
+    assigning: bool                            ## walking a plain assignment's target
 
 const NsLocalFuncMark = "#local"
   ## The type name a local function is declared under, so a call can find it.
@@ -794,6 +795,11 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
                 break
         ctx.declare(v.name, ctx.classifyType(v.typ), declTypeName(v.typ), v.typ)
         continue
+      let pm = a.argParam.paramMod
+      if pm in ["ref", "out"] and a.kind != nsnRefArg and
+         not (a.kind == nsnNamedArg and a.body != nil and a.body.kind == nsnRefArg):
+        ## The callee writes the argument, which the call must say (CS1620).
+        nsError(ctx.config, a.info, ndRefArgMissing, $(j + 1), pm)
       if a.kind == nsnRefArg: continue
       let conv = ctx.argConv(v, pt)
       if conv != acNone:
@@ -1279,6 +1285,17 @@ proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
     else: discard
     if not ok:
       nsError(ctx.config, n.info, ndNotAccessible, m.owner & "." & n.name)
+      return
+    if m.isProperty and not ctx.assigning:
+      ## A property with no getter cannot be read (CS0154).
+      for c in ctx.scope.chain(cn):
+        let d = ctx.scope.classes[c].decl
+        if d == nil: continue
+        for x in d.sons:
+          if x.kind == nsnPropertyDecl and x.name == n.name and x.explicitIface.len == 0:
+            if not x.attrs.isEvent and (x.params.len == 0 or x.params[0] == nil):
+              nsError(ctx.config, n.info, ndNoGetter, c & "." & n.name)
+            return
   elif rk == tkString and cn in ["string", "String", ""]:
     if not ctx.libraryHas("string", tkString, n.name):
       nsError(ctx.config, n.info, ndNoMember, "string", n.name)
@@ -1590,6 +1607,12 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       let info = ctx.scope.findMemberInfo(owner, callee.name)
       if info.name.len > 0 and info.isMethod: n.rtype = info.typ
     callee.setType(kind)
+  elif callee != nil and callee.kind == nsnIdent and ctx.types.hasKey(callee.name) and
+       ctx.types[callee.name].kind in {tkInt, tkFloat, tkBool, tkChar, tkString} and
+       ctx.types[callee.name].name != NsLocalFuncMark:
+    ## A variable that is not a delegate is called (CS0149).
+    nsError(ctx.config, callee.info, ndNotCallable)
+    discard ctx.walkExpr(callee)
   elif callee != nil and callee.kind == nsnIdent and ctx.types.hasKey(callee.name) and
        ctx.types[callee.name].name == NsLocalFuncMark:
     ## A local function: its declaration answers like a method's.
@@ -1963,6 +1986,17 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     result = tkTuple
   of nsnIndex:
     discard ctx.walkExpr(n.body)
+    if n.body != nil and n.body.typeKind in {tkInt, tkFloat, tkBool, tkChar}:
+      ## Only arrays, strings and types with an indexer take `[]` (CS0021).
+      nsError(ctx.config, n.info, ndNotIndexable, kindSpelling(n.body))
+    elif n.body != nil and (n.body.typeKind == tkString or
+         (n.body.rtype != nil and n.body.rtype.kind == nsnArrayType and
+          n.body.rtype.intVal < 2)):
+      for a in n.sons:
+        if a != nil and a.kind notin {nsnRange, nsnFromEnd}:
+          discard ctx.walkExpr(a)
+          if a.typeKind in {tkString, tkBool}:
+            nsError(ctx.config, a.info, ndCannotConvert, kindSpelling(a), "int")
     var hasRange, hasHat = false
     for a in n.sons:
       if a == nil: continue
@@ -2434,6 +2468,12 @@ proc checkTernaryTypes(ctx: NsCheckContext; n: NsNode) =
   if a.typeKind == b.typeKind or (a.typeKind in num and b.typeKind in num): return
   nsError(ctx.config, n.info, ndTernaryTypes, kindSpelling(a), kindSpelling(b))
 
+proc checkValue(ctx: NsCheckContext; v: NsNode) =
+  ## A type named where a value is expected (CS0119).
+  if v != nil and v.kind == nsnIdent and v.typeKind == tkType and
+     not ctx.types.hasKey(v.name):
+    nsError(ctx.config, v.info, ndTypeAsValue, v.name)
+
 proc checkLocalDecl(ctx: NsCheckContext; n: NsNode) =
   ## A local's declaration: its type exists (CS0246), its name is not taken in
   ## this scope (CS0128) or an enclosing one (CS0136), and `var` has a value
@@ -2483,6 +2523,7 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
     else:
       ctx.checkConvertible(n.body, ctx.targetOfType(n.typ), n.body.info)
       ctx.coerce(n.body, declTypeName(n.typ), n.body.info, n.typ)
+  if n.kind == nsnLocalDecl: ctx.checkValue(n.body)
   if n.kind == nsnLocalDecl and n.typ == nil and n.body != nil and n.body.rtype != nil and
      n.body.rtype.kind == nsnVoidType:
     nsError(ctx.config, n.info, ndVarBadInit, "void")
@@ -2522,6 +2563,9 @@ proc enumeratedElement(ctx: NsCheckContext; n: NsNode): NsNode =
 proc walkForeach(ctx: var NsCheckContext; n: NsNode) =
   var elemKind = ctx.classifyType(n.typ)
   discard ctx.walkExpr(n.body)
+  if n.body != nil and n.body.typeKind in {tkInt, tkFloat, tkBool, tkChar}:
+    ## Nothing to enumerate (CS1579).
+    nsError(ctx.config, n.body.info, ndNotEnumerable, kindSpelling(n.body))
   var elemName = (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName)
   var elemType = n.typ
   let et = ctx.enumeratedElement(n)
@@ -2619,7 +2663,35 @@ proc eventOf(ctx: NsCheckContext; target: NsNode): NsMemberSymbol =
   let m = ctx.scope.findMemberInfo(owner, target.name)
   if m.isEvent: result = m
 
+proc returnsRef(ctx: NsCheckContext; call: NsNode): bool =
+  ## Whether a call's method returns by `ref`, which makes the call assignable.
+  let c = call.body
+  if c == nil: return true
+  if c.kind == nsnIdent and ctx.types.hasKey(c.name) and ctx.types[c.name].node != nil:
+    return ctx.types[c.name].node.paramMod == "ref"
+  for _, cls in ctx.scope.classes:
+    if cls.decl == nil: continue
+    for m in cls.decl.sons:
+      if m.kind == nsnMethodDecl and m.name == c.name and m.paramMod == "ref": return true
+  false
+
 proc checkAssignable(ctx: NsCheckContext; target: NsNode) =
+  ## What is not a variable cannot be assigned (CS0131); a string's characters
+  ## are read-only (CS0200).
+  if target != nil:
+    case target.kind
+    of nsnIndex:
+      if target.body != nil and target.body.typeKind == tkString:
+        nsError(ctx.config, target.info, ndReadOnlyProperty, "string.this[int]")
+        return
+    of nsnCall:
+      if not ctx.returnsRef(target):
+        nsError(ctx.config, target.info, ndNotAssignable)
+        return
+    of nsnIntLit, nsnStrLit, nsnFloatLit, nsnBoolLit, nsnCharLit, nsnBinary, nsnNull:
+      nsError(ctx.config, target.info, ndNotAssignable)
+      return
+    else: discard
   ctx.noteMutation(target)
   ## A `const` is never assigned (CS0131); a `readonly` field only by its own class's
   ## constructors -- the static one, for a static field (CS0191 / CS0198).
@@ -2718,7 +2790,9 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       n.strVal = "discard"
       discard ctx.walkExpr(n.sons[1])
       return
+    ctx.assigning = n.name.len == 0
     discard ctx.walkExpr(n.sons[0])
+    ctx.assigning = false
     if n.sons.len == 2 and n.sons[1].kind == nsnRefArg and n.sons[0].paramMod == "deref":
       ## `r = ref y;` points the `ref` local at another variable.
       n.strVal = "refAssign"
@@ -3045,10 +3119,40 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
       nsError(ctx.config, m.info, ndConstNeedsValue)
   else: discard
 
+proc checkDuplicates(ctx: NsCheckContext; cls: NsNode) =
+  ## A name a type declares twice: a field, property or event (CS0102), or a
+  ## method or constructor with the same parameter types (CS0111).
+  var names: seq[string] = @[]
+  var sigs: seq[string] = @[]
+  var members: seq[NsNode] = @[]
+  for m in cls.sons:
+    if m.kind == nsnMultiDecl: members.add m.sons else: members.add m
+  for m in members:
+    if m.explicitIface.len > 0 or m.name.len == 0: continue
+    case m.kind
+    of nsnMethodDecl, nsnCtorDecl:
+      var sig = (if m.kind == nsnCtorDecl: (if m.attrs.isStatic: ".cctor" else: ".ctor")
+                 else: m.name) & "("
+      for p in m.params: sig.add typeSpelling(p.typ) & ","
+      if sig in sigs:
+        nsError(ctx.config, m.info, ndDuplicateMethod, cls.name, m.name)
+      sigs.add sig
+      if m.kind == nsnMethodDecl and m.name in names:
+        nsError(ctx.config, m.info, ndDuplicateMember, cls.name, m.name)
+    of nsnFieldDecl, nsnPropertyDecl:
+      if m.name in names:
+        nsError(ctx.config, m.info, ndDuplicateMember, cls.name, m.name)
+      for s in sigs:
+        if s.startsWith(m.name & "("):
+          nsError(ctx.config, m.info, ndDuplicateMember, cls.name, m.name)
+      names.add m.name
+    else: discard
+
 proc checkSupported(ctx: NsCheckContext; cls: NsNode) =
   ## Features the frontend can parse but does not lower are rejected loudly
   ## rather than dropped silently; ignoring `interface` or `override` produced
   ## programs that looked like they worked.
+  ctx.checkDuplicates(cls)
   for m in cls.sons:
     if m.kind == nsnOperatorDecl and m.name in ["true", "false"]:
       nsError(ctx.config, m.info, ndUnsupported, "'operator " & m.name & "'")
