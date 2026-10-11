@@ -2403,13 +2403,17 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       if p.typ != nil: ctx.declare(p.name, ctx.classifyType(p.typ), declTypeName(p.typ),
                                    p.typ)
       else: ctx.declare(p.name, tkUnknown)
-    if n.body != nil:
+    if n.body != nil and n.body.strVal == "expr" and n.body.sons.len == 1:
+      ## `() => e`: the expression is the lambda's result.
+      let e = n.body.sons[0]
+      if ctx.retType != nil and ctx.retType.kind != nsnVoidType:
+        ctx.targetTyped(e, ctx.retType)
+      discard ctx.walkExpr(e)
+      if ctx.retType != nil and ctx.retType.kind != nsnVoidType:
+        ## `() => "s"` for a `Func<int>` (CS0029).
+        ctx.checkConvertible(e, ctx.targetOfType(ctx.retType), e.info)
+    elif n.body != nil:
       ctx.walkInScope(n.body.sons)
-      if n.body.strVal == "expr" and n.body.sons.len == 1 and ctx.retType != nil and
-         ctx.retType.kind != nsnVoidType:
-        ## `() => "s"` for a `Func<int>`: the expression is the result (CS0029).
-        ctx.checkConvertible(n.body.sons[0], ctx.targetOfType(ctx.retType),
-                             n.body.sons[0].info)
     ctx.yieldHost = savedHost
     dec ctx.lambdaDepth
     ctx.retType = savedLamRet
@@ -2598,12 +2602,11 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
       ## The lambda takes another number of parameters than its delegate (CS1593).
       nsError(ctx.config, n.body.info, ndLambdaArity, typeSpelling(n.typ), $n.body.params.len)
     applySig(n.body, sig)
-  if n.kind == nsnLocalDecl and n.typ != nil and n.body != nil and
-     n.body.kind in {nsnIdent, nsnMember}:
-    ctx.checkMethodGroup(n.body, n.typ)
   if n.kind == nsnLocalDecl: ctx.checkTypeArgs(n.typ)
   if n.body != nil:
     let initKind = ctx.walkExpr(n.body)
+    if n.kind == nsnLocalDecl and n.typ != nil and n.body.kind in {nsnIdent, nsnMember}:
+      ctx.checkMethodGroup(n.body, n.typ)
     if n.typ == nil:
       kind = initKind
       if n.body.kind == nsnTernary and n.body.sons.len == 3:

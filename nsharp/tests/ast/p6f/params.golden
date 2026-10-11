@@ -1145,8 +1145,8 @@ nkStmtList
               nkStmtList
                 nkInfix
                   nkIdent '=='
-                  nkInfix
-                    nkIdent 'mod'
+                  nkCall
+                    nkIdent 'nsMod'
                     nkIdent 'x'
                     nkIntLit 2
                   nkIntLit 1

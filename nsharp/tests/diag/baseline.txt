@@ -17,7 +17,7 @@ console_wrong CS1503 nim
 continue_outside CS0139 match
 ctor_arg_count CS7036 match
 ctor_arg_type CS1503 match
-delegate_mismatch CS0123 nim
+delegate_mismatch CS0123 match
 dict_wrong_key CS1503 nim
 dup_local CS0128 match
 dup_member CS0102 match
@@ -39,7 +39,7 @@ instance_from_static CS0120 match
 int_to_enum CS0266 match
 interface_instance CS0144 match
 lambda_arity CS1593 match
-lambda_wrong_ret CS0029 nim
+lambda_wrong_ret CS0029 match
 list_add_wrong CS1503 nim
 long_to_int CS0266 match
 math_wrong CS1503 nim
