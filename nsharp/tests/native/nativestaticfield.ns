@@ -1,0 +1,9 @@
+using NSharp.Interop;
+namespace Demo
+{
+    [Native("Game::Thing", Header = "game.hpp")]
+    public class Thing
+    {
+        public static int Count;
+    }
+}

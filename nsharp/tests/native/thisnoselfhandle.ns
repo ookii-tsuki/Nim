@@ -1,0 +1,13 @@
+using NSharp.Interop;
+namespace Demo
+{
+    [Native("Game::Unit", Header = "game.hpp", Handle = "Game::UnitRef<{0}>")]
+    public class Unit
+    {
+    }
+
+    class Soldier : Unit
+    {
+        Unit Me() => this;
+    }
+}

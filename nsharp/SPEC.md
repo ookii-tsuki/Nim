@@ -840,9 +840,9 @@ binding (`Toybox.ns`) and C++-driven tests (`run_native.sh`).
 | `[Native]` struct: fields, `extern` constructors, operators, `static extern` properties | ✅ v1 | desugar: an `importcpp` object; members are `importcpp` procs (`Ns::T(@)`, `(# + #)`, `Ns::T::P`) |
 | `[Native]` class: fields, `extern` instance/static/generic methods | ✅ v1 | desugar: `importcpp` procs over `ptr T` (`#->M(@)`); a generic method takes one `typedesc` per type parameter, named in the pattern (`#->template M<'**2>(@)`); a result may be dropped |
 | `[Native("pattern")]` on an `extern` member | ✅ v1 | the C++ call as an `importcpp` pattern (`Ns::Print("%s", @)`) |
-| Handle classes: `Handle = "Ns::Id<{0}>"`, `SelfHandle = "id"` | ✅ v1 | a variable of the class (or of an N# class deriving it) is the handle `NsH_<Class>[T]`; member access dereferences it, `null`/`== null`/`?.` mean "invalid", using an invalid one throws `NullReferenceException` (not under `-d:danger`); casts and upcasts convert between handles of one family; `this` as a value is its own handle through `SelfHandle`, since the engine may move the object |
+| Handle classes: `Handle = "Ns::Id<{0}>"`, `SelfHandle = "id"` | ✅ v1 | a variable of the class (or of an N# class deriving it) is the handle `NsH_<Class>[T]`; member access dereferences it, `null`/`== null`/`?.` mean "invalid", using an invalid one throws `NullReferenceException` (not under `-d:danger`); casts and upcasts convert between handles of one family; `this` as a value is its own handle through `SelfHandle`, since the engine may move the object (without a handle, or without `SelfHandle`, `this` is only a receiver: NS9902/NS9903 as a value). `new` of a native class, or of one deriving it, is NS9901: the engine creates and owns it |
 | N# class deriving a native class | ✅ v1 | desugar: a C++ struct deriving it (`object of T`, `exportc`); a method is a C++ member function (`{.member.}`), which a concept-checking engine finds by name; an `override` of a native `virtual` is a C++ override (`{.virtual.}`) |
-| ... its fields | ✅ v1 for plain data | numbers, `bool`, `char`, enums, native structs, handles: the engine moves the object as bytes and never runs a Nim destructor, so a `string`, array or class field is NS9999, as are field initializers, constructors, properties, interfaces and generic instance methods |
+| ... its fields | ✅ v1 for plain data | numbers, `bool`, `char`, enums, native structs, handles: the engine moves the object as bytes and never runs a Nim destructor, so a `string`, array or class field is NS9999, as are field initializers, properties, interfaces and generic instance methods; a constructor is NS9905 (the engine constructs the object) |
 | `[Export("name")]` on a static method | ✅ v1 | desugar: an `exportc` wrapper C++ calls; the host calls `NimMain()` first (`--noMain`) |
 | `base.M()` on a native `virtual` | 🔜 later | |
 | Engine-owned destructors for managed fields | 🔜 later | a generated C++ destructor and move constructor |
@@ -995,7 +995,7 @@ that C# lacks, exposed deliberately.
 | **LSP** (completion, hover, goto-def, refs, outline, rename) | full support for `.ns` | ✅ v1 | via `nimsuggest`/`nimlangserver`; requires extension-aware parse |
 | Syntax highlighting | `.ns` grammar for VS Code et al. | ✅ v1 | TextMate/Tree-sitter (client side) |
 | Error style | mirror C# compiler message *text* | ✅ v1 | code leads the message: `app.ns(15, 13) Error: NS0246: The type or namespace name 'X' could not be found` |
-| Error codes | mirror C# | ✅ v1 | the digits are C#'s code for the same condition (`NS0246` is `CS0246`); `NS9999` is the single code for a construct N# does not support yet, and the rest of the 9xxx band is reserved for conditions C# accepts, which have nothing to mirror. `compiler/nsharp/diagnostics.nim` owns the table, and `run_cs.sh` checks each `.fail` marker against the code Roslyn reports |
+| Error codes | mirror C# | ✅ v1 | the digits are C#'s code for the same condition (`NS0246` is `CS0246`); `NS9999` is the single code for a construct N# does not support yet, and a rule C# does not have (native interop's) takes a code from `NS9901` up, clear of the `CS9xxx` codes C# keeps adding. `compiler/nsharp/diagnostics.nim` owns the table, and `run_cs.sh` checks each `.fail` marker against the code Roslyn reports |
 | Formatter | `nph`/custom | 🔜 later | Nim tooling is Nim-syntax |
 | Debugger | native DWARF/PDB | ✅ v1 | Nim emits standard debug info |
 | Package manager (Nimble) | `.ns` sources in packages | 🔜 later | - |
@@ -1004,7 +1004,7 @@ that C# lacks, exposed deliberately.
 
 A diagnostic's digits are the C# code for the same condition. `NS9999` is the one
 code for every construct N# does not support yet, so closing a gap retires no code,
-and the rest of the 9xxx band covers the conditions C# accepts.
+and a rule of N#'s own, which C# does not have, takes a code from `NS9901` up: the `CS9xxx` band below it is the C# compiler's, and it keeps growing.
 `compiler/nsharp/diagnostics.nim` is the source of truth for the text as well as the
 code:
 
@@ -1041,6 +1041,15 @@ code:
 | `NS0065`/`NS0079` | CS0065/CS0079 | an event with accessors that lacks one, or is used other than by `+=`/`-=` |
 | `NS0574`/`NS0575` | CS0574/CS0575 | a finalizer not named after its class, or in a struct |
 | `NS9998` | - | warning: a finalizer, which never runs in N# |
+| `NS9901` | - | `new` of a native class, or of a class deriving one: the engine creates it |
+| `NS9902` | - | `this` as a value in a class whose native base has no handle |
+| `NS9903` | - | `this` as a value when the handle class names no `SelfHandle` |
+| `NS9904` | - | an `extern` member outside a `[Native]` type |
+| `NS9905` | - | a constructor in a native class binding, or in a class deriving one |
+| `NS9906` | - | `[Export]` on anything but a non-generic static method |
+| `NS9907` | - | a `[Native]` type deriving a type that is not `[Native]` |
+| `NS9908` | - | a member of a `[Native]` type that is not `extern`, or has a body |
+| `NS9909` | - | a static or initialised field in a `[Native]` type |
 | `NS0019`/`NS0023` | CS0019/CS0023 | an operator applied to operands it does not take (`&&` on ints, `-` on a string) |
 | `NS0021`/`NS1579` | CS0021/CS1579 | indexing or `foreach` over a value that has neither |
 | `NS0026`/`NS0120` | CS0026/CS0120 | `this` or an instance member used in a static context |
@@ -1162,7 +1171,7 @@ flag=True       # the .csout, which is what C# prints
 | **D5** | Entry point | ✅ both top-level statements and `Main` | parser (top-level statements become `static void Main(string[] args)` of a synthesized `Program` in the global namespace, as C# defines them; their local functions are `Main`'s, declared forward so a call may precede them) |
 | **D6** | Null model | ✅ `nil`-able refs, `?` annotation; `Option[T]` for `T?`; `null` deref → `NullReferenceException` (§4.4) | lib |
 | **D7** | `decimal` | ✅ later (lib), not core | lib |
-| **D8** | Error codes/style | ✅ codes mirror C#'s digits, `NS9xxx` for the rest (§17) | tooling |
+| **D8** | Error codes/style | ✅ codes mirror C#'s digits; `NS9999` for what is not supported yet, `NS99xx` for N#'s own rules (§17) | tooling |
 
 **Resolved this round:** `char` = 1 byte; `string` = Nim UTF-8 mutable (§4.4);
 overflow default unchecked + `checked`/`unchecked` via `push`/`pop` (§7.3);

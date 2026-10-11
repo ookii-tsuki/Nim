@@ -1,0 +1,11 @@
+using Toybox;
+namespace Demo
+{
+    class Court : Stage
+    {
+        public override void Begin()
+        {
+            var n = new Node();
+        }
+    }
+}

@@ -1,0 +1,30 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "NSharp/Interop"
+  nkTypeSection
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Thing'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Game::Thing"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "game.hpp"
+          nkIdent 'inheritable'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+  nkStmtList

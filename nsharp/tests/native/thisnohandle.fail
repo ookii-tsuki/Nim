@@ -1,0 +1,2 @@
+'this' as a value in a class whose native base has no handle.
+code: NS9902

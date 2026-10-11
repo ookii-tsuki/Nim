@@ -1,0 +1,8 @@
+using NSharp.Interop;
+namespace Demo
+{
+    public class Plain { }
+
+    [Native("Game::Thing", Header = "game.hpp")]
+    public class Thing : Plain { }
+}

@@ -1,0 +1,9 @@
+using NSharp.Interop;
+namespace Demo
+{
+    class Hooks
+    {
+        [Export("nsPoke")]
+        public void Poke() { }
+    }
+}

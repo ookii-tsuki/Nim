@@ -1,0 +1,123 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "NSharp/Interop"
+  nkTypeSection
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'NsH_Unit'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Game::UnitRef<'0>"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "game.hpp"
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Unit'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Game::Unit"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "game.hpp"
+          nkIdent 'inheritable'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Soldier'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'exportc'
+            nkStrLit "Soldier"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkIdent 'Unit'
+        nkRecList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Me'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Unit'
+        nkIdent 'Unit'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Soldier'
+        nkEmpty
+    nkPragma
+      nkIdent 'member'
+    nkEmpty
+    nkEmpty
+  nkStmtList
+    nkCall
+      nkIdent 'nsHandleProcs'
+      nkIdent 'NsH_Unit'
+      nkIdent 'Unit'
+      nkStrLit "game.hpp"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Me'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Unit'
+        nkIdent 'Unit'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Soldier'
+        nkEmpty
+    nkPragma
+      nkIdent 'member'
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkCall
+          nkIdent 'nsAs'
+          nkCall
+            nkIdent 'nsAs'
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent ''
+            nkBracketExpr
+              nkIdent 'NsH_Unit'
+              nkIdent 'Soldier'
+          nkBracketExpr
+            nkIdent 'NsH_Unit'
+            nkIdent 'Unit'

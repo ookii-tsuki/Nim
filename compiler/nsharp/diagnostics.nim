@@ -3,8 +3,9 @@
 # Every N# diagnostic, with the code it reports. The digits are the code the C#
 # compiler uses for the same condition, so an N# error can be looked up in the C#
 # documentation: `NS0246` is `CS0246`. `NS9999` is the one code for every construct
-# N# does not support yet, so a temporary gap occupies no code of its own, and the
-# rest of the 9xxx band is reserved for conditions C# accepts.
+# N# does not support yet, so a temporary gap occupies no code of its own. Rules C#
+# does not have -- those of N#'s own native interop -- take codes from `NS9901` up,
+# which is clear of the `CS9xxx` codes the C# compiler keeps adding below it.
 
 import std/strutils
 import ../lineinfos, ../msgs, ../options
@@ -145,6 +146,15 @@ type
     ndYieldHere
     ndErrorDirective
     ndWarningDirective
+    ndNativeNew
+    ndNativeThisNoHandle
+    ndNativeNoSelfHandle
+    ndExternOutsideNative
+    ndNativeCtor
+    ndExportMisplaced
+    ndNativeBaseNotNative
+    ndNativeMemberNotExtern
+    ndNativeFieldStatic
     ndUnsupported
 
   NsDiagInfo* = tuple[code, msg: string]
@@ -354,6 +364,27 @@ const
                         " method or lambda expression"),
     ndErrorDirective: (code: "1029", msg: "#error: '$1'"),
     ndWarningDirective: (code: "1030", msg: "#warning: '$1'"),
+    ndNativeNew: (code: "9901", msg: "Cannot create an instance of '$1' with 'new': it is" &
+                        " a native class, which the engine creates and owns; use the" &
+                        " engine's own factory"),
+    ndNativeThisNoHandle: (code: "9902", msg: "'this' cannot be used as a value in '$1':" &
+                        " its native base '$2' has no handle, and the engine may move the" &
+                        " object; use 'this' only to reach members"),
+    ndNativeNoSelfHandle: (code: "9903", msg: "'this' cannot be used as a value in '$1':" &
+                        " the handle class '$2' names no 'SelfHandle' in its [Native]" &
+                        " attribute"),
+    ndExternOutsideNative: (code: "9904", msg: "'$1': an 'extern' member must belong to a" &
+                        " type marked [Native]"),
+    ndNativeCtor: (code: "9905", msg: "'$1': a native class, or a class deriving one," &
+                        " cannot declare a constructor; the engine constructs it"),
+    ndExportMisplaced: (code: "9906", msg: "'$1': [Export] applies only to a non-generic" &
+                        " static method"),
+    ndNativeBaseNotNative: (code: "9907", msg: "'$1': a [Native] type cannot derive from" &
+                        " '$2', which is not [Native]"),
+    ndNativeMemberNotExtern: (code: "9908", msg: "'$1': a member of a [Native] type must be" &
+                        " 'extern' and have no body"),
+    ndNativeFieldStatic: (code: "9909", msg: "'$1': a field of a [Native] type is the C++" &
+                        " type's, so it cannot be static or initialised"),
     ndUnsupported: (code: "9999", msg: "$1 is currently unsupported"),
   ]
 

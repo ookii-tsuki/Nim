@@ -56,6 +56,7 @@ type
     undo: seq[seq[(string, NsTypeInfo, bool)]] ## one frame per open scope
     inChecked: bool                            ## inside `checked`: `operator checked` applies
     lambdaDepth: int                           ## inside a lambda: `return` is the lambda's
+    receiver: NsNode                           ## the receiver of the member being walked
     inIterator: bool                           ## the body walked yields: `return` ends it
     assigning: bool                            ## walking a plain assignment's target
 
@@ -1565,6 +1566,7 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## Member access. The receiver's resolved type decides what the member means, and
   ## the declaration that owns it -- this module's, or the prelude's -- decides what
   ## it yields. No member name is special-cased.
+  ctx.receiver = n.body
   var rk = ctx.walkExpr(n.body)
   if rk == tkUnknown and n.body != nil:
     ## The receiver is a qualifier rather than a value: a type or an imported
@@ -1720,6 +1722,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       callee.kind = nsnMember
       callee.body = nsn(nsnThis, callee.info)
   if callee != nil and callee.kind == nsnMember:
+    ctx.receiver = callee.body
     let rk = ctx.walkExpr(callee.body)
     if rk == tkType:
       ## `Class.Method(...)` or `Namespace.Method(...)`: lowering drops the
@@ -2079,6 +2082,20 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     if ctx.isStaticCtx and n.info.line > 0:
       ## `this` names the object a static member does not have (CS0026).
       nsError(ctx.config, n.info, ndThisInStatic)
+    elif n != ctx.receiver and ctx.clsName.len > 0 and ctx.scope.classes.hasKey(ctx.clsName) and
+         ctx.scope.nativeBased(ctx.clsName) and not ctx.scope.isNative(ctx.clsName):
+      ## `this` as a value in a class deriving a native one: the engine may move the
+      ## object, so it is passed as its own handle, which `SelfHandle` reaches.
+      let root = ctx.scope.handleRoot(ctx.clsName)
+      if root.len == 0:
+        var base = ctx.clsName
+        for c in ctx.scope.chain(ctx.clsName):
+          if ctx.scope.isNative(c):
+            base = c
+            break
+        nsError(ctx.config, n.info, ndNativeThisNoHandle, ctx.clsName, base)
+      elif ctx.scope.classes[root].native.selfHandle.len == 0:
+        nsError(ctx.config, n.info, ndNativeNoSelfHandle, ctx.clsName, root)
     n.setType(tkClass, ctx.clsName)
     result = tkClass
   of nsnBase:
@@ -2111,6 +2128,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         ctx.warnObsolete(ctx.scope.classes[cn].obsolete, cn, n.info)
         if ctx.scope.classes[cn].isStatic:
           nsError(ctx.config, n.info, ndStaticClassInstance, cn)
+        elif ctx.scope.classes[cn].classKind == ckClass and ctx.scope.nativeBased(cn):
+          ## A native class, and one deriving it, is the engine's to create and to
+          ## destroy: its own factory (`Spawn<T>()`) makes one.
+          nsError(ctx.config, n.info, ndNativeNew, cn)
         elif ctx.scope.classes[cn].isAbstract or
            ctx.scope.classes[cn].classKind == ckInterface:
           nsError(ctx.config, n.info, ndAbstractInstance, cn)
@@ -3529,32 +3550,36 @@ proc plainNativeData(ctx: NsCheckContext; t: NsNode): bool =
   false
 
 proc checkNative(ctx: NsCheckContext; cls: NsNode) =
-  ## What a `[Native]` binding and a class deriving a native one may contain. The
-  ## rest is NS9999, never dropped.
+  ## What a `[Native]` binding and a class deriving a native one may contain. A rule
+  ## of the native model has its own code (NS99xx); what N# may support later is
+  ## NS9999. Nothing is dropped.
   let native = ctx.scope.isNative(cls.name)
   let based = not native and ctx.scope.nativeBased(cls.name)
   proc unsupported(m: NsNode; what: string) =
     nsError(ctx.config, m.info, ndUnsupported, what)
+  proc named(m: NsNode): string =
+    (if m.kind == nsnCtorDecl: cls.name & "." & cls.name else: cls.name & "." & m.name)
   for m in cls.sons:
     let a = m.attributeNamed("Export")
     if a != nil and (m.kind != nsnMethodDecl or not m.attrs.isStatic or
                      m.typeParams.len > 0):
-      unsupported(m, "'[Export]' on anything but a non-generic static method")
+      nsError(ctx.config, m.info, ndExportMisplaced, named(m))
     if m.attrs.isExtern and not native:
-      unsupported(m, "an 'extern' member outside a '[Native]' type")
+      nsError(ctx.config, m.info, ndExternOutsideNative, named(m))
   if native:
     if cls.typ != nil and not ctx.scope.isNative(canonicalTypeName(cls.typ.name)):
-      unsupported(cls, "a '[Native]' type deriving an N# class")
+      nsError(ctx.config, cls.info, ndNativeBaseNotNative, cls.name,
+              canonicalTypeName(cls.typ.name))
     for m in cls.sons:
       case m.kind
       of nsnFieldDecl:
         if m.attrs.isStatic or m.body != nil:
-          unsupported(m, "a static or initialised field in a '[Native]' type")
+          nsError(ctx.config, m.info, ndNativeFieldStatic, named(m))
       of nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl:
-        if not m.attrs.isExtern or m.body != nil:
-          unsupported(m, "a '[Native]' type's member that is not 'extern'")
         if m.kind == nsnCtorDecl and cls.classKind == ckClass and not m.attrs.isStatic:
-          unsupported(m, "a constructor of a native class (the engine creates them)")
+          nsError(ctx.config, m.info, ndNativeCtor, named(m))
+        elif not m.attrs.isExtern or m.body != nil:
+          nsError(ctx.config, m.info, ndNativeMemberNotExtern, named(m))
       of nsnPropertyDecl:
         if not m.attrs.isExtern or not m.attrs.isStatic:
           unsupported(m, "a '[Native]' property that is not 'static extern'")
@@ -3581,8 +3606,7 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
         if m.typeParams.len > 0 and not m.attrs.isStatic:
           unsupported(m, "a generic method in a class deriving a native one")
       of nsnCtorDecl:
-        unsupported(m, "a constructor in a class deriving a native one (the engine " &
-                       "constructs it)")
+        nsError(ctx.config, m.info, ndNativeCtor, named(m))
       else:
         unsupported(m, "this member in a class deriving a native one")
 
