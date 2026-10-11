@@ -715,3 +715,29 @@ template nsHandleProcs*(H, R: untyped; hdr: untyped) =
   converter nsToRoot*[U](h: H[U]): H[R] {.inject.} = nsAs(h, H[R])
     ## Any handle of the family is one of its root class: an upcast C# makes
     ## implicitly, which a library call (`List<Node>.Add(coin)`) relies on.
+
+# --- managed fields of native-derived classes ------------------------------------
+#
+# A field of a class deriving a native C++ class, whose type Nim manages, is an
+# `NsField[T]` (nsfield.hpp): C++ copies, moves and destroys it through Nim's
+# hooks for `T`, which `nsUseField(T)` registers when the module starts. Nim sees
+# no managed content in it, so it never manages the struct a second time.
+
+when defined(cpp):
+  # Guarded so a C build keeps compiling this module as C.
+  type
+    NsField*[T] {.importcpp: "NsField<'0>", header: "pure/nsharp/nsfield.hpp".} = object
+
+  proc nsVal*[T](f: var NsField[T]): var T {.importcpp: "#.v", header: "pure/nsharp/nsfield.hpp".}
+    ## The value, to read or assign.
+
+  proc nsFieldDestroy[T](p: ptr T) {.cdecl.} = `=destroy`(p[])
+  proc nsFieldCopy[T](d: ptr T; s: ptr T) {.cdecl.} = d[] = s[]
+  proc nsSetHooks[T](t: typedesc[T]; d: proc (p: ptr T) {.cdecl.};
+                     c: proc (d, s: ptr T) {.cdecl.}) {.
+    importcpp: "NsHooks<'1>::Set(@)",
+    header: "pure/nsharp/nsfield.hpp".}
+
+  template nsUseField*(T: typedesc) =
+    ## Registers Nim's hooks for a field type, before the engine creates an object.
+    nsSetHooks(T, nsFieldDestroy[T], nsFieldCopy[T])

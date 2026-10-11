@@ -475,6 +475,7 @@ proc typeRef(l: Lowerer; t: NsNode): PNode =
 
 proc checkNil(l: Lowerer; recvNs: NsNode; recv: PNode; info: TLineInfo): PNode
 proc recvOf(l: Lowerer; n: NsNode): PNode
+proc isManagedNativeField(l: Lowerer; cls, field: string): bool
 proc isHandleValue(l: Lowerer; n: NsNode): bool
 proc memberReceiverChecked(l: Lowerer; n: NsNode): PNode
 
@@ -1026,6 +1027,13 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       l.noteMemberImport(n)
       result = newTree(nkDotExpr, n.info, l.memberReceiverChecked(n),
                        l.id(n.name, n.info))
+      let owner = (if n.body != nil and n.body.kind == nsnThis and l.curClass != nil:
+                     l.curClass.name
+                   elif n.body != nil: n.body.typeName else: "")
+      if l.isManagedNativeField(owner, n.name):
+        ## A Nim-managed field of a native-derived class: its value is in the
+        ## `NsField`.
+        result = newTree(nkCall, n.info, l.id("nsVal", n.info), result)
   of nsnCall: result = l.callToNim(n)
   of nsnIndex:
     if n.strVal.startsWith("count:"):
@@ -3603,16 +3611,53 @@ proc exportWrapper(l: Lowerer; cls, m: NsNode): PNode =
                       l.id("cdecl", info))
   result[6] = newTree(nkStmtList, info, call)
 
+proc plainNativeField(l: Lowerer; t: NsNode): bool =
+  ## A field type C++ may copy and move as bytes: a number, `bool`, `char`, an
+  ## enum, a native struct, or a handle. Anything else is Nim-managed.
+  if t == nil or t.kind != nsnTypeName or t.sons.len > 0: return false
+  let n = canonicalTypeName(t.name)
+  if n in ["int", "uint", "long", "ulong", "short", "ushort", "byte", "sbyte", "float",
+           "double", "bool", "char", "nint", "nuint"]:
+    return true
+  if l.scope.enums.contains(n): return true
+  if l.scope.classes.hasKey(n):
+    if l.scope.handleRoot(n).len > 0: return true
+    if l.scope.isNative(n) and l.scope.classes[n].classKind == ckStruct: return true
+  false
+
+proc isManagedNativeField(l: Lowerer; cls, field: string): bool =
+  ## A field of a class deriving a native one whose type Nim manages: it is held as
+  ## an `NsField[T]`, and read and written through `nsVal`.
+  if cls.len == 0 or not l.scope.classes.hasKey(cls) or not l.scope.nativeBased(cls) or
+     l.scope.isNative(cls):
+    return false
+  let m = l.scope.findMemberInfo(cls, field)
+  if m.name.len == 0 or m.isMethod or m.isProperty or m.isStatic or
+     not l.scope.classes.hasKey(m.owner) or l.scope.isNative(m.owner):
+    return false
+  not l.plainNativeField(m.typ)
+
 proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
-  ## An N# class deriving a native one: a C++ struct deriving it.
+  ## An N# class deriving a native one: a C++ struct deriving it. A field Nim
+  ## manages is an `NsField[T]`, whose hooks the module registers when it starts,
+  ## so C++'s own copies, moves and destruction of the struct keep Nim's counts.
   let info = n.info
   var ol = l
   ol.objTypes = true
   let recList = newNodeI(nkRecList, info)
+  var registered: seq[string] = @[]
+  var inits: seq[NsNode] = @[]
   for m in n.sons:
     if m.kind == nsnFieldDecl and not m.attrs.isStatic:
-      recList.add newTree(nkIdentDefs, m.info, l.exportId(m.name, m.info),
-                          l.typeToNim(m.typ, m.info), empty(m.info))
+      var t = l.typeToNim(m.typ, m.info)
+      if not l.plainNativeField(m.typ):
+        let key = mangleType(m.typ)
+        if key notin registered:
+          registered.add key
+          into.add newTree(nkCall, m.info, l.id("nsUseField", m.info), copyTree(t))
+        t = newTree(nkBracketExpr, m.info, l.id("NsField", m.info), t)
+      recList.add newTree(nkIdentDefs, m.info, l.exportId(m.name, m.info), t, empty(m.info))
+      if m.body != nil: inits.add m
   let objTy = newTree(nkObjectTy, info, empty(info),
                       newTree(nkOfInherit, info, ol.typeToNim(n.typ, info)), recList)
   let pragma = newTree(nkPragma, info,
@@ -3622,6 +3667,25 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
                    newTree(nkTypeDef, info,
                            newTree(nkPragmaExpr, info, l.exportId(n.name, info), pragma),
                            empty(info), objTy))
+  if inits.len > 0:
+    ## The field initializers: a C++ default constructor, which is what the engine's
+    ## `T obj;` runs.
+    let body = newNodeI(nkStmtList, info)
+    for m in inits:
+      var target = newTree(nkDotExpr, m.info, l.id("result", m.info), l.id(m.name, m.info))
+      if not l.plainNativeField(m.typ):
+        target = newTree(nkCall, m.info, l.id("nsVal", m.info), target)
+      var value = l.expr(m.body)
+      if m.typ != nil and m.body.kind in {nsnIntLit, nsnFloatLit}:
+        value = newTree(nkCall, m.info, l.typeToNim(m.typ, m.info), value)
+      body.add newTree(nkAsgn, m.info, target, value)
+    let pd = newNodeI(nkProcDef, info, 7)
+    pd[0] = l.id("nsInit_" & n.name, info)
+    for i in 1 .. 6: pd[i] = empty(info)
+    pd[3] = newTree(nkFormalParams, info, ol.typeToNim(nsnTypeName(n.name, info), info))
+    pd[4] = newTree(nkPragma, info, l.id("constructor", info))
+    pd[6] = body
+    into.add pd
   var staticInits: seq[PNode] = @[]
   for m in n.sons:
     var inner = l

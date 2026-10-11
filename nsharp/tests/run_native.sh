@@ -24,6 +24,8 @@ if ! command -v g++ >/dev/null 2>&1 && ! command -v clang++ >/dev/null 2>&1; the
   exit 0
 fi
 
+asan="${NS_NATIVE_ASAN--fsanitize=address}"   # NS_NATIVE_ASAN= turns it off
+
 for ns in "$dir"/*.ns; do
   [ -f "$ns" ] || continue
   cpp="${ns%.ns}.cpp"
@@ -31,15 +33,19 @@ for ns in "$dir"/*.ns; do
   [ -f "$cpp" ] && [ -f "$exp" ] || continue
   count=$((count + 1))
   bin="/tmp/ns_native_$$"
+  ## AddressSanitizer (over malloc, so it sees Nim's heap too) turns a reference
+  ## count C++ got wrong -- a field freed twice, or never -- into a failure.
   if ! "$NIM" cpp --noMain --exceptions:goto --hints:off --warnings:off --lib:"$lib" \
-        --passC:"-std=c++20 -I$dir/toybox" --compile:"$cpp" -o:"$bin" "$ns" \
+        -d:useMalloc --passC:"-std=c++20 -I$dir/toybox $asan" --passL:"$asan" \
+        --compile:"$cpp" -o:"$bin" "$ns" \
         > /tmp/ns_native_compile.log 2>&1; then
     echo "COMPILE FAIL: ${ns#$root/}"
     grep -E "Error|error:" /tmp/ns_native_compile.log | head -10
     fail=1
     continue
   fi
-  got="$("$bin")"
+  got="$("$bin" 2>/tmp/ns_native_err.log)" || {
+    echo "FAIL (exit status): ${ns#$root/}"; head -20 /tmp/ns_native_err.log; fail=1; continue; }
   want="$(cat "$exp")"
   if [ "$got" = "$want" ]; then
     echo "ok: ${ns#$root/}"

@@ -1,0 +1,68 @@
+using System.Collections.Generic;
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // An N# class, held by reference from inside a C++ object.
+    class Note
+    {
+        public string Text;
+        public Note(string text) { Text = text; }
+    }
+
+    // Nim-managed fields in a class the engine stores by value: Toybox's pool moves
+    // these when it grows and when it removes one, and destroys them at the end.
+    class Pack : Node
+    {
+        string owner = "nobody";
+        List<string> items = new List<string>();
+        int[] slots = new int[3];
+        Note note = new Note("empty");
+        int weight = 10;
+
+        void OnBegin()
+        {
+            owner = "pack" + Bag.Made;
+            Bag.Made++;
+            items.Add("rope");
+            slots[0] = Bag.Made;
+            note = new Note($"{owner} note");
+            Bag.Packs.Add(this);
+        }
+
+        void OnTick(float dt)
+        {
+            items.Add("coin");
+            weight += 1;
+        }
+
+        public string Describe() =>
+            $"{owner}: {items.Count} items, slot {slots[0]}, weight {weight}, {note.Text}";
+    }
+
+    class Bag : Stage
+    {
+        public static int Made;
+        public static List<Node> Packs = new List<Node>();
+
+        public override void Begin()
+        {
+            for (int i = 0; i < 5; i++) Spawn<Pack>();   // the pool grows, moving them
+            Remove(Packs[1]);                              // the rest shift down
+            foreach (var n in Packs)
+                if (n != null) Console.Print(((Pack)n).Describe());
+        }
+
+        public override void Tick(float dt)
+        {
+            Console.Print(((Pack)Packs[4]).Describe());
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start() => Director.Play<Bag>();
+    }
+}

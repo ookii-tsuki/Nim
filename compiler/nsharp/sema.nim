@@ -3535,20 +3535,6 @@ proc checkDuplicates(ctx: NsCheckContext; cls: NsNode) =
       names.add m.name
     else: discard
 
-proc plainNativeData(ctx: NsCheckContext; t: NsNode): bool =
-  ## A field type the engine may move as bytes: a number, `bool`, `char`, an enum,
-  ## a native struct, or a handle.
-  if t == nil or t.kind != nsnTypeName or t.sons.len > 0: return false
-  let n = canonicalTypeName(t.name)
-  if n in ["int", "uint", "long", "ulong", "short", "ushort", "byte", "sbyte", "float",
-           "double", "bool", "char", "nint", "nuint"]:
-    return true
-  if ctx.scope.enums.contains(n): return true
-  if ctx.scope.classes.hasKey(n):
-    if ctx.scope.handleRoot(n).len > 0: return true
-    if ctx.scope.isNative(n) and ctx.scope.classes[n].classKind == ckStruct: return true
-  false
-
 proc checkNative(ctx: NsCheckContext; cls: NsNode) =
   ## What a `[Native]` binding and a class deriving a native one may contain. A rule
   ## of the native model has its own code (NS99xx); what N# may support later is
@@ -3595,13 +3581,7 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
     for m in cls.sons:
       case m.kind
       of nsnFieldDecl:
-        if not m.attrs.isStatic:
-          if m.body != nil:
-            unsupported(m, "a field initializer in a class deriving a native one")
-          if not ctx.plainNativeData(m.typ):
-            unsupported(m, "a field of type '" & typeSpelling(m.typ) &
-                           "' in a class deriving a native one (the engine moves the " &
-                           "object as plain data)")
+        discard   ## any type: a Nim-managed one is held as an `NsField` (desugar)
       of nsnMethodDecl:
         if m.typeParams.len > 0 and not m.attrs.isStatic:
           unsupported(m, "a generic method in a class deriving a native one")
