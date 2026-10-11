@@ -336,6 +336,19 @@ struct Labels {
     }
 };
 
+// --- grids ---------------------------------------------------------------------------
+//
+// Indexed two ways: accessor functions taking the indices, and a vector's operator[].
+
+class Grid {
+public:
+    int w, h;
+    std::vector<float> cells;
+    Grid(int w, int h) : w(w), h(h), cells(w * h) {}
+    float GetCell(int x, int y) const { return cells[y * w + x]; }
+    void SetCell(int x, int y, float v) { cells[y * w + x] = v; }
+};
+
 // --- palettes --------------------------------------------------------------------------
 //
 // A plain class the engine keeps none of: whoever makes one owns it. It cannot be

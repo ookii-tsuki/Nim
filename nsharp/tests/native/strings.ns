@@ -10,7 +10,7 @@ namespace Demo
         {
             Motion m = Spawn<Node>().Attach<Motion>();
             m.Position = new Vec2(7, 0);
-            Console.Print($"property: {m.Description}");
+            Console.Print($"property: {m.Description}, {m.Summary}");
         }
     }
 

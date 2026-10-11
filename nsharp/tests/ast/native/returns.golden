@@ -539,6 +539,118 @@ nkStmtList
               nkIdent 'Live'
               nkIdent 'Painter'
             nkStrLit ""
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "featured: same "
+              nkCall
+                nkIdent 'nsFmt'
+                nkInfix
+                  nkIdent '=='
+                  nkCall
+                    nkIdent 'nsVal'
+                    nkDotExpr
+                      nkIdent 'Painter'
+                      nkIdent 'Featured'
+                  nkCall
+                    nkIdent 'Shared'
+                    nkIdent 'Painter'
+                nkStrLit ""
+            nkStrLit ", live "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'Live'
+              nkIdent 'Painter'
+            nkStrLit ""
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'fresh'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+          nkDotExpr
+            nkIdent 'Painter'
+            nkIdent 'Fresh'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'spare'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+          nkDotExpr
+            nkIdent 'Painter'
+            nkIdent 'Spare'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkStrLit "fresh "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkDotExpr
+                      nkCall
+                        nkIdent 'nsDeref'
+                        nkIdent 'fresh'
+                      nkIdent 'colors'
+                    nkStrLit ""
+                nkStrLit ", spare "
+              nkCall
+                nkIdent 'nsFmt'
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'spare'
+                  nkIdent 'colors'
+                nkStrLit ""
+            nkStrLit ", live "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'Live'
+              nkIdent 'Painter'
+            nkStrLit ""
+      nkAsgn
+        nkIdent 'fresh'
+        nkCall
+          nkIdent 'nsNull'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+      nkAsgn
+        nkIdent 'spare'
+        nkCall
+          nkIdent 'nsNull'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkStrLit "property ones dropped: live "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'Live'
+              nkIdent 'Painter'
+            nkStrLit ""
   nkProcDef
     nkIdent 'nsStart'
     nkEmpty

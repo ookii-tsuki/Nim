@@ -1075,7 +1075,12 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       return newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
         newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(t, info), empty(info),
                                             l.expr(n.body))), br))
-    result = newTree(nkBracketExpr, n.info, l.expr(n.body))
+    ## A native class's indexer takes the C++ object: a handle (or an N#
+    ## reference) dereferenced, `this` as `self`.
+    let native = n.body != nil and l.scope.classes.hasKey(n.body.typeName) and
+                 l.scope.nativeBased(n.body.typeName)
+    result = newTree(nkBracketExpr, n.info,
+                     (if native: l.recvOf(n.body) else: l.expr(n.body)))
     for i in n.sons: result.add l.indexArgToNim(i)
   of nsnNew: result = l.newToNim(n)
   of nsnNewArray:
@@ -3745,7 +3750,10 @@ proc nativeProperty(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
     if given.len == 0:
       if isStatic: return nat.cpp & "::" & m.name & (if setter: " = @" else: "@")
       return ""
-    if '#' in given: return (if isStatic: "#" & given else: given)
+    var isName = true
+    for c in given:
+      if c notin {'a'..'z', 'A'..'Z', '0'..'9', '_'}: isName = false
+    if not isName: return (if isStatic: "#" & given else: given)
     if isStatic: return nat.cpp & "::" & given & (if setter: "(@)" else: "()@")
     access & given & (if setter: "(#)" else: "()")
   proc emit(name: PNode; fp: PNode; pattern: string) =
@@ -3755,9 +3763,18 @@ proc nativeProperty(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
     if handleSide: pd[2] = l.genericParams(@["nsU"], info)
     pd[3] = fp
     pd[4] = l.cppPragma(pattern, header, info)
-    if fp[0].kind == nkIdent and fp[0].ident.s == "string":
-      ## A `const char*` getter (its `Get` pattern may say `#->Title().c_str()`).
-      into.add l.stringReturn(m, pd, pattern, header)
+    ## A getter returning a string or a class N# may own is split as a method
+    ## returning one is, with the getter's own `[return: ...]` attributes.
+    let acc = (if m.params.len > 0: m.params[0] else: nil)
+    let gm = nsn(nsnMethodDecl, info)
+    gm.name = m.name
+    if acc != nil: gm.attributes = acc.attributes
+    let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
+              else: "")
+    if fp[0].kind != nkEmpty and rt == "string":
+      into.add l.stringReturn(gm, pd, pattern, header)
+    elif fp[0].kind != nkEmpty and l.scope.classes.hasKey(rt) and l.scope.ownedFamily(rt):
+      into.add l.ownedReturn(gm, pd, rt, pattern, header)
     else:
       into.add pd
   let getter = (if m.params.len > 0: m.params[0] else: nil)
@@ -3773,6 +3790,59 @@ proc nativeProperty(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
       emit(l.exportId(m.name & "=", info),
            newTree(nkFormalParams, info, empty(info), recvDefs(true),
                    l.identDefs("value", l.nativeParamType(m.typ, info), info)), pattern)
+
+proc nativeIndexer(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
+                   into: PNode) =
+  ## `extern T this[int i] { get; set; }`: Nim's `[]` and `[]=` over the C++ the
+  ## indexer's `[Native(Get = .., Set = ..)]` names -- a member function's name,
+  ## which takes the indices (and, setting, the value after them:
+  ## `#->GetChild(i)`, `#->SetChild(i, value)`), or a pattern (`"(*#)[#]"`).
+  let info = m.info
+  let pn = nativeOf(m)
+  let isStruct = cls.classKind == ckStruct
+  let access = (if isStruct: "#." else: "#->")
+  proc expand(given: string): string =
+    var isName = given.len > 0
+    for c in given:
+      if c notin {'a'..'z', 'A'..'Z', '0'..'9', '_'}: isName = false
+    (if isName: access & given & "(@)" else: given)
+  proc recv(mutable: bool): PNode =
+    if isStruct:
+      l.identDefs("self", (if mutable: newTree(nkVarTy, info, l.id(cls.name, info))
+                           else: l.id(cls.name, info)), info)
+    else:
+      l.identDefs("self", newTree(nkPtrTy, info, l.id(cls.name, info)), info)
+  let getter = (if m.sons.len > 0: m.sons[0] else: nil)
+  let setter = (if m.sons.len > 1: m.sons[1] else: nil)
+  if getter != nil and pn.get.len > 0:
+    let pattern = expand(pn.get)
+    let fp = newTree(nkFormalParams, info, l.typeToNim(m.typ, info), recv(false))
+    for p in m.params: fp.add l.identDefs(p.name, l.nativeParamType(p.typ, p.info), p.info)
+    let pd = newNodeI(nkProcDef, info, 7)
+    pd[0] = l.exportId("[]", info)
+    for i in 1 .. 6: pd[i] = empty(info)
+    pd[3] = fp
+    pd[4] = l.cppPragma(pattern, header, info)
+    ## A string, or a class N# may own, is returned as a method returns one.
+    let gm = nsn(nsnMethodDecl, info)
+    gm.name = "nsIndex_" & cls.name
+    gm.attributes = getter.attributes
+    let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
+              else: "")
+    if rt == "string": into.add l.stringReturn(gm, pd, pattern, header)
+    elif l.scope.classes.hasKey(rt) and l.scope.ownedFamily(rt):
+      into.add l.ownedReturn(gm, pd, rt, pattern, header)
+    else: into.add pd
+  if setter != nil and pn.set.len > 0:
+    let fp = newTree(nkFormalParams, info, empty(info), recv(true))
+    for p in m.params: fp.add l.identDefs(p.name, l.nativeParamType(p.typ, p.info), p.info)
+    fp.add l.identDefs("value", l.nativeParamType(m.typ, info), info)
+    let pd = newNodeI(nkProcDef, info, 7)
+    pd[0] = l.exportId("[]=", info)
+    for i in 1 .. 6: pd[i] = empty(info)
+    pd[3] = fp
+    pd[4] = l.cppPragma(expand(pn.set), header, info)
+    into.add pd
 
 proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let info = n.info
@@ -3876,6 +3946,8 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       procs.add pd
     of nsnPropertyDecl:
       l.nativeProperty(n, m, nat, header, procs)
+    of nsnIndexerDecl:
+      l.nativeIndexer(n, m, nat, header, procs)
     of nsnOperatorDecl:
       let fp = newNodeI(nkFormalParams, m.info)
       fp.add l.typeToNim(m.typ, m.info)

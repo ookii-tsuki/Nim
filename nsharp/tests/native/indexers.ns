@@ -1,0 +1,20 @@
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // C++ accessors and operator[] as C# indexers.
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start()
+        {
+            Grid g = new Grid(3, 2);
+            g[1, 1] = 2.5f;
+            g[1, 1] += 1;
+            g[0] = 7;
+            g[5] = g[0] * 2;
+            Console.Print($"cell {(int)(g[1, 1] * 10)}, flat {(int)g[0]}, same cell {(int)(g[4] * 10)}, last {(int)g[2, 1]}");
+        }
+    }
+}

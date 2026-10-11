@@ -41,6 +41,15 @@ namespace Demo
             Console.Print($"borrowed dropped: live {Painter.Live()}");
             kept = null;
             Console.Print($"copy dropped: live {Painter.Live()}");
+
+            // As properties.
+            Console.Print($"featured: same {Painter.Featured == Painter.Shared()}, live {Painter.Live()}");
+            Palette fresh = Painter.Fresh;
+            Palette spare = Painter.Spare;
+            Console.Print($"fresh {fresh.colors}, spare {spare.colors}, live {Painter.Live()}");
+            fresh = null;
+            spare = null;
+            Console.Print($"property ones dropped: live {Painter.Live()}");
         }
     }
 }

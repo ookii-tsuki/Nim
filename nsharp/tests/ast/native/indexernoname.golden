@@ -1,0 +1,114 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "NSharp/Interop"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'NsH_Bag'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'p'
+            nkPtrTy
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'keep'
+            nkRefTy
+              nkIdent 'NsBoxBase'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Bag'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Game::Bag"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "game.hpp"
+          nkIdent 'inheritable'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+  nkStmtList
+    nkCall
+      nkIdent 'nsObjProcs'
+      nkIdent 'NsH_Bag'
+      nkIdent 'Bag'
+    nkProcDef
+      nkIdent 'nsPlace_Bag'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Bag'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Game::Bag()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "game.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newBag'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Bag'
+          nkIdent 'Bag'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Bag'
+        nkCall
+          nkIdent 'nsPlace_Bag'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Bag'
+              nkIdent 'Bag'
+            nkIdent 'nsB'

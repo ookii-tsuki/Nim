@@ -295,14 +295,27 @@ nkStmtList
         nkIdent 'Console'
         nkInfix
           nkIdent '&'
-          nkStrLit "property: "
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "property: "
+              nkCall
+                nkIdent 'nsFmt'
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'm'
+                  nkIdent 'Description'
+                nkStrLit ""
+            nkStrLit ", "
           nkCall
             nkIdent 'nsFmt'
             nkDotExpr
               nkCall
                 nkIdent 'nsDeref'
                 nkIdent 'm'
-              nkIdent 'Description'
+              nkIdent 'Summary'
             nkStrLit ""
   nkMethodDef
     nkPostfix

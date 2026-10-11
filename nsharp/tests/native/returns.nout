@@ -6,3 +6,6 @@ borrowed: same true, missing true, live 1
 copy: colors 9, live 2, count 9
 borrowed dropped: live 2
 copy dropped: live 1
+featured: same true, live 1
+fresh 2, spare 3, live 3
+property ones dropped: live 1

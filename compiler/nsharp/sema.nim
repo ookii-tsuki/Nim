@@ -3686,6 +3686,19 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
           nsError(ctx.config, m.info, ndNativeCtor, named(m))
         elif not m.attrs.isExtern or m.body != nil:
           nsError(ctx.config, m.info, ndNativeMemberNotExtern, named(m))
+      of nsnIndexerDecl:
+        ## `extern T this[...]`: each accessor is the C++ it names, never guessed.
+        let pn = nativeOf(m)
+        let getter = (if m.sons.len > 0: m.sons[0] else: nil)
+        let setter = (if m.sons.len > 1: m.sons[1] else: nil)
+        if not m.attrs.isExtern or (getter != nil and getter.kind != nsnEmpty) or
+           (setter != nil and setter.kind != nsnEmpty):
+          nsError(ctx.config, m.info, ndNativeMemberNotExtern, cls.name & ".this[]")
+        else:
+          if getter != nil and pn.get.len == 0:
+            nsError(ctx.config, m.info, ndNativeAccessorUnnamed, cls.name & ".this[]", "getter")
+          if setter != nil and pn.set.len == 0:
+            nsError(ctx.config, m.info, ndNativeAccessorUnnamed, cls.name & ".this[]", "setter")
       of nsnPropertyDecl:
         ## Each accessor is the C++ its `[Native(Get = .., Set = ..)]` names; a
         ## static one with neither is the type's static member.
@@ -3702,8 +3715,16 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
             nsError(ctx.config, m.info, ndNativeAccessorUnnamed, named(m), "setter")
         let pt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
                   else: "")
-        if getter != nil and ctx.scope.classes.hasKey(pt) and ctx.scope.ownedFamily(pt):
-          unsupported(m, "a native property getter returning '" & pt & "'")
+        if getter != nil:
+          ## The getter's own `[return: ...]`: as on a method returning the type.
+          for a in getter.attributes:
+            let short = a.name.split('.')[^1]
+            if a.strVal != "return": continue
+            if short in ["CString", "CStringAttribute"] and pt != "string":
+              nsError(ctx.config, a.info, ndCStringMisplaced, named(m))
+            if short in ["Borrowed", "BorrowedAttribute", "Owned", "OwnedAttribute"] and
+               not (ctx.scope.classes.hasKey(pt) and ctx.scope.ownedFamily(pt)):
+              nsError(ctx.config, a.info, ndReturnOwnership, named(m))
       else:
         unsupported(m, "this member in a '[Native]' type")
   elif based:

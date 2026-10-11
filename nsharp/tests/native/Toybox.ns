@@ -41,6 +41,8 @@ namespace Toybox
         public extern float Speed { get; }
         [Native(Get = "#->Describe().c_str()")]
         public extern string Description { get; }
+        [Native(Get = "Describe")]
+        public extern string Summary { [return: CString("#.c_str()")] get; }
     }
 
     [Native("Toybox::Tag", Header = "toybox.hpp")]
@@ -113,6 +115,14 @@ namespace Toybox
         [return: Borrowed] public static extern Palette Shared();
         [return: Borrowed] public static extern Palette Find(int colors);
         [return: Owned] public static extern Palette Create(string name, int colors);
+
+        // The same, as properties: the getter's own [return: ...] says what it is.
+        [Native(Get = "Shared")]
+        public static extern Palette Featured { [return: Borrowed] get; }
+        [Native(Get = "Toybox::Painter::Make(\"fresh\", 2)")]
+        public static extern Palette Fresh { get; }
+        [Native(Get = "Toybox::Painter::Create(\"spare\", 3)")]
+        public static extern Palette Spare { [return: Owned] get; }
     }
 
     [Native("Toybox::Labels", Header = "toybox.hpp")]
@@ -122,5 +132,15 @@ namespace Toybox
         public static extern string Nothing();
         [return: CString("#.c_str()")] public static extern string Built(int k);
         [return: CString("#.Data()", Length = "#.Size()")] public static extern string Custom();
+    }
+
+    [Native("Toybox::Grid", Header = "toybox.hpp")]
+    public class Grid
+    {
+        public extern Grid(int w, int h);
+        [Native(Get = "GetCell", Set = "SetCell")]
+        public extern float this[int x, int y] { get; set; }
+        [Native(Get = "#->cells[#]", Set = "#->cells[#] = #")]
+        public extern float this[int i] { get; set; }
     }
 }

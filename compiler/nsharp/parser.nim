@@ -1944,6 +1944,8 @@ proc parseAccessors(p: var NsParser; info: TLineInfo): (NsNode, NsNode) =
     if p.at(nsSemi):
       discard p.advance
       continue
+    ## `[return: Borrowed] get;`: an accessor's own attributes.
+    let accAttrs = p.parseAttributes()
     let mods = p.parseModifierList(["public", "private", "protected", "internal"],
                                    ["public", "private", "protected", "internal"])
     if p.at(nsIdent) and p.peek.text in ["get", "set", "init", "add", "remove"]:
@@ -1968,6 +1970,7 @@ proc parseAccessors(p: var NsParser; info: TLineInfo): (NsNode, NsNode) =
         acc.strVal = "access"
       if isInit: acc.name = "init"
       if isEventAcc: acc.name = (if isGet: "add" else: "remove")
+      acc.attributes = accAttrs
       if isGet: getter = acc else: setter = acc
     else:
       p.err(p.peek, ndUnsupported, "this property accessor")
