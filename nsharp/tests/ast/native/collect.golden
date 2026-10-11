@@ -51,6 +51,10 @@ nkStmtList
         nkOfInherit
           nkIdent 'Stage'
         nkRecList
+          nkIdentDefs
+            nkIdent 'nsOwner'
+            nkIdent 'NsOwner'
+            nkEmpty
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -363,6 +367,68 @@ nkStmtList
         nkDotExpr
           nkIdent 'self'
           nkIdent 'worth'
+  nkStmtList
+    nkProcDef
+      nkIdent 'nsPlace_Vault'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Vault'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Vault()"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newVault'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Stage'
+          nkIdent 'Vault'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Vault'
+        nkCall
+          nkIdent 'nsPlace_Vault'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkDotExpr
+            nkDotExpr
+              nkCall
+                nkIdent 'nsAt'
+                nkIdent 'nsB'
+              nkIdent 'nsOwner'
+            nkIdent 'box'
+          nkCast
+            nkIdent 'pointer'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Stage'
+              nkIdent 'Vault'
+            nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -659,7 +725,9 @@ nkStmtList
       nkCall
         nkIdent 'Play'
         nkIdent 'Director'
-        nkIdent 'Vault'
+        nkBracketExpr
+          nkIdent 'NsH_Stage'
+          nkIdent 'Vault'
   nkProcDef
     nkIdent 'nsStart'
     nkEmpty

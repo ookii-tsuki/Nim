@@ -1,0 +1,84 @@
+using System.Collections.Generic;
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // An N# class deriving a plain native one: N# owns it, and `this` keeps it alive.
+    class Warm : Palette
+    {
+        public static List<Palette> Kept = new List<Palette>();
+        string label = "warm";
+
+        public override int Weight() => 100 + label.Length;
+
+        public void Keep() => Kept.Add(this);
+    }
+
+    // An owned reference held by a node the engine stores by value (an `NsField`).
+    class Easel : Node
+    {
+        Palette pal = new Palette("field", 7);
+
+        void OnBegin() => Console.Print($"easel: count {Painter.Count(pal)}, live {Painter.Live()}");
+    }
+
+    // A stage the engine made: `this` is lent, not owned.
+    class Studio : Stage
+    {
+        public override void Begin()
+        {
+            Stage me = this;
+            Console.Print($"studio lends itself: {me != null}");
+            Spawn<Easel>();
+            Spawn<Easel>();
+        }
+    }
+
+    // A native class with no handle is an ordinary N# object: `new` makes one, the
+    // last reference going destroys it, and C++ gets it as a pointer or a reference.
+    static class Entry
+    {
+        static void MakeTemp()
+        {
+            var t = new Palette("t", 1);
+            Console.Print($"temp: live {Painter.Live()}, count {Painter.Count(t)}");
+        }
+
+        [Export("nsStart")]
+        public static void Start()
+        {
+            Palette a = new Palette("a", 3);
+            Console.Print($"count {Painter.Count(a)}, weigh {Painter.Weigh(a)}, live {Painter.Live()}");
+            Palette b = a;
+            b.colors = 5;
+            Console.Print($"shared: {a.colors}, same {a == b}");
+            Palette none = null;
+            Console.Print($"null: count {Painter.Count(none)}, is null {none == null}");
+            MakeTemp();
+            Console.Print($"after temp: live {Painter.Live()}");
+
+            Warm w = new Warm();
+            Console.Print($"warm: weigh {Painter.Weigh(w)}, colors {w.colors}, live {Painter.Live()}");
+            w.Keep();
+            w = null;
+            Console.Print($"kept: live {Painter.Live()}, weigh {Painter.Weigh(Warm.Kept[0])}");
+            Warm.Kept.Clear();
+            Console.Print($"cleared: live {Painter.Live()}");
+
+            a = null;
+            Console.Print($"one left: live {Painter.Live()}");
+            b = null;
+            Console.Print($"dropped: live {Painter.Live()}");
+            try
+            {
+                int c = none.colors;
+            }
+            catch
+            {
+                Console.Print("null deref throws");
+            }
+            Director.Play<Studio>();
+        }
+    }
+}

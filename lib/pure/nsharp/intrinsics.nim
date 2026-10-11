@@ -763,3 +763,74 @@ when defined(cpp):
     writeLine(stderr, "Unhandled exception in a constructor of " & cls & ": " & e.msg &
                       " [" & $e.name & "]")
     quit(1)
+
+  # --- native objects N# owns --------------------------------------------------------
+  #
+  # A class of a native family with no `Handle` is held through `NsH_<Root>[T]`
+  # (declared by the binding's lowering): a pointer to the object, and the box
+  # keeping it alive when N# made it (nil when C++ lent it). `new C(...)` makes
+  # the box, a Nim `ref` whose storage the C++ constructor runs in (placement
+  # new), and whose destruction runs the C++ destructor (nsobj.hpp).
+
+  type
+    NsBoxBase* = object of RootObj
+    NsStorage*[T] {.importcpp: "NsStorage<'0>", header: "pure/nsharp/nsobj.hpp".} = object
+    NsObjBox*[T] = object of NsBoxBase
+      v: NsStorage[T]
+    NsOwner* {.importcpp: "NsOwner", header: "pure/nsharp/nsobj.hpp".} = object
+      ## The box of an object of an N# class deriving a native one, which `this`
+      ## keeps alive; a copy C++ makes has none.
+      box*: pointer
+    NsPass*[R] {.importcpp: "NsPass<'0>", header: "pure/nsharp/nsobj.hpp".} = object
+      ## An N# reference passed to C++, which becomes the pointer or reference the
+      ## parameter is.
+
+  proc nsStorageAt[T](s: NsStorage[T]): ptr T {.importcpp: "#.get()",
+    header: "pure/nsharp/nsobj.hpp".}
+  proc nsDestroyAt[T](p: ptr T) {.importcpp: "nsDestroyAt(#)",
+    header: "pure/nsharp/nsobj.hpp".}
+  proc `=destroy`*[T](b: NsObjBox[T]) =
+    nsDestroyAt(nsStorageAt(b.v))
+  proc `=copy`*[T](d: var NsObjBox[T]; s: NsObjBox[T]) {.error.}
+
+  proc nsNewBox*[T](t: typedesc[T]): ref NsObjBox[T] {.inline.} =
+    ## A box for a `T`, which the caller constructs at `nsAt` before anything
+    ## else can drop it.
+    new(result)
+  proc nsAt*[T](b: ref NsObjBox[T]): ptr T {.inline.} = nsStorageAt(b.v)
+
+  proc nsPtrAs*[T, U](p: ptr U; t: typedesc[T]): ptr T {.importcpp: "static_cast<'0>(#)".}
+    ## A pointer as one to another class of its family.
+  proc nsPassOf*[R](p: ptr R): NsPass[R] {.importcpp: "NsPass<'*1>{#}",
+    header: "pure/nsharp/nsobj.hpp".}
+
+  proc nsKeepOf*(box: pointer): ref NsBoxBase {.inline.} =
+    ## The box an `NsOwner` records, as a reference of its own: assigning from the
+    ## cast counts it, as a copy does.
+    if box != nil:
+      result = cast[ref NsBoxBase](box)
+
+  template nsObjProcs*(H, R: untyped) =
+    ## The helpers of a family N# may own: `H[T]` is its reference type and `R` its
+    ## root class. They mirror `nsHandleProcs`, so lowering treats both alike.
+    proc nsValid*[T](h: H[T]): bool {.inline, inject.} = h.p != nil
+    proc nsDeref*[T](h: H[T]): ptr T {.inline, inject.} =
+      when not defined(danger):
+        if h.p == nil: nsNilFail()
+      h.p
+    proc nsAs*[T, U](h: H[U]; t: typedesc[H[T]]): H[T] {.inline, inject.} =
+      ## As one of another class of the family: an upcast, or a downcast C++
+      ## does not check.
+      H[T](p: nsPtrAs(h.p, T), keep: h.keep)
+    proc nsNull*[T](t: typedesc[H[T]]): H[T] {.inline, inject.} = H[T]()
+    proc `==`*[T, U](a: H[T]; b: H[U]): bool {.inline, inject.} =
+      ## Identity, compared as the root class.
+      nsPtrAs(a.p, R) == nsPtrAs(b.p, R)
+    proc nsMake*[T](t: typedesc[H[T]]; b: ref NsObjBox[T]): H[T] {.inline, inject.} =
+      ## The reference to an object N# just made in `b`.
+      H[T](p: nsAt(b), keep: b)
+    proc nsSelfObj*[T](t: typedesc[H[T]]; p: ptr T; box: pointer): H[T] {.inline, inject.} =
+      ## `this` as a value: kept alive by its box when N# made it, lent otherwise.
+      H[T](p: p, keep: nsKeepOf(box))
+    converter nsToRoot*[U](h: H[U]): H[R] {.inject.} = nsAs(h, H[R])
+    converter nsToPass*[U](h: H[U]): NsPass[R] {.inject.} = nsPassOf(nsPtrAs(h.p, R))

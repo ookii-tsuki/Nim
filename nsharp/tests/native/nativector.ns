@@ -1,7 +1,7 @@
 using NSharp.Interop;
 namespace Demo
 {
-    [Native("Game::Thing", Header = "game.hpp")]
+    [Native("Game::Thing", Header = "game.hpp", Handle = "Game::Ref<{0}>")]
     public class Thing
     {
         public extern Thing(int size);

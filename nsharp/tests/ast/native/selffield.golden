@@ -51,6 +51,33 @@ nkStmtList
         nkEmpty
         nkRecList
     nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'NsH_Stage'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'p'
+            nkPtrTy
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'keep'
+            nkRefTy
+              nkIdent 'NsBoxBase'
+            nkEmpty
+    nkTypeDef
       nkPragmaExpr
         nkPostfix
           nkIdent '*'
@@ -132,6 +159,10 @@ nkStmtList
         nkOfInherit
           nkIdent 'Stage'
         nkRecList
+          nkIdentDefs
+            nkIdent 'nsOwner'
+            nkIdent 'NsOwner'
+            nkEmpty
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -369,6 +400,10 @@ nkStmtList
       nkEmpty
       nkEmpty
   nkStmtList
+    nkCall
+      nkIdent 'nsObjProcs'
+      nkIdent 'NsH_Stage'
+      nkIdent 'Stage'
     nkProcDef
       nkPostfix
         nkIdent '*'
@@ -424,6 +459,59 @@ nkStmtList
         nkIdent 'discardable'
       nkEmpty
       nkEmpty
+    nkProcDef
+      nkIdent 'nsPlace_Stage'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Stage'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Toybox::Stage()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newStage'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Stage'
+          nkIdent 'Stage'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Stage'
+        nkCall
+          nkIdent 'nsPlace_Stage'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Stage'
+              nkIdent 'Stage'
+            nkIdent 'nsB'
   nkStmtList
     nkProcDef
       nkPostfix
@@ -452,7 +540,7 @@ nkStmtList
       nkPragma
         nkExprColonExpr
           nkIdent 'importcpp'
-          nkStrLit "Toybox::Director::Play<'2>(@)"
+          nkStrLit "Toybox::Director::Play<'**2>(@)"
         nkExprColonExpr
           nkIdent 'header'
           nkStrLit "toybox.hpp"
@@ -517,6 +605,68 @@ nkStmtList
           nkBracketExpr
             nkIdent 'NsH_Node'
             nkIdent 'Seed'
+  nkStmtList
+    nkProcDef
+      nkIdent 'nsPlace_Plot'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Plot'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Plot()"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newPlot'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Stage'
+          nkIdent 'Plot'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Plot'
+        nkCall
+          nkIdent 'nsPlace_Plot'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkDotExpr
+            nkDotExpr
+              nkCall
+                nkIdent 'nsAt'
+                nkIdent 'nsB'
+              nkIdent 'nsOwner'
+            nkIdent 'box'
+          nkCast
+            nkIdent 'pointer'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Stage'
+              nkIdent 'Plot'
+            nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -662,7 +812,9 @@ nkStmtList
       nkCall
         nkIdent 'Play'
         nkIdent 'Director'
-        nkIdent 'Plot'
+        nkBracketExpr
+          nkIdent 'NsH_Stage'
+          nkIdent 'Plot'
   nkProcDef
     nkIdent 'nsStart'
     nkEmpty

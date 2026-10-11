@@ -10,6 +10,33 @@ nkStmtList
     nkStrLit "NSharp/Interop"
   nkTypeSection
     nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'NsH_Thing'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'p'
+            nkPtrTy
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'keep'
+            nkRefTy
+              nkIdent 'NsBoxBase'
+            nkEmpty
+    nkTypeDef
       nkPragmaExpr
         nkPostfix
           nkIdent '*'
@@ -28,3 +55,60 @@ nkStmtList
         nkEmpty
         nkRecList
   nkStmtList
+    nkCall
+      nkIdent 'nsObjProcs'
+      nkIdent 'NsH_Thing'
+      nkIdent 'Thing'
+    nkProcDef
+      nkIdent 'nsPlace_Thing'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Thing'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Game::Thing()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "game.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newThing'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Thing'
+          nkIdent 'Thing'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Thing'
+        nkCall
+          nkIdent 'nsPlace_Thing'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Thing'
+              nkIdent 'Thing'
+            nkIdent 'nsB'

@@ -10,6 +10,33 @@ nkStmtList
     nkStrLit "NSharp/Interop"
   nkTypeSection
     nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'NsH_World'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'p'
+            nkPtrTy
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'keep'
+            nkRefTy
+              nkIdent 'NsBoxBase'
+            nkEmpty
+    nkTypeDef
       nkPragmaExpr
         nkPostfix
           nkIdent '*'
@@ -28,6 +55,10 @@ nkStmtList
         nkEmpty
         nkRecList
   nkStmtList
+    nkCall
+      nkIdent 'nsObjProcs'
+      nkIdent 'NsH_World'
+      nkIdent 'World'
     nkProcDef
       nkPostfix
         nkIdent '*'
@@ -51,3 +82,56 @@ nkStmtList
         nkIdent 'varargs'
       nkEmpty
       nkEmpty
+    nkProcDef
+      nkIdent 'nsPlace_World'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'World'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Game::World()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "game.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newWorld'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_World'
+          nkIdent 'World'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'World'
+        nkCall
+          nkIdent 'nsPlace_World'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_World'
+              nkIdent 'World'
+            nkIdent 'nsB'

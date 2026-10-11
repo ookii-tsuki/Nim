@@ -2139,7 +2139,8 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
             base = c
             break
         nsError(ctx.config, n.info, ndNativeThisNoHandle, ctx.clsName, base)
-      elif ctx.scope.classes[root].native.selfHandle.len == 0:
+      elif ctx.scope.classes[root].native.handle.len > 0 and
+           ctx.scope.classes[root].native.selfHandle.len == 0:
         nsError(ctx.config, n.info, ndNativeNoSelfHandle, ctx.clsName, root)
       elif ctx.inCtor and not ctx.ctorIsStatic:
         nsWarn(ctx.config, n.info, ndNativeCtorEarly, "this", ctx.clsName)
@@ -2175,9 +2176,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         ctx.warnObsolete(ctx.scope.classes[cn].obsolete, cn, n.info)
         if ctx.scope.classes[cn].isStatic:
           nsError(ctx.config, n.info, ndStaticClassInstance, cn)
-        elif ctx.scope.classes[cn].classKind == ckClass and ctx.scope.nativeBased(cn):
-          ## A native class, and one deriving it, is the engine's to create and to
-          ## destroy: its own factory (`Spawn<T>()`) makes one.
+        elif ctx.scope.classes[cn].classKind == ckClass and ctx.scope.engineOwned(cn):
+          ## A class of a handle family is the engine's to create and to destroy:
+          ## its own factory (`Spawn<T>()`) makes one. One of a family with no
+          ## handle is N#'s, like any other object.
           nsError(ctx.config, n.info, ndNativeNew, cn)
         elif ctx.scope.classes[cn].isAbstract or
            ctx.scope.classes[cn].classKind == ckInterface:
@@ -3617,7 +3619,8 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
         if m.attrs.isStatic or m.body != nil:
           nsError(ctx.config, m.info, ndNativeFieldStatic, named(m))
       of nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl:
-        if m.kind == nsnCtorDecl and cls.classKind == ckClass and not m.attrs.isStatic:
+        if m.kind == nsnCtorDecl and cls.classKind == ckClass and not m.attrs.isStatic and
+           ctx.scope.engineOwned(cls.name):
           nsError(ctx.config, m.info, ndNativeCtor, named(m))
         elif not m.attrs.isExtern or m.body != nil:
           nsError(ctx.config, m.info, ndNativeMemberNotExtern, named(m))

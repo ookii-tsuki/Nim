@@ -979,7 +979,16 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       ## `this` as a value in a native-derived class: the engine may move the
       ## object, so it is never kept as a pointer but as its own handle.
       let root = l.scope.handleRoot(l.curClass.name)
-      if root.len > 0:
+      if root.len > 0 and l.scope.ownedFamily(l.curClass.name):
+        ## Kept alive by the box N# made it in, if it did: lent otherwise.
+        result = newTree(nkCall, n.info, l.id("nsSelfObj", n.info),
+                         newTree(nkBracketExpr, n.info, l.id("NsH_" & root, n.info),
+                                 l.id(l.curClass.name, n.info)),
+                         l.id("self", n.info),
+                         newTree(nkDotExpr, n.info,
+                                 newTree(nkDotExpr, n.info, l.id("self", n.info),
+                                         l.id("nsOwner", n.info)), l.id("box", n.info)))
+      elif root.len > 0:
         result = newTree(nkCall, n.info, l.id("nsAs", n.info),
                          newTree(nkCall, n.info, l.id("nsSelfOf_" & root, n.info), result),
                          newTree(nkBracketExpr, n.info, l.id("NsH_" & root, n.info),
@@ -3453,6 +3462,11 @@ proc nativeParamType(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   ## A C# `string` reaches C++ as `const char*`.
   if t != nil and t.kind == nsnTypeName and canonicalTypeName(t.name) == "string":
     return l.id("cstring", info)
+  if t != nil and t.kind == nsnTypeName and l.scope.classes.hasKey(canonicalTypeName(t.name)) and
+     l.scope.ownedFamily(canonicalTypeName(t.name)):
+    ## An N# reference reaches C++ as whatever the parameter is: `X*` or `X&`.
+    return newTree(nkBracketExpr, info, l.id("NsPass", info),
+                   l.id(l.scope.handleRoot(canonicalTypeName(t.name)), info))
   l.typeToNim(t, info)
 
 proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PNode =
@@ -3509,6 +3523,47 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PN
   result[5] = empty(info)
   result[6] = empty(info)
 
+proc ownedNew(l: Lowerer; cls: NsNode; params: seq[PNode]; ctor, header: string;
+              info: TLineInfo; into: PNode) =
+  ## `new C(args)` for a class N# owns: `nsPlace_C(p, args)` runs the C++ constructor
+  ## `ctor` in a fresh box (placement new), and `newC(args)` returns the reference
+  ## holding it. An N# class deriving a native one also records the box, which
+  ## `this` as a value keeps alive.
+  let root = l.scope.handleRoot(cls.name)
+  let place = newNodeI(nkProcDef, info, 7)
+  place[0] = l.id("nsPlace_" & cls.name, info)
+  for i in 1 .. 6: place[i] = empty(info)
+  place[3] = newTree(nkFormalParams, info, empty(info),
+                     l.identDefs("nsP", newTree(nkPtrTy, info, l.id(cls.name, info)), info))
+  for p in params: place[3].add copyTree(p)
+  place[4] = l.cppPragma("new (#) " & ctor, header, info)
+  into.add place
+  let href = newTree(nkBracketExpr, info, l.id("NsH_" & root, info), l.id(cls.name, info))
+  let body = newNodeI(nkStmtList, info)
+  body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id("nsB", info), empty(info),
+    newTree(nkCall, info, l.id("nsNewBox", info), l.id(cls.name, info))))
+  let call = newTree(nkCall, info, l.id("nsPlace_" & cls.name, info),
+                     newTree(nkCall, info, l.id("nsAt", info), l.id("nsB", info)))
+  for p in params:
+    for k in 0 ..< p.len - 2:
+      call.add l.id((if p[k].kind == nkPostfix: p[k][1] else: p[k]).ident.s, info)
+  body.add call
+  if not l.scope.isNative(cls.name):
+    body.add newTree(nkAsgn, info,
+      newTree(nkDotExpr, info, newTree(nkDotExpr, info,
+        newTree(nkCall, info, l.id("nsAt", info), l.id("nsB", info)), l.id("nsOwner", info)),
+        l.id("box", info)),
+      newTree(nkCast, info, l.id("pointer", info), l.id("nsB", info)))
+  body.add newTree(nkAsgn, info, l.id("result", info),
+                   newTree(nkCall, info, l.id("nsMake", info), href, l.id("nsB", info)))
+  let pd = newNodeI(nkProcDef, info, 7)
+  pd[0] = l.exportId("new" & cls.name, info)
+  for i in 1 .. 6: pd[i] = empty(info)
+  pd[3] = newTree(nkFormalParams, info, copyTree(href))
+  for p in params: pd[3].add copyTree(p)
+  pd[6] = body
+  into.add pd
+
 proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let info = n.info
   let nat = l.scope.classes[n.name].native
@@ -3538,6 +3593,19 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
                             l.cppPragma(nat.handle.replace("{0}", "'0"), header, info)),
                     l.genericParams(@["T"], info),
                     newTree(nkObjectTy, info, empty(info), empty(info), empty(info)))
+  let ownedRoot = n.classKind == ckClass and not n.attrs.isStatic and
+                  l.scope.ownedFamily(n.name) and l.scope.handleRoot(n.name) == n.name
+  if ownedRoot:
+    ## A family with no handle: `NsH_<Class>[T]` is an N# reference, a pointer to the
+    ## object and the box keeping it alive when N# made it (nil when C++ lent it).
+    let rec = newTree(nkRecList, info,
+                      newTree(nkIdentDefs, info, l.exportId("p", info),
+                              newTree(nkPtrTy, info, l.id("T", info)), empty(info)),
+                      newTree(nkIdentDefs, info, l.exportId("keep", info),
+                              newTree(nkRefTy, info, l.id("NsBoxBase", info)), empty(info)))
+    sec.add newTree(nkTypeDef, info, l.exportId("NsH_" & n.name, info),
+                    l.genericParams(@["T"], info),
+                    newTree(nkObjectTy, info, empty(info), empty(info), rec))
   sec.add newTree(nkTypeDef, info,
                   newTree(nkPragmaExpr, info, l.exportId(n.name, info),
                           l.cppPragma(nat.cpp, header, info, extra)),
@@ -3546,6 +3614,9 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   # the members: in a statement list, so the module's forward declarations, which
   # an `importcpp` proc has no body to follow, leave them alone
   let procs = newNodeI(nkStmtList, info)
+  if ownedRoot:
+    procs.add newTree(nkCall, info, l.id("nsObjProcs", info), l.id("NsH_" & n.name, info),
+                      l.id(n.name, info))
   if nat.handle.len > 0:
     ## Validity is the handle's `explicit operator bool` unless `Valid` says how to
     ## test it; the invalid handle is a default-constructed one unless `Null` names it.
@@ -3576,6 +3647,12 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     of nsnCtorDecl:
       if m.attrs.isStatic: continue
       if m.params.len == 0: paramless = true
+      if n.classKind == ckClass:
+        ## A class N# may own: `new C(...)` makes one in a box.
+        var ps: seq[PNode] = @[]
+        for p in m.params: ps.add l.identDefs(p.name, l.nativeParamType(p.typ, p.info), p.info)
+        l.ownedNew(n, ps, nat.cpp & "(@)", header, m.info, procs)
+        continue
       let fp = newNodeI(nkFormalParams, m.info)
       fp.add ol.typeToNim(nsnTypeName(n.name, m.info), m.info)
       for p in m.params: fp.add l.identDefs(p.name, l.nativeParamType(p.typ, p.info), p.info)
@@ -3609,6 +3686,10 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       pd[4] = l.cppPragma(pattern, header, m.info)
       procs.add pd
     else: discard
+  if n.classKind == ckClass and not paramless and not n.attrs.isStatic and
+     not n.attrs.isAbstract and l.scope.ownedFamily(n.name):
+    ## No constructor declared: C#'s implicit parameterless one, C++'s default.
+    l.ownedNew(n, @[], nat.cpp & "()", header, info, procs)
   if n.classKind == ckStruct and not paramless:
     ## `new V()` / `default(V)`: the C++ value-initialised one.
     let fp = newTree(nkFormalParams, info, ol.typeToNim(nsnTypeName(n.name, info), info))
@@ -3651,7 +3732,7 @@ proc plainNativeField(l: Lowerer; t: NsNode): bool =
     return true
   if l.scope.enums.contains(n): return true
   if l.scope.classes.hasKey(n):
-    if l.scope.handleRoot(n).len > 0: return true
+    if l.scope.engineOwned(n): return true
     if l.scope.isNative(n) and l.scope.classes[n].classKind == ckStruct: return true
   false
 
@@ -3688,6 +3769,11 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         t = newTree(nkBracketExpr, m.info, l.id("NsField", m.info), t)
       recList.add newTree(nkIdentDefs, m.info, l.exportId(m.name, m.info), t, empty(m.info))
       if m.body != nil: inits.add m
+  let owned = l.scope.ownedFamily(n.name)
+  if owned:
+    ## The box N# made it in, if it did, which `this` as a value keeps alive.
+    recList.add newTree(nkIdentDefs, info, l.id("nsOwner", info), l.id("NsOwner", info),
+                        empty(info))
   let objTy = newTree(nkObjectTy, info, empty(info),
                       newTree(nkOfInherit, info, ol.typeToNim(n.typ, info)), recList)
   let pragma = newTree(nkPragma, info,
@@ -3745,6 +3831,19 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     pd[4] = newTree(nkPragma, cinfo, l.id("constructor", cinfo))
     pd[6] = body
     into.add pd
+  if owned and not n.attrs.isAbstract:
+    ## `new D(args)`: N# owns what it makes of a family with no handle.
+    let made = newNodeI(nkStmtList, info)
+    if ctors.len == 0:
+      l.ownedNew(n, @[], n.name & "()", "", info, made)
+    for c in ctors:
+      var ps: seq[PNode] = @[]
+      if c != nil:
+        for p in c.params: ps.add l.paramDef(p)
+      l.ownedNew(n, ps, n.name & "(@)", "", (if c != nil: c.info else: info), made)
+    ## In a statement list, which the module's forward declarations leave alone:
+    ## `nsPlace_D` is an `importcpp` proc, with no body to follow.
+    into.add made
   var staticInits: seq[PNode] = @[]
   for m in n.sons:
     var inner = l

@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -293,5 +294,30 @@ public:
 
 template <typename T>
 T* TimerId<T>::operator->() const { return static_cast<T*>(Timers::Table()[id].get()); }
+
+// --- palettes --------------------------------------------------------------------------
+//
+// A plain class the engine keeps none of: whoever makes one owns it. It cannot be
+// copied, and counts the live ones so a test can see each destroyed.
+
+class Palette {
+public:
+    static int& Live() { static int n = 0; return n; }
+    std::string name;
+    int colors = 1;
+    Palette() : name("plain") { Live()++; }
+    Palette(const char* n, int c) : name(n), colors(c) { Live()++; }
+    Palette(const Palette&) = delete;
+    Palette& operator=(const Palette&) = delete;
+    virtual ~Palette() { Live()--; }
+    virtual int Weight() { return colors; }
+};
+
+// Takes them as a pointer (null allowed) or as a reference.
+struct Painter {
+    static int Count(Palette* p) { return p ? p->colors : -1; }
+    static int Weigh(const Palette& p) { return const_cast<Palette&>(p).Weight(); }
+    static int Live() { return Palette::Live(); }
+};
 
 } // namespace Toybox

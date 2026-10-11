@@ -13,6 +13,27 @@ nkStmtList
       nkPragmaExpr
         nkPostfix
           nkIdent '*'
+          nkIdent 'NsH_Thing'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Game::Ref<'0>"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "game.hpp"
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
           nkIdent 'Thing'
         nkPragma
           nkExprColonExpr
@@ -28,14 +49,24 @@ nkStmtList
         nkEmpty
         nkRecList
   nkStmtList
+    nkCall
+      nkIdent 'nsHandleProcs'
+      nkIdent 'NsH_Thing'
+      nkIdent 'Thing'
+      nkStrLit "game.hpp"
+      nkStrLit "static_cast<bool>(#)"
+      nkStrLit "Game::Ref<'1>()"
     nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newThing'
+      nkIdent 'nsPlace_Thing'
       nkEmpty
       nkEmpty
       nkFormalParams
-        nkIdent 'Thing'
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Thing'
+          nkEmpty
         nkIdentDefs
           nkIdent 'size'
           nkIdent 'int32'
@@ -43,10 +74,47 @@ nkStmtList
       nkPragma
         nkExprColonExpr
           nkIdent 'importcpp'
-          nkStrLit "Game::Thing(@)"
+          nkStrLit "new (#) Game::Thing(@)"
         nkExprColonExpr
           nkIdent 'header'
           nkStrLit "game.hpp"
-        nkIdent 'constructor'
       nkEmpty
       nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newThing'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Thing'
+          nkIdent 'Thing'
+        nkIdentDefs
+          nkIdent 'size'
+          nkIdent 'int32'
+          nkEmpty
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Thing'
+        nkCall
+          nkIdent 'nsPlace_Thing'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+          nkIdent 'size'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Thing'
+              nkIdent 'Thing'
+            nkIdent 'nsB'

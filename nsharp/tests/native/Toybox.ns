@@ -77,4 +77,21 @@ namespace Toybox
         public static extern Timer Start(float seconds);
         public static extern void Stop(Timer timer);
     }
+
+    [Native("Toybox::Palette", Header = "toybox.hpp")]
+    public class Palette
+    {
+        public int colors;
+        public extern Palette();
+        public extern Palette(string name, int colors);
+        public virtual extern int Weight();
+    }
+
+    [Native("Toybox::Painter", Header = "toybox.hpp")]
+    public static class Painter
+    {
+        public static extern int Count(Palette palette);
+        public static extern int Weigh(Palette palette);
+        public static extern int Live();
+    }
 }

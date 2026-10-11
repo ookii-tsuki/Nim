@@ -1,0 +1,15 @@
+count 3, weigh 3, live 1
+shared: 5, same true
+null: count -1, is null true
+temp: live 2, count 1
+after temp: live 1
+warm: weigh 104, colors 1, live 2
+kept: live 2, weigh 104
+cleared: live 1
+one left: live 1
+dropped: live 0
+null deref throws
+studio lends itself: true
+easel: count 7, live 1
+easel: count 7, live 2
+at exit: live 0

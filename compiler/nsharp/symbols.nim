@@ -672,8 +672,24 @@ proc nativeBased*(scope: NsModuleScope; clsName: string): bool =
   false
 
 proc handleRoot*(scope: NsModuleScope; clsName: string): string =
-  ## The nearest class (itself first) whose binding names a handle: a variable of
-  ## `clsName` holds that handle. "" when it has none.
+  ## The class whose handle a variable of `clsName` holds: the nearest one (itself
+  ## first) whose binding names a `Handle`, or, in a family with none, its topmost
+  ## native class, whose handle is an N# reference (`NsH_<Root>`: a pointer, and
+  ## the box keeping it alive when N# created it). "" for anything else.
+  var top = ""
   for c in scope.chain(clsName):
-    if scope.classes[c].native.handle.len > 0: return c
-  ""
+    let k = scope.classes[c]
+    if k.native.handle.len > 0: return c
+    if k.native.cpp.len > 0 and k.classKind == ckClass and not k.isStatic: top = c
+  top
+
+proc engineOwned*(scope: NsModuleScope; clsName: string): bool =
+  ## A class whose objects the engine creates and owns: its family has a `Handle`.
+  let r = scope.handleRoot(clsName)
+  r.len > 0 and scope.classes[r].native.handle.len > 0
+
+proc ownedFamily*(scope: NsModuleScope; clsName: string): bool =
+  ## A class of a native family with no `Handle`: N# owns what it creates of it,
+  ## and holds what C++ gives it as a borrowed pointer.
+  let r = scope.handleRoot(clsName)
+  r.len > 0 and scope.classes[r].native.handle.len == 0

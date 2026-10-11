@@ -367,8 +367,8 @@ const
     ndErrorDirective: (code: "1029", msg: "#error: '$1'"),
     ndWarningDirective: (code: "1030", msg: "#warning: '$1'"),
     ndNativeNew: (code: "9901", msg: "Cannot create an instance of '$1' with 'new': it is" &
-                        " a native class, which the engine creates and owns; use the" &
-                        " engine's own factory"),
+                        " a native class with a handle, which the engine creates and owns;" &
+                        " use the engine's own factory"),
     ndNativeThisNoHandle: (code: "9902", msg: "'this' cannot be used as a value in '$1':" &
                         " its native base '$2' has no handle, and the engine may move the" &
                         " object; use 'this' only to reach members"),
@@ -377,8 +377,8 @@ const
                         " attribute"),
     ndExternOutsideNative: (code: "9904", msg: "'$1': an 'extern' member must belong to a" &
                         " type marked [Native]"),
-    ndNativeCtor: (code: "9905", msg: "'$1': a [Native] class cannot declare a" &
-                        " constructor; the engine constructs it"),
+    ndNativeCtor: (code: "9905", msg: "'$1': a [Native] class with a handle cannot" &
+                        " declare a constructor; the engine constructs it"),
     ndExportMisplaced: (code: "9906", msg: "'$1': [Export] applies only to a non-generic" &
                         " static method"),
     ndNativeBaseNotNative: (code: "9907", msg: "'$1': a [Native] type cannot derive from" &
