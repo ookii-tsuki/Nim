@@ -1,0 +1,28 @@
+using System;
+using System.Collections.Generic;
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // Two namespaces with a `Console` each: written qualified, each is its own.
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start()
+        {
+            Toybox.Console.Print("from the engine's console");
+            System.Console.WriteLine("from System's console");
+            var names = new System.Collections.Generic.List<string>();
+            names.Add("x");
+            try
+            {
+                throw new System.InvalidOperationException("qualified throw");
+            }
+            catch (System.InvalidOperationException e)
+            {
+                Toybox.Console.Print($"caught: {e.Message}, {names.Count}");
+            }
+        }
+    }
+}

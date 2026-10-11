@@ -42,7 +42,26 @@ nkStmtList
           nkIdent 'Rig'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Rig'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
     nkEmpty
     nkEmpty
   nkStmtList
@@ -121,7 +140,9 @@ nkStmtList
           nkIdent 'Rig'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -152,3 +173,34 @@ nkStmtList
             nkIdent 'Position'
           nkIdent 'x'
         nkIntLit 5
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Rig'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Begin'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Rig.Begin"

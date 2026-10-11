@@ -79,7 +79,28 @@ nkStmtList
           nkIdent 'Soldier'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Me()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Me'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Unit'
+        nkIdent 'Unit'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Soldier'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Me()"
     nkEmpty
     nkEmpty
   nkStmtList
@@ -107,7 +128,9 @@ nkStmtList
           nkIdent 'Soldier'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Me()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -124,3 +147,38 @@ nkStmtList
           nkBracketExpr
             nkIdent 'NsH_Unit'
             nkIdent 'Unit'
+  nkProcDef
+    nkIdent 'nsCpp_Me'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Unit'
+        nkIdent 'Unit'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Soldier'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Me()"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Me'
+              nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Soldier.Me"

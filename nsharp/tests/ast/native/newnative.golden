@@ -42,7 +42,26 @@ nkStmtList
           nkIdent 'Court'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Court'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
     nkEmpty
     nkEmpty
   nkStmtList
@@ -121,7 +140,9 @@ nkStmtList
           nkIdent 'Court'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -130,3 +151,34 @@ nkStmtList
           nkEmpty
           nkCall
             nkIdent 'newNode'
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Court'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Begin'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Court.Begin"

@@ -48,6 +48,7 @@ type
 
   NsClassSymbol* = object
     name*: string
+    namespace*: string             ## the namespace it is declared in ("" for none)
     native*: NsNative              ## its `[Native]` attribute; `cpp` is "" for N# types
     base*: string
     classKind*: NsClassKind
@@ -193,10 +194,12 @@ proc noteNamespace(scope: NsModuleScope; ns: string) =
     cur = if cur.len == 0: part else: cur & "." & part
     scope.namespaces.incl cur
 
-proc collect*(decl: NsNode; scope: NsModuleScope) =
+proc collect*(decl: NsNode; scope: NsModuleScope; ns = "") =
   case decl.kind
   of nsnClassDecl:
     scope.collectClass(decl)
+    if scope.classes.hasKey(decl.name) and scope.classes[decl.name].decl == decl:
+      scope.classes[decl.name].namespace = ns
   of nsnDelegateDecl:
     scope.delegates[decl.name] = decl
   of nsnEnumDecl:
@@ -210,8 +213,20 @@ proc collect*(decl: NsNode; scope: NsModuleScope) =
       scope.staticUsings.add canonicalTypeName(decl.typ.name)
   of nsnNamespace:
     if decl.body != nil:
-      for d in decl.body.sons: collect(d, scope)
+      for d in decl.body.sons: collect(d, scope, decl.name)
   else: discard
+
+proc foreignQualified*(scope: NsModuleScope; written: string): bool =
+  ## `Ns.T` written with a namespace other than the one the compilation's own `T`
+  ## is declared in (`System.Console` beside a binding's `Toybox.Console`): it
+  ## names the other namespace's type, not this one.
+  let dot = written.rfind('.')
+  if dot <= 0: return false
+  let prefix = written[0 ..< dot]
+  let last = written[dot + 1 .. ^1]
+  scope.classes.hasKey(last) and not scope.classes.hasKey(prefix.split('.')[^1]) and
+    scope.classes[last].namespace.len > 0 and scope.classes[last].namespace != prefix and
+    isDeclaredNamespace(prefix)     ## an alias (`using P = ...`) names the same types
 
 proc isInterface*(scope: NsModuleScope; name: string): bool =
   scope.classes.hasKey(name) and scope.classes[name].classKind == ckInterface

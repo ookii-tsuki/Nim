@@ -79,7 +79,7 @@ nkStmtList
             nkIdent 'Exception'
           nkCall
             nkIdent 'nsEscaped'
-            nkStrLit "Crate"
+            nkStrLit "Crate.Crate"
   nkProcDef
     nkIdent 'nsInit_Crate'
     nkEmpty
@@ -107,4 +107,4 @@ nkStmtList
             nkIdent 'Exception'
           nkCall
             nkIdent 'nsEscaped'
-            nkStrLit "Crate"
+            nkStrLit "Crate.Crate"

@@ -756,13 +756,22 @@ when defined(cpp):
     ## Registers Nim's hooks for a field type, before the engine creates an object.
     nsSetHooks(T, nsFieldDestroy[T], nsFieldCopy[T])
 
-  proc nsEscaped*(cls: string) {.noreturn.} =
-    ## An exception left a constructor the engine ran. C++ cannot see it and the
-    ## object is half made, so the program stops, as on an unhandled exception.
-    let e = getCurrentException()
-    writeLine(stderr, "Unhandled exception in a constructor of " & cls & ": " & e.msg &
-                      " [" & $e.name & "]")
+  proc nsOnUnhandled(where, message, kind: cstring) {.exportc: "nsOnUnhandled", cdecl,
+      codegenDecl: "extern \"C\" __attribute__((weak)) $1 $2$3".} =
+    ## What happens to an exception that would escape into C++ (`nsEscaped`): this
+    ## default reports it and stops the program. It is a weak symbol, so an engine
+    ## defining `extern "C" void nsOnUnhandled(const char* where, const char*
+    ## message, const char* type)` replaces it -- to log through its own console,
+    ## break into a debugger, or return, in which case the C++ entry point returns
+    ## its default result and the program goes on.
+    writeLine(stderr, "Unhandled exception in " & $where & ": " & $message & " [" & $kind & "]")
     quit(1)
+
+  proc nsEscaped*(where: string) =
+    ## An exception reached a place C++ entered N# (`where`: `Class.Member`): C++
+    ## cannot see it, so it is handed to `nsOnUnhandled` and goes no further.
+    let e = getCurrentException()
+    nsOnUnhandled(cstring(where), cstring(e.msg), e.name)
 
   # --- native objects N# owns --------------------------------------------------------
   #

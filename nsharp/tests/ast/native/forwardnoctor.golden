@@ -71,7 +71,26 @@ nkStmtList
           nkIdent 'Yard'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Yard'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -105,7 +124,7 @@ nkStmtList
             nkIdent 'Exception'
           nkCall
             nkIdent 'nsEscaped'
-            nkStrLit "Crate"
+            nkStrLit "Crate.Crate"
   nkStmtList
     nkProcDef
       nkIdent 'nsPlace_Yard'
@@ -182,7 +201,9 @@ nkStmtList
           nkIdent 'Yard'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
     nkEmpty
     nkStmtList
       nkCall
@@ -197,3 +218,34 @@ nkStmtList
         nkCall
           nkIdent 'nsFwd'
           nkIntLit 2
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Yard'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Begin'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Yard.Begin"

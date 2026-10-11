@@ -121,6 +121,16 @@ proc isTypeName(ctx: NsCheckContext; name: string): bool =
     ctx.scope.delegates.hasKey(name) or ctx.scope.enums.contains(name) or
     ctx.scope.namespaces.contains(name)
 
+proc dottedName(n: NsNode): string =
+  ## A receiver as written, `A.B.C`, when it is a chain of names; "" otherwise.
+  if n == nil: return ""
+  case n.kind
+  of nsnIdent: n.name
+  of nsnMember:
+    let head = dottedName(n.body)
+    if head.len == 0: "" else: head & "." & n.name
+  else: ""
+
 proc qualifierRoot(n: NsNode): string =
   ## The innermost name of a dotted receiver: the `System` of `System.Console`, the
   ## `P` of `P.Gadget`. "" when the receiver is not a plain dotted name, which is
@@ -1770,12 +1780,16 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ## `Class.Method(...)` or `Namespace.Method(...)`: lowering drops the
       ## qualifier, and the result type is the method's if the class is known.
       owner = unqualified(callee.body.name)
-      ctx.checkStaticMember(owner, callee.name, callee.info)
-      kind = ctx.memberKind(owner, callee.name)
+      ## `System.Console` beside a binding's own `Console`: the library's.
+      let foreign = ctx.scope.foreignQualified(dottedName(callee.body))
+      if not foreign:
+        ctx.checkStaticMember(owner, callee.name, callee.info)
+        kind = ctx.memberKind(owner, callee.name)
       if kind == tkUnknown:
         ## A static member of a library type: `String.Concat`, `Array.IndexOf`.
         kind = ctx.memberKindOfSurface(ctx.surface.kindOfName(owner), owner,
                                        callee.name, tn)
+      if foreign: owner = ""
     elif rk == tkUnknown and ctx.scope.enums.contains(callee.body.typeName):
       ## A member of an enum value: what the library declares for any value
       ## (`ToString`, `GetType`).

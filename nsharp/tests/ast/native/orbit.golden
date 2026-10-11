@@ -90,7 +90,26 @@ nkStmtList
           nkIdent 'Ball'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_OnBegin()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_OnBegin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Ball'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "OnBegin()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -111,7 +130,30 @@ nkStmtList
         nkIdent 'float32'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_OnTick('2 #2)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_OnTick'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Ball'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'dt'
+        nkIdent 'float32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "OnTick('2 #2)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -128,7 +170,26 @@ nkStmtList
           nkIdent 'Ball'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Bounces()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Bounces'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Ball'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Bounces()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -145,7 +206,26 @@ nkStmtList
           nkIdent 'Court'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Court'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -166,7 +246,30 @@ nkStmtList
         nkIdent 'float32'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Tick('2 #2)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Tick'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Court'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'dt'
+        nkIdent 'float32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Tick('2 #2) override"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -304,7 +407,9 @@ nkStmtList
           nkIdent 'Ball'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_OnBegin()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -349,6 +454,37 @@ nkStmtList
         nkIdent 'Console'
         nkStrLit "ball ready"
   nkProcDef
+    nkIdent 'nsCpp_OnBegin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Ball'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "OnBegin()"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'OnBegin'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Ball.OnBegin"
+  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'OnTick'
@@ -366,7 +502,9 @@ nkStmtList
         nkIdent 'float32'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_OnTick('2 #2)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -525,6 +663,42 @@ nkStmtList
               nkIdent 'bounces'
             nkStrLit ""
   nkProcDef
+    nkIdent 'nsCpp_OnTick'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Ball'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'dt'
+        nkIdent 'float32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "OnTick('2 #2)"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'OnTick'
+            nkIdent 'self'
+            nkIdent 'dt'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Ball.OnTick"
+  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'Bounces'
@@ -538,13 +712,48 @@ nkStmtList
           nkIdent 'Ball'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Bounces()"
     nkEmpty
     nkStmtList
       nkReturnStmt
         nkDotExpr
           nkIdent 'self'
           nkIdent 'bounces'
+  nkProcDef
+    nkIdent 'nsCpp_Bounces'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Ball'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Bounces()"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Bounces'
+              nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Ball.Bounces"
   nkStmtList
     nkProcDef
       nkIdent 'nsPlace_Court'
@@ -621,7 +830,9 @@ nkStmtList
           nkIdent 'Court'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -719,6 +930,37 @@ nkStmtList
               nkStrLit ""
           nkStrLit " times"
   nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Court'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Begin'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Court.Begin"
+  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'Tick'
@@ -736,7 +978,9 @@ nkStmtList
         nkIdent 'float32'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Tick('2 #2)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -767,6 +1011,42 @@ nkStmtList
                 nkIdent 'tag'
               nkIdent 'Value'
             nkStrLit ""
+  nkProcDef
+    nkIdent 'nsCpp_Tick'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Court'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'dt'
+        nkIdent 'float32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Tick('2 #2) override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Tick'
+            nkIdent 'self'
+            nkIdent 'dt'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Court.Tick"
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -855,9 +1135,20 @@ nkStmtList
       nkIdent 'cdecl'
     nkEmpty
     nkStmtList
-      nkCall
-        nkIdent 'Start'
-        nkIdent 'Entry'
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Start'
+            nkIdent 'Entry'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Entry.Start"
   nkProcDef
     nkPostfix
       nkIdent '*'

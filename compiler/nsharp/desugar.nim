@@ -188,6 +188,34 @@ proc baseCall(l: Lowerer; name: string; args: seq[PNode]; info: TLineInfo): PNod
 # (interfaces: see below)
 # --- types ------------------------------------------------------------------
 
+proc writtenName(n: NsNode): string =
+  ## A receiver as written, `A.B.C`, when it is a chain of names; "" otherwise.
+  if n == nil: return ""
+  case n.kind
+  of nsnIdent: n.name
+  of nsnTypeName: n.name
+  of nsnMember:
+    let head = writtenName(n.body)
+    if head.len == 0: "" else: head & "." & n.name
+  else: ""
+
+proc qualifiedName(l: Lowerer; written: string; info: TLineInfo): PNode =
+  ## `Ns.T` written with its namespace: `Module.T`, the namespace's module naming
+  ## it, so two namespaces' `T`s stay apart. The module is imported for qualified
+  ## access only (`from "Ns" import nil`), so it brings nothing else into scope.
+  ## nil for anything else: no qualifier, a class's nested type, a namespace this
+  ## module declares, or a C# keyword type (`System.Int32`).
+  let dot = written.rfind('.')
+  if dot <= 0 or l.imports == nil: return nil
+  let prefix = written[0 ..< dot]
+  let last = written[dot + 1 .. ^1]
+  if prefix in l.ownNamespaces or l.scope.classes.hasKey(unqualified(prefix)): return nil
+  if not (isDeclaredNamespace(prefix) or l.surface.isLibraryNamespace(prefix)): return nil
+  if nimTypeName(last) != last: return nil
+  let path = namespaceModulePath(prefix)
+  if not l.imports.byModule.hasKey(path): l.imports.byModule[path] = @[]
+  newTree(nkDotExpr, info, l.id(path.split('/')[^1], info), l.id(last, info))
+
 proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   ## C# type reference to Nim type expression. `nsnEmpty`/`nsnVoidType` become
   ## `nkEmpty`, which is how "no type" is spelled in a Nim parameter list.
@@ -217,6 +245,16 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
     else:
       result = l.typeToNim(t.typ, info)
   of nsnTypeName:
+    if '.' in t.name:
+      ## A native class held through a handle keeps its own spelling (`NsH_...`).
+      let last = unqualified(t.name)
+      if not l.scope.classes.hasKey(last) or l.scope.handleRoot(last).len == 0:
+        let q = l.qualifiedName(t.name, info)
+        if q != nil:
+          if t.sons.len == 0: return q
+          result = newTree(nkBracketExpr, info, q)
+          for a in t.sons: result.add l.typeToNim(a, info)
+          return
     var name = nimTypeName(t.name)
     ## `Func<T, R>`: a name C# overloads by arity is declared once per arity by the
     ## library, with the arity as a suffix (`Func2`), and that declaration is used.
@@ -458,6 +496,11 @@ proc newToNim(l: Lowerer; n: NsNode): PNode =
       l.id("new" & nimTypeName(n.typ.name), n.info)
     else:
       l.id("new", n.info)
+  if n.typ != nil and n.typ.kind == nsnTypeName and '.' in n.typ.name:
+    ## `new Ns.T(...)`: `Module.newT`, as the type is named.
+    let q = l.qualifiedName(n.typ.name, n.info)
+    if q != nil:
+      callee = newTree(nkDotExpr, n.info, q[0], l.id("new" & nimTypeName(n.typ.name), n.info))
   if n.typ != nil and n.typ.kind == nsnTypeName and n.typ.sons.len > 0:
     let be = newNodeI(nkBracketExpr, n.info)
     be.add callee
@@ -477,7 +520,8 @@ proc isUserStatic(l: Lowerer; m: NsNode): bool =
 proc typeRef(l: Lowerer; t: NsNode): PNode =
   ## A type used as a value (a static member's receiver): `C`, or `C[int32]` when it
   ## carries type arguments.
-  result = l.id(nimTypeName(t.typeName), t.info)
+  result = l.qualifiedName(writtenName(t), t.info)
+  if result == nil: result = l.id(nimTypeName(t.typeName), t.info)
   if t.typeArgs.len > 0:
     result = newTree(nkBracketExpr, t.info, result)
     for a in t.typeArgs: result.add l.typeToNim(a, t.info)
@@ -528,7 +572,9 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
       if callee.body.typeKind == tkType:
         var ol = l
         ol.objTypes = true
-        result.add ol.typeToNim(nsnTypeName(callee.body.typeName, n.info), n.info)
+        let q = l.qualifiedName(writtenName(callee.body), n.info)
+        result.add (if q != nil: q
+                    else: ol.typeToNim(nsnTypeName(callee.body.typeName, n.info), n.info))
       elif l.scope.onHandle(callee.body.typeName, callee.name):
         ## A member of the handle: the handle itself, unchecked (`this`'s own,
         ## through `SelfHandle`).
@@ -1316,7 +1362,8 @@ proc throwToNim(l: Lowerer; n: NsNode): PNode =
       else: newAtom(nkStrLit, "", n.info)
     let ne = newNodeI(nkCall, n.info)
     ne.add l.id("newException", n.info)
-    ne.add l.id(nimTypeName(n.body.typ.name), n.info)
+    let q = l.qualifiedName(n.body.typ.name, n.info)
+    ne.add (if q != nil: q else: l.id(nimTypeName(n.body.typ.name), n.info))
     ne.add msg
     e = ne
   result = newTree(nkRaiseStmt, n.info, e)
@@ -4123,6 +4170,54 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     procs.add pd
   into.add procs
 
+proc cppParamSig(np: PNode): string =
+  ## A member function's C++ parameter list for `{.member.}`/`{.virtual.}`:
+  ## `('2 #2, '3 #3)`, the receiver being the first.
+  result = "("
+  var k = 2
+  for i in 2 ..< np.len:
+    for j in 0 ..< np[i].len - 2:
+      if k > 2: result.add ", "
+      result.add "'" & $k & " #" & $k
+      inc k
+  result.add ")"
+
+proc guardEntry(l: Lowerer; call: PNode; where: string; hasResult: bool;
+                info: TLineInfo): PNode =
+  ## Where C++ enters N#: an exception must not leave, since C++ cannot see it
+  ## (with goto exceptions it would stay pending through the engine's own code),
+  ## so it goes to `nsOnUnhandled` (`nsEscaped`); if that returns, so does this,
+  ## with the default result.
+  let body = (if hasResult: newTree(nkAsgn, info, l.id("result", info), call) else: call)
+  newTree(nkTryStmt, info, newTree(nkStmtList, info, body, newTree(nkDiscardStmt, info, empty(info))),
+          newTree(nkExceptBranch, info, l.anyException(info),
+                  newTree(nkCall, info, l.id("nsEscaped", info), strLit(where, info))))
+
+proc cppEntry(l: Lowerer; cls, m: NsNode; np: PNode; quals = ""): PNode =
+  ## `nsCpp_M`: the C++ member function `M` of an N# class deriving a native one
+  ## (`{.member.}`, or `{.virtual.}` for the override of a native virtual), running
+  ## the N# `M` behind the boundary `guardEntry` keeps.
+  let info = m.info
+  var sig = m.name & cppParamSig(np)
+  let call = newTree(nkCall, info, l.id(m.name, info), l.id("self", info))
+  for i in 2 ..< np.len:
+    for j in 0 ..< np[i].len - 2:
+      call.add l.id(np[i][j].ident.s, info)
+  if quals.len > 0: sig.add " " & quals
+  if m.attrs.isOverride: sig.add " override"
+  let fp = copyTree(np)
+  for i in 2 ..< fp.len:
+    if fp[i].len >= 3: fp[i][^1] = empty(info)       ## no default values here
+  let pd = newNodeI(nkProcDef, info, 7)
+  pd[0] = l.id("nsCpp_" & m.name, info)
+  for i in 1 .. 6: pd[i] = empty(info)
+  pd[3] = fp
+  pd[4] = newTree(nkPragma, info, newTree(nkExprColonExpr, info,
+    l.id((if m.attrs.isOverride: "virtual" else: "member"), info), strLit(sig, info)))
+  pd[6] = newTree(nkStmtList, info,
+                  l.guardEntry(call, cls.name & "." & m.name, fp[0].kind != nkEmpty, info))
+  pd
+
 proc exportWrapper(l: Lowerer; cls, m: NsNode): PNode =
   ## `[Export("name")]` on a static method: `proc name() {.exportc.}`, which C++
   ## calls, forwarding to the method.
@@ -4142,7 +4237,9 @@ proc exportWrapper(l: Lowerer; cls, m: NsNode): PNode =
   result[4] = newTree(nkPragma, info,
                       newTree(nkExprColonExpr, info, l.id("exportc", info), strLit(name, info)),
                       l.id("cdecl", info))
-  result[6] = newTree(nkStmtList, info, call)
+  result[6] = newTree(nkStmtList, info, l.guardEntry(call, cls.name & "." & m.name,
+                                                    m.typ != nil and m.typ.kind notin
+                                                      {nsnVoidType, nsnEmpty}, info))
 
 proc plainNativeField(l: Lowerer; t: NsNode): bool =
   ## A field type C++ may copy and move as bytes: a number, `bool`, `char`, an
@@ -4245,7 +4342,7 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         body.add newTree(nkTryStmt, c.info, user,
                          newTree(nkExceptBranch, c.info, l.anyException(c.info),
                                  newTree(nkCall, c.info, l.id("nsEscaped", c.info),
-                                         strLit(n.name, c.info))))
+                                         strLit(n.name & "." & n.name, c.info))))
     let pd = newNodeI(nkProcDef, cinfo, 7)
     pd[0] = l.id("nsInit_" & n.name, cinfo)
     for i in 1 .. 6: pd[i] = empty(cinfo)
@@ -4289,11 +4386,17 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       let pd = inner.mkProc(l.exportId(m.name, m.info), np,
                             inner.memberBody(m.typ, m.body), m.info)
       if not m.attrs.isStatic:
-        ## A member function, which the engine finds by name (a concept), or the
-        ## override of a native `virtual`.
-        pd[4] = newTree(nkPragma, m.info,
-                        l.id((if m.attrs.isOverride: "virtual" else: "member"), m.info))
+        ## The N# body is a member function too (`nsM_M`, which C++ does not
+        ## know), so it reaches the base's protected members.
+        pd[4] = newTree(nkPragma, m.info, newTree(nkExprColonExpr, m.info, l.id("member", m.info),
+                        strLit("nsM_" & m.name & cppParamSig(np), m.info)))
       into.add pd
+      if not m.attrs.isStatic:
+        ## The C++ member function, which the engine finds by name (a concept), or
+        ## the override of a native `virtual`: it runs the N# one (which N# calls
+        ## itself, so its exceptions reach an N# `catch`), and stops one escaping
+        ## into C++.
+        into.add l.cppEntry(n, m, np)
       let w = l.exportWrapper(n, m)
       if w != nil: into.add w
     else: discard
@@ -4651,6 +4754,8 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
     var names = l.imports.byModule[m]
     names.sort()
     for n in names: f.add l.id(n, module.info)
+    ## Named only qualified (`Ns.T`): the module, and nothing in scope.
+    if names.len == 0: f.add newNodeI(nkNilLit, module.info)
     result.add f
   ## C# arithmetic is unchecked unless it is written inside `checked`, so the module
   ## turns the check off and `checked { }` pushes it back on (§7.3).

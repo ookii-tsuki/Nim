@@ -769,17 +769,25 @@ nkStmtList
         nkIdentDefs
           nkIdent 't'
           nkBracketExpr
-            nkIdent 'Dictionary'
+            nkDotExpr
+              nkIdent 'Generic'
+              nkIdent 'Dictionary'
             nkIdent 'string'
             nkBracketExpr
-              nkIdent 'List'
+              nkDotExpr
+                nkIdent 'Generic'
+                nkIdent 'List'
               nkIdent 'int32'
           nkCall
             nkBracketExpr
-              nkIdent 'newDictionary'
+              nkDotExpr
+                nkIdent 'Generic'
+                nkIdent 'newDictionary'
               nkIdent 'string'
               nkBracketExpr
-                nkIdent 'List'
+                nkDotExpr
+                  nkIdent 'Generic'
+                  nkIdent 'List'
                 nkIdent 'int32'
       nkAsgn
         nkBracketExpr

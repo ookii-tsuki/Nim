@@ -116,7 +116,26 @@ nkStmtList
           nkIdent 'Coin'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_OnBegin()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_OnBegin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Coin'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "OnBegin()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -133,7 +152,26 @@ nkStmtList
           nkIdent 'Coin'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Polish()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Polish'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Coin'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Polish()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -150,7 +188,26 @@ nkStmtList
           nkIdent 'Coin'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Worth()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Worth'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Coin'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Worth()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -167,7 +224,26 @@ nkStmtList
           nkIdent 'Vault'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Vault'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -307,7 +383,9 @@ nkStmtList
           nkIdent 'Coin'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_OnBegin()"
     nkEmpty
     nkStmtList
       nkCall
@@ -325,6 +403,37 @@ nkStmtList
             nkIdent 'NsH_Node'
             nkIdent 'Coin'
   nkProcDef
+    nkIdent 'nsCpp_OnBegin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Coin'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "OnBegin()"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'OnBegin'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Coin.OnBegin"
+  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'Polish'
@@ -338,7 +447,9 @@ nkStmtList
           nkIdent 'Coin'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Polish()"
     nkEmpty
     nkStmtList
       nkCommand
@@ -346,6 +457,37 @@ nkStmtList
         nkDotExpr
           nkIdent 'self'
           nkIdent 'worth'
+  nkProcDef
+    nkIdent 'nsCpp_Polish'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Coin'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Polish()"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Polish'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Coin.Polish"
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -360,13 +502,48 @@ nkStmtList
           nkIdent 'Coin'
         nkEmpty
     nkPragma
-      nkIdent 'member'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Worth()"
     nkEmpty
     nkStmtList
       nkReturnStmt
         nkDotExpr
           nkIdent 'self'
           nkIdent 'worth'
+  nkProcDef
+    nkIdent 'nsCpp_Worth'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Coin'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Worth()"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Worth'
+              nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Coin.Worth"
   nkStmtList
     nkProcDef
       nkIdent 'nsPlace_Vault'
@@ -443,7 +620,9 @@ nkStmtList
           nkIdent 'Vault'
         nkEmpty
     nkPragma
-      nkIdent 'virtual'
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
     nkEmpty
     nkStmtList
       nkBlockStmt
@@ -653,6 +832,37 @@ nkStmtList
               nkIdent 'Print'
               nkIdent 'Console'
               nkStrLit "a removed node throws"
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Vault'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Begin'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Vault.Begin"
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -741,9 +951,20 @@ nkStmtList
       nkIdent 'cdecl'
     nkEmpty
     nkStmtList
-      nkCall
-        nkIdent 'Start'
-        nkIdent 'Entry'
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Start'
+            nkIdent 'Entry'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Entry.Start"
   nkProcDef
     nkPostfix
       nkIdent '*'

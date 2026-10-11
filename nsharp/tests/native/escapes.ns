@@ -1,0 +1,67 @@
+using System.Collections.Generic;
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // Exceptions where C++ calls into N#: each stops at the boundary and goes to the
+    // engine's nsOnUnhandled (escapes.cpp), which logs and returns, so the engine goes
+    // on -- with nothing left pending. N# calling the same members still catches.
+    class Fuse : Node
+    {
+        int ticks;
+
+        public Fuse(int start) { if (start < 0) throw new System.ArgumentException("negative start"); ticks = start; }
+
+        void OnTick(float dt)
+        {
+            ticks++;
+            if (ticks == 1) throw new System.InvalidOperationException("fuse blew on tick 1");
+            Console.Print($"fuse tick {ticks}");
+        }
+
+        public void Blow() => throw new System.InvalidOperationException("blown on purpose");
+    }
+
+    class Heavy : Palette
+    {
+        public override int Weight() => throw new System.InvalidOperationException("too heavy to weigh");
+    }
+
+    class Range : Stage
+    {
+        int frame;
+
+        public override void Begin()
+        {
+            Node f = Spawn<Fuse>(0);
+            Spawn<Fuse>(-1);
+            Console.Print("spawned both");
+            try
+            {
+                ((Fuse)f).Blow();
+            }
+            catch
+            {
+                Console.Print("N# caught its own call");
+            }
+            Console.Print($"weigh a heavy one: {Painter.Weigh(new Heavy())}");
+        }
+
+        public override void Tick(float dt)
+        {
+            frame++;
+            if (frame == 1) throw new System.InvalidOperationException("stage tick 1");
+            Console.Print($"stage tick {frame}");
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start() => Director.Play<Range>();
+
+        [Export("nsFail")]
+        public static void Fail() => throw new System.InvalidOperationException("exported failure");
+    }
+}

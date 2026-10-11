@@ -364,9 +364,20 @@ nkStmtList
       nkIdent 'cdecl'
     nkEmpty
     nkStmtList
-      nkCall
-        nkIdent 'Start'
-        nkIdent 'Entry'
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Start'
+            nkIdent 'Entry'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Entry.Start"
   nkProcDef
     nkPostfix
       nkIdent '*'

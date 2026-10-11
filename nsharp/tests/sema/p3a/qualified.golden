@@ -1,0 +1,5 @@
+member ArgumentException.Message = System | string
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member List.Add = System.Collections.Generic | void
+member List.Count = System.Collections.Generic | int

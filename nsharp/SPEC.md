@@ -285,7 +285,13 @@ One `.ns` file is one compilation unit; imports resolve across `.ns` and `.nim`.
 **Qualifiers are dropped.** A namespace or type qualifier is decorative once the
 name is lowered, because imported symbols are flat: `System.Console.WriteLine`,
 `Company.Products.Gadget` and `P.Gadget` all lower to the bare name. That is why a
-namespace alias is only an import of its target. A type alias has no qualifier to
+namespace alias is only an import of its target. A *type* written with its
+namespace is the exception: `System.ArgumentException`, `Toybox.Console` lower to
+`System.ArgumentException`, the namespace's module naming it, with that module
+imported for qualified access only (`from "System" import nil`), so the type is
+reachable with no `using` and two namespaces' `Console`s stay apart; one written
+with another namespace than the compilation's own type of that name is the other
+namespace's, not the compilation's. A type alias has no qualifier to
 drop, so the parser substitutes its target instead.
 
 **...but a namespace the library declares is global.** C# has no `using` in the
@@ -849,6 +855,7 @@ binding (`Toybox.ns`) and C++-driven tests (`run_native.sh`).
 | N# class deriving a native class | ✅ v1 | desugar: a C++ struct deriving it (`object of T`, `exportc`); a method is a C++ member function (`{.member.}`), which a concept-checking engine finds by name; an `override` of a native `virtual` is a C++ override (`{.virtual.}`) |
 | ... its fields | ✅ v1 | any type, with initializers. Plain data (numbers, `bool`, `char`, enums, native structs, handles) is a plain C++ member; a type Nim manages (`string`, an array, a `List<T>`, an N# class) is an `NsField<T>` (`lib/pure/nsharp/nsfield.hpp`), whose copy, move (`noexcept`) and destructor run Nim's hooks, so the engine's own copies, moves and destruction keep Nim's reference counts right while the class itself needs no special members (the rule of zero). Each module registers the hooks for its field types when it starts (the host calls `NimMain()` first). Initializers run in a generated C++ default constructor, which the engine's `T obj;` calls. Properties, interfaces and generic instance methods are NS9999 |
 | ... its constructors | ✅ v1 | C++ constructors (`{.constructor.}`), each starting with the field initializers; the engine runs one when its factory creates the object. A generic `extern` factory whose last parameter is `[Forward] params object[] args` (`T Spawn<T>([Forward] params object[] args) where T : Node`) passes the rest of its arguments to the C++ call as they are (a `varargs` `importcpp` proc), where the engine forwards them to `T`'s constructor (`T node(std::forward<Args>(args)...)`); they are checked against the constructors of the type argument for the result type (else the first), so a mismatch is CS1729/CS1503 at the call. A constructor body sees `this` as a member function's does, but the engine may set the object up only after constructing it, so `this` as a value or a native member there is a warning (NS9910); an exception that leaves one stops the program, since C++ cannot see it and the object would be half made. `: base(args)`, `: this(...)` and static constructors are NS9999; `[Forward]` anywhere else is NS9911 |
+| Exceptions where C++ calls N# | ✅ v1 | every place C++ enters N# -- a member function found by a concept, the override of a native virtual, an `[Export]` function, a constructor -- stops an exception there: C++ cannot see one (with goto exceptions it would stay pending through the engine's own code, failing the next N# call it makes). It goes to `nsOnUnhandled(where, message, type)`, a weak symbol whose default prints it and stops the program; an engine defining its own logs it its way, and if it returns, the entry point returns its default result and nothing is left pending. Each member function is two: the N# body (a member function C++ does not know, `nsM_M`), which N# calls, so its exceptions reach an N# `catch` as in C#, and the C++ one, which runs it behind the boundary |
 | `[Export("name")]` on a static method | ✅ v1 | desugar: an `exportc` wrapper C++ calls; the host calls `NimMain()` first (`--noMain`) |
 | `base.M()` on a native `virtual` | 🔜 later | |
 | `extern "C"` functions, raw pointers, function pointers | 🔜 later | |

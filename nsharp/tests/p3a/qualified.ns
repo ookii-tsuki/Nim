@@ -1,0 +1,18 @@
+// Types named with their namespace, with no `using` for it.
+class Program
+{
+    static void Main()
+    {
+        try
+        {
+            throw new System.ArgumentException("bad");
+        }
+        catch (System.ArgumentException e)
+        {
+            System.Console.WriteLine("caught " + e.Message);
+        }
+        System.Collections.Generic.List<int> xs = new System.Collections.Generic.List<int>();
+        xs.Add(3);
+        System.Console.WriteLine(xs.Count);
+    }
+}
