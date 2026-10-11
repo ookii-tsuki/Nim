@@ -870,6 +870,46 @@ proc noteMutation(ctx: NsCheckContext; target: NsNode) =
 
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind
 
+proc kindSpelling(n: NsNode): string =
+  ## A value's type as C# spells it in a diagnostic.
+  if n.typeName.len > 0: return n.typeName
+  case n.typeKind
+  of tkInt: "int"
+  of tkFloat: "double"
+  of tkBool: "bool"
+  of tkChar: "char"
+  of tkString: "string"
+  else: "?"
+
+proc checkOperands(ctx: NsCheckContext; n: NsNode; lk, rk: NsTypeKind) =
+  ## A built-in operator applied to operands it does not take (CS0019): only
+  ## judged when both operands' kinds are known and neither declares the operator.
+  const known = {tkInt, tkFloat, tkBool, tkChar, tkString, tkClass}
+  if lk notin known or rk notin known: return
+  for side in [n.sons[0], n.sons[1]]:
+    let cn = canonicalTypeName(side.typeName)
+    if side.typeKind == tkClass and (not ctx.scope.classes.hasKey(cn) or
+       ctx.scope.classes[cn].operators.len > 0 or ctx.scope.classes[cn].decl == nil or
+       ctx.scope.classes[cn].decl.attrs.isRecord):
+      ## A library class, or one with operators or conversions of its own: Nim
+      ## knows better.
+      return
+  proc num(k: NsTypeKind): bool = k in {tkInt, tkFloat, tkChar}
+  proc integral(k: NsTypeKind): bool = k in {tkInt, tkChar}
+  let ok =
+    case n.name
+    of "+": lk == tkString or rk == tkString or (num(lk) and num(rk))
+    of "-", "*", "/", "nsDiv", "mod", "nsMod": num(lk) and num(rk)
+    of "<", ">", "<=", ">=": num(lk) and num(rk)
+    of "==", "!=":
+      (num(lk) and num(rk)) or (lk == rk and lk in {tkBool, tkString, tkClass})
+    of "and", "or", "xor": (lk == tkBool and rk == tkBool) or (integral(lk) and integral(rk))
+    of "shl", "shr": integral(lk) and integral(rk)
+    else: true
+  if not ok:
+    nsError(ctx.config, n.info, ndOperatorTypes, csOperatorOf(n.name),
+            kindSpelling(n.sons[0]), kindSpelling(n.sons[1]))
+
 # --- control flow -----------------------------------------------------------
 #
 # Reachability as C# defines it, over the statements alone: whether control can
@@ -2030,6 +2070,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnBinary:
     var lk = ctx.walkExpr(n.sons[0])
     var rk = ctx.walkExpr(n.sons[1])
+    let (lk0, rk0) = (lk, rk)
     if n.name in ["==", "!="]:
       ## `s == null` for a string compares with the empty string.
       if lk == tkString: ctx.markNull(n.sons[1], "string")
@@ -2110,6 +2151,8 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
                                              checked = true)
             if cop != nil: n.argParam = cop
           break
+    if n.typeKind != tkClass or n.rtype == nil:
+      ctx.checkOperands(n, lk0, rk0)
   of nsnNullDot:
     ## `a?.B`: the guarded value goes back where the marker stood, so the tail is
     ## checked like any other expression. C# makes a value-typed result `T?`, which

@@ -57,6 +57,7 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndOperatorTypes
     ndDuplicateLocal
     ndLocalShadows
     ndVarNeedsInit
@@ -185,6 +186,8 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndOperatorTypes: (code: "0019", msg: "Operator '$1' cannot be applied to operands of type '$2'" &
+                    " and '$3'"),
     ndDuplicateLocal: (code: "0128", msg: "A local variable or function named '$1' is already defined" &
                      " in this scope"),
     ndLocalShadows: (code: "0136", msg: "A local or parameter named '$1' cannot be declared in this" &

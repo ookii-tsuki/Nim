@@ -11,8 +11,8 @@ call_non_method CS0149 nim
 case_not_const CS9135 nim
 cast_invalid CS0030 nim
 cast_string_int CS0030 nim
-char_string_cmp CS0019 nim
-compare_class_int CS0019 nim
+char_string_cmp CS0019 match
+compare_class_int CS0019 match
 console_wrong CS1503 nim
 continue_outside CS0139 match
 ctor_arg_count CS7036 match
@@ -56,9 +56,9 @@ no_member_list CS1061 nim
 no_member_string CS1061 match
 not_all_paths CS0161 match
 null_to_int CS0037 match
-op_bad_types CS0019 nim
-op_class_plus CS0019 nim
-op_string_minus CS0019 nim
+op_bad_types CS0019 match
+op_class_plus CS0019 match
+op_string_minus CS0019 match
 out_missing CS1620 accepted
 out_unassigned CS0177 accepted
 override_nonvirtual CS0506 match
