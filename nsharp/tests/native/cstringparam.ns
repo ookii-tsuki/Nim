@@ -1,0 +1,9 @@
+using NSharp.Interop;
+namespace Demo
+{
+    [Native("Game::Body", Header = "game.hpp")]
+    public static class Body
+    {
+        public static extern void Scale([CString("Game::Str(#)")] int factor);
+    }
+}

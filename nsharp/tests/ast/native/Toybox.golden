@@ -945,6 +945,89 @@ nkStmtList
         nkIdent 'discardable'
       nkEmpty
       nkEmpty
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRawArgs_Weigh'
+        nkEmpty
+        nkGenericParams
+          nkIdentDefs
+            nkIdent 'T'
+            nkEmpty
+            nkEmpty
+        nkFormalParams
+          nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Node'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'tag'
+            nkIdent 'cstring'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'nsLen_tag'
+            nkIdent 'int64'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'ns_T'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'T'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "#->template Weigh<'**4>([&](const char* nsp, long long nsn) { return Toybox::Text::Str(nsp, nsn); }(#, #))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Weigh'
+        nkEmpty
+        nkGenericParams
+          nkIdentDefs
+            nkIdent 'T'
+            nkEmpty
+            nkEmpty
+        nkFormalParams
+          nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Node'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'ns_T'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'tag'
+            nkIdent 'string'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkReturnStmt
+            nkCall
+              nkIdent 'nsRawArgs_Weigh'
+              nkIdent 'self'
+              nkCall
+                nkIdent 'cstring'
+                nkIdent 'tag'
+              nkCall
+                nkIdent 'int64'
+                nkDotExpr
+                  nkIdent 'tag'
+                  nkIdent 'len'
+              nkIdent 'ns_T'
     nkProcDef
       nkPostfix
         nkIdent '*'
@@ -2354,6 +2437,210 @@ nkStmtList
               nkIdent 'addr'
               nkIdent 'result'
             nkIdent 't'
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRawArgs_Measure'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 's'
+            nkIdent 'cstring'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'nsLen_s'
+            nkIdent 'int64'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Labels'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::Labels::Measure([&](const char* nsp, long long nsn) { return Toybox::Text::Str(nsp, nsn); }(#, #))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Measure'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Labels'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 's'
+            nkIdent 'string'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkReturnStmt
+            nkCall
+              nkIdent 'nsRawArgs_Measure'
+              nkCall
+                nkIdent 'cstring'
+                nkIdent 's'
+              nkCall
+                nkIdent 'int64'
+                nkDotExpr
+                  nkIdent 's'
+                  nkIdent 'len'
+              nkIdent 't'
+    nkStmtList
+      nkStmtList
+        nkProcDef
+          nkIdent 'nsRawArgs_Join'
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+            nkIdentDefs
+              nkIdent 'nsDest'
+              nkPtrTy
+                nkIdent 'string'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'a'
+              nkIdent 'cstring'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'nsLen_a'
+              nkIdent 'int64'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'sep'
+              nkIdent 'int32'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'b'
+              nkIdent 'cstring'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'nsLen_b'
+              nkIdent 'int64'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 't'
+              nkBracketExpr
+                nkIdent 'typedesc'
+                nkIdent 'Labels'
+              nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'importcpp'
+              nkStrLit "nsSetStrVia(#, Toybox::Labels::Join([&](const char* nsp, long long nsn) { return Toybox::Text::Str::From(nsp); }(#, #), #, [&](const char* nsp, long long nsn) { return Toybox::Text::Str(nsp, nsn); }(#, #)), [&](auto&& nsv) { return nsv.c_str(); })"
+            nkExprColonExpr
+              nkIdent 'header'
+              nkStrLit "pure/nsharp/nsobj.hpp"
+          nkEmpty
+          nkEmpty
+        nkProcDef
+          nkIdent 'nsRaw_Join'
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+            nkIdentDefs
+              nkIdent 'nsDest'
+              nkPtrTy
+                nkIdent 'string'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 't'
+              nkBracketExpr
+                nkIdent 'typedesc'
+                nkIdent 'Labels'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'a'
+              nkIdent 'string'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'sep'
+              nkIdent 'int32'
+              nkEmpty
+            nkIdentDefs
+              nkIdent 'b'
+              nkIdent 'string'
+              nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkCall
+              nkIdent 'nsRawArgs_Join'
+              nkIdent 'nsDest'
+              nkCall
+                nkIdent 'cstring'
+                nkIdent 'a'
+              nkCall
+                nkIdent 'int64'
+                nkDotExpr
+                  nkIdent 'a'
+                  nkIdent 'len'
+              nkIdent 'sep'
+              nkCall
+                nkIdent 'cstring'
+                nkIdent 'b'
+              nkCall
+                nkIdent 'int64'
+                nkDotExpr
+                  nkIdent 'b'
+                  nkIdent 'len'
+              nkIdent 't'
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Join'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkIdent 'string'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Labels'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'a'
+            nkIdent 'string'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'sep'
+            nkIdent 'int32'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'b'
+            nkIdent 'string'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkCall
+            nkIdent 'nsRaw_Join'
+            nkCall
+              nkIdent 'addr'
+              nkIdent 'result'
+            nkIdent 't'
+            nkIdent 'a'
+            nkIdent 'sep'
+            nkIdent 'b'
   nkStmtList
     nkCall
       nkIdent 'nsObjProcs'

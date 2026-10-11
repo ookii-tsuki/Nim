@@ -3642,6 +3642,19 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
             if x.kind == nsnStrLit: reach = true
           if m.kind != nsnMethodDecl or not m.attrs.isExtern or rt != "string" or not reach:
             nsError(ctx.config, a.info, ndCStringMisplaced, named(m))
+    if m.kind in {nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl, nsnPropertyDecl}:
+      for p in m.params:
+        if p == nil or p.kind != nsnParam: continue
+        let a = p.attributeNamed("CString")
+        if a == nil: continue
+        var reach = false
+        for x in a.sons:
+          if x.kind == nsnStrLit: reach = true
+        let pt = (if p.typ != nil and p.typ.kind == nsnTypeName: canonicalTypeName(p.typ.name)
+                  else: "")
+        if m.kind != nsnMethodDecl or not m.attrs.isExtern or pt != "string" or
+           p.paramMod.len > 0 or not reach:
+          nsError(ctx.config, a.info, ndCStringMisplaced, named(m))
     if borrowed or owned:
       let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
                 else: "")

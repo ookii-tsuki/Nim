@@ -56,6 +56,7 @@ namespace Toybox
     {
         public extern T Attach<T>() where T : Trait;
         public extern T Find<T>() where T : Trait;
+        public extern int Weigh<T>([CString("Toybox::Text::Str(#, #len)")] string tag) where T : Trait;
         [OnHandle] public extern uint Slot();
         [OnHandle, Native(Get = "#.version")] public extern uint Version { get; }
     }
@@ -132,6 +133,10 @@ namespace Toybox
         public static extern string Nothing();
         [return: CString("#.c_str()")] public static extern string Built(int k);
         [return: CString("#.Data()", Length = "#.Size()")] public static extern string Custom();
+        public static extern int Measure([CString("Toybox::Text::Str(#, #len)")] string s);
+        [return: CString("#.c_str()")]
+        public static extern string Join([CString("Toybox::Text::Str::From(#)")] string a, int sep,
+                                         [CString("Toybox::Text::Str(#, #len)")] string b);
     }
 
     [Native("Toybox::Grid", Header = "toybox.hpp")]

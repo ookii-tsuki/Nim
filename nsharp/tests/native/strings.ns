@@ -8,7 +8,9 @@ namespace Demo
     {
         public override void Begin()
         {
-            Motion m = Spawn<Node>().Attach<Motion>();
+            Node n = Spawn<Node>();
+            Console.Print($"generic: {n.Weigh<Motion>("abc")}, {n.Weigh<Tag>("abcd")}");
+            Motion m = n.Attach<Motion>();
             m.Position = new Vec2(7, 0);
             Console.Print($"property: {m.Description}, {m.Summary}");
         }
@@ -24,6 +26,7 @@ namespace Demo
                 Console.Print($"temporary: {Labels.Built(k)}");
             string c = Labels.Custom();
             Console.Print($"custom: length {c.Length}, ends {c[4]}");
+            Console.Print($"passed: measure {Labels.Measure(c)}, join {Labels.Join("left", '+', "right")}");
             Director.Play<Rig>();
         }
     }

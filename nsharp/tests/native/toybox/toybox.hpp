@@ -37,6 +37,18 @@ struct Vec2 {
 };
 inline const Vec2 Vec2::Zero{0.0f, 0.0f};
 
+namespace Text {
+struct Str {                       // an engine's own string: data, length, no '\0' promise
+    char buf[32];
+    int n;
+    Str() : buf{}, n(0) {}
+    Str(const char* p, int len) : buf{}, n(len < 32 ? len : 32) { std::memcpy(buf, p, n); }
+    static Str From(const char* p) { return Str(p, static_cast<int>(std::strlen(p))); }
+    const char* Data() const { return buf; }
+    int Size() const { return n; }
+};
+}
+
 class Node;
 class Stage;
 
@@ -128,6 +140,7 @@ protected:
 public:
     Stage* stage = nullptr;
     NodeRef<> Self() const { return me; }
+    template <typename C> int Weigh(const Text::Str& tag) const;
 
     template <typename C> TraitRef<C> Attach();
     template <typename C> TraitRef<C> Find();
@@ -315,24 +328,18 @@ T* TimerId<T>::Get() const { return static_cast<T*>(Timers::Table()[id].get()); 
 // Strings in the shapes engines return them: a C string, a std::string by value (a
 // temporary), and the engine's own string class.
 
-namespace Text {
-struct Str {                       // an engine's own string: data, length, no '\0' promise
-    char buf[32];
-    int n;
-    const char* Data() const { return buf; }
-    int Size() const { return n; }
-};
-}
 
 struct Labels {
     static const char* Plain() { return "plain"; }
     static const char* Nothing() { return nullptr; }
     static std::string Built(int k) { return "built-" + std::to_string(k); }
     static Text::Str Custom() {
-        Text::Str s{};
-        std::memcpy(s.buf, "ab\0cd", 5);   // an embedded '\0', so only the length tells
-        s.n = 5;
-        return s;
+        return Text::Str("ab\0cd", 5);   // an embedded '\0', so only the length tells
+    }
+    // Taking the engine's string, which no const char* converts to implicitly.
+    static int Measure(const Text::Str& s) { return s.n; }
+    static std::string Join(const Text::Str& a, int sep, const Text::Str& b) {
+        return std::string(a.buf, a.n) + static_cast<char>(sep) + std::string(b.buf, b.n);
     }
 };
 
@@ -348,6 +355,9 @@ public:
     float GetCell(int x, int y) const { return cells[y * w + x]; }
     void SetCell(int x, int y, float v) { cells[y * w + x] = v; }
 };
+
+template <typename C>
+int Node::Weigh(const Text::Str& tag) const { return tag.n * 10 + (std::is_same_v<C, Motion> ? 1 : 2); }
 
 // --- palettes --------------------------------------------------------------------------
 //

@@ -3,4 +3,6 @@ temporary: built-0
 temporary: built-1
 temporary: built-2
 custom: length 5, ends d
+passed: measure 5, join left+right
+generic: 31, 42
 property: motion at 7, motion at 7

@@ -263,6 +263,53 @@ nkStmtList
     nkStmtList
       nkVarSection
         nkIdentDefs
+          nkIdent 'n'
+          nkBracketExpr
+            nkIdent 'NsH_Node'
+            nkIdent 'Node'
+          nkCall
+            nkIdent 'Spawn'
+            nkIdent 'self'
+            nkBracketExpr
+              nkIdent 'NsH_Node'
+              nkIdent 'Node'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "generic: "
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkIdent 'Weigh'
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'n'
+                  nkBracketExpr
+                    nkIdent 'NsH_Trait'
+                    nkIdent 'Motion'
+                  nkStrLit "abc"
+                nkStrLit ""
+            nkStrLit ", "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'Weigh'
+              nkCall
+                nkIdent 'nsDeref'
+                nkIdent 'n'
+              nkBracketExpr
+                nkIdent 'NsH_Trait'
+                nkIdent 'Tag'
+              nkStrLit "abcd"
+            nkStrLit ""
+      nkVarSection
+        nkIdentDefs
           nkIdent 'm'
           nkBracketExpr
             nkIdent 'NsH_Trait'
@@ -271,12 +318,7 @@ nkStmtList
             nkIdent 'Attach'
             nkCall
               nkIdent 'nsDeref'
-              nkCall
-                nkIdent 'Spawn'
-                nkIdent 'self'
-                nkBracketExpr
-                  nkIdent 'NsH_Node'
-                  nkIdent 'Node'
+              nkIdent 'n'
             nkBracketExpr
               nkIdent 'NsH_Trait'
               nkIdent 'Motion'
@@ -471,6 +513,35 @@ nkStmtList
             nkBracketExpr
               nkIdent 'c'
               nkIntLit 4
+            nkStrLit ""
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "passed: measure "
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkIdent 'Measure'
+                  nkIdent 'Labels'
+                  nkIdent 'c'
+                nkStrLit ""
+            nkStrLit ", join "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'Join'
+              nkIdent 'Labels'
+              nkStrLit "left"
+              nkCall
+                nkIdent 'int32'
+                nkCharLit 43
+              nkStrLit "right"
             nkStrLit ""
       nkCall
         nkIdent 'Play'

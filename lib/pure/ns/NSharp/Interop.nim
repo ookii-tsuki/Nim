@@ -57,4 +57,8 @@ type
     ## (`"#.Data()"`, `"#.ptr"`); `Length = "#.size()"` gives the length too, so a
     ## string may hold a `'\0'`. Without it the C++ result is a `const char*`. The
     ## characters are copied into the N# string at once, so a temporary they live
-    ## in is still alive; null is the empty string.
+    ## in is still alive; null is the empty string. On a `string` parameter,
+    ## `[CString("Text::Str(#, #len)")]` builds the C++ argument from the N#
+    ## string's characters (`#`) and length (`#len`), for a string type no
+    ## `const char*` converts to implicitly; without it C++ gets a `const char*`.
+    ## Either way the characters are valid only during the call.

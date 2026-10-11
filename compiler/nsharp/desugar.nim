@@ -3560,6 +3560,141 @@ proc stringReturn(l: Lowerer; m: NsNode; raw: PNode; pattern, header: string): P
   wrapper[6] = newTree(nkStmtList, info, c)
   result = newTree(nkStmtList, info, raw, wrapper)
 
+proc cstringParams(l: Lowerer; m: NsNode; raw: PNode): PNode =
+  ## An `extern` with `[CString("pattern")] string` parameters: `raw`, the C++ call,
+  ## becomes `nsRawArgs_M`, taking each such argument's characters and length,
+  ## and builds the C++ argument from them where it stands, in an immediately
+  ## called lambda (`#` the characters, `#len` the length), so it lives exactly as
+  ## long as the call. `raw`'s name then belongs to a wrapper passing them.
+  var conv: seq[(string, string)] = @[]        ## parameter name, its pattern
+  for p in m.params:
+    if p == nil: continue
+    let a = p.attributeNamed("CString")
+    if a == nil: continue
+    for x in a.sons:
+      if x.kind == nsnStrLit: conv.add (p.name, x.strVal)
+  if conv.len == 0: return raw
+  let info = m.info
+  let fp = raw[3]
+  proc convOf(name: string): string =
+    for (n, pat) in conv:
+      if n == name: return pat
+    ""
+  ## Each argument slot of the C++ call, in order: (name, is a typedesc).
+  var slots: seq[(string, bool)] = @[]
+  for i in 1 ..< fp.len:
+    let t = fp[i][^2]
+    let td = t.kind == nkBracketExpr and t[0].kind == nkIdent and t[0].ident.s == "typedesc"
+    for k in 0 ..< fp[i].len - 2: slots.add (fp[i][k].ident.s, td)
+  proc argText(name: string): string =
+    let pat = convOf(name)
+    if pat.len == 0: return "#"
+    "[&](const char* nsp, long long nsn) { return " &
+      pat.replace("#len", "nsn").replace("#", "nsp") & "; }(#, #)"
+  var pattern = ""
+  for x in raw[4]:
+    if x.kind == nkExprColonExpr and x[0].kind == nkIdent and x[0].ident.s == "importcpp":
+      pattern = x[1].strVal
+  ## The C++ call's parameters: the values in order (each such string followed by
+  ## its length), then the `typedesc`s, which a `#` cannot stand for but `'k`
+  ## still names -- renumbered to where they now are.
+  var order: seq[string] = @[]                 ## new parameter list, by name
+  var defs: seq[PNode] = @[]
+  for (nm, td) in slots:
+    if td: continue
+    for i in 1 ..< fp.len:
+      if fp[i][0].ident.s == nm:
+        let d = copyTree(fp[i])
+        if convOf(nm).len > 0:
+          d[^2] = l.id("cstring", info)
+          defs.add d
+          defs.add l.identDefs("nsLen_" & nm, l.id("int64", info), info)
+          order.add nm
+          order.add "nsLen_" & nm
+        else:
+          defs.add d
+          order.add nm
+  for (nm, td) in slots:
+    if not td: continue
+    for i in 1 ..< fp.len:
+      if fp[i][0].ident.s == nm: defs.add copyTree(fp[i])
+    order.add nm
+  proc newIndex(old: int): int =
+    ## `'k` names the k-th parameter (1-based); where that one is now.
+    if old < 1 or old > slots.len: return old
+    order.find(slots[old - 1][0]) + 1
+  var values: seq[string] = @[]
+  for (nm, td) in slots:
+    if not td: values.add nm
+  var outp = ""
+  var idx = 0
+  var i = 0
+  while i < pattern.len:
+    let c = pattern[i]
+    if c == '#' and idx < values.len:
+      outp.add argText(values[idx])
+      inc idx
+    elif c == '@':
+      var items: seq[string] = @[]
+      while idx < values.len:
+        items.add argText(values[idx])
+        inc idx
+      outp.add items.join(", ")
+    elif c == '\'' and i + 1 < pattern.len and pattern[i + 1] in {'*', '0'..'9'}:
+      var j = i + 1
+      while j < pattern.len and pattern[j] == '*': inc j
+      var k = j
+      while k < pattern.len and pattern[k] in {'0'..'9'}: inc k
+      if k > j:
+        outp.add pattern[i ..< j] & $newIndex(parseInt(pattern[j ..< k]))
+        i = k
+        continue
+      outp.add c
+    else:
+      outp.add c
+    inc i
+  let nfp = newTree(nkFormalParams, info, copyTree(fp[0]))
+  for d in defs: nfp.add d
+  let inner = newNodeI(nkProcDef, info, 7)
+  inner[0] = l.id("nsRawArgs_" & m.name, info)
+  inner[1] = empty(info)
+  inner[2] = copyTree(raw[2])
+  inner[3] = nfp
+  inner[4] = copyTree(raw[4])
+  for k in 0 ..< inner[4].len:
+    let x = inner[4][k]
+    if x.kind == nkExprColonExpr and x[0].kind == nkIdent and x[0].ident.s == "importcpp":
+      x[1] = strLit(outp, info)
+  for k in countdown(inner[4].len - 1, 0):
+    if inner[4][k].kind == nkIdent and inner[4][k].ident.s == "discardable":
+      inner[4].sons.delete(k)
+  inner[5] = empty(info)
+  inner[6] = empty(info)
+  ## The wrapper, under `raw`'s name: the N# string's characters and length.
+  let w = newNodeI(nkProcDef, info, 7)
+  w[0] = raw[0]
+  w[1] = empty(info)
+  w[2] = copyTree(raw[2])
+  w[3] = copyTree(fp)
+  for k in 1 ..< w[3].len:
+    if convOf(w[3][k][0].ident.s).len > 0: w[3][k][^2] = l.id("string", info)
+  w[4] = (if fp[0].kind != nkEmpty: newTree(nkPragma, info, l.id("discardable", info))
+          else: empty(info))
+  w[5] = empty(info)
+  let call = newTree(nkCall, info, l.id("nsRawArgs_" & m.name, info))
+  for nm in order:
+    if nm.startsWith("nsLen_"):
+      let src = nm[6 .. ^1]
+      call.add newTree(nkCall, info, l.id("int64", info),
+                       newTree(nkDotExpr, info, l.id(src, info), l.id("len", info)))
+    elif convOf(nm).len > 0:
+      call.add newTree(nkCall, info, l.id("cstring", info), l.id(nm, info))
+    else:
+      call.add l.id(nm, info)
+  w[6] = newTree(nkStmtList, info,
+                 (if fp[0].kind != nkEmpty: newTree(nkReturnStmt, info, call) else: call))
+  result = newTree(nkStmtList, info, inner, w)
+
 proc ownedReturn(l: Lowerer; m: NsNode; raw: PNode; rt, pattern, header: string): PNode =
   ## An `extern` returning a class N# may own: `nsRaw_M`, the C++ call, and `M`, the
   ## N# reference to what it gives. By value (the default) the result is
@@ -3675,6 +3810,19 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PN
     result = l.ownedReturn(m, result, rt, pattern, header)
   elif rt == "string" and not forward:
     result = l.stringReturn(m, result, pattern, header)
+  if not forward:
+    ## `[CString("Text::Str::From(#)")] string name`: the C++ call is the innermost
+    ## proc, which builds those arguments from their characters.
+    if result.kind == nkStmtList:
+      result[0] = l.cstringParams(m, result[0])
+      ## The result's wrapper passes those arguments on as the N# strings they are.
+      for p in m.params:
+        if p != nil and p.attributeNamed("CString") != nil:
+          let wfp = result[1][3]
+          for k in 1 ..< wfp.len:
+            if wfp[k][0].kind == nkIdent and wfp[k][0].ident.s == p.name:
+              wfp[k][^2] = l.id("string", m.info)
+    else: result = l.cstringParams(m, result)
 
 proc ownedNew(l: Lowerer; cls: NsNode; params: seq[PNode]; ctor, header: string;
               info: TLineInfo; into: PNode) =

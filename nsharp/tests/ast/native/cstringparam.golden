@@ -1,0 +1,91 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "NSharp/Interop"
+  nkTypeSection
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Body'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Game::Body"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "game.hpp"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+  nkStmtList
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRawArgs_Scale'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkEmpty
+          nkIdentDefs
+            nkIdent 'factor'
+            nkIdent 'cstring'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'nsLen_factor'
+            nkIdent 'int64'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Body'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Game::Body::Scale([&](const char* nsp, long long nsn) { return Game::Str(nsp); }(#, #))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "game.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Scale'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkEmpty
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Body'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'factor'
+            nkIdent 'string'
+            nkEmpty
+        nkEmpty
+        nkEmpty
+        nkStmtList
+          nkCall
+            nkIdent 'nsRawArgs_Scale'
+            nkCall
+              nkIdent 'cstring'
+              nkIdent 'factor'
+            nkCall
+              nkIdent 'int64'
+              nkDotExpr
+                nkIdent 'factor'
+                nkIdent 'len'
+            nkIdent 't'
