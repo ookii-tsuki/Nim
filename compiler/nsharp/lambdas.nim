@@ -237,3 +237,29 @@ proc libResultType*(surface: NsBclSurface; recv: NsNode; name: string;
     if m.genParams.find(m.ret) >= 0: return nb[m.genParams.find(m.ret)]
     return nil
   nil
+
+proc libParams*(m: NsBclMember; recv: NsNode; staticCall: bool; info: NsNode):
+    tuple[params: seq[NsNode], variadic: bool] =
+  ## The C# parameter types of a library overload after its receiver, its generic
+  ## parameters bound from the receiver's type arguments; a parameter whose type
+  ## stays unbound is nil, which a check takes as accepting anything.
+  var nb = newSeq[NsNode](m.genParams.len)
+  var start = 0
+  if m.paramTypes.len > 0:
+    let p0 = m.paramTypes[0]
+    let overType = p0.kind == nkBracketExpr and p0.len > 0 and p0[0].kind == nkIdent and
+                   p0[0].ident.s == "typedesc"
+    if overType or not staticCall: start = 1
+    if not staticCall and recv != nil and recv.rtype != nil:
+      unifyNim(p0, recv.rtype, m.genParams, nb)
+  ## A generic parameter the receiver does not bind is `$T`: the arguments bind it.
+  for k in 0 ..< nb.len:
+    if nb[k] == nil: nb[k] = nsnTypeName("$" & m.genParams[k], info.info)
+  for i in start ..< m.paramTypes.len:
+    let t = m.paramTypes[i]
+    if i == m.paramTypes.len - 1 and t.kind == nkBracketExpr and t.len >= 2 and
+       t[0].kind == nkIdent and t[0].ident.s == "varargs":
+      result.variadic = true
+      result.params.add nimToCs(t[1], m.genParams, nb, info)
+    else:
+      result.params.add nimToCs(t, m.genParams, nb, info)

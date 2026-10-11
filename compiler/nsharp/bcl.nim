@@ -23,6 +23,7 @@ type
     isInterface*: bool    ## declared `{.nsInterface.}`: a C# interface
     genParams*: seq[string] ## its generic parameters
     sig*: PNode           ## a delegate (proc type): its formal parameters
+    fields*: seq[string]  ## an object type's fields, which C# reads as properties
 
   NsBclMember* = object
     ## A prelude proc seen as a member; the receiver is its first parameter.
@@ -292,6 +293,24 @@ proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
     for m in s.members.getOrDefault(cur):
       if m.name == name: return m
 
+proc overloads*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
+                name: string): seq[NsBclMember] =
+  ## Every declaration of a member on a receiver, its prelude bases' included.
+  var keys: seq[string] = @[]
+  let nim = s.nimSpellingOf(recvName)
+  if nim.len > 0: keys.add nim
+  let kk = kindKey(recvKind)
+  if kk.len > 0: keys.add kk
+  var cur = nim
+  var hops = 0
+  while cur.len > 0 and s.types.hasKey(cur) and hops < 16:
+    cur = s.types[cur].base
+    if cur.len > 0: keys.add cur
+    inc hops
+  for key in keys:
+    for m in s.members.getOrDefault(key):
+      if m.name == name: result.add m
+
 proc resultAgrees*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
                    name: string): bool =
   ## Whether every overload of a library member yields the same type, so the result
@@ -361,6 +380,13 @@ proc loadTypes(s: var NsBclSurface; n: PNode) =
       of nkObjectTy, nkRefTy, nkPtrTy:
         t.base = headSpelling(body)
         if t.base.len == 0: t.kind = tkClass
+        let obj = (if body.kind == nkObjectTy: body
+                   elif body.len > 0 and body[0] != nil and body[0].kind == nkObjectTy: body[0]
+                   else: nil)
+        if obj != nil and obj.len > 2 and obj[2] != nil and obj[2].kind == nkRecList:
+          for f in obj[2]:
+            if f.kind == nkIdentDefs:
+              for k in 0 ..< f.len - 2: t.fields.add declaredName(f[k])
       of nkProcTy, nkIteratorTy: t.kind = tkDelegate
       else:
         let a = headSpelling(body)

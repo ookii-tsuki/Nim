@@ -622,6 +622,12 @@ proc mapArgs(params, args: seq[NsNode]): NsArgMap =
         return
       filled[k] = true
       result.slot[j] = k
+      ## Named in its own position (C# 7.2), it lets positional arguments follow.
+      if k == pos: inc pos
+    elif pos < params.len and filled[pos] and
+         (params[pos] == nil or params[pos].paramMod != "params"):
+      result.fits = false
+      return
     elif pos < params.len and params[pos] != nil and params[pos].paramMod == "params":
       result.slot[j] = pos
       filled[pos] = true
@@ -856,6 +862,62 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
   else:
     nsError(ctx.config, where, ndArgumentNoOverload, displayName, $args.len)
 
+proc checkLibraryCall(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]) =
+  ## A call of a library member no overload of which takes these arguments:
+  ## CS1503 when one takes this many, CS1501 when none does. Generic parameters
+  ## the receiver leaves open are bound by the arguments; anything N# cannot type
+  ## is taken to fit, so only a sure mismatch is reported.
+  let recv = callee.body
+  let staticCall = recv.typeKind == tkType
+  var recvName = ""
+  var recvKind = tkUnknown
+  if staticCall:
+    recvName = unqualified(recv.typeName)
+    if ctx.scope.classes.hasKey(recvName): return
+    recvKind = ctx.surface.kindOfName(recvName)
+  else:
+    recvName = recv.typeName
+    recvKind = recv.typeKind
+    if recvKind notin {tkSequence, tkString, tkInt, tkFloat, tkChar, tkBool, tkClass}: return
+    if recvKind == tkClass and ctx.scope.classes.hasKey(canonicalTypeName(recvName)): return
+  if ctx.scope.extensions.hasKey(callee.name): return
+  for a in args:
+    if a == nil or a.kind in {nsnNamedArg, nsnRefArg, nsnOutDecl, nsnLambda} or
+       a.typeKind in {tkUnknown, tkDelegate}:
+      return
+  let ovs = ctx.surface.overloads(recvName, recvKind, callee.name)
+  if ovs.len == 0: return
+  var bad: tuple[found: bool, idx: int, pt: NsNode]
+  for m in ovs:
+    if m.isStatic != staticCall and not staticCall: continue
+    let (ps, variadic) = libParams(m, recv, staticCall, callee)
+    let fixed = (if variadic: ps.len - 1 else: ps.len)
+    if args.len < fixed: return          # defaults N# cannot see: assume it fits
+    if not variadic and args.len > ps.len: continue
+    var bound = initTable[string, NsNode]()
+    var fits = true
+    for j, a in args:
+      var pt = (if j < fixed: ps[j] else: ps[^1])
+      if pt == nil: continue
+      if pt.kind == nsnTypeName and pt.name.startsWith("$"):
+        if bound.hasKey(pt.name): pt = bound[pt.name]
+        else:
+          let vt = valueType(a)
+          if vt != nil: bound[pt.name] = vt
+          continue
+      if pt == nil or (pt.kind == nsnArrayType and pt.typ == nil): continue
+      if ctx.incompatible(a, ctx.targetOfType(pt)):
+        fits = false
+        if not bad.found: bad = (true, j, pt)
+        break
+    if fits: return
+  if bad.found:
+    let a = args[bad.idx]
+    nsError(ctx.config, a.info, ndArgumentCannotConvert, $(bad.idx + 1), valueSpelling(a),
+            typeSpelling(bad.pt))
+  else:
+    nsError(ctx.config, callee.info, ndArgumentNoOverload, callee.name, $args.len)
+
 proc checkCondition(ctx: NsCheckContext; cond: NsNode) =
   ## C# requires a `bool` condition, and says CS0029 when it does not get one. A `T?`
   ## is not a `bool` either, but its spelling keeps the `?` C# prints.
@@ -943,6 +1005,7 @@ proc noteMutation(ctx: NsCheckContext; target: NsNode) =
 
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind
 proc checkTypeArgs(ctx: NsCheckContext; t: NsNode)
+proc firstUnknownType(ctx: NsCheckContext; t: NsNode): NsNode
 
 proc checkOperands(ctx: NsCheckContext; n: NsNode; lk, rk: NsTypeKind) =
   ## A built-in operator applied to operands it does not take (CS0019): only
@@ -1243,6 +1306,13 @@ proc libraryHas(ctx: NsCheckContext; recv: string; kind: NsTypeKind; name: strin
   ## Whether the prelude gives a value of this type a member `name`: its own, or one
   ## declared for any value (`ToString`, `GetType`), or an extension in scope.
   if ctx.surface.member(recv, kind, name).name.len > 0: return true
+  var cur = ctx.surface.nimSpellingOf(recv)
+  var hops = 0
+  while cur.len > 0 and ctx.surface.types.hasKey(cur) and hops < 16:
+    ## A field of the library's object type reads as a C# property.
+    if name in ctx.surface.types[cur].fields: return true
+    cur = ctx.surface.types[cur].base
+    inc hops
   for m in ctx.surface.members.getOrDefault(NsParamKey):
     if m.name == name: return true
   ctx.scope.extensions.hasKey(name)
@@ -1310,6 +1380,14 @@ proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
   elif rk == tkString and cn in ["string", "String", ""]:
     if not ctx.libraryHas("string", tkString, n.name):
       nsError(ctx.config, n.info, ndNoMember, "string", n.name)
+  elif rk in {tkClass, tkSequence} and not ctx.scope.classes.hasKey(cn) and
+       (recv.rtype == nil or recv.rtype.kind != nsnArrayType) and
+       ctx.surface.types.hasKey(ctx.surface.nimSpellingOf(cn)):
+    ## A library class the prelude declares: what it does not declare, no
+    ## receiver of it has (CS1061).
+    if not ctx.libraryHas(cn, rk, n.name) and not ctx.libraryHas("object", tkClass, n.name):
+      nsError(ctx.config, n.info, ndNoMember,
+              (if recv.rtype != nil: typeSpelling(recv.rtype) else: cn), n.name)
 
 proc unknownName(ctx: NsCheckContext; n: NsNode) =
   ## A bare name nothing in scope declares (CS0103); an instance member named in a
@@ -1455,7 +1533,7 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
             n.rtype = e.typ
           break
   of tkSequence, tkString, tkException, tkNullable:
-    if rk == tkString: ctx.checkMemberUse(n)
+    if rk in {tkString, tkSequence}: ctx.checkMemberUse(n)
     kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
   of tkType:
     ## A namespace's member is a type (`System.Console`); a declared type's member
@@ -1573,7 +1651,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
           tn = m.ret
           n.rtype = nsnTypeName(m.ret, n.info)
           break
-    elif rk == tkString:
+    elif rk in {tkString, tkSequence}:
       ctx.checkMemberUse(callee)
     elif rk == tkClass:
       ctx.checkMemberUse(callee)
@@ -1650,6 +1728,8 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## arguments select.
   for a in n.sons:
     if not isLambdaArg(a): discard ctx.walkExpr(a)
+  if callee != nil and callee.kind == nsnMember and cands.len == 0 and callee.body != nil:
+    ctx.checkLibraryCall(callee, n.sons)
   n.setType(kind, tn)
   if callee != nil and (callee.kind == nsnMember or cands.len > 0):
     ctx.checkCallArgs(cands, n.sons, callee.name, owner, false, n.info)
@@ -1888,6 +1968,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnCall: result = ctx.walkCall(n)
   of nsnNew:
     ctx.checkTypeArgs(n.typ)
+    if n.typ != nil and ctx.clsName.len > 0:
+      let u = ctx.firstUnknownType(n.typ)
+      if u != nil: nsError(ctx.config, u.info, ndNamespaceNotFound, u.name)
     if n.typ == nil:
       ## `new()` whose target gave it no type.
       nsError(ctx.config, n.info, ndUnsupported, "a target-typed 'new()' without a target")
@@ -2105,6 +2188,13 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       n.rtype = mt
     else:
       n.setType(tkUnknown)
+    if n.body != nil and n.body.typeKind in {tkClass, tkSequence} and n.sons.len == 1 and
+       n.sons[0] != nil and n.sons[0].kind notin {nsnRange, nsnFromEnd} and
+       not ctx.scope.classes.hasKey(canonicalTypeName(n.body.typeName)) and
+       (n.body.rtype == nil or n.body.rtype.kind != nsnArrayType):
+      ## A library collection's indexer takes its key type (CS1503).
+      let probe = nsnMember(n.body, "[]", n.info)
+      ctx.checkLibraryCall(probe, n.sons)
   of nsnUnary:
     result = ctx.walkExpr(n.body)
     n.setType(result, n.body.typeName)
