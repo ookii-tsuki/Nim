@@ -1,0 +1,35 @@
+// Generic classes deriving a plain one: an override and an inherited virtual method.
+using System;
+
+namespace Demo
+{
+    class Animal
+    {
+        public virtual string Sound() => "...";
+        public virtual string Kind() => "animal";
+    }
+
+    class Pet<T> : Animal
+    {
+        public T Tag;
+        public override string Sound() => "pet:" + Tag;
+    }
+
+    class Stray<T> : Animal
+    {
+    }
+
+    class Dog : Animal
+    {
+        public override string Sound() => "woof";
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Animal[] all = { new Pet<int> { Tag = 7 }, new Stray<string>(), new Dog(), new Animal() };
+            foreach (var a in all) Console.WriteLine(a.Sound() + " " + a.Kind());
+        }
+    }
+}

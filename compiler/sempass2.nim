@@ -116,6 +116,21 @@ proc getObjDepth(t: PType): (int, ItemId) =
 
 proc collectObjectTree(graph: ModuleGraph, n: PNode) =
   for section in n:
+    if section.kind == nkTypeDef and section.len > 1 and section[1].kind == nkGenericParams:
+      ## A generic subtype (`Gen[T] = ref object of A`): its instances get no vtable,
+      ## so it is recorded under its root as generic, which keeps the root's methods
+      ## on the classic dispatchers.
+      var nameNode = section[0]
+      while nameNode.kind in {nkPragmaExpr, nkPostfix}: nameNode = nameNode[^(if nameNode.kind == nkPostfix: 1 else: nameNode.len)]
+      if nameNode.kind == nkSym and nameNode.sym.typ != nil:
+        let body = nameNode.sym.typ.skipTypes({tyGenericBody}).skipTypes(skipPtrs)
+        if body.kind == tyObject and body.baseClass != nil:
+          let (depthLevel, root) = getObjDepth(body)
+          if depthLevel > 0:
+            if root notin graph.objectTree: graph.objectTree[root] = @[]
+            ## The generic body itself, which `containGenerics` recognises.
+            graph.objectTree[root].add (depthLevel, nameNode.sym.typ)
+      continue
     if section.kind == nkTypeDef and section[^1].kind in {nkObjectTy, nkRefTy, nkPtrTy} and section[^1].typ != nil:
       let typ = section[^1].typ.skipTypes(skipPtrs)
       if typ.kind == tyObject and typ.baseClass != nil:

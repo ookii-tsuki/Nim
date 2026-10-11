@@ -233,6 +233,23 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IShape'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Square'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -641,11 +658,13 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Area'
-                        nkCast
-                          nkIdent 'Square'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Area'
+                          nkCast
+                            nkIdent 'Square'
+                            nkIdent 'self'
                 nkExprColonExpr
                   nkIdent 'f1'
                   nkLambda
@@ -662,14 +681,35 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Name'
-                        nkCast
-                          nkIdent 'Square'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Name'
+                          nkCast
+                            nkIdent 'IShape'
+                            nkIdent 'self'
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IShape'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IShape'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Square'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_Square_IShape'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -702,7 +742,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_Square_IShape'
+                nkIdent 'nsVtOf_IShape'
+                nkIdent 'x'
   nkMethodDef
     nkPostfix
       nkIdent '*'

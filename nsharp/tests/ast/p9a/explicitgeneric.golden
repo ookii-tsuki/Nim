@@ -253,6 +253,25 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IBox_int'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IBox'
+          nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Both'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -282,6 +301,25 @@ nkStmtList
           nkIdent 'nsVT_IBox'
           nkIdent 'string'
     nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IBox_string'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IBox'
+          nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Both'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
     nkEmpty
     nkEmpty
   nkConverterDef
@@ -749,11 +787,13 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'nsIBox_int_Get'
-                        nkCast
-                          nkIdent 'Both'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'nsIBox_int_Get'
+                          nkCast
+                            nkIdent 'Both'
+                            nkIdent 'self'
                 nkExprColonExpr
                   nkIdent 'f1'
                   nkLambda
@@ -770,14 +810,37 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'nsIBox_int_Kind'
-                        nkCast
-                          nkIdent 'Both'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'nsIBox_int_Kind'
+                          nkCast
+                            nkIdent 'Both'
+                            nkIdent 'self'
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IBox_int'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IBox'
+          nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Both'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_Both_IBox_int'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -816,7 +879,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_Both_IBox_int'
+                nkIdent 'nsVtOf_IBox_int'
+                nkIdent 'x'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -874,11 +938,13 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'nsIBox_string_Get'
-                        nkCast
-                          nkIdent 'Both'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'nsIBox_string_Get'
+                          nkCast
+                            nkIdent 'Both'
+                            nkIdent 'self'
                 nkExprColonExpr
                   nkIdent 'f1'
                   nkLambda
@@ -895,14 +961,37 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Kind'
-                        nkCast
-                          nkIdent 'Both'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Kind'
+                          nkCast
+                            nkIdent 'Both'
+                            nkIdent 'self'
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IBox_string'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IBox'
+          nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Both'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_Both_IBox_string'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -941,7 +1030,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_Both_IBox_string'
+                nkIdent 'nsVtOf_IBox_string'
+                nkIdent 'x'
   nkMethodDef
     nkPostfix
       nkIdent '*'

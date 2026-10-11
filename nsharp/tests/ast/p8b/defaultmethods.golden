@@ -317,6 +317,23 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IGreeter'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IGreeter'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Plain'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -463,6 +480,23 @@ nkStmtList
       nkPtrTy
         nkIdent 'nsVT_IGreeter'
     nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IGreeter'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IGreeter'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Custom'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
     nkEmpty
     nkEmpty
   nkConverterDef
@@ -627,6 +661,23 @@ nkStmtList
       nkPtrTy
         nkIdent 'nsVT_IGreeter'
     nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IGreeter'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IGreeter'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Loud'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
     nkEmpty
     nkEmpty
   nkConverterDef
@@ -1127,11 +1178,13 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Name'
-                        nkCast
-                          nkIdent 'Plain'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Name'
+                          nkCast
+                            nkIdent 'Plain'
+                            nkIdent 'self'
                 nkExprColonExpr
                   nkIdent 'f1'
                   nkLambda
@@ -1181,6 +1234,25 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IGreeter'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IGreeter'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Plain'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_Plain_IGreeter'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1213,7 +1285,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_Plain_IGreeter'
+                nkIdent 'nsVtOf_IGreeter'
+                nkIdent 'x'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -1404,11 +1477,13 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Name'
-                        nkCast
-                          nkIdent 'Custom'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Name'
+                          nkCast
+                            nkIdent 'Custom'
+                            nkIdent 'self'
                 nkExprColonExpr
                   nkIdent 'f1'
                   nkLambda
@@ -1425,11 +1500,13 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Greet'
-                        nkCast
-                          nkIdent 'Custom'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Greet'
+                          nkCast
+                            nkIdent 'Custom'
+                            nkIdent 'self'
                 nkExprColonExpr
                   nkIdent 'f2'
                   nkLambda
@@ -1456,6 +1533,25 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IGreeter'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IGreeter'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Custom'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_Custom_IGreeter'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1488,7 +1584,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_Custom_IGreeter'
+                nkIdent 'nsVtOf_IGreeter'
+                nkIdent 'x'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -1702,11 +1799,13 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Name'
-                        nkCast
-                          nkIdent 'Loud'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Name'
+                          nkCast
+                            nkIdent 'Loud'
+                            nkIdent 'self'
                 nkExprColonExpr
                   nkIdent 'f1'
                   nkLambda
@@ -1746,14 +1845,35 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Suffix'
-                        nkCast
-                          nkIdent 'Loud'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Suffix'
+                          nkCast
+                            nkIdent 'Loud'
+                            nkIdent 'self'
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IGreeter'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IGreeter'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Loud'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_Loud_IGreeter'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1786,7 +1906,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_Loud_IGreeter'
+                nkIdent 'nsVtOf_IGreeter'
+                nkIdent 'x'
   nkMethodDef
     nkPostfix
       nkIdent '*'

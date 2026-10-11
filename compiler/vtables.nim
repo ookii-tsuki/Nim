@@ -74,9 +74,13 @@ proc dispatch(x: Base, params: ...) =
   result.ast[bodyPos] = body
 
 proc containGenerics(base: PType, s: seq[tuple[depth: int, value: PType]]): bool =
-  result = tfHasMeta in base.flags
+  ## A hierarchy with a generic type in it -- the generic body or an instance of it
+  ## (`Gen[int]` deriving a plain base) -- gets no vtables, so its methods dispatch
+  ## through the classic dispatchers: an instance has no vtable of its own.
+  result = tfHasMeta in base.flags or tfFromGeneric in base.flags
   for i in s:
-    if tfHasMeta in i.value.flags:
+    if tfHasMeta in i.value.flags or tfFromGeneric in i.value.flags or
+       i.value.typeInst != nil or i.value.kind == tyGenericBody:
       result = true
       break
 

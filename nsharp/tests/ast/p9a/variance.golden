@@ -628,6 +628,25 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IProducer_Cat'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IProducer'
+          nkIdent 'Cat'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'CatShop'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -783,6 +802,25 @@ nkStmtList
           nkIdent 'nsVT_IConsumer'
           nkIdent 'Animal'
     nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IConsumer_Animal'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IConsumer'
+          nkIdent 'Animal'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Vet'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
     nkEmpty
     nkEmpty
   nkConverterDef
@@ -1516,14 +1554,37 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Make'
-                        nkCast
-                          nkIdent 'CatShop'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Make'
+                          nkCast
+                            nkIdent 'CatShop'
+                            nkIdent 'self'
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IProducer_Cat'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IProducer'
+          nkIdent 'Cat'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'CatShop'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_CatShop_IProducer_Cat'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1562,7 +1623,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_CatShop_IProducer_Cat'
+                nkIdent 'nsVtOf_IProducer_Cat'
+                nkIdent 'x'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -1790,15 +1852,38 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Take'
-                        nkCast
-                          nkIdent 'Vet'
-                          nkIdent 'self'
-                        nkIdent 'x'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Take'
+                          nkCast
+                            nkIdent 'Vet'
+                            nkIdent 'self'
+                          nkIdent 'x'
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IConsumer_Animal'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IConsumer'
+          nkIdent 'Animal'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Vet'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_Vet_IConsumer_Animal'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1837,7 +1922,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_Vet_IConsumer_Animal'
+                nkIdent 'nsVtOf_IConsumer_Animal'
+                nkIdent 'x'
   nkMethodDef
     nkPostfix
       nkIdent '*'

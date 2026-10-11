@@ -494,6 +494,25 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IMonoid_Text'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IMonoid'
+          nkIdent 'Text'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Text'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1419,6 +1438,27 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IMonoid_Text'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IMonoid'
+          nkIdent 'Text'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Text'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_Text_IMonoid_Text'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1457,7 +1497,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_Text_IMonoid_Text'
+                nkIdent 'nsVtOf_IMonoid_Text'
+                nkIdent 'x'
   nkMethodDef
     nkPostfix
       nkIdent '*'

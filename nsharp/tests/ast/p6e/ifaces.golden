@@ -632,6 +632,25 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_INamedRepo_int'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_INamedRepo'
+          nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'IntRepo'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -661,6 +680,25 @@ nkStmtList
           nkIdent 'nsVT_IRepo'
           nkIdent 'int32'
     nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IRepo_int'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IRepo'
+          nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'IntRepo'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
     nkEmpty
     nkEmpty
   nkConverterDef
@@ -1838,11 +1876,13 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Name'
-                        nkCast
-                          nkIdent 'IntRepo'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Name'
+                          nkCast
+                            nkIdent 'IntRepo'
+                            nkIdent 'self'
                 nkExprColonExpr
                   nkIdent 'f1'
                   nkLambda
@@ -1863,12 +1903,14 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Add'
-                        nkCast
-                          nkIdent 'IntRepo'
-                          nkIdent 'self'
-                        nkIdent 'item'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Add'
+                          nkCast
+                            nkIdent 'IntRepo'
+                            nkIdent 'self'
+                          nkIdent 'item'
                 nkExprColonExpr
                   nkIdent 'f2'
                   nkLambda
@@ -1889,12 +1931,14 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Get'
-                        nkCast
-                          nkIdent 'IntRepo'
-                          nkIdent 'self'
-                        nkIdent 'i'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Get'
+                          nkCast
+                            nkIdent 'IntRepo'
+                            nkIdent 'self'
+                          nkIdent 'i'
                 nkExprColonExpr
                   nkIdent 'f3'
                   nkLambda
@@ -1911,11 +1955,13 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Count'
-                        nkCast
-                          nkIdent 'IntRepo'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Count'
+                          nkCast
+                            nkIdent 'IntRepo'
+                            nkIdent 'self'
                 nkExprColonExpr
                   nkIdent 'up0'
                   nkCall
@@ -1923,6 +1969,27 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_INamedRepo_int'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_INamedRepo'
+          nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'IntRepo'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_IntRepo_INamedRepo_int'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1961,7 +2028,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_IntRepo_INamedRepo_int'
+                nkIdent 'nsVtOf_INamedRepo_int'
+                nkIdent 'x'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -2023,12 +2091,14 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Add'
-                        nkCast
-                          nkIdent 'IntRepo'
-                          nkIdent 'self'
-                        nkIdent 'item'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Add'
+                          nkCast
+                            nkIdent 'IntRepo'
+                            nkIdent 'self'
+                          nkIdent 'item'
                 nkExprColonExpr
                   nkIdent 'f1'
                   nkLambda
@@ -2049,12 +2119,14 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Get'
-                        nkCast
-                          nkIdent 'IntRepo'
-                          nkIdent 'self'
-                        nkIdent 'i'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Get'
+                          nkCast
+                            nkIdent 'IntRepo'
+                            nkIdent 'self'
+                          nkIdent 'i'
                 nkExprColonExpr
                   nkIdent 'f2'
                   nkLambda
@@ -2071,14 +2143,37 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'Count'
-                        nkCast
-                          nkIdent 'IntRepo'
-                          nkIdent 'self'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'Count'
+                          nkCast
+                            nkIdent 'IntRepo'
+                            nkIdent 'self'
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IRepo_int'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IRepo'
+          nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'IntRepo'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_IntRepo_IRepo_int'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -2117,7 +2212,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_IntRepo_IRepo_int'
+                nkIdent 'nsVtOf_IRepo_int'
+                nkIdent 'x'
   nkMethodDef
     nkPostfix
       nkIdent '*'

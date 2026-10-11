@@ -1,0 +1,72 @@
+// Which member an interface call reaches: an override (dispatched), a member hidden
+// with `new` (not), a class that names the interface again (its own), through a
+// generic subclass and without one.
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    interface IThing
+    {
+        string Name();
+        int Size();
+    }
+
+    class Base : IThing
+    {
+        public virtual string Name() => "base";
+        public int Size() => 1;
+    }
+
+    class Mid : Base
+    {
+        public override string Name() => "mid";
+        public new int Size() => 2;
+    }
+
+    class Leaf : Mid
+    {
+        public override string Name() => "leaf";
+    }
+
+    class Gen<T> : Leaf
+    {
+        public override string Name() => "gen";
+    }
+
+    class Other : Base, IThing
+    {
+        public new int Size() => 3;
+    }
+
+    class A : IThing
+    {
+        public virtual string Name() => "a";
+        public int Size() => 10;
+    }
+
+    class B : A
+    {
+        public override string Name() => "b";
+        public new int Size() => 20;
+    }
+
+    class C : B
+    {
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var things = new List<IThing> { new Base(), new Mid(), new Leaf(), new Gen<int>(),
+                                            new Other(), new A(), new B(), new C() };
+            foreach (var t in things) Console.WriteLine(t.Name() + " " + t.Size());
+            Base asBase = new Leaf();
+            IThing viaBase = asBase;
+            A asA = new C();
+            IThing viaA = asA;
+            Console.WriteLine(viaBase.Name() + " " + viaA.Name() + " " + viaA.Size());
+        }
+    }
+}

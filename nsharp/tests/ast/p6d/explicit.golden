@@ -357,6 +357,23 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IGreeter'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IGreeter'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Polite'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1055,15 +1072,36 @@ nkStmtList
                       nkIdent 'nimcall'
                     nkEmpty
                     nkStmtList
-                      nkCall
-                        nkIdent 'nsIGreeter_Greet'
-                        nkCast
-                          nkIdent 'Polite'
-                          nkIdent 'self'
-                        nkIdent 'who'
+                      nkCommand
+                        nkIdent 'procCall'
+                        nkCall
+                          nkIdent 'nsIGreeter_Greet'
+                          nkCast
+                            nkIdent 'Polite'
+                            nkIdent 'self'
+                          nkIdent 'who'
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtOf_IGreeter'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IGreeter'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'Polite'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsVtGet_Polite_IGreeter'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1096,7 +1134,8 @@ nkStmtList
             nkExprColonExpr
               nkIdent 'nsVt'
               nkCall
-                nkIdent 'nsVtGet_Polite_IGreeter'
+                nkIdent 'nsVtOf_IGreeter'
+                nkIdent 'x'
   nkMethodDef
     nkPostfix
       nkIdent '*'

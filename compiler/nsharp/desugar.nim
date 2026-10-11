@@ -2930,8 +2930,12 @@ proc lowerAllocator(l: Lowerer; cls, m: NsNode; isException: bool): PNode =
 #   proc Add*[T](self: IRepo[T], item: T) = (self.nsVt.f0)(nsCheckNil(self.nsObj), item)
 #
 # A class that implements `IRepo<int>` gets a lazily filled `nsVT_IRepo[int32]`
-# whose entries call its own members -- which dispatch further when virtual -- and a
-# `converter` from the class, so a class value is accepted wherever the interface is.
+# whose entries call its own members, and a `converter` from the class, so a class
+# value is accepted wherever the interface is. A plain (non-generic) class has a
+# table of its own for every interface it implements, inherited ones included, and
+# the conversion takes the object's own class's (`nsVtOf_I`, dispatched once), so
+# an entry calls the implementation directly (`procCall`) when every class deriving
+# it has tables of its own too; otherwise entries dispatch again.
 # A non-generic interface also gets a dispatched `nsAs<I>(RootRef)`, overridden by
 # each implementing class, which is how `is`, `as` and casts ask the *dynamic* type.
 # An interface value converts to an interface it extends through the pointers its
@@ -3142,10 +3146,38 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
   ## for a non-generic interface, the `nsAs<I>` override. A struct is boxed:
   ## `nsBox_S` holds a copy, as C#'s box does.
   let info = n.info
-  let ifaces = l.scope.directInterfaceTypes(n.name)
-  if ifaces.len == 0: return
   let nativeDerived = l.scope.nativeBased(n.name) and not l.scope.isNative(n.name)
   let isStruct = n.classKind == ckStruct or nativeDerived
+  ## A plain class has a table of its own for each interface it implements, those
+  ## it inherits included, and the conversion picks the object's own class's
+  ## (`nsVtOf_I`, dispatched once): a call through the interface then reaches the
+  ## implementation directly. A generic class (or one with a generic class between
+  ## it and a base) keeps its base's tables, whose entries dispatch again.
+  let plain = not isStruct and not isException and n.classKind == ckClass and
+              l.clsTypeParams.len == 0
+  var ifaces = l.scope.directInterfaceTypes(n.name)
+  var inherited: seq[string] = @[]
+  var mapper = initTable[string, string]()     ## the class that names the interface
+  for it in ifaces: mapper[mangleType(it)] = n.name
+  if plain:
+    let ch = l.scope.chain(n.name)
+    for k in 1 ..< ch.len:
+      let a = ch[k]
+      if l.scope.classes[a].typeParams.len > 0 or l.scope.nativeBased(a): break
+      for it in l.scope.directInterfaceTypes(a):
+        let key = mangleType(it)
+        if not mapper.hasKey(key):
+          mapper[key] = a
+          inherited.add key
+          ifaces.add it
+  if ifaces.len == 0: return
+  ## Every class deriving this one has tables of its own: an entry may call the
+  ## implementation without dispatching again.
+  var exact = plain
+  if exact:
+    for d, k in l.scope.classes:
+      if d != n.name and n.name in l.scope.chain(d) and k.typeParams.len > 0:
+        exact = false
   let boxName = "nsBox_" & n.name
   let boxType = l.ifaceTypeNim(boxName, tpNodes(l.clsTypeParams, info), info)
   let heldType = (if nativeDerived: l.typeToNim(nsnTypeName(n.name, info), info)
@@ -3206,6 +3238,12 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
                   ## the object is reread as one without a conversion check.
                   newTree(nkCast, info, copyTree(recvType), l.id("self", info)))
       let target = l.implementerFor(n, m, iface, mangleType(it))
+      ## The entry's object, read as the class whose member it calls: this one for
+      ## a dispatched member (its own override), else the member's declaring class.
+      let mapperCls = mapper.getOrDefault(mangleType(it), n.name)
+      let mi = l.scope.findMemberInfo(mapperCls, m.name)
+      let staticCls = (if l.scope.isDispatched(mapperCls, m.name) or mi.name.len == 0:
+                         n.name else: mi.owner)
       var body: PNode
       var implemented = false
       for c in l.scope.chain(n.name):
@@ -3226,10 +3264,17 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
       else:
         let call = newNodeI(nkCall, info)
         call.add l.id(target, info)
-        call.add me
+        if staticCls != n.name:
+          ## A member the class does not dispatch (one hidden by `new` included): the
+          ## one of the class that names the interface.
+          call.add newTree(nkCast, info, l.id(staticCls, info), l.id("self", info))
+        else:
+          call.add me
         if m.kind == nsnMethodDecl:
           for p in m.params: call.add l.id(p.name, info)
-        body = call
+        ## This table is paired only with objects of exactly this class: the
+        ## member is called as this class's, without dispatching again.
+        body = (if exact: newTree(nkCommand, info, l.id("procCall", info), call) else: call)
       lam[6] = newTree(nkStmtList, info, body)
       fill.add newTree(nkExprColonExpr, info, l.id("f" & $k, info), lam)
     for j, b in l.ifaceBases(iface):
@@ -3253,6 +3298,23 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
       newTree(nkCall, info, l.id("addr", info), l.id(store, info)))
     into.add l.mkProc(l.exportId(getName, info), getFp, getBody, info)
     let getCall = l.getterCall(getName, info)
+    let key = mangleType(it)
+    if plain:
+      ## `nsVtOf_I(x)`: the table of the object's own class, dispatched once.
+      var base = mapper[key] == n.name
+      for a in l.scope.chain(n.name)[1 .. ^1]:
+        for t in l.scope.directInterfaceTypes(a):
+          if mangleType(t) == key: base = false
+      let vfp = newNodeI(nkFormalParams, info)
+      vfp.add newTree(nkPtrTy, info, l.vtTypeNim(iface, args, info))
+      vfp.add l.identDefs("x", l.clsType(n.name, info), info)
+      let vm = l.mkProc(l.exportId("nsVtOf_" & key, info), vfp,
+                        newTree(nkStmtList, info, copyTree(getCall)), info, kind = nkMethodDef)
+      if base:
+        if vm[4].kind == nkEmpty: vm[4] = newNodeI(nkPragma, info)
+        vm[4].add l.id("base", info)
+      into.add vm
+    if key in inherited: continue
     # converter nsTo_<I>*(x: C): I
     let cfp = newNodeI(nkFormalParams, info)
     cfp.add l.ifaceTypeNim(iface, args, info)
@@ -3264,7 +3326,9 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
                    else: l.id("x", info))
     let make = newTree(nkObjConstr, info, l.ifaceTypeNim(iface, args, info),
       newTree(nkExprColonExpr, info, l.id("nsObj", info), objExpr),
-      newTree(nkExprColonExpr, info, l.id("nsVt", info), copyTree(getCall)))
+      newTree(nkExprColonExpr, info, l.id("nsVt", info),
+              (if plain: newTree(nkCall, info, l.id("nsVtOf_" & key, info), l.id("x", info))
+               else: copyTree(getCall))))
     var cbody: PNode
     if isStruct:
       cbody = newTree(nkStmtList, info, make)

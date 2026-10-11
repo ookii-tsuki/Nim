@@ -391,7 +391,7 @@ and the namespaces must be merged or layered.
 | **Methods** `R M(P a) { }` | method | ✅ v1 | front (→ `proc`) |
 | Expression-bodied method `=> e;` | `R M() => e;` | ✅ v1 | desugar |
 | `static` methods | type-level | ✅ v1 | desugar (`proc M(t: typedesc[C], ...)`, called `M(C, ...)`, so a static method never competes with an instance member through Nim's dot-call) |
-| `virtual` / `override` / `abstract` | dispatch | ✅ v1 | desugar (`virtual`/`abstract` → `method {.base.}`, `override` → `method`; an override without a slot is NS0115). An N# program is built with Nim's vtables (`compiler/main.nim` turns the feature on when the main file is `.ns`), so a virtual call is one indirect call, as in .NET |
+| `virtual` / `override` / `abstract` | dispatch | ✅ v1 | desugar (`virtual`/`abstract` → `method {.base.}`, `override` → `method`; an override without a slot is NS0115). An N# program is built with Nim's vtables (`compiler/main.nim` turns the feature on when the main file is `.ns`), so a virtual call is one indirect call, as in .NET; a hierarchy with a generic class in it (`Pet<T> : Animal`) dispatches through Nim's classic dispatchers instead, since an instance of a generic type has no vtable of its own (`compiler/vtables.nim`, `sempass2.nim`) |
 | `sealed override` | stop override | ✅ v1 | sem (overriding it again is NS0239) |
 | `new` (hide) | shadow base | ✅ v1 | desugar (a plain proc beside the base's `method`, so static type decides, as in C#) |
 | **Constructors** `C(a) { }` | init | ✅ v1 | desugar (→ `proc new`) |
@@ -669,6 +669,13 @@ type
 proc Area*(self: IShape): float64 = (self.nsVt.f0)(nsCheckNil(self.nsObj))
 method nsAsIShape*(x: RootRef): IShape {.base.} = default(IShape)
 ```
+
+A plain class has a table of its own for each interface it implements, inherited
+ones included, and converting an object to the interface takes the table of the
+object's own class (`method nsVtOf_IShape`, one dispatch per conversion). An entry
+then calls that class's implementation directly, so an interface call is one
+indirect call, as in .NET -- unless a generic class derives the class, whose objects
+use the base's table, whose entries then dispatch again.
 
 Each class naming `IShape` gets a lazily filled table whose entries call its own
 members (so a `virtual` member dispatches further), a `converter nsToIShape`, which
