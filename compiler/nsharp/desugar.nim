@@ -970,9 +970,8 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       ## object, so it is never kept as a pointer but as its own handle.
       let root = l.scope.handleRoot(l.curClass.name)
       if root.len > 0:
-        let sh = l.scope.classes[root].native.selfHandle
         result = newTree(nkCall, n.info, l.id("nsAs", n.info),
-                         newTree(nkDotExpr, n.info, result, l.id(sh, n.info)),
+                         newTree(nkCall, n.info, l.id("nsSelfOf_" & root, n.info), result),
                          newTree(nkBracketExpr, n.info, l.id("NsH_" & root, n.info),
                                  l.id(l.curClass.name, n.info)))
   of nsnBase: result = l.baseConv(n.info)
@@ -3490,12 +3489,6 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     if m.kind == nsnFieldDecl and not m.attrs.isStatic:
       recList.add l.identDefs(m.name, l.typeToNim(m.typ, m.info), m.info)
       recList[^1][0] = l.exportId(m.name, m.info)
-  let root = l.scope.handleRoot(n.name)
-  if nat.selfHandle.len > 0 and root.len > 0:
-    ## The member a `this` reaches its own handle through.
-    recList.add newTree(nkIdentDefs, info, l.exportId(nat.selfHandle, info),
-                        newTree(nkBracketExpr, info, l.id("NsH_" & root, info),
-                                l.id(root, info)), empty(info))
   let objTy = newNodeI(nkObjectTy, info)
   objTy.add empty(info)
   objTy.add (if n.typ != nil: newTree(nkOfInherit, info, ol.typeToNim(n.typ, info))
@@ -3524,6 +3517,19 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   if nat.handle.len > 0:
     procs.add newTree(nkCall, info, l.id("nsHandleProcs", info), l.id("NsH_" & n.name, info),
                       l.id(n.name, info), strLit(header, info))
+  if nat.handle.len > 0 and nat.selfHandle.len > 0:
+    ## `nsSelfOf_<Class>(self)`: an object's own handle, through `SelfHandle` -- a
+    ## C++ pattern (`#->GetId()`), or a member name standing for `#->name`.
+    let pattern = (if '#' in nat.selfHandle: nat.selfHandle else: "#->" & nat.selfHandle)
+    let fp = newTree(nkFormalParams, info,
+                     newTree(nkBracketExpr, info, l.id("NsH_" & n.name, info), l.id(n.name, info)),
+                     l.identDefs("self", newTree(nkPtrTy, info, l.id(n.name, info)), info))
+    let pd = newNodeI(nkProcDef, info, 7)
+    pd[0] = l.exportId("nsSelfOf_" & n.name, info)
+    for i in 1 .. 6: pd[i] = empty(info)
+    pd[3] = fp
+    pd[4] = l.cppPragma(pattern, header, info)
+    procs.add pd
   var paramless = false
   for m in n.sons:
     case m.kind

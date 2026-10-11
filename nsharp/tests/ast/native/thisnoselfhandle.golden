@@ -112,9 +112,9 @@ nkStmtList
           nkIdent 'nsAs'
           nkCall
             nkIdent 'nsAs'
-            nkDotExpr
+            nkCall
+              nkIdent 'nsSelfOf_Unit'
               nkIdent 'self'
-              nkIdent ''
             nkBracketExpr
               nkIdent 'NsH_Unit'
               nkIdent 'Soldier'

@@ -111,9 +111,12 @@ template <typename T> concept HasOnBegin = requires(T t) { { t.OnBegin() } -> st
 template <typename T> concept HasOnTick = requires(T t, float dt) { { t.OnTick(dt) } -> std::same_as<void>; };
 
 class Node {
+    template <typename T> friend struct Pool;
+protected:
+    NodeRef<> me;          // reachable from derived classes, not from outside
 public:
-    NodeRef<> me;
     Stage* stage = nullptr;
+    NodeRef<> Self() const { return me; }
 
     template <typename C> TraitRef<C> Attach();
     template <typename C> TraitRef<C> Find();

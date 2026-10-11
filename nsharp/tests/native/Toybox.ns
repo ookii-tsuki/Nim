@@ -41,7 +41,7 @@ namespace Toybox
         public int Value;
     }
 
-    [Native("Toybox::Node", Header = "toybox.hpp", Handle = "Toybox::NodeRef<{0}>", SelfHandle = "me")]
+    [Native("Toybox::Node", Header = "toybox.hpp", Handle = "Toybox::NodeRef<{0}>", SelfHandle = "#->Self()")]
     public class Node
     {
         public extern T Attach<T>() where T : Trait;

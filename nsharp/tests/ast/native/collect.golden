@@ -314,9 +314,9 @@ nkStmtList
           nkIdent 'Add'
         nkCall
           nkIdent 'nsAs'
-          nkDotExpr
+          nkCall
+            nkIdent 'nsSelfOf_Node'
             nkIdent 'self'
-            nkIdent 'me'
           nkBracketExpr
             nkIdent 'NsH_Node'
             nkIdent 'Coin'

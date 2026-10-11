@@ -187,14 +187,6 @@ nkStmtList
         nkEmpty
         nkEmpty
         nkRecList
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'me'
-            nkBracketExpr
-              nkIdent 'NsH_Node'
-              nkIdent 'Node'
-            nkEmpty
     nkTypeDef
       nkPragmaExpr
         nkPostfix
@@ -416,6 +408,30 @@ nkStmtList
       nkIdent 'NsH_Node'
       nkIdent 'Node'
       nkStrLit "toybox.hpp"
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsSelfOf_Node'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Node'
+          nkIdent 'Node'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Node'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Self()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
     nkProcDef
       nkPostfix
         nkIdent '*'

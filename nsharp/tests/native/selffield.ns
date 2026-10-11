@@ -1,0 +1,55 @@
+using System.Collections.Generic;
+using NSharp.Interop;
+
+// Its own binding of the test engine, whose `SelfHandle` names a member (a
+// protected field, which a derived class can reach) rather than a call.
+namespace Garden
+{
+    [Native("Toybox::Node", Header = "toybox.hpp", Handle = "Toybox::NodeRef<{0}>", SelfHandle = "me")]
+    public class Node
+    {
+    }
+
+    [Native("Toybox::Stage", Header = "toybox.hpp")]
+    public class Stage
+    {
+        public virtual extern void Begin();
+        public extern T Spawn<T>() where T : Node;
+    }
+
+    [Native("Toybox::Director", Header = "toybox.hpp")]
+    public static class Director
+    {
+        public static extern void Play<T>() where T : Stage;
+    }
+
+    [Native("Toybox::Console", Header = "toybox.hpp")]
+    public static class Console
+    {
+        [Native("Toybox::Console::Print(\"%s\", @)")]
+        public static extern void Print(string text);
+    }
+
+    class Seed : Node
+    {
+        void OnBegin() { Plot.Seeds.Add(this); }
+    }
+
+    class Plot : Stage
+    {
+        public static List<Node> Seeds = new List<Node>();
+
+        public override void Begin()
+        {
+            Spawn<Seed>();
+            Spawn<Seed>();
+            Console.Print($"planted {Seeds.Count}: {Seeds[0] != null} {Seeds[1] != null}");
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start() => Director.Play<Plot>();
+    }
+}
