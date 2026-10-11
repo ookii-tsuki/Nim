@@ -365,6 +365,19 @@ proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineI
   ## The implicit numeric conversion C# applies where a value of one numeric type is
   ## used as another: recorded when C# allows it, CS0266 when only a cast would.
   ## A variant interface or delegate conversion is recorded too.
+  if value != nil and value.typeKind == tkClass and value.conv.len == 0 and
+     value.kind != nsnNull:
+    ## A handle as one of another class of its family: `Node n = ball;`.
+    let tn = (if targetType != nil and targetType.kind == nsnTypeName:
+                canonicalTypeName(targetType.name) else: canonicalTypeName(targetName))
+    let vn = canonicalTypeName(value.typeName)
+    if tn.len > 0 and vn.len > 0 and tn != vn and ctx.scope.classes.hasKey(tn) and
+       ctx.scope.classes.hasKey(vn):
+      let root = ctx.scope.handleRoot(tn)
+      if root.len > 0 and root == ctx.scope.handleRoot(vn):
+        value.conv = "nsHandle"
+        value.convType = nsnTypeName(tn, info)
+        return
   if value != nil and value.typeKind == tkClass and value.conv.len == 0:
     ## A class implementing `IEnumerable<T>`/`IEnumerator<T>` where one is expected:
     ## the library's view over its `GetEnumerator` (or `MoveNext`/`Current`).
@@ -684,8 +697,13 @@ proc resolveOverload(ctx: NsCheckContext; cands: seq[seq[NsNode]];
 
 proc markNull(ctx: NsCheckContext; value: NsNode; target: string) =
   ## `null` for an interface is the empty interface value, which lowering spells
-  ## `default(I)`, so the target is recorded on the literal.
-  if value != nil and value.kind == nsnNull and ctx.scope.isInterface(target):
+  ## `default(I)`, so the target is recorded on the literal; for a handle class it
+  ## is the invalid handle.
+  let tn = canonicalTypeName(target)
+  if value != nil and value.kind == nsnNull and ctx.scope.classes.hasKey(tn) and
+     ctx.scope.handleRoot(tn).len > 0:
+    value.setType(tkClass, tn)
+  elif value != nil and value.kind == nsnNull and ctx.scope.isInterface(target):
     value.setType(tkClass, target)
   elif value != nil and value.kind == nsnNull and canonicalTypeName(target) == "string":
     ## A Nim string cannot be nil: a null string is the empty one (SPEC 7.3).
@@ -1738,6 +1756,16 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       if kind == tkUnknown:
         ## Likewise, a member of a class the prelude declares (`Queue.Dequeue`).
         kind = ctx.memberKindOfSurface(rk, owner, callee.name, tn)
+    if callee.typeArgs.len > 0 and ctx.scope.classes.hasKey(owner):
+      ## `M<Transform>()`: the written type arguments give the result its type.
+      let mi = ctx.scope.findMemberInfo(owner, callee.name)
+      if mi.isMethod and mi.typ != nil and mi.typeParams.len == callee.typeArgs.len:
+        let st = substitute(mi.typ, mi.typeParams, callee.typeArgs)
+        let k = ctx.classifyType(st)
+        if k != tkUnknown:
+          n.rtype = st
+          kind = k
+          tn = declTypeName(st)
     ## The declared parameter lists, so the arguments can be matched against them.
     ## A receiver the scope does not know (`Console`, a name from a module it does
     ## not cover) has none, and the call is left to Nim.
@@ -3486,11 +3514,84 @@ proc checkDuplicates(ctx: NsCheckContext; cls: NsNode) =
       names.add m.name
     else: discard
 
+proc plainNativeData(ctx: NsCheckContext; t: NsNode): bool =
+  ## A field type the engine may move as bytes: a number, `bool`, `char`, an enum,
+  ## a native struct, or a handle.
+  if t == nil or t.kind != nsnTypeName or t.sons.len > 0: return false
+  let n = canonicalTypeName(t.name)
+  if n in ["int", "uint", "long", "ulong", "short", "ushort", "byte", "sbyte", "float",
+           "double", "bool", "char", "nint", "nuint"]:
+    return true
+  if ctx.scope.enums.contains(n): return true
+  if ctx.scope.classes.hasKey(n):
+    if ctx.scope.handleRoot(n).len > 0: return true
+    if ctx.scope.isNative(n) and ctx.scope.classes[n].classKind == ckStruct: return true
+  false
+
+proc checkNative(ctx: NsCheckContext; cls: NsNode) =
+  ## What a `[Native]` binding and a class deriving a native one may contain. The
+  ## rest is NS9999, never dropped.
+  let native = ctx.scope.isNative(cls.name)
+  let based = not native and ctx.scope.nativeBased(cls.name)
+  proc unsupported(m: NsNode; what: string) =
+    nsError(ctx.config, m.info, ndUnsupported, what)
+  for m in cls.sons:
+    let a = m.attributeNamed("Export")
+    if a != nil and (m.kind != nsnMethodDecl or not m.attrs.isStatic or
+                     m.typeParams.len > 0):
+      unsupported(m, "'[Export]' on anything but a non-generic static method")
+    if m.attrs.isExtern and not native:
+      unsupported(m, "an 'extern' member outside a '[Native]' type")
+  if native:
+    if cls.typ != nil and not ctx.scope.isNative(canonicalTypeName(cls.typ.name)):
+      unsupported(cls, "a '[Native]' type deriving an N# class")
+    for m in cls.sons:
+      case m.kind
+      of nsnFieldDecl:
+        if m.attrs.isStatic or m.body != nil:
+          unsupported(m, "a static or initialised field in a '[Native]' type")
+      of nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl:
+        if not m.attrs.isExtern or m.body != nil:
+          unsupported(m, "a '[Native]' type's member that is not 'extern'")
+        if m.kind == nsnCtorDecl and cls.classKind == ckClass and not m.attrs.isStatic:
+          unsupported(m, "a constructor of a native class (the engine creates them)")
+      of nsnPropertyDecl:
+        if not m.attrs.isExtern or not m.attrs.isStatic:
+          unsupported(m, "a '[Native]' property that is not 'static extern'")
+      else:
+        unsupported(m, "this member in a '[Native]' type")
+  elif based:
+    if cls.classKind != ckClass:
+      unsupported(cls, "a struct deriving a native type")
+    if cls.typeParams.len > 0:
+      unsupported(cls, "a generic class deriving a native one")
+    if cls.bases.len > (if cls.typ != nil: 1 else: 0):
+      unsupported(cls, "an interface on a class deriving a native one")
+    for m in cls.sons:
+      case m.kind
+      of nsnFieldDecl:
+        if not m.attrs.isStatic:
+          if m.body != nil:
+            unsupported(m, "a field initializer in a class deriving a native one")
+          if not ctx.plainNativeData(m.typ):
+            unsupported(m, "a field of type '" & typeSpelling(m.typ) &
+                           "' in a class deriving a native one (the engine moves the " &
+                           "object as plain data)")
+      of nsnMethodDecl:
+        if m.typeParams.len > 0 and not m.attrs.isStatic:
+          unsupported(m, "a generic method in a class deriving a native one")
+      of nsnCtorDecl:
+        unsupported(m, "a constructor in a class deriving a native one (the engine " &
+                       "constructs it)")
+      else:
+        unsupported(m, "this member in a class deriving a native one")
+
 proc checkSupported(ctx: NsCheckContext; cls: NsNode) =
   ## Features the frontend can parse but does not lower are rejected loudly
   ## rather than dropped silently; ignoring `interface` or `override` produced
   ## programs that looked like they worked.
   ctx.checkDuplicates(cls)
+  ctx.checkNative(cls)
   for m in cls.sons:
     if m.kind in {nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl, nsnIndexerDecl}:
       ## Two parameters of one name (CS0100).
@@ -3611,7 +3712,7 @@ proc checkInheritance(ctx: NsCheckContext; cls: NsNode) =
     if m.kind == nsnMethodDecl:
       if a.isAbstract and m.body != nil:
         nsError(ctx.config, m.info, ndAbstractHasBody, signatureOf(cls.name, m))
-      elif not a.isAbstract and m.body == nil:
+      elif not a.isAbstract and not a.isExtern and m.body == nil:
         nsError(ctx.config, m.info, ndMissingBody, signatureOf(cls.name, m))
     if a.isSealed and not a.isOverride:
       nsError(ctx.config, m.info, ndSealedNotOverride, signatureOf(cls.name, m))

@@ -1,0 +1,65 @@
+// The N# binding of toybox/toybox.hpp: C# declarations whose members are
+// `extern`, each naming the C++ it stands for.
+using NSharp.Interop;
+
+namespace Toybox
+{
+    [Native("Toybox::Vec2", Header = "toybox.hpp")]
+    public struct Vec2
+    {
+        public float x;
+        public float y;
+        public extern Vec2(float x, float y);
+        public static extern Vec2 Zero { get; }
+        public static extern Vec2 operator +(Vec2 a, Vec2 b);
+        public static extern Vec2 operator *(Vec2 a, float s);
+    }
+
+    [Native("Toybox::Console", Header = "toybox.hpp")]
+    public static class Console
+    {
+        [Native("Toybox::Console::Print(\"%s\", @)")]
+        public static extern void Print(string text);
+    }
+
+    [Native("Toybox::Trait", Header = "toybox.hpp", Handle = "Toybox::TraitRef<{0}>")]
+    public class Trait
+    {
+    }
+
+    [Native("Toybox::Motion", Header = "toybox.hpp")]
+    public class Motion : Trait
+    {
+        public Vec2 Pos;
+        public Vec2 Vel;
+        public extern void Push(Vec2 force);
+    }
+
+    [Native("Toybox::Tag", Header = "toybox.hpp")]
+    public class Tag : Trait
+    {
+        public int Value;
+    }
+
+    [Native("Toybox::Node", Header = "toybox.hpp", Handle = "Toybox::NodeRef<{0}>", SelfHandle = "me")]
+    public class Node
+    {
+        public extern T Attach<T>() where T : Trait;
+        public extern T Find<T>() where T : Trait;
+    }
+
+    [Native("Toybox::Stage", Header = "toybox.hpp")]
+    public class Stage
+    {
+        public virtual extern void Begin();
+        public virtual extern void Tick(float dt);
+        public extern T Spawn<T>() where T : Node;
+        public extern void Remove(Node node);
+    }
+
+    [Native("Toybox::Director", Header = "toybox.hpp")]
+    public static class Director
+    {
+        public static extern void Play<T>() where T : Stage;
+    }
+}

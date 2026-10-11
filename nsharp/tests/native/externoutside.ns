@@ -1,0 +1,7 @@
+namespace Demo
+{
+    class Plain
+    {
+        public static extern void Ping();
+    }
+}

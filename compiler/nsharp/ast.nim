@@ -41,6 +41,7 @@ type
     isAnon*: bool           ## a class sema synthesized for an anonymous type
     isEnumerable*: bool     ## a class naming `IEnumerable<T>`: it converts to one
     isEnumerator*: bool     ## a class naming `IEnumerator<T>`: it converts to one
+    isExtern*: bool         ## `extern`: implemented natively (a `[Native]` type's member)
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.

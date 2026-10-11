@@ -74,6 +74,7 @@ if [ "$update" = "1" ] && [ "$have_dotnet" = "0" ]; then
 fi
 
 for ns in "$here"/*.ns "$here"/*/*.ns; do
+  case "$ns" in "$here"/native/*) continue ;; esac   # C++-driven: run_native.sh
   [ -f "$ns" ] || continue
   [ -f "${ns%.ns}.out" ] || continue
   count=$((count + 1))

@@ -43,9 +43,13 @@ Investigated before designing the integration:
 | `compiler/pipelines.nim` | guarded branch: one-shot N# module parse → `sem`, then fall through to the shared tail | ✅ Phase 0 |
 | `compiler/options.nim` | `NsExt` + `findModule` prefers a `.ns` sibling, then tries `.ns` (imports) | ✅ Phase 1b |
 | `compiler/idents.nim` | additive `getIdentExact` (case/underscore-sensitive interning); Nim's `getIdent` and hashing untouched (SPEC §3.1) | ✅ Phase 1a |
+| `compiler/options.nim` | `isNsharpProject`: the main file is `.ns` | ✅ optimization pass |
+| `compiler/main.nim` | an N# program is compiled with the `vtables` feature (a virtual call is one indirect call) | ✅ optimization pass |
+| `compiler/cgmeth.nim` | vtables allow, for an N# program, the library's `method`s on `RootRef` declared outside `system` | ✅ optimization pass |
+| `compiler/ccgtypes.nim` | a fix, not an N# hook: an instance of a generic `importcpp` object reaching codegen without its `tyGenericInst` (a `seq` element, a generic's argument) takes its pattern's arguments from `typeInst`, instead of printing `'0` | ✅ C++ interop |
 
 **Untouched:** `modules.nim`, `nodekinds.nim`, `ast*.nim`, `sem*`, `sigmatch`,
-`cgen`, `msgs`. `koch` / packaging need nothing: the build imports
+`msgs`; `cgen` only as listed above. `koch` / packaging need nothing: the build imports
 `compiler/nim.nim` transitively and packaging ships the whole `compiler/` dir.
 
 > **Why `pipelines.nim` and not `openParser`?** The main pipeline streams via

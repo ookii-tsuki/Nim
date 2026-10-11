@@ -152,6 +152,7 @@ jobs="${NS_CS_JOBS:-$(nproc 2>/dev/null || echo 2)}"
 ## printed in order, so the log reads the same however the builds interleave.
 i=0
 for ns in "$here"/*.ns "$here"/*/*.ns; do
+  case "$ns" in "$here"/native/*) continue ;; esac   # C++-driven: run_native.sh
   [ -f "$ns" ] || continue
   out="${ns%.ns}.out"
   [ -f "$out" ] || [ -f "${ns%.ns}.fail" ] || [ -f "${ns%.ns}.unsupported" ] || continue

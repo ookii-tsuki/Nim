@@ -1,0 +1,13 @@
+ball ready
+ball ready
+refs: true true true
+other bounced 0 times
+y = 1.5, bounces = 0
+y = 1.5, bounces = 0
+court tick: tag = 8
+y = 0.5, bounces = 0
+y = 0.5, bounces = 0
+court tick: tag = 9
+y = 0.0, bounces = 1
+y = 0.0, bounces = 1
+court tick: tag = 10

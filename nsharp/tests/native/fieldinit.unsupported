@@ -1,0 +1,2 @@
+Valid C# that N# does not support yet: a field initializer in a class deriving a native one.
+code: NS9999

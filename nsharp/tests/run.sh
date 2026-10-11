@@ -109,6 +109,13 @@ if [ -z "${NS_SKIP_SEMA:-}" ] && [ -x "$here/run_sema.sh" ]; then
   "$here/run_sema.sh" || fail=1
 fi
 
+# C++ interop gate: N# programs driven by C++, through native bindings. Set
+# NS_SKIP_NATIVE=1 to skip.
+if [ -z "${NS_SKIP_NATIVE:-}" ] && [ -x "$here/run_native.sh" ]; then
+  echo "--- native interop ---"
+  NIM="$NIM" "$here/run_native.sh" || fail=1
+fi
+
 # Diagnostics gate: wrong programs must keep reporting Roslyn's error codes.
 # Set NS_SKIP_DIAG=1 to skip.
 if [ -z "${NS_SKIP_DIAG:-}" ] && [ -x "$here/run_diag.sh" ]; then

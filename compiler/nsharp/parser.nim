@@ -45,7 +45,7 @@ const
   ## is reported by `parseModifierList` instead of being silently dropped.
   NsMemberModifiers = ["public", "private", "protected", "internal", "static",
     "const", "readonly", "virtual", "override", "abstract", "sealed", "new",
-    "implicit", "explicit", "event", "required", "partial"]
+    "implicit", "explicit", "event", "required", "partial", "extern"]
   NsClassModifiers = ["public", "private", "protected", "internal", "abstract",
     "sealed", "static", "partial", "file"]
 
@@ -2046,7 +2046,7 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
                       isOverride: "override" in mods, isAbstract: "abstract" in mods,
                       isSealed: "sealed" in mods, isNew: "new" in mods,
                       isEvent: "event" in mods, isRequired: "required" in mods,
-                      isPartial: "partial" in mods)
+                      isPartial: "partial" in mods, isExtern: "extern" in mods)
 
   # constructor: `ClassName(params)` (no return type, as in C#)
   if p.at(nsIdent) and p.peek.text == clsName and p.peekAhead(1).kind == nsLParen:
@@ -2065,7 +2065,11 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
           result.initArgs.add p.parseArgument()
           if p.at(nsComma): discard p.advance else: break
         discard p.expect(nsRParen)
-    result.body = p.parseBlock()
+    if attrs.isExtern and p.at(nsSemi):
+      ## `extern C(...);`: implemented natively, so no body.
+      discard p.advance
+    else:
+      result.body = p.parseBlock()
     return
 
   if p.peek.kind != nsIdent and not p.at(nsLParen):

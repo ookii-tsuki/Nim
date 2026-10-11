@@ -1,0 +1,9 @@
+using Toybox;
+namespace Demo
+{
+    class Labelled : Node
+    {
+        string label;
+        void OnBegin() { label = "x"; }
+    }
+}

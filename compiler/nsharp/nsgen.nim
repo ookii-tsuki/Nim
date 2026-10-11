@@ -17,7 +17,7 @@ import ../ast, ../idents, ../lineinfos, ../msgs, ../options, ../pathutils,
 import ast, bcl, diagnostics, parser, lexer, symbols, sema, desugar
 
 const
-  NsGenDirName = ".nsgen"
+  NsGenDirName* = ".nsgen"
   NsExt = ".ns"
   ## The declaration keywords that introduce a type name. `record` is a C# class
   ## with a generated shape, which N# rejects, but the name is a type either way.

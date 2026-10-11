@@ -1,0 +1,9 @@
+using Toybox;
+namespace Demo
+{
+    class Tough : Node
+    {
+        int hp = 10;
+        void OnBegin() { hp++; }
+    }
+}

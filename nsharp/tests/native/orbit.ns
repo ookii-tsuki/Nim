@@ -1,0 +1,67 @@
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // A ball falls, bounces off the floor and counts its bounces. `OnBegin` and
+    // `OnTick` are plain methods: Toybox finds them by name.
+    class Ball : Node
+    {
+        int bounces;
+        float drag;
+
+        void OnBegin()
+        {
+            var m = Attach<Motion>();
+            m.Pos = new Vec2(0, 2);
+            Attach<Tag>().Value = 7;
+            drag = 0.5f;
+            Console.Print("ball ready");
+        }
+
+        void OnTick(float dt)
+        {
+            var m = Find<Motion>();
+            if (m == null) return;
+            m.Push(new Vec2(0, -2) * dt);
+            m.Pos = m.Pos + m.Vel * dt;
+            if (m.Pos.y < 0)
+            {
+                bounces++;
+                m.Pos = new Vec2(m.Pos.x, 0);
+                m.Vel = Vec2.Zero;
+            }
+            var tag = Find<Tag>();
+            if (tag != null) tag.Value += 1;
+            Console.Print($"y = {m.Pos.y}, bounces = {bounces}");
+        }
+
+        public int Bounces() => bounces;
+    }
+
+    class Court : Stage
+    {
+        Node lead;
+
+        public override void Begin()
+        {
+            lead = Spawn<Ball>();
+            Ball other = Spawn<Ball>();   // the pool grows and moves the first ball
+            Node nobody = null;
+            Console.Print($"refs: {lead != null} {other != null} {nobody == null}");
+            Console.Print($"other bounced {other.Bounces()} times");
+        }
+
+        public override void Tick(float dt)
+        {
+            var tag = lead.Find<Tag>();
+            Console.Print($"court tick: tag = {tag.Value}");
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start() => Director.Play<Court>();
+    }
+}

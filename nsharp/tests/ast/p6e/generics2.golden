@@ -2295,12 +2295,14 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkBracketExpr
-              nkIdent 'Or'
-              nkIdent 'Named'
-            nkIdent 'Factory'
-            nkNilLit
-            nkIdent 'n'
+            nkIdent 'nsCheckNil'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Or'
+                nkIdent 'Named'
+              nkIdent 'Factory'
+              nkNilLit
+              nkIdent 'n'
           nkIdent 'Name'
       nkCall
         nkIdent 'WriteLine'

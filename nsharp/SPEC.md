@@ -828,23 +828,26 @@ The compiler reads the ones that change what it does (`[Flags]`, `[Obsolete]`).
 
 ### 14.2 N# ↔ C / C++
 
-| Capability | C# analog | Disposition | Mechanism |
-|---|---|---|---|
-| `extern "C"` declaration | `[DllImport]`/`extern` | ✅ v1 | desugar (→ `{.importc.}`) |
-| `extern "C" fn` body | `[UnmanagedCallersOnly]` | ✅ v1 | desugar (→ `{.exportc.}`) |
-| C++ class binding (`extern "C++"`) | - | ✅ v1 | desugar (→ `{.importcpp.}`) |
-| Export to C++ | - | ✅ v1 | desugar (→ `{.exportcpp.}`) |
-| C++ member / constructor | - | ✅ v1 | desugar (→ `ccMember`/`constructor`) |
-| `[StructLayout]` ABI match | - | 🔜 later | desugar |
-| N# implementing a C++ abstract interface | - | ✅ v1 | desugar (`vtables`) |
-| `cstring` conversions | `Marshal` | ✅ v1 | lib |
-| Raw pointers `T*` | `unsafe` | ✅ v1 | front (→ `ptr`) |
-| `IntPtr` | - | 🔜 later | lib |
-| Function pointers | - | ✅ v1 | front/lib (→ `proc`) |
+C++ is bound in N# itself, with ordinary C# declarations: a type marked
+`[Native("Ns::Type", Header = "h.hpp")]` (from `NSharp.Interop`) is that C++ type,
+and its members are `extern`. A program using a binding is built with the C++
+backend (`nim cpp --exceptions:goto`, so the engine may build with
+`-fno-exceptions`); `nsharp/tests/native/` holds a small test engine (`toybox/`), its
+binding (`Toybox.ns`) and C++-driven tests (`run_native.sh`).
 
-**Goal (from your brief): C++ bindings should be writable in N# itself.** §14.2
-is therefore a **v1 priority**, not an afterthought - `extern "C"`/`extern "C++"`
-blocks are the mechanism, desugaring to Nim's mature `importc`/`importcpp`.
+| Capability | Disposition | Mechanism |
+|---|---|---|
+| `[Native]` struct: fields, `extern` constructors, operators, `static extern` properties | ✅ v1 | desugar: an `importcpp` object; members are `importcpp` procs (`Ns::T(@)`, `(# + #)`, `Ns::T::P`) |
+| `[Native]` class: fields, `extern` instance/static/generic methods | ✅ v1 | desugar: `importcpp` procs over `ptr T` (`#->M(@)`); a generic method takes one `typedesc` per type parameter, named in the pattern (`#->template M<'**2>(@)`); a result may be dropped |
+| `[Native("pattern")]` on an `extern` member | ✅ v1 | the C++ call as an `importcpp` pattern (`Ns::Print("%s", @)`) |
+| Handle classes: `Handle = "Ns::Id<{0}>"`, `SelfHandle = "id"` | ✅ v1 | a variable of the class (or of an N# class deriving it) is the handle `NsH_<Class>[T]`; member access dereferences it, `null`/`== null`/`?.` mean "invalid", using an invalid one throws `NullReferenceException` (not under `-d:danger`); casts and upcasts convert between handles of one family; `this` as a value is its own handle through `SelfHandle`, since the engine may move the object |
+| N# class deriving a native class | ✅ v1 | desugar: a C++ struct deriving it (`object of T`, `exportc`); a method is a C++ member function (`{.member.}`), which a concept-checking engine finds by name; an `override` of a native `virtual` is a C++ override (`{.virtual.}`) |
+| ... its fields | ✅ v1 for plain data | numbers, `bool`, `char`, enums, native structs, handles: the engine moves the object as bytes and never runs a Nim destructor, so a `string`, array or class field is NS9999, as are field initializers, constructors, properties, interfaces and generic instance methods |
+| `[Export("name")]` on a static method | ✅ v1 | desugar: an `exportc` wrapper C++ calls; the host calls `NimMain()` first (`--noMain`) |
+| `base.M()` on a native `virtual` | 🔜 later | |
+| Engine-owned destructors for managed fields | 🔜 later | a generated C++ destructor and move constructor |
+| `extern "C"` functions, raw pointers, function pointers | 🔜 later | |
+| `[StructLayout]` ABI match, `IntPtr` | 🔜 later | |
 
 ---
 

@@ -1,0 +1,2 @@
+Valid C# that N# does not support yet: a constructor in a class deriving a native one (the engine constructs it).
+code: NS9999

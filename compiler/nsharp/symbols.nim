@@ -33,8 +33,18 @@ type
     typ*: NsNode              ## declared type of a field, or a method's return type
     params*: seq[NsNode]      ## a method's declared parameter list
 
+  NsNative* = object
+    ## What a `[Native(...)]` attribute says about a type: the C++ type, the header
+    ## that declares it, and for a handle class the handle template (`{0}` stands
+    ## for the C++ class) and the member that gives `this` its own handle.
+    cpp*: string
+    header*: string
+    handle*: string
+    selfHandle*: string
+
   NsClassSymbol* = object
     name*: string
+    native*: NsNative              ## its `[Native]` attribute; `cpp` is "" for N# types
     base*: string
     classKind*: NsClassKind
     isAbstract*: bool
@@ -117,11 +127,25 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
     typ: m.typ,              ## field/property type, or a method's return type
     params: (if m.kind == nsnMethodDecl: m.params else: @[]))
 
+proc nativeOf*(n: NsNode): NsNative =
+  ## A declaration's `[Native("Ns::T", Header = .., Handle = .., SelfHandle = ..)]`.
+  let a = n.attributeNamed("Native")
+  if a == nil: return
+  for x in a.sons:
+    if x.kind == nsnStrLit: result.cpp = x.strVal
+    elif x.kind == nsnNamedArg and x.body != nil and x.body.kind == nsnStrLit:
+      case x.name
+      of "Header": result.header = x.body.strVal
+      of "Handle": result.handle = x.body.strVal
+      of "SelfHandle": result.selfHandle = x.body.strVal
+      else: discard
+
 proc collectClass(scope: NsModuleScope; cls: NsNode) =
   var sym = NsClassSymbol(name: cls.name, classKind: cls.classKind,
                           isAbstract: cls.attrs.isAbstract, isSealed: cls.attrs.isSealed,
                           isStatic: cls.attrs.isStatic, decl: cls,
                           obsolete: cls.attributeNamed("Obsolete"),
+                          native: nativeOf(cls),
                           enclosing: (if cls.outer.len > 0: cls.outer.split('+')[^1]
                                       else: ""))
   for t in cls.typeParams: sym.typeParams.add t.name
@@ -630,3 +654,22 @@ proc baseSlot*(scope: NsModuleScope; clsName, member: string): NsMemberSymbol =
   for i in 1 ..< ch.len:
     for m in scope.classes[ch[i]].members:
       if m.name == member and (m.isVirtual or m.isOverride): return m
+
+# --- native C++ types ----------------------------------------------------------
+
+proc isNative*(scope: NsModuleScope; clsName: string): bool =
+  ## A type the binding declares: its members are C++'s.
+  scope.classes.hasKey(clsName) and scope.classes[clsName].native.cpp.len > 0
+
+proc nativeBased*(scope: NsModuleScope; clsName: string): bool =
+  ## A native type, or an N# class deriving one: a C++ struct, not a Nim `ref`.
+  for c in scope.chain(clsName):
+    if scope.classes[c].native.cpp.len > 0: return true
+  false
+
+proc handleRoot*(scope: NsModuleScope; clsName: string): string =
+  ## The nearest class (itself first) whose binding names a handle: a variable of
+  ## `clsName` holds that handle. "" when it has none.
+  for c in scope.chain(clsName):
+    if scope.classes[c].native.handle.len > 0: return c
+  ""

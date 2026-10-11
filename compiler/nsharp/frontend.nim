@@ -12,7 +12,7 @@
 #   desugar.nim  ast.NsNode -> Nim PNode       (the C#-to-Nim translation)
 
 import std/[os, syncio]
-import ../ast, ../idents, ../lineinfos, ../options, ../msgs, ../pathutils
+import ../ast, ../idents, ../lineinfos, ../options, ../msgs, ../pathutils, ../renderer
 import parser, sema, desugar, diagnostics, nsgen
 
 proc isNsharpFile*(config: ConfigRef; fileIdx: FileIndex): bool =
@@ -28,6 +28,13 @@ proc compileNsSource*(source: string; fileIdx: FileIndex; cache: IdentCache;
   let scope = collectWithNamespaces(module, config)
   checkModule(module, scope, config)
   result = lowerModule(module, scope, cache, config)
+  if isDefined(config, "nsDump"):
+    ## `-d:nsDump`: the Nim a module lowers to, beside the namespace modules
+    ## (`<nimcache>/.nsgen/<file>.lowered.nim`), for reading what N# produced.
+    let dir = getNimcacheDir(config).string / NsGenDirName
+    createDir(dir)
+    let name = splitFile(toFullPath(config, fileIdx)).name
+    renderModule(result, dir / (name & ".lowered.nim"), {}, fileIdx, config)
 
 proc parseModule*(fileIdx: FileIndex; cache: IdentCache;
                   config: ConfigRef): PNode =

@@ -1139,7 +1139,13 @@ proc getTypeDescAux(m: BModule; origTyp: PType, check: var IntSet; kind: TypeDes
       m.s[cfsTypes].addArrayTypedef(name = result, len = n):
         m.s[cfsTypes].add(e)
   of tyObject, tyTuple:
-    let tt = origTyp.skipTypes({tyDistinct})
+    var tt = origTyp.skipTypes({tyDistinct})
+    if isImportedCppType(t) and tt.kind != tyGenericInst and t.kind == tyObject and
+        t.typeInst != nil and t.typeInst.kind == tyGenericInst:
+      # an instance of a generic `importcpp` object can reach here without its
+      # `tyGenericInst` (as a generic's type argument, a seq's element), and its
+      # pattern's placeholders ('0) need that instance's arguments
+      tt = t.typeInst
     if isImportedCppType(t) and tt.kind == tyGenericInst:
       importedCppObject(m, t, tt, check, kind, sig, result)
     else:

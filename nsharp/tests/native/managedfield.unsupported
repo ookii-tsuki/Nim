@@ -1,0 +1,2 @@
+Valid C# that N# does not support yet: a field of a managed type (string) in a class deriving a native one, which the engine moves as plain data.
+code: NS9999

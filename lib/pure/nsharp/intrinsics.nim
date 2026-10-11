@@ -691,3 +691,27 @@ proc nsAsByKey*[I](o: RootRef; t: typedesc[I]): I =
     if p != nil:
       result.nsObj = o
       result.nsVt = cast[typeof(result.nsVt)](p)
+
+# --- native C++ handles ----------------------------------------------------------
+#
+# A `[Native(Handle = "Ns::Id<{0}>")]` class is held through that handle: the
+# compiler declares the handle type (`NsH_<Class>[T]`, `T` the C++ class) and
+# instantiates these over it. A handle reads as `null` when the engine says it
+# is invalid; using one throws `NullReferenceException`, as a null reference
+# does in C#, unless checks are off (`-d:danger`).
+
+template nsHandleProcs*(H, R: untyped; hdr: untyped) =
+  proc nsRawDeref[T](h: H[T]): ptr T {.importcpp: "#.operator->()", header: hdr.}
+  proc nsValid*[T](h: H[T]): bool {.importcpp: "static_cast<bool>(#)", header: hdr, inject.}
+  proc nsDeref*[T](h: H[T]): ptr T {.inline, inject.} =
+    when not defined(danger):
+      if not nsValid(h): nsNilFail()
+    nsRawDeref(h)
+  proc nsAs*[T, U](h: H[U]; t: typedesc[H[T]]): H[T] {.importcpp: "'0(#)", header: hdr, inject.}
+    ## The handle as one of another class of its family: an upcast, or a downcast
+    ## the engine may check.
+  proc nsNull*[T](t: typedesc[H[T]]): H[T] {.importcpp: "'0()", header: hdr, inject.}
+    ## The invalid handle, C#'s `null`.
+  converter nsToRoot*[U](h: H[U]): H[R] {.inject.} = nsAs(h, H[R])
+    ## Any handle of the family is one of its root class: an upcast C# makes
+    ## implicitly, which a library call (`List<Node>.Add(coin)`) relies on.

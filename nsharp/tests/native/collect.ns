@@ -1,0 +1,56 @@
+using System;
+using System.Collections.Generic;
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    class Coin : Node
+    {
+        int worth;
+
+        void OnBegin()
+        {
+            Vault.Coins.Add(this);   // `this` kept as a reference, never as a pointer
+        }
+
+        public void Polish() { worth++; }
+        public int Worth() => worth;
+    }
+
+    class Vault : Stage
+    {
+        public static List<Node> Coins = new List<Node>();
+
+        public override void Begin()
+        {
+            for (int i = 0; i < 3; i++) Spawn<Coin>();
+            Console.Print($"minted {Coins.Count}");
+            foreach (var n in Coins)
+            {
+                Coin c = (Coin)n;
+                c.Polish();
+            }
+            Coin first = (Coin)Coins[0];
+            first.Polish();
+            Remove(Coins[1]);
+            Node spent = Coins[1];
+            Console.Print($"after remove: {Coins[0] != null} {spent == null} {Coins[2] != null}");
+            Console.Print($"worth: {first.Worth()} {((Coin)Coins[2]).Worth()}");
+            try
+            {
+                ((Coin)spent).Polish();
+            }
+            catch (NullReferenceException)
+            {
+                Console.Print("a removed node throws");
+            }
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start() => Director.Play<Vault>();
+    }
+}
