@@ -843,9 +843,11 @@ binding (`Toybox.ns`) and C++-driven tests (`run_native.sh`).
 | Handle classes: `Handle = "Ns::Id<{0}>"`, `SelfHandle = "id"` or `"#->GetId()"` | ✅ v1 | a variable of the class (or of an N# class deriving it) is the handle `NsH_<Class>[T]`; member access dereferences it, `null`/`== null`/`?.` mean "invalid", using an invalid one throws `NullReferenceException` (not under `-d:danger`); casts and upcasts convert between handles of one family; `this` as a value is its own handle through `SelfHandle`, since the engine may move the object; `SelfHandle` is a C++ pattern over the object (`#->GetId()`), or a member name standing for `#->name`, and since the generated code is the derived class's, what it names must be public or protected (without a handle, or without `SelfHandle`, `this` is only a receiver: NS9902/NS9903 as a value). `new` of a native class, or of one deriving it, is NS9901: the engine creates and owns it |
 | N# class deriving a native class | ✅ v1 | desugar: a C++ struct deriving it (`object of T`, `exportc`); a method is a C++ member function (`{.member.}`), which a concept-checking engine finds by name; an `override` of a native `virtual` is a C++ override (`{.virtual.}`) |
 | ... its fields | ✅ v1 | any type, with initializers. Plain data (numbers, `bool`, `char`, enums, native structs, handles) is a plain C++ member; a type Nim manages (`string`, an array, a `List<T>`, an N# class) is an `NsField<T>` (`lib/pure/nsharp/nsfield.hpp`), whose copy, move (`noexcept`) and destructor run Nim's hooks, so the engine's own copies, moves and destruction keep Nim's reference counts right while the class itself needs no special members (the rule of zero). Each module registers the hooks for its field types when it starts (the host calls `NimMain()` first). Initializers run in a generated C++ default constructor, which the engine's `T obj;` calls. Properties, interfaces and generic instance methods are NS9999 |
+| ... its constructors | ✅ v1 | C++ constructors (`{.constructor.}`), each starting with the field initializers; the engine runs one when its factory creates the object. A generic `extern` factory whose last parameter is `[Forward] params object[] args` (`T Spawn<T>([Forward] params object[] args) where T : Node`) passes the rest of its arguments to the C++ call as they are (a `varargs` `importcpp` proc), where the engine forwards them to `T`'s constructor (`T node(std::forward<Args>(args)...)`); they are checked against the constructors of the type argument for the result type (else the first), so a mismatch is CS1729/CS1503 at the call. A constructor body sees `this` as a member function's does, but the engine may set the object up only after constructing it, so `this` as a value or a native member there is a warning (NS9910); an exception that leaves one stops the program, since C++ cannot see it and the object would be half made. `: base(args)`, `: this(...)` and static constructors are NS9999; `[Forward]` anywhere else is NS9911 |
 | `[Export("name")]` on a static method | ✅ v1 | desugar: an `exportc` wrapper C++ calls; the host calls `NimMain()` first (`--noMain`) |
 | `base.M()` on a native `virtual` | 🔜 later | |
 | `extern "C"` functions, raw pointers, function pointers | 🔜 later | |
+| C bindings (`[Native]` over a C struct and its functions) | 🔜 later | a C struct is a Nim `importc` object (`{.inheritable, pure.}` to derive it as a plain struct: no `of`, no methods, so no native virtuals); functions are `importc` procs, and handles are whatever the C API uses (an id, a pointer). An N# type deriving a C struct would hold Nim-managed fields as in C++, but C has no destructor to run them, so the binding names the C call that frees one (`Free = "ns_free"`) |
 | `[StructLayout]` ABI match, `IntPtr` | 🔜 later | |
 
 ---
@@ -1044,11 +1046,13 @@ code:
 | `NS9902` | - | `this` as a value in a class whose native base has no handle |
 | `NS9903` | - | `this` as a value when the handle class names no `SelfHandle` |
 | `NS9904` | - | an `extern` member outside a `[Native]` type |
-| `NS9905` | - | a constructor in a native class binding, or in a class deriving one |
+| `NS9905` | - | a constructor in a native class binding |
 | `NS9906` | - | `[Export]` on anything but a non-generic static method |
 | `NS9907` | - | a `[Native]` type deriving a type that is not `[Native]` |
 | `NS9908` | - | a member of a `[Native]` type that is not `extern`, or has a body |
 | `NS9909` | - | a static or initialised field in a `[Native]` type |
+| `NS9910` | - | warning: `this` as a value, or a native member, in a constructor of a class deriving a native one, which the engine may not have set up yet |
+| `NS9911` | - | `[Forward]` on anything but the last, `params object[]`, parameter of a generic `extern` method |
 | `NS0019`/`NS0023` | CS0019/CS0023 | an operator applied to operands it does not take (`&&` on ints, `-` on a string) |
 | `NS0021`/`NS1579` | CS0021/CS1579 | indexing or `foreach` over a value that has neither |
 | `NS0026`/`NS0120` | CS0026/CS0120 | `this` or an instance member used in a static context |

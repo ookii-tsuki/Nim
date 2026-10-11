@@ -1,9 +1,0 @@
-using Toybox;
-namespace Demo
-{
-    class Built : Node
-    {
-        int hp;
-        public Built() { hp = 10; }
-    }
-}

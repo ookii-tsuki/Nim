@@ -1,0 +1,9 @@
+using NSharp.Interop;
+namespace Demo
+{
+    [Native("Game::World", Header = "game.hpp")]
+    public class World
+    {
+        public extern void Log([Forward] params object[] args);
+    }
+}

@@ -155,6 +155,8 @@ type
     ndNativeBaseNotNative
     ndNativeMemberNotExtern
     ndNativeFieldStatic
+    ndNativeCtorEarly
+    ndForwardMisplaced
     ndUnsupported
 
   NsDiagInfo* = tuple[code, msg: string]
@@ -375,8 +377,8 @@ const
                         " attribute"),
     ndExternOutsideNative: (code: "9904", msg: "'$1': an 'extern' member must belong to a" &
                         " type marked [Native]"),
-    ndNativeCtor: (code: "9905", msg: "'$1': a native class, or a class deriving one," &
-                        " cannot declare a constructor; the engine constructs it"),
+    ndNativeCtor: (code: "9905", msg: "'$1': a [Native] class cannot declare a" &
+                        " constructor; the engine constructs it"),
     ndExportMisplaced: (code: "9906", msg: "'$1': [Export] applies only to a non-generic" &
                         " static method"),
     ndNativeBaseNotNative: (code: "9907", msg: "'$1': a [Native] type cannot derive from" &
@@ -385,6 +387,10 @@ const
                         " 'extern' and have no body"),
     ndNativeFieldStatic: (code: "9909", msg: "'$1': a field of a [Native] type is the C++" &
                         " type's, so it cannot be static or initialised"),
+    ndNativeCtorEarly: (code: "9910", msg: "'$1' in a constructor of '$2': the engine" &
+                        " may not have finished setting up the native object yet"),
+    ndForwardMisplaced: (code: "9911", msg: "'$1': [Forward] applies only to the last" &
+                        " parameter, 'params object[]', of a generic 'extern' method"),
     ndUnsupported: (code: "9999", msg: "$1 is currently unsupported"),
   ]
 

@@ -149,9 +149,11 @@ template <typename T>
 struct Pool : PoolBase {
     std::vector<T> items;
 
-    NodeRef<T> Make(Registry& reg, Stage* stage) {
+    // The node is constructed first and registered after, as engines often do.
+    template <typename... Args>
+    NodeRef<T> Make(Registry& reg, Stage* stage, Args&&... args) {
         NodeRef<> r = reg.Add();
-        T node;
+        T node(std::forward<Args>(args)...);
         node.me = r;
         node.stage = stage;
         items.push_back(std::move(node));
@@ -200,11 +202,11 @@ public:
         return *pool;
     }
 
-    template <typename T = Node>
+    template <typename T = Node, typename... Args>
         requires std::derived_from<T, Node>
-    NodeRef<T> Spawn() {
+    NodeRef<T> Spawn(Args&&... args) {
         Registry::Current() = &registry;
-        return PoolOf<T>().Make(registry, this);
+        return PoolOf<T>().Make(registry, this, std::forward<Args>(args)...);
     }
 
     void Remove(NodeRef<> r) {

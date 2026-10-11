@@ -53,7 +53,7 @@ namespace Toybox
     {
         public virtual extern void Begin();
         public virtual extern void Tick(float dt);
-        public extern T Spawn<T>() where T : Node;
+        public extern T Spawn<T>([Forward] params object[] args) where T : Node;
         public extern void Remove(Node node);
     }
 

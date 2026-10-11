@@ -1,0 +1,9 @@
+using Toybox;
+namespace Demo
+{
+    class Crate : Node
+    {
+        public Crate(int count) : this() { }
+        public Crate() { }
+    }
+}

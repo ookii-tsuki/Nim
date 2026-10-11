@@ -404,6 +404,15 @@ proc argsToNim(l: Lowerer; call: NsNode): seq[PNode] =
         if mayMutate(x):
           arg = newTree(nkCall, a.info, l.id("nsVal", a.info), arg)
           break
+    if a.argForward and not a.argElement:
+      ## Passed on to a C++ constructor as it is: converted to the parameter's type,
+      ## and kept from C's `varargs` treatment of a `string`.
+      let pt = (if a.argParam != nil: a.argParam.typ else: nil)
+      if pt != nil and pt.kind == nsnTypeName and l.nameableType(pt) and v != nil and
+         v.kind != nsnNull:
+        arg = newTree(nkCall, a.info, l.typeToNim(pt, a.info), arg)
+      result.add newTree(nkCall, a.info, l.id("nsFwd", a.info), arg)
+      continue
     if a.argElement and a.argParam != nil and a.argParam.typ != nil and
        a.argParam.typ.kind == nsnArrayType:
       ## An element of a `params` array: the trailing arguments become one array.
@@ -3462,7 +3471,13 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PN
     fp.add l.identDefs("ns_" & tp.name, newTree(nkBracketExpr, info, l.id("typedesc", info),
                                                 l.id(tp.name, info)), info)
     targs.add "'" & (if l.isHandleConstrained(m, tp.name): "**" else: "") & $(i + 2)
+  var forward = false
   for p in m.params:
+    if p.paramMod == "params" and p.attributeNamed("Forward") != nil:
+      ## `[Forward] params object[]`: the rest of the arguments, which `@` passes
+      ## to the C++ call as they are.
+      forward = true
+      continue
     var t = l.nativeParamType(p.typ, p.info)
     if p.paramMod in ["ref", "out"]: t = newTree(nkVarTy, p.info, t)
     fp.add l.identDefs(p.name, t, p.info)
@@ -3480,8 +3495,9 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PN
   result[3] = fp
   ## C# lets a call statement drop a method's result.
   let isVoid = m.typ == nil or m.typ.kind in {nsnVoidType, nsnEmpty}
-  result[4] = l.cppPragma(pattern, header, info,
-                          (if isVoid: newSeq[string]() else: @["discardable"]))
+  var extra = (if isVoid: newSeq[string]() else: @["discardable"])
+  if forward: extra.add "varargs"
+  result[4] = l.cppPragma(pattern, header, info, extra)
   result[5] = empty(info)
   result[6] = empty(info)
 
@@ -3507,8 +3523,8 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let sec = newNodeI(nkTypeSection, info)
   if nat.handle.len > 0:
     ## The handle: `NsH_<Class>[T]`, the template with `{0}` as the class. It comes
-    ## first: the class's own `SelfHandle` field instantiates it, and an
-    ## instantiation of a type declared later in the section stays unresolved.
+    ## first, since an instantiation of a type declared later in the section stays
+    ## unresolved.
     sec.add newTree(nkTypeDef, info,
                     newTree(nkPragmaExpr, info, l.exportId("NsH_" & n.name, info),
                             l.cppPragma(nat.handle.replace("{0}", "'0"), header, info)),
@@ -3667,10 +3683,23 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
                    newTree(nkTypeDef, info,
                            newTree(nkPragmaExpr, info, l.exportId(n.name, info), pragma),
                            empty(info), objTy))
-  if inits.len > 0:
-    ## The field initializers: a C++ default constructor, which is what the engine's
-    ## `T obj;` runs.
-    let body = newNodeI(nkStmtList, info)
+  var ctors: seq[NsNode] = @[]
+  for m in n.sons:
+    if m.kind == nsnCtorDecl and not m.attrs.isStatic: ctors.add m
+  if ctors.len == 0 and inits.len > 0:
+    ## No constructor of its own: the field initializers are a C++ default
+    ## constructor, which is what the engine's `T obj;` runs.
+    ctors.add nil
+  for c in ctors:
+    ## A constructor: a C++ one, which the engine runs when a `[Forward]` factory
+    ## creates the object, and which starts with the field initializers. Its body
+    ## sees `this` as `self`, as a member function's does.
+    let cinfo = (if c != nil: c.info else: info)
+    let body = newNodeI(nkStmtList, cinfo)
+    if c != nil and c.body != nil:
+      body.add newTree(nkLetSection, cinfo,
+                       newTree(nkIdentDefs, cinfo, l.id("self", cinfo), empty(cinfo),
+                               newTree(nkAddr, cinfo, l.id("result", cinfo))))
     for m in inits:
       var target = newTree(nkDotExpr, m.info, l.id("result", m.info), l.id(m.name, m.info))
       if not l.plainNativeField(m.typ):
@@ -3679,11 +3708,27 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       if m.typ != nil and m.body.kind in {nsnIntLit, nsnFloatLit}:
         value = newTree(nkCall, m.info, l.typeToNim(m.typ, m.info), value)
       body.add newTree(nkAsgn, m.info, target, value)
-    let pd = newNodeI(nkProcDef, info, 7)
-    pd[0] = l.id("nsInit_" & n.name, info)
-    for i in 1 .. 6: pd[i] = empty(info)
-    pd[3] = newTree(nkFormalParams, info, ol.typeToNim(nsnTypeName(n.name, info), info))
-    pd[4] = newTree(nkPragma, info, l.id("constructor", info))
+    let fp = newTree(nkFormalParams, cinfo, ol.typeToNim(nsnTypeName(n.name, cinfo), cinfo))
+    if c != nil:
+      for p in c.params: fp.add l.paramDef(p)
+      if c.body != nil:
+        ## C++ cannot see an exception that leaves it, and the object would be half
+        ## made, so one stops the program, as an unhandled exception does.
+        var inner = l
+        inner.thisName = "self"
+        ## The closing `discard` keeps the body's last call from being the value of
+        ## the `try`, which ends the proc.
+        let user = newTree(nkStmtList, c.info, inner.memberBody(nil, c.body),
+                           newTree(nkDiscardStmt, c.info, empty(c.info)))
+        body.add newTree(nkTryStmt, c.info, user,
+                         newTree(nkExceptBranch, c.info,
+                                 newTree(nkCall, c.info, l.id("nsEscaped", c.info),
+                                         strLit(n.name, c.info))))
+    let pd = newNodeI(nkProcDef, cinfo, 7)
+    pd[0] = l.id("nsInit_" & n.name, cinfo)
+    for i in 1 .. 6: pd[i] = empty(cinfo)
+    pd[3] = fp
+    pd[4] = newTree(nkPragma, cinfo, l.id("constructor", cinfo))
     pd[6] = body
     into.add pd
   var staticInits: seq[PNode] = @[]

@@ -1,0 +1,13 @@
+using Toybox;
+namespace Demo
+{
+    class Crate : Node
+    {
+        public Crate(int count) { }
+    }
+
+    class Yard : Stage
+    {
+        public override void Begin() { Spawn<Crate>("a"); }
+    }
+}

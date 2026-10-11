@@ -19,7 +19,7 @@ struct NsHooks {
 
 template <typename T>
 struct NsField {
-    T v{};
+    T v{};   // the only member: Nim's `nsVal` reads it at the field's own address
     NsField() = default;
     NsField(const NsField& o) : v{} { if (NsHooks<T>::copy) NsHooks<T>::copy(&v, const_cast<T*>(&o.v)); }
     NsField(NsField&& o) noexcept : v(o.v) { o.v = T{}; }

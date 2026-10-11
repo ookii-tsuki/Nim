@@ -728,8 +728,16 @@ when defined(cpp):
   type
     NsField*[T] {.importcpp: "NsField<'0>", header: "pure/nsharp/nsfield.hpp".} = object
 
-  proc nsVal*[T](f: var NsField[T]): var T {.importcpp: "#.v", header: "pure/nsharp/nsfield.hpp".}
-    ## The value, to read or assign.
+  proc nsVal*[T](f: var NsField[T]): var T {.inline.} =
+    ## The value, to read or assign: `NsField<T>`'s only member, so at its address.
+    ## A Nim proc rather than an `importcpp` one, whose `var` result C++ would hold
+    ## as a reference that an inlined iterator cannot declare before assigning it.
+    cast[ptr T](addr f)[]
+
+  type NsFwd*[T] {.importcpp: "'0".} = object
+    ## A `[Forward]` argument: the value as it is, which a C `varargs` call would
+    ## otherwise pass a `string` to as a `cstring`.
+  proc nsFwd*[T](x: T): NsFwd[T] {.importcpp: "#".}
 
   proc nsFieldDestroy[T](p: ptr T) {.cdecl.} = `=destroy`(p[])
   proc nsFieldCopy[T](d: ptr T; s: ptr T) {.cdecl.} = d[] = s[]
@@ -741,3 +749,11 @@ when defined(cpp):
   template nsUseField*(T: typedesc) =
     ## Registers Nim's hooks for a field type, before the engine creates an object.
     nsSetHooks(T, nsFieldDestroy[T], nsFieldCopy[T])
+
+  proc nsEscaped*(cls: string) {.noreturn.} =
+    ## An exception left a constructor the engine ran. C++ cannot see it and the
+    ## object is half made, so the program stops, as on an unhandled exception.
+    let e = getCurrentException()
+    writeLine(stderr, "Unhandled exception in a constructor of " & cls & ": " & e.msg &
+                      " [" & $e.name & "]")
+    quit(1)

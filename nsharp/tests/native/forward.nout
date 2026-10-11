@@ -1,0 +1,4 @@
+plain x0 at 10: default
+gold x3 at 10: labelled
+iron! x2 at 25: iron!0 iron!1
+tin x1 at 10: labelled

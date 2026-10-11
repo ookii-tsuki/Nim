@@ -23,3 +23,8 @@ type
     ## `[Native("pattern")]` gives the C++ call as a Nim `importcpp` pattern.
   ExportAttribute* = ref object of Attribute
     ## `[Export("name")]` on a static method: C++ calls it by that name.
+  ForwardAttribute* = ref object of Attribute
+    ## `[Forward] params object[] args`, the last parameter of a generic `extern`
+    ## factory (`T Spawn<T>([Forward] params object[] args) where T : Node`): the
+    ## arguments reach the C++ call as they are, and are checked against the
+    ## constructors of the type argument (the return type's, or the first one).

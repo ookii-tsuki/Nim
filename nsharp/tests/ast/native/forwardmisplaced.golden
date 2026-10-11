@@ -1,0 +1,53 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "NSharp/Interop"
+  nkTypeSection
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'World'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Game::World"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "game.hpp"
+          nkIdent 'inheritable'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+  nkStmtList
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Log'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'World'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Log(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "game.hpp"
+        nkIdent 'varargs'
+      nkEmpty
+      nkEmpty

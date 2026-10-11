@@ -888,6 +888,24 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
   else:
     nsError(ctx.config, where, ndArgumentNoOverload, displayName, $args.len)
 
+proc isForwardParam(p: NsNode): bool =
+  p != nil and p.paramMod == "params" and p.attributeNamed("Forward") != nil
+
+proc forwardTarget(ctx: NsCheckContext; owner: string; callee: NsNode): string =
+  ## The class a `[Forward]` factory's arguments construct: its type argument for the
+  ## method's result type when that is a type parameter, else for its first one.
+  ## "" when the call names none, or names a type parameter of its own.
+  let mi = ctx.scope.findMemberInfo(owner, callee.name)
+  if mi.typeParams.len == 0 or callee.typeArgs.len != mi.typeParams.len: return ""
+  var k = 0
+  if mi.typ != nil and mi.typ.kind == nsnTypeName:
+    let i = mi.typeParams.find(mi.typ.name)
+    if i >= 0: k = i
+  let t = callee.typeArgs[k]
+  if t == nil or t.kind != nsnTypeName: return ""
+  let cn = unqualified(t.name)
+  if ctx.scope.classes.hasKey(cn): cn else: ""
+
 proc checkExplicitTypeArgs(ctx: NsCheckContext; owner: string; callee: NsNode;
                            args: seq[NsNode]) =
   ## `M<int>("s")`: the written type arguments fix the parameter types, so an
@@ -1391,6 +1409,18 @@ proc libraryHas(ctx: NsCheckContext; recv: string; kind: NsTypeKind; name: strin
     if m.name == name: return true
   ctx.scope.extensions.hasKey(name)
 
+proc warnEarlyNative(ctx: NsCheckContext; n: NsNode) =
+  ## `this.M()` on a native member in a constructor of a class deriving a native
+  ## one: C++ has constructed the base, but the engine may set the object up only
+  ## once it is constructed (NS9910).
+  if not ctx.inCtor or ctx.ctorIsStatic or n.body == nil or
+     n.body.kind notin {nsnThis, nsnBase} or not ctx.scope.classes.hasKey(ctx.clsName) or
+     not ctx.scope.nativeBased(ctx.clsName) or ctx.scope.isNative(ctx.clsName):
+    return
+  let m = ctx.scope.findMemberInfo(ctx.clsName, n.name)
+  if m.name.len > 0 and ctx.scope.isNative(m.owner):
+    nsWarn(ctx.config, n.info, ndNativeCtorEarly, m.owner & "." & n.name, ctx.clsName)
+
 proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
   ## `recv.name` on a value: the member must exist (CS1061), be an instance member
   ## (CS0176), and be accessible from here (CS0122). Only where the receiver's
@@ -1584,6 +1614,7 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of tkClass:
     ctx.checkMemberAccess(n)
     ctx.checkMemberUse(n)
+    ctx.warnEarlyNative(n)
     kind = ctx.memberKind(n.body.typeName, n.name)
     if ctx.scope.findMemberInfo(n.body.typeName, n.name).isMethod:
       ## A method named without a call is a method group: a delegate value.
@@ -1747,6 +1778,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ctx.checkMemberUse(callee)
     elif rk == tkClass:
       ctx.checkMemberUse(callee)
+      ctx.warnEarlyNative(callee)
       owner = callee.body.typeName
       kind = ctx.memberKind(owner, callee.name)
       let mt = ctx.memberTypeOf(callee.body, owner, callee.name)
@@ -1836,7 +1868,20 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if callee != nil and callee.typeArgs.len > 0 and owner.len > 0 and
      ctx.scope.classes.hasKey(owner):
     ctx.checkExplicitTypeArgs(owner, callee, n.sons)
-  if callee != nil and (callee.kind == nsnMember or cands.len > 0):
+  if callee != nil and cands.len == 1 and cands[0].len > 0 and isForwardParam(cands[0][^1]):
+    ## A `[Forward]` factory: the arguments past its own parameters reach the C++
+    ## call as they are, so they are checked against the constructors of the class
+    ## it creates, and are given their parameters' types.
+    let own = cands[0].len - 1
+    let target = ctx.forwardTarget(owner, callee)
+    ctx.checkCallArgs(@[cands[0][0 ..< own]], n.sons[0 ..< min(own, n.sons.len)],
+                      callee.name, owner, false, n.info)
+    if target.len > 0:
+      ctx.checkCallArgs(ctx.scope.ctorOverloads(target),
+                        (if n.sons.len > own: n.sons[own .. ^1] else: @[]),
+                        target, target, true, n.info)
+    for j in own ..< n.sons.len: n.sons[j].argForward = true
+  elif callee != nil and (callee.kind == nsnMember or cands.len > 0):
     ctx.checkCallArgs(cands, n.sons, callee.name, owner, false, n.info)
   let sigs = callLambdaSigs(ctx.scope, ctx.surface, n)
   for j, a in n.sons:
@@ -2096,6 +2141,8 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         nsError(ctx.config, n.info, ndNativeThisNoHandle, ctx.clsName, base)
       elif ctx.scope.classes[root].native.selfHandle.len == 0:
         nsError(ctx.config, n.info, ndNativeNoSelfHandle, ctx.clsName, root)
+      elif ctx.inCtor and not ctx.ctorIsStatic:
+        nsWarn(ctx.config, n.info, ndNativeCtorEarly, "this", ctx.clsName)
     n.setType(tkClass, ctx.clsName)
     result = tkClass
   of nsnBase:
@@ -3552,6 +3599,14 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
       nsError(ctx.config, m.info, ndExportMisplaced, named(m))
     if m.attrs.isExtern and not native:
       nsError(ctx.config, m.info, ndExternOutsideNative, named(m))
+    if m.kind in {nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl}:
+      for i, p in m.params:
+        if p == nil or p.attributeNamed("Forward") == nil: continue
+        if m.kind != nsnMethodDecl or not m.attrs.isExtern or m.typeParams.len == 0 or
+           i != m.params.len - 1 or p.paramMod != "params" or p.typ == nil or
+           p.typ.kind != nsnArrayType or p.typ.typ == nil or
+           canonicalTypeName(declTypeName(p.typ.typ)) != "object":
+          nsError(ctx.config, p.info, ndForwardMisplaced, named(m))
   if native:
     if cls.typ != nil and not ctx.scope.isNative(canonicalTypeName(cls.typ.name)):
       nsError(ctx.config, cls.info, ndNativeBaseNotNative, cls.name,
@@ -3586,7 +3641,13 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
         if m.typeParams.len > 0 and not m.attrs.isStatic:
           unsupported(m, "a generic method in a class deriving a native one")
       of nsnCtorDecl:
-        nsError(ctx.config, m.info, ndNativeCtor, named(m))
+        ## A C++ constructor, which the engine runs when it creates the object
+        ## through a `[Forward]` factory.
+        if m.attrs.isStatic:
+          unsupported(m, "a static constructor in a class deriving a native one")
+        elif m.initKind == "this" or m.initArgs.len > 0:
+          unsupported(m, "': base(...)' or ': this(...)' on a constructor of a class" &
+                         " deriving a native one")
       else:
         unsupported(m, "this member in a class deriving a native one")
 

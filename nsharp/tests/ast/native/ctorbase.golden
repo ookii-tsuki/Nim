@@ -1,0 +1,104 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "Toybox"
+  nkTypeSection
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Crate'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'exportc'
+            nkStrLit "Crate"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkIdent 'Node'
+        nkRecList
+  nkProcDef
+    nkIdent 'nsInit_Crate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Crate'
+      nkIdentDefs
+        nkIdent 'count'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkIdent 'constructor'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsInit_Crate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Crate'
+    nkPragma
+      nkIdent 'constructor'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsInit_Crate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Crate'
+      nkIdentDefs
+        nkIdent 'count'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkIdent 'constructor'
+    nkEmpty
+    nkStmtList
+      nkLetSection
+        nkIdentDefs
+          nkIdent 'self'
+          nkEmpty
+          nkAddr
+            nkIdent 'result'
+      nkTryStmt
+        nkStmtList
+          nkStmtList
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Crate"
+  nkProcDef
+    nkIdent 'nsInit_Crate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Crate'
+    nkPragma
+      nkIdent 'constructor'
+    nkEmpty
+    nkStmtList
+      nkLetSection
+        nkIdentDefs
+          nkIdent 'self'
+          nkEmpty
+          nkAddr
+            nkIdent 'result'
+      nkTryStmt
+        nkStmtList
+          nkStmtList
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Crate"
