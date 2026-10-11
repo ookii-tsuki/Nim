@@ -145,12 +145,19 @@ nkStmtList
         nkStrLit "nsM_Begin()"
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'n'
-          nkEmpty
-          nkCall
-            nkIdent 'newNode'
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'n'
+            nkEmpty
+            nkCall
+              nkIdent 'newNode'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_n'
+            nkPtrTy
+              nkIdent 'Node'
+            nkNilLit
   nkProcDef
     nkIdent 'nsCpp_Begin'
     nkEmpty

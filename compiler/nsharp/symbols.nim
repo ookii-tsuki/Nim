@@ -46,6 +46,7 @@ type
     deref*: string                 ## a handle's object pointer (`#.Get()`)
     get*, set*: string             ## an `extern` property's accessors (`GetPosition`)
     qualifiers*: string            ## an `extern` method's C++ qualifiers (`const noexcept`)
+    stable*: bool                  ## `Stable = true`: its members create, destroy and move nothing
 
   NsClassSymbol* = object
     name*: string
@@ -151,6 +152,9 @@ proc nativeOf*(n: NsNode): NsNative =
       of "Set": result.set = x.body.strVal
       of "Qualifiers": result.qualifiers = x.body.strVal
       else: discard
+    elif x.kind == nsnNamedArg and x.name == "Stable" and x.body != nil and
+         x.body.kind == nsnBoolLit:
+      result.stable = x.body.intVal != 0
 
 proc collectClass(scope: NsModuleScope; cls: NsNode) =
   var sym = NsClassSymbol(name: cls.name, classKind: cls.classKind,
@@ -726,6 +730,24 @@ proc ownedFamily*(scope: NsModuleScope; clsName: string): bool =
   ## and holds what C++ gives it as a borrowed pointer.
   let r = scope.handleRoot(clsName)
   r.len > 0 and scope.classes[r].native.handle.len == 0
+proc nativeStable*(scope: NsModuleScope; clsName: string): bool =
+  ## A native class whose members (its constructors and destructor included)
+  ## create, destroy and move no engine object: its binding, or a native base's,
+  ## says `Stable = true`.
+  for c in scope.chain(clsName):
+    if scope.isNative(c) and scope.classes[c].native.stable: return true
+  false
+
+proc nativeMoves*(scope: NsModuleScope; clsName, member: string): bool =
+  ## Whether calling a native member may create, destroy or move an engine object:
+  ## yes unless its class is `Stable` and the member is not marked `[Moves]`.
+  if not scope.nativeStable(clsName): return true
+  for c in scope.chain(clsName):
+    if not scope.isNative(c) or scope.classes[c].decl == nil: continue
+    for m in scope.classes[c].decl.sons:
+      if m.name == member and m.attributeNamed("Moves") != nil: return true
+  false
+
 proc nativeQualifiers*(scope: NsModuleScope; clsName, member: string): string =
   ## The C++ qualifiers (`[Native(Qualifiers = "const")]`) of the native method a
   ## member of `clsName` is, or overrides: "" when it is none.

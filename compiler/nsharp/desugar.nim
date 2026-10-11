@@ -55,6 +55,13 @@ type
       ## the generic parameters a routine emitted now takes (class's, then method's)
     objTypes: bool
       ## a native class names its C++ struct, not its handle: a base type, `self`
+    hoist: NsHoist
+      ## the handle locals in scope whose object pointer is kept (`nsP_x`)
+    noCache: bool
+      ## lowering a statement that may move engine objects: handles resolve afresh
+  NsHoist = ref object
+    names: seq[tuple[name, cls: string]]
+    moves: Table[string, bool]   ## memo: whether an N# member may move engine objects
 
 proc note(l: NsFromImports; module, name: string) =
   ## Records one declaration to import by name, once.
@@ -364,6 +371,9 @@ proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
   ## A lambda as a Nim closure. `sema.nim` wrote the types of the delegate it
   ## converts to; one it could not place keeps `auto`, which Nim infers when the
   ## lambda is passed where a concrete proc type is expected.
+  var l = l
+  ## It may run any time later: no handle's object is kept across into it.
+  if l.hoist != nil: l.hoist = NsHoist(moves: l.hoist.moves)
   let fp = newNodeI(nkFormalParams, n.info)
   if n.typ != nil: fp.add l.typeToNim(n.typ, n.info)
   else: fp.add l.id("auto", n.info)
@@ -537,6 +547,9 @@ proc typeRef(l: Lowerer; t: NsNode): PNode =
 
 proc checkNil(l: Lowerer; recvNs: NsNode; recv: PNode; info: TLineInfo): PNode
 proc recvOf(l: Lowerer; n: NsNode): PNode
+proc isHoisted(l: Lowerer; name: string): bool
+proc cacheResets(l: Lowerer; info: TLineInfo): seq[PNode]
+proc afterThrow(l: Lowerer; body: PNode): PNode
 proc isManagedNativeField(l: Lowerer; cls, field: string): bool
 proc isHandleValue(l: Lowerer; n: NsNode): bool
 proc memberReceiverChecked(l: Lowerer; n: NsNode): PNode
@@ -805,6 +818,10 @@ proc recvOf(l: Lowerer; n: NsNode): PNode =
     return l.id("self", n.info)
   result = l.expr(n)
   if l.isHandleValue(n):
+    if n.kind == nsnIdent and l.isHoisted(n.name):
+      ## A handle local whose object is kept (see `stmt`).
+      return newTree(nkCall, n.info, l.id("nsDerefCached", n.info), result,
+                     l.id("nsP_" & n.name, n.info))
     result = newTree(nkCall, n.info, l.id("nsDeref", n.info), result)
 
 proc memberReceiver(l: Lowerer; n: NsNode): PNode =
@@ -1411,6 +1428,9 @@ proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode =
       let fwd = l.localFuncToNim(s)
       fwd[6] = empty(s.info)
       result.add fwd
+  let kept = (if l.hoist != nil: l.hoist.names.len else: 0)
+  defer:
+    if l.hoist != nil: l.hoist.names.setLen(kept)
   for i, s in stmts:
     let st = l.stmt(s)
     if s != nil and s.kind == nsnLocalDecl and st.kind in {nkVarSection, nkLetSection} and
@@ -1946,6 +1966,7 @@ proc filteredTryToNim(l: Lowerer; n: NsNode): PNode =
   let pick = l.fresh("nsPick")
   let br = newTree(nkExceptBranch, info, l.anyException(info))
   let body = newNodeI(nkStmtList, info)
+  for r in l.cacheResets(info): body.add r
   body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(exc, info),
     empty(info), newTree(nkCall, info, l.id("getCurrentException", info))))
   body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id(pick, info),
@@ -1955,7 +1976,7 @@ proc filteredTryToNim(l: Lowerer; n: NsNode): PNode =
   var finallyNode: PNode = nil
   for c in n.sons:
     if c.kind == nsnFinally:
-      finallyNode = newTree(nkFinally, c.info, l.stmtSeq(c.body))
+      finallyNode = newTree(nkFinally, c.info, l.afterThrow(l.stmtSeq(c.body)))
       continue
     if c.kind != nsnCatch: continue
     inc k
@@ -2001,8 +2022,11 @@ proc usingToNim(l: Lowerer; n: NsNode): PNode =
       sl.add newTree(nkLetSection, r.info, newTree(nkIdentDefs, r.info, l.id(t, r.info),
                                                   empty(r.info), l.expr(r)))
       v = l.id(t, r.info)
-    sl.add newTree(nkDefer, r.info, newTree(nkStmtList, r.info,
-      newTree(nkCall, r.info, l.id("nsDispose", r.info), v)))
+    let disposal = newTree(nkStmtList, r.info,
+      newTree(nkCall, r.info, l.id("nsDispose", r.info), v))
+    ## `Dispose` may move engine objects: what is kept before it is dropped.
+    for x in l.cacheResets(r.info): disposal.add x
+    sl.add newTree(nkDefer, r.info, disposal)
   if n.body == nil: return sl
   sl.add l.stmtSeq(n.body)
   result = newTree(nkBlockStmt, info, empty(info), sl)
@@ -2035,11 +2059,11 @@ proc tryToNim(l: Lowerer; n: NsNode): PNode =
         ## `catch { }` takes everything, the runtime's errors too (a bare `except`
         ## would leave out Nim's defects, `NullReferenceException` among them).
         br.add l.anyException(c.info)
-      br.add l.stmtSeq(c.body)
+      br.add l.afterThrow(l.stmtSeq(c.body))
       result.add br
     elif c.kind == nsnFinally:
       let f = newNodeI(nkFinally, c.info)
-      f.add l.stmtSeq(c.body)
+      f.add l.afterThrow(l.stmtSeq(c.body))
       result.add f
 
 proc noneCall(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
@@ -2304,7 +2328,231 @@ proc outDeclsOf(n: NsNode): seq[NsNode] =
 
 proc stmtInner(l: Lowerer; n: NsNode): PNode
 
+# --- handle hoisting -------------------------------------------------------------
+#
+# Each member access through an engine handle resolves it (`nsDeref`: a validity
+# test and a lookup). A handle local keeps the object it reaches in `nsP_x` and
+# reuses it, until a statement that may create, destroy or move engine objects:
+# such a statement resolves handles afresh, and clears every kept pointer after
+# it. What may move: a native member unless its class is `Stable` (and the member
+# not `[Moves]`), a constructor of such a class, an N# member that may reach one,
+# a call N# cannot see the target of (virtual, interface, delegate), and storing a
+# class N# owns whose binding is not `Stable` (its C++ destructor may run). A
+# cleared pointer is resolved again at its next use, so branches and loops need no
+# analysis of their own. `-d:nsNoHandleCache` turns it off.
+
+proc exprMoves(l: Lowerer; n: NsNode): bool
+proc memberMoves(l: Lowerer; cls, name: string): bool
+
+proc bodyMoves(l: Lowerer; n: NsNode): bool =
+  ## Whether anything in a body may move engine objects, its nested statements
+  ## included; a lambda's body counts where it is called, not here.
+  if n == nil: return false
+  if n.kind in {nsnLambda, nsnLocalFunc}: return false
+  if l.exprMoves(n): return true
+  if l.bodyMoves(n.body): return true
+  for x in n.sons:
+    if l.bodyMoves(x): return true
+  false
+
+proc memberMoves(l: Lowerer; cls, name: string): bool =
+  ## Whether an N# member (every declaration of the name, along its class chain)
+  ## may move engine objects. Recursion counts as moving.
+  let key = cls & "." & name
+  if l.hoist.moves.hasKey(key): return l.hoist.moves[key]
+  l.hoist.moves[key] = true
+  var r = false
+  for c in l.scope.chain(cls):
+    let d = l.scope.classes[c].decl
+    if d == nil: continue
+    if l.scope.isNative(c):
+      for m in d.sons:
+        if m.name == name and l.scope.nativeMoves(c, name): r = true
+      continue
+    for m in d.sons:
+      if m.name != name and not (name == "" and m.kind == nsnCtorDecl): continue
+      case m.kind
+      of nsnMethodDecl, nsnCtorDecl: r = r or l.bodyMoves(m.body)
+      of nsnPropertyDecl:
+        for acc in m.params: r = r or l.bodyMoves(acc)
+      of nsnFieldDecl: r = r or l.bodyMoves(m.body)
+      else: discard
+    if r: break
+  l.hoist.moves[key] = r
+  r
+
+proc ownedRelease(l: Lowerer; n: NsNode): bool =
+  ## A value of a class N# owns whose binding is not `Stable`: storing over one may
+  ## run its C++ destructor.
+  n != nil and n.typeKind == tkClass and l.scope.classes.hasKey(n.typeName) and
+    l.scope.ownedFamily(n.typeName) and not l.scope.nativeStable(n.typeName)
+
+proc exprMoves(l: Lowerer; n: NsNode): bool =
+  ## Whether evaluating an expression may move engine objects (lambdas aside).
+  if n == nil: return false
+  case n.kind
+  of nsnLambda, nsnLocalFunc: return false
+  of nsnCall:
+    let c = n.body
+    if c == nil: return true
+    if c.kind == nsnMember and c.strVal == "extension":
+      if l.scope.extensions.hasKey(c.name) and l.scope.extensions[c.name].len > 0:
+        if l.memberMoves(l.scope.extensions[c.name][0].owner, c.name): return true
+      else: return true
+    elif c.kind == nsnMember and c.body != nil:
+      let owner = (if c.body.kind == nsnThis: (if l.curClass != nil: l.curClass.name else: "")
+                   else: c.body.typeName)
+      if l.scope.classes.hasKey(owner):
+        let mi = l.scope.findMemberInfo(owner, c.name)
+        if mi.name.len == 0 or not mi.isMethod: return true      ## a delegate
+        if l.scope.isNative(mi.owner):
+          if l.scope.nativeMoves(mi.owner, c.name): return true
+        elif l.scope.isDispatched(owner, c.name) or l.scope.isInterface(owner): return true
+        elif l.memberMoves(mi.owner, c.name): return true
+      elif c.body.typeKind == tkClass and l.scope.isInterface(c.body.typeName):
+        return true
+    else:
+      return true                                                ## a local function or delegate
+    for a in n.sons:
+      if l.ownedRelease(a): return true
+  of nsnNew:
+    let t = (if n.typ != nil and n.typ.kind == nsnTypeName: unqualified(n.typ.name) else: "")
+    if l.scope.classes.hasKey(t):
+      if l.scope.nativeBased(t) and not l.scope.nativeStable(t): return true
+      if l.memberMoves(t, ""): return true
+  of nsnMember:
+    if n.body != nil:
+      let owner = (if n.body.kind == nsnThis: (if l.curClass != nil: l.curClass.name else: "")
+                   else: n.body.typeName)
+      if l.scope.classes.hasKey(owner):
+        let mi = l.scope.findMemberInfo(owner, n.name)
+        if mi.isProperty:
+          if l.scope.isNative(mi.owner):
+            if l.scope.nativeMoves(mi.owner, n.name): return true
+          elif l.scope.isDispatched(owner, n.name) or l.memberMoves(mi.owner, n.name):
+            return true
+  of nsnIndex:
+    if n.body != nil and l.scope.classes.hasKey(n.body.typeName) and
+       l.scope.nativeBased(n.body.typeName) and
+       not l.scope.nativeStable(n.body.typeName):
+      return true
+  of nsnAssign:
+    if n.sons.len > 0 and l.ownedRelease(n.sons[0]): return true
+  else: discard
+  if l.exprMoves(n.body): return true
+  for x in n.sons:
+    if l.exprMoves(x): return true
+  false
+
+proc stmtMoves(l: Lowerer; n: NsNode): bool =
+  ## Whether a statement's own expressions may move engine objects: its condition,
+  ## initializer, subject or value -- not the statements nested in it, which are
+  ## judged where they are lowered.
+  if n == nil: return false
+  case n.kind
+  of nsnLocalDecl, nsnExprStmt, nsnReturn, nsnThrow, nsnSwitch:
+    l.exprMoves(n.body)
+  of nsnIf:
+    var r = false
+    for b in n.sons:
+      if b != nil and b.kind == nsnIfBranch: r = r or l.exprMoves(b.body)
+    r
+  of nsnWhile, nsnDoWhile: l.exprMoves(n.body)
+  of nsnFor: l.bodyMoves(n.body)
+  of nsnForeach:
+    ## The enumeration itself: a collection of the library's moves nothing.
+    l.exprMoves(n.body) or (n.body != nil and n.body.typeKind == tkClass and
+                            l.scope.classes.hasKey(n.body.typeName))
+  of nsnUsingStmt:
+    var r = false
+    for x in n.sons: r = r or l.bodyMoves(x)
+    r
+  of nsnYield:
+    ## Whatever runs between the iterator's steps may move anything.
+    true
+  of nsnBlock, nsnBlockStmt, nsnTry, nsnChecked, nsnUnchecked, nsnBreak, nsnContinue,
+     nsnElseBranch:
+    false
+  else: l.exprMoves(n)
+
+proc hoistedLocal(l: Lowerer; n: NsNode): string =
+  ## The engine class a local's handle is of, when it is one N# may keep the object
+  ## of: "" otherwise.
+  if defined(nsNoHandleCache) or l.hoist == nil or n.paramMod.len > 0 or
+     n.declKind == dkConst:
+    return ""
+  let tn = (if n.typ != nil and n.typ.kind == nsnTypeName: canonicalTypeName(n.typ.name)
+            elif n.body != nil: n.body.typeName else: "")
+  if tn.len > 0 and l.scope.classes.hasKey(tn) and l.scope.engineOwned(tn): tn else: ""
+
+proc cacheDecl(l: Lowerer; name, cls: string; info: TLineInfo): PNode =
+  ## `var nsP_x: ptr C = nil`
+  newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id("nsP_" & name, info),
+    newTree(nkPtrTy, info, l.id(cls, info)), newNodeI(nkNilLit, info)))
+
+proc cacheResets(l: Lowerer; info: TLineInfo): seq[PNode] =
+  ## `nsP_x = nil` for every kept pointer in scope.
+  result = @[]
+  if l.hoist == nil: return
+  for (name, _) in l.hoist.names:
+    result.add newTree(nkAsgn, info, l.id("nsP_" & name, info), newNodeI(nkNilLit, info))
+
+proc afterThrow(l: Lowerer; body: PNode): PNode =
+  ## A `catch` or `finally` body: the statement that threw may have moved engine
+  ## objects before its kept pointers were dropped, so they are dropped here.
+  let resets = l.cacheResets(body.info)
+  if resets.len == 0: return body
+  result = newNodeI(nkStmtList, body.info)
+  for r in resets: result.add r
+  result.add body
+
+proc isHoisted(l: Lowerer; name: string): bool =
+  if l.hoist == nil or l.noCache: return false
+  for (n, _) in l.hoist.names:
+    if n == name: return true
+  false
+
+proc assignsLocal(n: NsNode; name: string): bool =
+  ## Whether a statement assigns the local, or passes it as `ref`/`out`.
+  if n == nil or n.kind in {nsnLambda, nsnLocalFunc}: return false
+  if n.kind == nsnAssign and n.sons.len > 0 and n.sons[0].kind == nsnIdent and
+     n.sons[0].name == name:
+    return true
+  if n.kind == nsnRefArg and n.body != nil and n.body.kind == nsnIdent and n.body.name == name:
+    return true
+  if assignsLocal(n.body, name): return true
+  for x in n.sons:
+    if assignsLocal(x, name): return true
+  false
+
+proc stmtCore(l: Lowerer; n: NsNode): PNode
+
 proc stmt(l: Lowerer; n: NsNode): PNode =
+  if n == nil: return empty(unknownLineInfo)
+  if l.hoist != nil and l.hoist.names.len > 0 and not l.noCache and l.stmtMoves(n):
+    ## It may move engine objects: handles resolve afresh in it, and nothing kept
+    ## survives it.
+    var fresh = l
+    fresh.noCache = true
+    result = newTree(nkStmtList, n.info, fresh.stmtCore(n))
+    for r in l.cacheResets(n.info): result.add r
+    return
+  result = l.stmtCore(n)
+  if l.hoist != nil and l.hoist.names.len > 0:
+    var after: seq[PNode] = @[]
+    for (name, _) in l.hoist.names:
+      if assignsLocal(n, name):
+        after.add newTree(nkAsgn, n.info, l.id("nsP_" & name, n.info), newNodeI(nkNilLit, n.info))
+    if after.len > 0:
+      result = newTree(nkStmtList, n.info, result)
+      for a in after: result.add a
+  if n.kind == nsnLocalDecl:
+    let cls = l.hoistedLocal(n)
+    if cls.len > 0:
+      result = newTree(nkStmtList, n.info, result, l.cacheDecl(n.name, cls, n.info))
+      l.hoist.names.add (n.name, cls)
+
+proc stmtCore(l: Lowerer; n: NsNode): PNode =
   if n == nil: return empty(unknownLineInfo)
   let outs = outDeclsOf(n)
   if outs.len == 0: return l.stmtInner(n)
@@ -2378,6 +2626,7 @@ proc memberBody(l: Lowerer; ret, body: NsNode): PNode =
 proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   ## A local function is a nested proc, which captures what it names as a closure.
   var inner = l
+  if inner.hoist != nil: inner.hoist = NsHoist(moves: l.hoist.moves)
   for t in n.typeParams: inner.procTypeParams.add t.name
   let fp = inner.formalParams(n.typ, n.params, n.info)
   if n.paramMod == "ref": fp[0] = newTree(nkVarTy, n.info, fp[0])
@@ -2475,7 +2724,17 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
     result = newNodeI(nkForStmt, n.info)
     result.add l.id(n.name, n.info)
     result.add l.expr(n.body)
-    result.add l.stmtsToNode(n.sons, n.info)
+    ## A handle loop variable keeps its object for the iteration (see `stmt`).
+    let ln = NsNode(kind: nsnLocalDecl, name: n.name, typ: n.typ, info: n.info)
+    let cls = (if n.typ != nil: l.hoistedLocal(ln) else: "")
+    if cls.len > 0:
+      l.hoist.names.add (n.name, cls)
+      let body = l.stmtsToNode(n.sons, n.info)
+      l.hoist.names.setLen(l.hoist.names.len - 1)
+      body.sons.insert(l.cacheDecl(n.name, cls, n.info), 0)
+      result.add body
+    else:
+      result.add l.stmtsToNode(n.sons, n.info)
   of nsnYield:
     ## Inside the closure iterator `memberBody` builds: `yield return v` yields,
     ## and `yield break` ends the iteration.
@@ -5153,6 +5412,7 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
                   counter: new int,
                   imports: NsFromImports(byModule: initTable[string, seq[string]]()),
                   usingPaths: initHashSet[string](),
+                  hoist: NsHoist(moves: initTable[string, bool]()),
                   nilChecks: optNilCheck in config.options)
   var stmts: seq[PNode] = @[]
   proc noteOwn(n: NsNode; into: var HashSet[string]) =

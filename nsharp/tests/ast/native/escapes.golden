@@ -855,41 +855,52 @@ nkStmtList
         nkStrLit "nsM_Begin()"
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'f'
-          nkBracketExpr
-            nkIdent 'NsH_Node'
-            nkIdent 'Node'
-          nkCall
-            nkIdent 'nsAs'
-            nkCall
-              nkIdent 'Spawn'
-              nkIdent 'self'
-              nkBracketExpr
-                nkIdent 'NsH_Node'
-                nkIdent 'Fuse'
-              nkCall
-                nkIdent 'nsFwd'
-                nkCall
-                  nkIdent 'int32'
-                  nkIntLit 0
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'f'
             nkBracketExpr
               nkIdent 'NsH_Node'
               nkIdent 'Node'
-      nkCall
-        nkIdent 'Spawn'
-        nkIdent 'self'
-        nkBracketExpr
-          nkIdent 'NsH_Node'
-          nkIdent 'Fuse'
+            nkCall
+              nkIdent 'nsAs'
+              nkCall
+                nkIdent 'Spawn'
+                nkIdent 'self'
+                nkBracketExpr
+                  nkIdent 'NsH_Node'
+                  nkIdent 'Fuse'
+                nkCall
+                  nkIdent 'nsFwd'
+                  nkCall
+                    nkIdent 'int32'
+                    nkIntLit 0
+              nkBracketExpr
+                nkIdent 'NsH_Node'
+                nkIdent 'Node'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_f'
+            nkPtrTy
+              nkIdent 'Node'
+            nkNilLit
+      nkStmtList
         nkCall
-          nkIdent 'nsFwd'
+          nkIdent 'Spawn'
+          nkIdent 'self'
+          nkBracketExpr
+            nkIdent 'NsH_Node'
+            nkIdent 'Fuse'
           nkCall
-            nkIdent 'int32'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 1
+            nkIdent 'nsFwd'
+            nkCall
+              nkIdent 'int32'
+              nkPrefix
+                nkIdent '-'
+                nkIntLit 1
+        nkAsgn
+          nkIdent 'nsP_f'
+          nkNilLit
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'
@@ -912,29 +923,37 @@ nkStmtList
             nkIdent 'system'
             nkIdent 'Exception'
           nkStmtList
-            nkCall
-              nkIdent 'Print'
-              nkIdent 'Console'
-              nkStrLit "N# caught its own call"
-      nkCall
-        nkIdent 'Print'
-        nkIdent 'Console'
-        nkInfix
-          nkIdent '&'
-          nkStrLit "weigh a heavy one: "
-          nkCall
-            nkIdent 'nsFmt'
-            nkCall
-              nkIdent 'Weigh'
-              nkIdent 'Painter'
+            nkAsgn
+              nkIdent 'nsP_f'
+              nkNilLit
+            nkStmtList
               nkCall
-                nkIdent 'nsAs'
+                nkIdent 'Print'
+                nkIdent 'Console'
+                nkStrLit "N# caught its own call"
+      nkStmtList
+        nkCall
+          nkIdent 'Print'
+          nkIdent 'Console'
+          nkInfix
+            nkIdent '&'
+            nkStrLit "weigh a heavy one: "
+            nkCall
+              nkIdent 'nsFmt'
+              nkCall
+                nkIdent 'Weigh'
+                nkIdent 'Painter'
                 nkCall
-                  nkIdent 'newHeavy'
-                nkBracketExpr
-                  nkIdent 'NsH_Palette'
-                  nkIdent 'Palette'
-            nkStrLit ""
+                  nkIdent 'nsAs'
+                  nkCall
+                    nkIdent 'newHeavy'
+                  nkBracketExpr
+                    nkIdent 'NsH_Palette'
+                    nkIdent 'Palette'
+              nkStrLit ""
+        nkAsgn
+          nkIdent 'nsP_f'
+          nkNilLit
   nkProcDef
     nkIdent 'nsCpp_Begin'
     nkEmpty

@@ -15,7 +15,7 @@ namespace Toybox
         public static extern Vec2 operator *(Vec2 a, float s);
     }
 
-    [Native("Toybox::Console", Header = "toybox.hpp")]
+    [Native("Toybox::Console", Header = "toybox.hpp", Stable = true)]
     public static class Console
     {
         [Native("Toybox::Console::Print(\"%s\", @)")]
@@ -69,13 +69,13 @@ namespace Toybox
         [Native(Get = "#->text.c_str()")] public extern string Text { get; }
     }
 
-    [Native("Toybox::Stage", Header = "toybox.hpp")]
+    [Native("Toybox::Stage", Header = "toybox.hpp", Stable = true)]
     public class Stage
     {
         public virtual extern void Begin();
         public virtual extern void Tick(float dt);
-        public extern T Spawn<T>([Forward] params object[] args) where T : Node;
-        public extern void Remove(Node node);
+        [Moves] public extern T Spawn<T>([Forward] params object[] args) where T : Node;
+        [Moves] public extern void Remove(Node node);
     }
 
     [Native("Toybox::Director", Header = "toybox.hpp")]

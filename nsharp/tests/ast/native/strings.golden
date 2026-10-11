@@ -282,104 +282,127 @@ nkStmtList
         nkStrLit "nsM_Begin()"
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'n'
-          nkBracketExpr
-            nkIdent 'NsH_Node'
-            nkIdent 'Node'
-          nkCall
-            nkIdent 'Spawn'
-            nkIdent 'self'
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'n'
             nkBracketExpr
               nkIdent 'NsH_Node'
               nkIdent 'Node'
-      nkCall
-        nkIdent 'Print'
-        nkIdent 'Console'
-        nkInfix
-          nkIdent '&'
+            nkCall
+              nkIdent 'Spawn'
+              nkIdent 'self'
+              nkBracketExpr
+                nkIdent 'NsH_Node'
+                nkIdent 'Node'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_n'
+            nkPtrTy
+              nkIdent 'Node'
+            nkNilLit
+      nkStmtList
+        nkCall
+          nkIdent 'Print'
+          nkIdent 'Console'
           nkInfix
             nkIdent '&'
             nkInfix
               nkIdent '&'
-              nkStrLit "generic: "
-              nkCall
-                nkIdent 'nsFmt'
+              nkInfix
+                nkIdent '&'
+                nkStrLit "generic: "
                 nkCall
-                  nkIdent 'Weigh'
+                  nkIdent 'nsFmt'
                   nkCall
-                    nkIdent 'nsDeref'
-                    nkIdent 'n'
-                  nkBracketExpr
-                    nkIdent 'NsH_Trait'
-                    nkIdent 'Motion'
-                  nkStrLit "abc"
-                nkStrLit ""
-            nkStrLit ", "
-          nkCall
-            nkIdent 'nsFmt'
+                    nkIdent 'Weigh'
+                    nkCall
+                      nkIdent 'nsDeref'
+                      nkIdent 'n'
+                    nkBracketExpr
+                      nkIdent 'NsH_Trait'
+                      nkIdent 'Motion'
+                    nkStrLit "abc"
+                  nkStrLit ""
+              nkStrLit ", "
             nkCall
-              nkIdent 'Weigh'
+              nkIdent 'nsFmt'
+              nkCall
+                nkIdent 'Weigh'
+                nkCall
+                  nkIdent 'nsDeref'
+                  nkIdent 'n'
+                nkBracketExpr
+                  nkIdent 'NsH_Trait'
+                  nkIdent 'Tag'
+                nkStrLit "abcd"
+              nkStrLit ""
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'm'
+            nkBracketExpr
+              nkIdent 'NsH_Trait'
+              nkIdent 'Motion'
+            nkCall
+              nkIdent 'Attach'
               nkCall
                 nkIdent 'nsDeref'
                 nkIdent 'n'
               nkBracketExpr
                 nkIdent 'NsH_Trait'
-                nkIdent 'Tag'
-              nkStrLit "abcd"
-            nkStrLit ""
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'm'
-          nkBracketExpr
-            nkIdent 'NsH_Trait'
-            nkIdent 'Motion'
-          nkCall
-            nkIdent 'Attach'
+                nkIdent 'Motion'
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkAsgn
+          nkDotExpr
             nkCall
               nkIdent 'nsDeref'
-              nkIdent 'n'
-            nkBracketExpr
-              nkIdent 'NsH_Trait'
-              nkIdent 'Motion'
-      nkAsgn
-        nkDotExpr
+              nkIdent 'm'
+            nkIdent 'Position'
           nkCall
-            nkIdent 'nsDeref'
-            nkIdent 'm'
-          nkIdent 'Position'
+            nkIdent 'newVec2'
+            nkIntLit 7
+            nkIntLit 0
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
         nkCall
-          nkIdent 'newVec2'
-          nkIntLit 7
-          nkIntLit 0
-      nkCall
-        nkIdent 'Print'
-        nkIdent 'Console'
-        nkInfix
-          nkIdent '&'
+          nkIdent 'Print'
+          nkIdent 'Console'
           nkInfix
             nkIdent '&'
             nkInfix
               nkIdent '&'
-              nkStrLit "property: "
-              nkCall
-                nkIdent 'nsFmt'
-                nkDotExpr
-                  nkCall
-                    nkIdent 'nsDeref'
-                    nkIdent 'm'
-                  nkIdent 'Description'
-                nkStrLit ""
-            nkStrLit ", "
-          nkCall
-            nkIdent 'nsFmt'
-            nkDotExpr
-              nkCall
-                nkIdent 'nsDeref'
-                nkIdent 'm'
-              nkIdent 'Summary'
-            nkStrLit ""
+              nkInfix
+                nkIdent '&'
+                nkStrLit "property: "
+                nkCall
+                  nkIdent 'nsFmt'
+                  nkDotExpr
+                    nkCall
+                      nkIdent 'nsDeref'
+                      nkIdent 'm'
+                    nkIdent 'Description'
+                  nkStrLit ""
+              nkStrLit ", "
+            nkCall
+              nkIdent 'nsFmt'
+              nkDotExpr
+                nkCall
+                  nkIdent 'nsDeref'
+                  nkIdent 'm'
+                nkIdent 'Summary'
+              nkStrLit ""
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
   nkProcDef
     nkIdent 'nsCpp_Begin'
     nkEmpty

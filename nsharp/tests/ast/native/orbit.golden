@@ -412,38 +412,53 @@ nkStmtList
         nkStrLit "nsM_OnBegin()"
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'm'
-          nkEmpty
-          nkCall
-            nkIdent 'Attach'
-            nkIdent 'self'
-            nkBracketExpr
-              nkIdent 'NsH_Trait'
-              nkIdent 'Motion'
-      nkAsgn
-        nkDotExpr
-          nkCall
-            nkIdent 'nsDeref'
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
             nkIdent 'm'
-          nkIdent 'Pos'
-        nkCall
-          nkIdent 'newVec2'
-          nkIntLit 0
-          nkIntLit 2
-      nkAsgn
-        nkDotExpr
-          nkCall
-            nkIdent 'nsDeref'
+            nkEmpty
             nkCall
               nkIdent 'Attach'
               nkIdent 'self'
               nkBracketExpr
                 nkIdent 'NsH_Trait'
-                nkIdent 'Tag'
-          nkIdent 'Value'
-        nkIntLit 7
+                nkIdent 'Motion'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_m'
+            nkPtrTy
+              nkIdent 'Motion'
+            nkNilLit
+      nkStmtList
+        nkAsgn
+          nkDotExpr
+            nkCall
+              nkIdent 'nsDeref'
+              nkIdent 'm'
+            nkIdent 'Pos'
+          nkCall
+            nkIdent 'newVec2'
+            nkIntLit 0
+            nkIntLit 2
+        nkAsgn
+          nkIdent 'nsP_m'
+          nkNilLit
+      nkStmtList
+        nkAsgn
+          nkDotExpr
+            nkCall
+              nkIdent 'nsDeref'
+              nkCall
+                nkIdent 'Attach'
+                nkIdent 'self'
+                nkBracketExpr
+                  nkIdent 'NsH_Trait'
+                  nkIdent 'Tag'
+            nkIdent 'Value'
+          nkIntLit 7
+        nkAsgn
+          nkIdent 'nsP_m'
+          nkNilLit
       nkAsgn
         nkDotExpr
           nkIdent 'self'
@@ -507,16 +522,23 @@ nkStmtList
         nkStrLit "nsM_OnTick('2 #2)"
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'm'
-          nkEmpty
-          nkCall
-            nkIdent 'Find'
-            nkIdent 'self'
-            nkBracketExpr
-              nkIdent 'NsH_Trait'
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'm'
+            nkEmpty
+            nkCall
+              nkIdent 'Find'
+              nkIdent 'self'
+              nkBracketExpr
+                nkIdent 'NsH_Trait'
+                nkIdent 'Motion'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_m'
+            nkPtrTy
               nkIdent 'Motion'
+            nkNilLit
       nkIfStmt
         nkElifBranch
           nkPrefix
@@ -527,39 +549,46 @@ nkStmtList
           nkStmtList
             nkReturnStmt
               nkEmpty
-      nkCall
-        nkIdent 'Push'
+      nkStmtList
         nkCall
-          nkIdent 'nsDeref'
-          nkIdent 'm'
-        nkInfix
-          nkIdent '*'
-          nkCall
-            nkIdent 'newVec2'
-            nkIntLit 0
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 2
-          nkIdent 'dt'
-      nkAsgn
-        nkDotExpr
+          nkIdent 'Push'
           nkCall
             nkIdent 'nsDeref'
             nkIdent 'm'
+          nkInfix
+            nkIdent '*'
+            nkCall
+              nkIdent 'newVec2'
+              nkIntLit 0
+              nkPrefix
+                nkIdent '-'
+                nkIntLit 2
+            nkIdent 'dt'
+        nkAsgn
+          nkIdent 'nsP_m'
+          nkNilLit
+      nkAsgn
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDerefCached'
+            nkIdent 'm'
+            nkIdent 'nsP_m'
           nkIdent 'Pos'
         nkInfix
           nkIdent '+'
           nkDotExpr
             nkCall
-              nkIdent 'nsDeref'
+              nkIdent 'nsDerefCached'
               nkIdent 'm'
+              nkIdent 'nsP_m'
             nkIdent 'Pos'
           nkInfix
             nkIdent '*'
             nkDotExpr
               nkCall
-                nkIdent 'nsDeref'
+                nkIdent 'nsDerefCached'
                 nkIdent 'm'
+                nkIdent 'nsP_m'
               nkIdent 'Vel'
             nkIdent 'dt'
       nkIfStmt
@@ -569,8 +598,9 @@ nkStmtList
             nkDotExpr
               nkDotExpr
                 nkCall
-                  nkIdent 'nsDeref'
+                  nkIdent 'nsDerefCached'
                   nkIdent 'm'
+                  nkIdent 'nsP_m'
                 nkIdent 'Pos'
               nkIdent 'y'
             nkIntLit 0
@@ -580,41 +610,53 @@ nkStmtList
               nkDotExpr
                 nkIdent 'self'
                 nkIdent 'bounces'
-            nkAsgn
-              nkDotExpr
-                nkCall
-                  nkIdent 'nsDeref'
-                  nkIdent 'm'
-                nkIdent 'Pos'
-              nkCall
-                nkIdent 'newVec2'
+            nkStmtList
+              nkAsgn
                 nkDotExpr
-                  nkDotExpr
-                    nkCall
-                      nkIdent 'nsDeref'
-                      nkIdent 'm'
-                    nkIdent 'Pos'
-                  nkIdent 'x'
-                nkIntLit 0
-            nkAsgn
-              nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'm'
+                  nkIdent 'Pos'
                 nkCall
-                  nkIdent 'nsDeref'
-                  nkIdent 'm'
-                nkIdent 'Vel'
-              nkDotExpr
-                nkIdent 'Vec2'
-                nkIdent 'Zero'
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'tag'
-          nkEmpty
-          nkCall
-            nkIdent 'Find'
-            nkIdent 'self'
-            nkBracketExpr
-              nkIdent 'NsH_Trait'
-              nkIdent 'Tag'
+                  nkIdent 'newVec2'
+                  nkDotExpr
+                    nkDotExpr
+                      nkCall
+                        nkIdent 'nsDeref'
+                        nkIdent 'm'
+                      nkIdent 'Pos'
+                    nkIdent 'x'
+                  nkIntLit 0
+              nkAsgn
+                nkIdent 'nsP_m'
+                nkNilLit
+            nkStmtList
+              nkAsgn
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'm'
+                  nkIdent 'Vel'
+                nkDotExpr
+                  nkIdent 'Vec2'
+                  nkIdent 'Zero'
+              nkAsgn
+                nkIdent 'nsP_m'
+                nkNilLit
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'tag'
+            nkEmpty
+            nkCall
+              nkIdent 'Find'
+              nkIdent 'self'
+              nkBracketExpr
+                nkIdent 'NsH_Trait'
+                nkIdent 'Tag'
+        nkAsgn
+          nkIdent 'nsP_m'
+          nkNilLit
       nkIfStmt
         nkElifBranch
           nkCall
@@ -650,8 +692,9 @@ nkStmtList
                 nkDotExpr
                   nkDotExpr
                     nkCall
-                      nkIdent 'nsDeref'
+                      nkIdent 'nsDerefCached'
                       nkIdent 'm'
+                      nkIdent 'nsP_m'
                     nkIdent 'Pos'
                   nkIdent 'y'
                 nkStrLit ""
@@ -850,29 +893,43 @@ nkStmtList
           nkBracketExpr
             nkIdent 'NsH_Node'
             nkIdent 'Node'
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'other'
-          nkBracketExpr
-            nkIdent 'NsH_Node'
-            nkIdent 'Ball'
-          nkCall
-            nkIdent 'Spawn'
-            nkIdent 'self'
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'other'
             nkBracketExpr
               nkIdent 'NsH_Node'
               nkIdent 'Ball'
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'nobody'
-          nkBracketExpr
-            nkIdent 'NsH_Node'
-            nkIdent 'Node'
-          nkCall
-            nkIdent 'nsNull'
+            nkCall
+              nkIdent 'Spawn'
+              nkIdent 'self'
+              nkBracketExpr
+                nkIdent 'NsH_Node'
+                nkIdent 'Ball'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_other'
+            nkPtrTy
+              nkIdent 'Ball'
+            nkNilLit
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nobody'
             nkBracketExpr
               nkIdent 'NsH_Node'
               nkIdent 'Node'
+            nkCall
+              nkIdent 'nsNull'
+              nkBracketExpr
+                nkIdent 'NsH_Node'
+                nkIdent 'Node'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_nobody'
+            nkPtrTy
+              nkIdent 'Node'
+            nkNilLit
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'
@@ -924,8 +981,9 @@ nkStmtList
               nkCall
                 nkDotExpr
                   nkCall
-                    nkIdent 'nsDeref'
+                    nkIdent 'nsDerefCached'
                     nkIdent 'other'
+                    nkIdent 'nsP_other'
                   nkIdent 'Bounces'
               nkStrLit ""
           nkStrLit " times"
@@ -983,20 +1041,27 @@ nkStmtList
         nkStrLit "nsM_Tick('2 #2)"
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'tag'
-          nkEmpty
-          nkCall
-            nkIdent 'Find'
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'tag'
+            nkEmpty
             nkCall
-              nkIdent 'nsDeref'
-              nkDotExpr
-                nkIdent 'self'
-                nkIdent 'lead'
-            nkBracketExpr
-              nkIdent 'NsH_Trait'
+              nkIdent 'Find'
+              nkCall
+                nkIdent 'nsDeref'
+                nkDotExpr
+                  nkIdent 'self'
+                  nkIdent 'lead'
+              nkBracketExpr
+                nkIdent 'NsH_Trait'
+                nkIdent 'Tag'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_tag'
+            nkPtrTy
               nkIdent 'Tag'
+            nkNilLit
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'
@@ -1007,8 +1072,9 @@ nkStmtList
             nkIdent 'nsFmt'
             nkDotExpr
               nkCall
-                nkIdent 'nsDeref'
+                nkIdent 'nsDerefCached'
                 nkIdent 'tag'
+                nkIdent 'nsP_tag'
               nkIdent 'Value'
             nkStrLit ""
   nkProcDef

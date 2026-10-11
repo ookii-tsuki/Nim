@@ -32,7 +32,11 @@ type
     ## neither is an error, except that a static property with neither is the C++
     ## type's static member. On an `extern` method, `Qualifiers = "const noexcept"`
     ## gives its C++ qualifiers, which an N# override repeats so that it overrides,
-    ## and which make a `const` one callable from a const member function. On an `extern` member,
+    ## and which make a `const` one callable from a const member function.
+    ## `Stable = true` on a class says its members (constructors and destructor
+    ## included) create, destroy and move no engine object, so N# may keep the
+    ## object a handle reaches across calls to them; a member that does is marked
+    ## `[Moves]`. Without it, every call to the class's members may. On an `extern` member,
     ## `[Native("pattern")]` gives the C++ call as a Nim `importcpp` pattern.
   ExportAttribute* = ref object of Attribute
     ## `[Export("name")]` on a static method: C++ calls it by that name.
@@ -64,3 +68,6 @@ type
     ## string's characters (`#`) and length (`#len`), for a string type no
     ## `const char*` converts to implicitly; without it C++ gets a `const char*`.
     ## Either way the characters are valid only during the call.
+  MovesAttribute* = ref object of Attribute
+    ## `[Moves]` on an `extern` member of a `Stable` class: it may create, destroy
+    ## or move engine objects, so a handle N# holds resolves afresh after it.

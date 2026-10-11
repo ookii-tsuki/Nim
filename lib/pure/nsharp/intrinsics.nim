@@ -722,6 +722,13 @@ template nsHandleProcs*(H, R: untyped; hdr, validPat, nullPat, derefPat: untyped
     ## Any handle of the family is one of its root class: an upcast C# makes
     ## implicitly, which a library call (`List<Node>.Add(coin)`) relies on.
 
+proc nsDerefCached*[H, T](h: H; p: var ptr T): ptr T {.inline.} =
+  ## The object a handle local reaches, resolved once and kept in `p` until a
+  ## statement that may move engine objects clears it (desugar's handle hoisting).
+  mixin nsDeref
+  if p.isNil: p = nsDeref(h)
+  p
+
 # --- managed fields of native-derived classes ------------------------------------
 #
 # A field of a class deriving a native C++ class, whose type Nim manages, is an

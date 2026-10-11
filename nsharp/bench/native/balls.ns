@@ -1,0 +1,62 @@
+// Bouncing balls held through engine handles: every member access goes through a
+// NodeRef, which the engine resolves through its registry.
+using System.Collections.Generic;
+using NSharp.Interop;
+using Toybox;
+
+namespace Bench
+{
+    class Ball : Node
+    {
+        public float x, y, vx, vy;
+    }
+
+    class Court : Stage
+    {
+        public static List<Ball> Balls = new List<Ball>();
+        public static int Frames;
+
+        public override void Begin()
+        {
+            for (int i = 0; i < 1000; i++)
+            {
+                Ball b = Spawn<Ball>();
+                b.x = i;
+                b.y = 10 + i % 7;
+                b.vx = 1 + i % 3;
+                b.vy = 0;
+                Balls.Add(b);
+            }
+        }
+
+        public override void Tick(float dt)
+        {
+            foreach (Ball b in Balls)
+            {
+                b.vy -= 9.8f * dt;
+                b.x += b.vx * dt;
+                b.y += b.vy * dt;
+                if (b.y < 0)
+                {
+                    b.y = 0;
+                    b.vy = -b.vy * 0.5f;
+                }
+            }
+            Frames++;
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start() => Director.Play<Court>();
+
+        [Export("nsChecksum")]
+        public static double Checksum()
+        {
+            double s = 0;
+            foreach (Ball b in Court.Balls) s += b.x + b.y;
+            return s;
+        }
+    }
+}

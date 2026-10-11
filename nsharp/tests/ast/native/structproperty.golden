@@ -145,34 +145,45 @@ nkStmtList
         nkStrLit "nsM_Begin()"
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'm'
-          nkBracketExpr
-            nkIdent 'NsH_Trait'
-            nkIdent 'Motion'
-          nkCall
-            nkIdent 'Attach'
-            nkCall
-              nkIdent 'nsDeref'
-              nkCall
-                nkIdent 'Spawn'
-                nkIdent 'self'
-                nkBracketExpr
-                  nkIdent 'NsH_Node'
-                  nkIdent 'Node'
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'm'
             nkBracketExpr
               nkIdent 'NsH_Trait'
               nkIdent 'Motion'
-      nkAsgn
-        nkDotExpr
-          nkDotExpr
             nkCall
-              nkIdent 'nsDeref'
-              nkIdent 'm'
-            nkIdent 'Position'
-          nkIdent 'x'
-        nkIntLit 5
+              nkIdent 'Attach'
+              nkCall
+                nkIdent 'nsDeref'
+                nkCall
+                  nkIdent 'Spawn'
+                  nkIdent 'self'
+                  nkBracketExpr
+                    nkIdent 'NsH_Node'
+                    nkIdent 'Node'
+              nkBracketExpr
+                nkIdent 'NsH_Trait'
+                nkIdent 'Motion'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_m'
+            nkPtrTy
+              nkIdent 'Motion'
+            nkNilLit
+      nkStmtList
+        nkAsgn
+          nkDotExpr
+            nkDotExpr
+              nkCall
+                nkIdent 'nsDeref'
+                nkIdent 'm'
+              nkIdent 'Position'
+            nkIdent 'x'
+          nkIntLit 5
+        nkAsgn
+          nkIdent 'nsP_m'
+          nkNilLit
   nkProcDef
     nkIdent 'nsCpp_Begin'
     nkEmpty

@@ -1478,23 +1478,30 @@ nkStmtList
                           nkIdent 'c'
                         nkIdent 'Score'
                     nkStrLit ""
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'back'
-          nkBracketExpr
-            nkIdent 'NsH_Node'
-            nkIdent 'Crate'
-          nkDotExpr
-            nkCall
-              nkIdent 'nsBox_Crate'
-              nkDotExpr
-                nkBracketExpr
-                  nkDotExpr
-                    nkIdent 'Board'
-                    nkIdent 'All'
-                  nkIntLit 1
-                nkIdent 'nsObj'
-            nkIdent 'v'
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'back'
+            nkBracketExpr
+              nkIdent 'NsH_Node'
+              nkIdent 'Crate'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsBox_Crate'
+                nkDotExpr
+                  nkBracketExpr
+                    nkDotExpr
+                      nkIdent 'Board'
+                      nkIdent 'All'
+                    nkIntLit 1
+                  nkIdent 'nsObj'
+              nkIdent 'v'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_back'
+            nkPtrTy
+              nkIdent 'Crate'
+            nkNilLit
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'
@@ -1510,8 +1517,9 @@ nkStmtList
                 nkCall
                   nkDotExpr
                     nkCall
-                      nkIdent 'nsDeref'
+                      nkIdent 'nsDerefCached'
                       nkIdent 'back'
+                      nkIdent 'nsP_back'
                     nkIdent 'Score'
                 nkStrLit ""
             nkStrLit ", swatch is crate: "

@@ -1,0 +1,80 @@
+using System;
+using System.Collections.Generic;
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // N# keeps the object a handle reaches between member accesses, and drops it
+    // whenever something may have moved engine objects: Toybox's pool moves every
+    // node when it grows, so a pointer kept across a Spawn would dangle.
+    class Ball : Node
+    {
+        public int n;
+        public int Twice() => n * 2;
+    }
+
+    class Field : Stage
+    {
+        static Field current;
+        void Grow(int k) { for (int i = 0; i < k; i++) Spawn<Ball>(); }
+        int Quiet(int x) => x + 1;
+        void Boom() { Grow(40); throw new InvalidOperationException("boom"); }
+
+        IEnumerable<int> Walk(Ball b)
+        {
+            yield return b.n;
+            yield return b.n + 100;
+        }
+
+        public override void Begin()
+        {
+            current = this;
+            Ball a = Spawn<Ball>();
+            a.n = 1;
+            for (int i = 0; i < 40; i++) Spawn<Ball>();   // the pool grows
+            a.n += 1;
+            Console.Print($"after spawns: {a.n}");
+
+            a.n = Quiet(a.n);                              // moves nothing
+            Grow(80);                                      // an N# call that spawns
+            a.n += a.Twice();
+            Console.Print($"after Grow: {a.n}");
+
+            try { a.n++; Boom(); }
+            catch (InvalidOperationException e) { a.n += 10; Console.Print($"caught {e.Message}: {a.n}"); }
+            a.n++;
+            Console.Print($"after try: {a.n}");
+
+            Action more = () => current.Grow(100);
+            a.n++;
+            more();
+            a.n++;
+            Console.Print($"after lambda: {a.n}");
+
+            foreach (int v in Walk(a))
+            {
+                Grow(60);
+                Console.Print($"walk {v}");
+            }
+
+            Ball b = a;
+            if (a.n > 0) { a = Spawn<Ball>(); a.n = 7; }
+            Console.Print($"swap: {a.n} {b.n}");
+
+            int total = 0;
+            for (int i = 0; i < 3; i++)
+            {
+                total += b.n;
+                if (i == 1) Grow(200);
+            }
+            Console.Print($"loop: {total}");
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start() => Director.Play<Field>();
+    }
+}

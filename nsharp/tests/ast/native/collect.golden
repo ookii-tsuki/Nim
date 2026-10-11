@@ -668,65 +668,92 @@ nkStmtList
           nkIdent 'Vault'
           nkIdent 'Coins'
         nkStmtList
-          nkVarSection
-            nkIdentDefs
-              nkIdent 'c'
-              nkBracketExpr
-                nkIdent 'NsH_Node'
-                nkIdent 'Coin'
-              nkCall
-                nkIdent 'nsAs'
-                nkIdent 'n'
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'c'
                 nkBracketExpr
                   nkIdent 'NsH_Node'
                   nkIdent 'Coin'
+                nkCall
+                  nkIdent 'nsAs'
+                  nkIdent 'n'
+                  nkBracketExpr
+                    nkIdent 'NsH_Node'
+                    nkIdent 'Coin'
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'nsP_c'
+                nkPtrTy
+                  nkIdent 'Coin'
+                nkNilLit
           nkCall
             nkDotExpr
               nkCall
-                nkIdent 'nsDeref'
+                nkIdent 'nsDerefCached'
                 nkIdent 'c'
+                nkIdent 'nsP_c'
               nkIdent 'Polish'
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'first'
-          nkBracketExpr
-            nkIdent 'NsH_Node'
-            nkIdent 'Coin'
-          nkCall
-            nkIdent 'nsAs'
-            nkBracketExpr
-              nkDotExpr
-                nkIdent 'Vault'
-                nkIdent 'Coins'
-              nkIntLit 0
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'first'
             nkBracketExpr
               nkIdent 'NsH_Node'
               nkIdent 'Coin'
+            nkCall
+              nkIdent 'nsAs'
+              nkBracketExpr
+                nkDotExpr
+                  nkIdent 'Vault'
+                  nkIdent 'Coins'
+                nkIntLit 0
+              nkBracketExpr
+                nkIdent 'NsH_Node'
+                nkIdent 'Coin'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_first'
+            nkPtrTy
+              nkIdent 'Coin'
+            nkNilLit
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsDeref'
+            nkIdent 'nsDerefCached'
             nkIdent 'first'
+            nkIdent 'nsP_first'
           nkIdent 'Polish'
-      nkCall
-        nkIdent 'Remove'
-        nkIdent 'self'
-        nkBracketExpr
-          nkDotExpr
-            nkIdent 'Vault'
-            nkIdent 'Coins'
-          nkIntLit 1
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'spent'
-          nkBracketExpr
-            nkIdent 'NsH_Node'
-            nkIdent 'Node'
+      nkStmtList
+        nkCall
+          nkIdent 'Remove'
+          nkIdent 'self'
           nkBracketExpr
             nkDotExpr
               nkIdent 'Vault'
               nkIdent 'Coins'
             nkIntLit 1
+        nkAsgn
+          nkIdent 'nsP_first'
+          nkNilLit
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'spent'
+            nkBracketExpr
+              nkIdent 'NsH_Node'
+              nkIdent 'Node'
+            nkBracketExpr
+              nkDotExpr
+                nkIdent 'Vault'
+                nkIdent 'Coins'
+              nkIntLit 1
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_spent'
+            nkPtrTy
+              nkIdent 'Node'
+            nkNilLit
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'
@@ -786,8 +813,9 @@ nkStmtList
                 nkCall
                   nkDotExpr
                     nkCall
-                      nkIdent 'nsDeref'
+                      nkIdent 'nsDerefCached'
                       nkIdent 'first'
+                      nkIdent 'nsP_first'
                     nkIdent 'Worth'
                 nkStrLit ""
             nkStrLit " "
@@ -828,10 +856,17 @@ nkStmtList
             nkIdent 'NullReferenceException'
             nkIdent 'e'
           nkStmtList
-            nkCall
-              nkIdent 'Print'
-              nkIdent 'Console'
-              nkStrLit "a removed node throws"
+            nkAsgn
+              nkIdent 'nsP_first'
+              nkNilLit
+            nkAsgn
+              nkIdent 'nsP_spent'
+              nkNilLit
+            nkStmtList
+              nkCall
+                nkIdent 'Print'
+                nkIdent 'Console'
+                nkStrLit "a removed node throws"
   nkProcDef
     nkIdent 'nsCpp_Begin'
     nkEmpty

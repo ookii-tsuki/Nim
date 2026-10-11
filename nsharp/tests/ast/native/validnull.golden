@@ -212,21 +212,29 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 't'
-          nkBracketExpr
-            nkIdent 'NsH_Timer'
-            nkIdent 'Timer'
-          nkCall
-            nkIdent 'Start'
-            nkIdent 'Timers'
-            nkFloat32Lit 2.5
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'NsH_Timer'
+              nkIdent 'Timer'
+            nkCall
+              nkIdent 'Start'
+              nkIdent 'Timers'
+              nkFloat32Lit 2.5
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_t'
+            nkPtrTy
+              nkIdent 'Timer'
+            nkNilLit
       nkAsgn
         nkDotExpr
           nkCall
-            nkIdent 'nsDeref'
+            nkIdent 'nsDerefCached'
             nkIdent 't'
+            nkIdent 'nsP_t'
           nkIdent 'fired'
         nkIntLit 3
       nkCall
@@ -250,14 +258,19 @@ nkStmtList
             nkIdent 'nsFmt'
             nkDotExpr
               nkCall
-                nkIdent 'nsDeref'
+                nkIdent 'nsDerefCached'
                 nkIdent 't'
+                nkIdent 'nsP_t'
               nkIdent 'fired'
             nkStrLit ""
-      nkCall
-        nkIdent 'Stop'
-        nkIdent 'Timers'
-        nkIdent 't'
+      nkStmtList
+        nkCall
+          nkIdent 'Stop'
+          nkIdent 'Timers'
+          nkIdent 't'
+        nkAsgn
+          nkIdent 'nsP_t'
+          nkNilLit
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'
@@ -277,8 +290,9 @@ nkStmtList
           nkAsgn
             nkDotExpr
               nkCall
-                nkIdent 'nsDeref'
+                nkIdent 'nsDerefCached'
                 nkIdent 't'
+                nkIdent 'nsP_t'
               nkIdent 'fired'
             nkIntLit 4
           nkCall
@@ -290,21 +304,32 @@ nkStmtList
             nkIdent 'system'
             nkIdent 'Exception'
           nkStmtList
-            nkCall
-              nkIdent 'Print'
-              nkIdent 'Console'
-              nkStrLit "caught a stale timer"
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'none'
-          nkBracketExpr
-            nkIdent 'NsH_Timer'
-            nkIdent 'Timer'
-          nkCall
-            nkIdent 'nsNull'
+            nkAsgn
+              nkIdent 'nsP_t'
+              nkNilLit
+            nkStmtList
+              nkCall
+                nkIdent 'Print'
+                nkIdent 'Console'
+                nkStrLit "caught a stale timer"
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'none'
             nkBracketExpr
               nkIdent 'NsH_Timer'
               nkIdent 'Timer'
+            nkCall
+              nkIdent 'nsNull'
+              nkBracketExpr
+                nkIdent 'NsH_Timer'
+                nkIdent 'Timer'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_none'
+            nkPtrTy
+              nkIdent 'Timer'
+            nkNilLit
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'

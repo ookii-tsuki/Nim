@@ -417,103 +417,137 @@ nkStmtList
         nkStrLit "nsM_Begin()"
     nkEmpty
     nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'n'
-          nkBracketExpr
-            nkIdent 'NsH_Node'
-            nkIdent 'Node'
-          nkCall
-            nkIdent 'nsAs'
-            nkCall
-              nkIdent 'Spawn'
-              nkIdent 'self'
-              nkBracketExpr
-                nkIdent 'NsH_Node'
-                nkIdent 'Marker'
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'n'
             nkBracketExpr
               nkIdent 'NsH_Node'
               nkIdent 'Node'
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'm'
-          nkBracketExpr
-            nkIdent 'NsH_Trait'
-            nkIdent 'Motion'
-          nkCall
-            nkIdent 'Attach'
             nkCall
-              nkIdent 'nsDeref'
-              nkIdent 'n'
+              nkIdent 'nsAs'
+              nkCall
+                nkIdent 'Spawn'
+                nkIdent 'self'
+                nkBracketExpr
+                  nkIdent 'NsH_Node'
+                  nkIdent 'Marker'
+              nkBracketExpr
+                nkIdent 'NsH_Node'
+                nkIdent 'Node'
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'nsP_n'
+            nkPtrTy
+              nkIdent 'Node'
+            nkNilLit
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'm'
             nkBracketExpr
               nkIdent 'NsH_Trait'
               nkIdent 'Motion'
-      nkAsgn
-        nkDotExpr
-          nkCall
-            nkIdent 'nsDeref'
-            nkIdent 'm'
-          nkIdent 'Position'
-        nkCall
-          nkIdent 'newVec2'
-          nkIntLit 1
-          nkIntLit 2
-      nkAsgn
-        nkDotExpr
-          nkCall
-            nkIdent 'nsDeref'
-            nkIdent 'm'
-          nkIdent 'Spin'
-        nkFloat32Lit 2.5
-      nkAsgn
-        nkDotExpr
-          nkCall
-            nkIdent 'nsDeref'
-            nkIdent 'm'
-          nkIdent 'Spin'
-        nkInfix
-          nkIdent '+'
-          nkDotExpr
             nkCall
-              nkIdent 'nsDeref'
-              nkIdent 'm'
-            nkIdent 'Spin'
-          nkIntLit 1
-      nkCall
-        nkIdent 'Push'
-        nkCall
-          nkIdent 'nsDeref'
-          nkIdent 'm'
-        nkCall
-          nkIdent 'newVec2'
-          nkIntLit 4
-          nkIntLit 0
-      nkVarSection
-        nkIdentDefs
-          nkIdent 'p'
-          nkIdent 'Vec2'
+              nkIdent 'Attach'
+              nkCall
+                nkIdent 'nsDeref'
+                nkIdent 'n'
+              nkBracketExpr
+                nkIdent 'NsH_Trait'
+                nkIdent 'Motion'
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkAsgn
           nkDotExpr
             nkCall
               nkIdent 'nsDeref'
               nkIdent 'm'
             nkIdent 'Position'
+          nkCall
+            nkIdent 'newVec2'
+            nkIntLit 1
+            nkIntLit 2
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkAsgn
+          nkDotExpr
+            nkCall
+              nkIdent 'nsDeref'
+              nkIdent 'm'
+            nkIdent 'Spin'
+          nkFloat32Lit 2.5
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkAsgn
+          nkDotExpr
+            nkCall
+              nkIdent 'nsDeref'
+              nkIdent 'm'
+            nkIdent 'Spin'
+          nkInfix
+            nkIdent '+'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsDeref'
+                nkIdent 'm'
+              nkIdent 'Spin'
+            nkIntLit 1
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkCall
+          nkIdent 'Push'
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'm'
+          nkCall
+            nkIdent 'newVec2'
+            nkIntLit 4
+            nkIntLit 0
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'p'
+            nkIdent 'Vec2'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsDeref'
+                nkIdent 'm'
+              nkIdent 'Position'
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
       nkAsgn
         nkDotExpr
           nkIdent 'p'
           nkIdent 'x'
         nkIntLit 10
-      nkAsgn
-        nkDotExpr
-          nkCall
-            nkIdent 'nsDeref'
-            nkIdent 'm'
-          nkIdent 'Position'
-        nkIdent 'p'
-      nkCall
-        nkIdent 'Print'
-        nkIdent 'Console'
-        nkInfix
-          nkIdent '&'
+      nkStmtList
+        nkAsgn
+          nkDotExpr
+            nkCall
+              nkIdent 'nsDeref'
+              nkIdent 'm'
+            nkIdent 'Position'
+          nkIdent 'p'
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkCall
+          nkIdent 'Print'
+          nkIdent 'Console'
           nkInfix
             nkIdent '&'
             nkInfix
@@ -526,128 +560,156 @@ nkStmtList
                     nkIdent '&'
                     nkInfix
                       nkIdent '&'
-                      nkStrLit "position "
-                      nkCall
-                        nkIdent 'nsFmt'
+                      nkInfix
+                        nkIdent '&'
+                        nkStrLit "position "
                         nkCall
-                          nkIdent 'int32'
-                          nkDotExpr
-                            nkDotExpr
-                              nkCall
-                                nkIdent 'nsDeref'
-                                nkIdent 'm'
-                              nkIdent 'Position'
-                            nkIdent 'x'
-                        nkStrLit ""
-                    nkStrLit ","
-                  nkCall
-                    nkIdent 'nsFmt'
-                    nkCall
-                      nkIdent 'int32'
-                      nkDotExpr
-                        nkDotExpr
+                          nkIdent 'nsFmt'
                           nkCall
-                            nkIdent 'nsDeref'
-                            nkIdent 'm'
-                          nkIdent 'Position'
-                        nkIdent 'y'
-                    nkStrLit ""
-                nkStrLit ", spin "
-              nkCall
-                nkIdent 'nsFmt'
-                nkCall
-                  nkIdent 'int32'
-                  nkInfix
-                    nkIdent '*'
-                    nkDotExpr
+                            nkIdent 'int32'
+                            nkDotExpr
+                              nkDotExpr
+                                nkCall
+                                  nkIdent 'nsDeref'
+                                  nkIdent 'm'
+                                nkIdent 'Position'
+                              nkIdent 'x'
+                          nkStrLit ""
+                      nkStrLit ","
+                    nkCall
+                      nkIdent 'nsFmt'
                       nkCall
-                        nkIdent 'nsDeref'
-                        nkIdent 'm'
-                      nkIdent 'Spin'
-                    nkIntLit 10
-                nkStrLit ""
-            nkStrLit ", speed "
-          nkCall
-            nkIdent 'nsFmt'
-            nkCall
-              nkIdent 'int32'
-              nkDotExpr
+                        nkIdent 'int32'
+                        nkDotExpr
+                          nkDotExpr
+                            nkCall
+                              nkIdent 'nsDeref'
+                              nkIdent 'm'
+                            nkIdent 'Position'
+                          nkIdent 'y'
+                      nkStrLit ""
+                  nkStrLit ", spin "
                 nkCall
-                  nkIdent 'nsDeref'
-                  nkIdent 'm'
-                nkIdent 'Speed'
-            nkStrLit ""
-      nkCall
-        nkIdent 'Print'
-        nkIdent 'Console'
-        nkInfix
-          nkIdent '&'
+                  nkIdent 'nsFmt'
+                  nkCall
+                    nkIdent 'int32'
+                    nkInfix
+                      nkIdent '*'
+                      nkDotExpr
+                        nkCall
+                          nkIdent 'nsDeref'
+                          nkIdent 'm'
+                        nkIdent 'Spin'
+                      nkIntLit 10
+                  nkStrLit ""
+              nkStrLit ", speed "
+            nkCall
+              nkIdent 'nsFmt'
+              nkCall
+                nkIdent 'int32'
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'm'
+                  nkIdent 'Speed'
+              nkStrLit ""
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkCall
+          nkIdent 'Print'
+          nkIdent 'Console'
           nkInfix
             nkIdent '&'
             nkInfix
               nkIdent '&'
-              nkStrLit "handle: slot "
-              nkCall
-                nkIdent 'nsFmt'
+              nkInfix
+                nkIdent '&'
+                nkStrLit "handle: slot "
                 nkCall
-                  nkIdent 'Slot'
-                  nkIdent 'n'
-                nkStrLit ""
-            nkStrLit ", version "
-          nkCall
-            nkIdent 'nsFmt'
-            nkDotExpr
-              nkIdent 'n'
-              nkIdent 'Version'
-            nkStrLit ""
-      nkAsgn
-        nkDotExpr
-          nkIdent 'Director'
-          nkIdent 'TimeScale'
-        nkIntLit 2
-      nkAsgn
-        nkDotExpr
-          nkIdent 'Director'
-          nkIdent 'TimeScale'
-        nkInfix
-          nkIdent '*'
+                  nkIdent 'nsFmt'
+                  nkCall
+                    nkIdent 'Slot'
+                    nkIdent 'n'
+                  nkStrLit ""
+              nkStrLit ", version "
+            nkCall
+              nkIdent 'nsFmt'
+              nkDotExpr
+                nkIdent 'n'
+                nkIdent 'Version'
+              nkStrLit ""
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkAsgn
           nkDotExpr
             nkIdent 'Director'
             nkIdent 'TimeScale'
-          nkIntLit 3
-      nkCall
-        nkIdent 'Print'
-        nkIdent 'Console'
-        nkInfix
-          nkIdent '&'
-          nkStrLit "time scale "
-          nkCall
-            nkIdent 'nsFmt'
+          nkIntLit 2
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkAsgn
+          nkDotExpr
+            nkIdent 'Director'
+            nkIdent 'TimeScale'
+          nkInfix
+            nkIdent '*'
+            nkDotExpr
+              nkIdent 'Director'
+              nkIdent 'TimeScale'
+            nkIntLit 3
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkCall
+          nkIdent 'Print'
+          nkIdent 'Console'
+          nkInfix
+            nkIdent '&'
+            nkStrLit "time scale "
             nkCall
-              nkIdent 'int32'
-              nkDotExpr
-                nkIdent 'Director'
-                nkIdent 'TimeScale'
-            nkStrLit ""
-      nkVarSection
-        nkIdentDefs
+              nkIdent 'nsFmt'
+              nkCall
+                nkIdent 'int32'
+                nkDotExpr
+                  nkIdent 'Director'
+                  nkIdent 'TimeScale'
+              nkStrLit ""
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'NsH_Timer'
+              nkIdent 'Timer'
+            nkCall
+              nkIdent 'Start'
+              nkIdent 'Timers'
+              nkIntLit 1
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkCall
+          nkIdent 'Stop'
+          nkIdent 'Timers'
           nkIdent 't'
-          nkBracketExpr
-            nkIdent 'NsH_Timer'
-            nkIdent 'Timer'
-          nkCall
-            nkIdent 'Start'
-            nkIdent 'Timers'
-            nkIntLit 1
-      nkCall
-        nkIdent 'Stop'
-        nkIdent 'Timers'
-        nkIdent 't'
-      nkCall
-        nkIdent 'Print'
-        nkIdent 'Console'
-        nkInfix
-          nkIdent '&'
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
+      nkStmtList
+        nkCall
+          nkIdent 'Print'
+          nkIdent 'Console'
           nkInfix
             nkIdent '&'
             nkInfix
@@ -656,29 +718,34 @@ nkStmtList
                 nkIdent '&'
                 nkInfix
                   nkIdent '&'
-                  nkStrLit "stopped timer: null "
-                  nkCall
-                    nkIdent 'nsFmt'
-                    nkPrefix
-                      nkIdent 'not'
-                      nkCall
-                        nkIdent 'nsValid'
-                        nkIdent 't'
-                    nkStrLit ""
-                nkStrLit ", id "
-              nkCall
-                nkIdent 'nsFmt'
-                nkDotExpr
-                  nkIdent 't'
-                  nkIdent 'Id'
-                nkStrLit ""
-            nkStrLit ", raw "
-          nkCall
-            nkIdent 'nsFmt'
+                  nkInfix
+                    nkIdent '&'
+                    nkStrLit "stopped timer: null "
+                    nkCall
+                      nkIdent 'nsFmt'
+                      nkPrefix
+                        nkIdent 'not'
+                        nkCall
+                          nkIdent 'nsValid'
+                          nkIdent 't'
+                      nkStrLit ""
+                  nkStrLit ", id "
+                nkCall
+                  nkIdent 'nsFmt'
+                  nkDotExpr
+                    nkIdent 't'
+                    nkIdent 'Id'
+                  nkStrLit ""
+              nkStrLit ", raw "
             nkCall
-              nkIdent 'RawId'
-              nkIdent 't'
-            nkStrLit ""
+              nkIdent 'nsFmt'
+              nkCall
+                nkIdent 'RawId'
+                nkIdent 't'
+              nkStrLit ""
+        nkAsgn
+          nkIdent 'nsP_n'
+          nkNilLit
   nkProcDef
     nkIdent 'nsCpp_Begin'
     nkEmpty
