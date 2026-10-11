@@ -1,0 +1,2 @@
+[return: Borrowed] on an extern that returns no native class.
+code: NS9912

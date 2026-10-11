@@ -1172,3 +1172,356 @@ nkStmtList
         nkIdent 'discardable'
       nkEmpty
       nkEmpty
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Make'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkEmpty
+          nkIdentDefs
+            nkIdent 'nsDest'
+            nkPtrTy
+              nkIdent 'Palette'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'name'
+            nkIdent 'cstring'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'colors'
+            nkIdent 'int32'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "new (#) Toybox::Palette(Toybox::Painter::Make(@))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Make'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'name'
+            nkIdent 'cstring'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'colors'
+            nkIdent 'int32'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkLetSection
+            nkIdentDefs
+              nkIdent 'nsB'
+              nkEmpty
+              nkCall
+                nkIdent 'nsNewBox'
+                nkIdent 'Palette'
+          nkCall
+            nkIdent 'nsRaw_Make'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 't'
+            nkIdent 'name'
+            nkIdent 'colors'
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsMake'
+              nkBracketExpr
+                nkIdent 'NsH_Palette'
+                nkIdent 'Palette'
+              nkIdent 'nsB'
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Copy'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkEmpty
+          nkIdentDefs
+            nkIdent 'nsDest'
+            nkPtrTy
+              nkIdent 'Palette'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'palette'
+            nkBracketExpr
+              nkIdent 'NsPass'
+              nkIdent 'Palette'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "new (#) Toybox::Palette(Toybox::Painter::Copy(@))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Copy'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'palette'
+            nkBracketExpr
+              nkIdent 'NsPass'
+              nkIdent 'Palette'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkLetSection
+            nkIdentDefs
+              nkIdent 'nsB'
+              nkEmpty
+              nkCall
+                nkIdent 'nsNewBox'
+                nkIdent 'Palette'
+          nkCall
+            nkIdent 'nsRaw_Copy'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 't'
+            nkIdent 'palette'
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsMake'
+              nkBracketExpr
+                nkIdent 'NsH_Palette'
+                nkIdent 'Palette'
+              nkIdent 'nsB'
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Shared'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkPtrTy
+            nkIdent 'Palette'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr(Toybox::Painter::Shared(@))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Shared'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsBorrow'
+              nkBracketExpr
+                nkIdent 'NsH_Palette'
+                nkIdent 'Palette'
+              nkCall
+                nkIdent 'nsRaw_Shared'
+                nkIdent 't'
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Find'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkPtrTy
+            nkIdent 'Palette'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'colors'
+            nkIdent 'int32'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr(Toybox::Painter::Find(@))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Find'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'colors'
+            nkIdent 'int32'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsBorrow'
+              nkBracketExpr
+                nkIdent 'NsH_Palette'
+                nkIdent 'Palette'
+              nkCall
+                nkIdent 'nsRaw_Find'
+                nkIdent 't'
+                nkIdent 'colors'
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Create'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkPtrTy
+            nkIdent 'Palette'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'name'
+            nkIdent 'cstring'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'colors'
+            nkIdent 'int32'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr(Toybox::Painter::Create(@))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Create'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'name'
+            nkIdent 'cstring'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'colors'
+            nkIdent 'int32'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsAdopt'
+              nkBracketExpr
+                nkIdent 'NsH_Palette'
+                nkIdent 'Palette'
+              nkCall
+                nkIdent 'nsRaw_Create'
+                nkIdent 't'
+                nkIdent 'name'
+                nkIdent 'colors'

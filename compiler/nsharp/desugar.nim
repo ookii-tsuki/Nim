@@ -3469,6 +3469,80 @@ proc nativeParamType(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
                    l.id(l.scope.handleRoot(canonicalTypeName(t.name)), info))
   l.typeToNim(t, info)
 
+proc returnAttr(m: NsNode; name: string): bool =
+  ## `[return: name]` on a member.
+  for a in m.attributes:
+    if a.strVal == "return" and a.name.split('.')[^1] in [name, name & "Attribute"]:
+      return true
+  false
+
+proc shiftTypeRefs(pattern: string): string =
+  ## An `importcpp` pattern with each `'k` (`'*k`, `'**k`) naming the next argument,
+  ## for a proc that gains a parameter in front.
+  result = ""
+  var i = 0
+  while i < pattern.len:
+    if pattern[i] == '\'' and i + 1 < pattern.len:
+      var j = i + 1
+      while j < pattern.len and pattern[j] == '*': inc j
+      var k = j
+      while k < pattern.len and pattern[k] in {'0'..'9'}: inc k
+      if k > j:
+        let n = parseInt(pattern[j ..< k])
+        result.add pattern[i ..< j] & $(if n >= 1: n + 1 else: n)
+        i = k
+        continue
+    result.add pattern[i]
+    inc i
+
+proc ownedReturn(l: Lowerer; m: NsNode; raw: PNode; rt, pattern, header: string): PNode =
+  ## An `extern` returning a class N# may own: `nsRaw_M`, the C++ call, and `M`, the
+  ## N# reference to what it gives. By value (the default) the result is
+  ## constructed in a fresh box (`new (box) T(call)`, which C++17 elides into);
+  ## `[return: Borrowed]` lends a pointer or reference, which nothing keeps alive;
+  ## `[return: Owned]` hands over one C++ made with `new`, which N# deletes.
+  let info = m.info
+  let root = l.scope.handleRoot(rt)
+  let href = newTree(nkBracketExpr, info, l.id("NsH_" & root, info), l.id(rt, info))
+  let cpp = (if l.scope.isNative(rt): l.scope.classes[rt].native.cpp else: rt)
+  let byValue = not returnAttr(m, "Borrowed") and not returnAttr(m, "Owned")
+  let fp = raw[3]
+  var args: seq[PNode] = @[]
+  for i in 1 ..< fp.len:
+    for k in 0 ..< fp[i].len - 2: args.add l.id(fp[i][k].ident.s, info)
+  let wrapper = newNodeI(nkProcDef, info, 7)
+  wrapper[0] = raw[0]
+  wrapper[1] = empty(info)
+  wrapper[2] = copyTree(raw[2])
+  wrapper[3] = copyTree(fp)
+  wrapper[3][0] = copyTree(href)
+  wrapper[4] = newTree(nkPragma, info, l.id("discardable", info))
+  wrapper[5] = empty(info)
+  raw[0] = l.id("nsRaw_" & m.name, info)
+  let call = newTree(nkCall, info, l.id("nsRaw_" & m.name, info))
+  let body = newNodeI(nkStmtList, info)
+  if byValue:
+    fp[0] = empty(info)
+    fp.sons.insert(l.identDefs("nsDest", newTree(nkPtrTy, info, l.id(rt, info)), info), 1)
+    raw[4] = l.cppPragma("new (#) " & cpp & "(" & shiftTypeRefs(pattern) & ")", header, info)
+    body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id("nsB", info),
+      empty(info), newTree(nkCall, info, l.id("nsNewBox", info), l.id(rt, info))))
+    call.add newTree(nkCall, info, l.id("nsAt", info), l.id("nsB", info))
+    for a in args: call.add a
+    body.add call
+    body.add newTree(nkAsgn, info, l.id("result", info),
+                     newTree(nkCall, info, l.id("nsMake", info), copyTree(href), l.id("nsB", info)))
+  else:
+    fp[0] = newTree(nkPtrTy, info, l.id(rt, info))
+    raw[4] = l.cppPragma("nsAddr(" & pattern & ")", header, info)
+    for a in args: call.add a
+    body.add newTree(nkAsgn, info, l.id("result", info),
+                     newTree(nkCall, info,
+                             l.id((if returnAttr(m, "Owned"): "nsAdopt" else: "nsBorrow"), info),
+                             copyTree(href), call))
+  wrapper[6] = body
+  result = newTree(nkStmtList, info, raw, wrapper)
+
 proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PNode =
   ## `extern R M<T>(args)` as `proc M[T](self: ptr C; t: typedesc[T]; args): R` over
   ## the C++ call; each type parameter is a `typedesc` argument, which the C++
@@ -3522,6 +3596,10 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PN
   result[4] = l.cppPragma(pattern, header, info, extra)
   result[5] = empty(info)
   result[6] = empty(info)
+  let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
+            else: "")
+  if rt.len > 0 and l.scope.classes.hasKey(rt) and l.scope.ownedFamily(rt) and not forward:
+    result = l.ownedReturn(m, result, rt, pattern, header)
 
 proc ownedNew(l: Lowerer; cls: NsNode; params: seq[PNode]; ctor, header: string;
               info: TLineInfo; into: PNode) =

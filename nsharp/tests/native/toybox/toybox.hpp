@@ -318,6 +318,14 @@ struct Painter {
     static int Count(Palette* p) { return p ? p->colors : -1; }
     static int Weigh(const Palette& p) { return const_cast<Palette&>(p).Weight(); }
     static int Live() { return Palette::Live(); }
+
+    // Hands one out by value, lends one (by reference, or by pointer that may be
+    // null), or hands one over that the caller must delete.
+    static Palette Make(const char* n, int c) { return Palette(n, c); }
+    static Palette Copy(const Palette& p) { return Palette((p.name + "'").c_str(), p.colors); }
+    static Palette& Shared() { static Palette shared("shared", 9); return shared; }
+    static Palette* Find(int colors) { return colors == Shared().colors ? &Shared() : nullptr; }
+    static Palette* Create(const char* n, int c) { return new Palette(n, c); }
 };
 
 } // namespace Toybox

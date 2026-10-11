@@ -3601,6 +3601,24 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
       nsError(ctx.config, m.info, ndExportMisplaced, named(m))
     if m.attrs.isExtern and not native:
       nsError(ctx.config, m.info, ndExternOutsideNative, named(m))
+    var borrowed, owned = false
+    for a in m.attributes:
+      if a.strVal == "return":
+        let short = a.name.split('.')[^1]
+        if short in ["Borrowed", "BorrowedAttribute"]: borrowed = true
+        if short in ["Owned", "OwnedAttribute"]: owned = true
+    if borrowed or owned:
+      let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
+                else: "")
+      if m.kind != nsnMethodDecl or not m.attrs.isExtern or (borrowed and owned) or
+         rt.len == 0 or not ctx.scope.classes.hasKey(rt) or not ctx.scope.ownedFamily(rt):
+        nsError(ctx.config, m.info, ndReturnOwnership, named(m))
+    if m.kind == nsnMethodDecl and m.attrs.isExtern and m.params.len > 0 and
+       m.params[^1] != nil and m.params[^1].attributeNamed("Forward") != nil and
+       m.typ != nil and m.typ.kind == nsnTypeName and
+       ctx.scope.classes.hasKey(canonicalTypeName(m.typ.name)) and
+       ctx.scope.ownedFamily(canonicalTypeName(m.typ.name)):
+      unsupported(m, "a [Forward] factory returning a native class with no handle")
     if m.kind in {nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl}:
       for i, p in m.params:
         if p == nil or p.attributeNamed("Forward") == nil: continue

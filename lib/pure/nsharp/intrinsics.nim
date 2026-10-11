@@ -799,6 +799,15 @@ when defined(cpp):
     new(result)
   proc nsAt*[T](b: ref NsObjBox[T]): ptr T {.inline.} = nsStorageAt(b.v)
 
+  type NsHeapBox*[T] = object of NsBoxBase
+    ## An object C++ made with `new` and handed over (`[return: Owned]`), which N#
+    ## deletes when the last reference goes.
+    p*: ptr T
+  proc nsDelete[T](p: ptr T) {.importcpp: "delete #".}
+  proc `=destroy`*[T](b: NsHeapBox[T]) =
+    if b.p != nil: nsDelete(b.p)
+  proc `=copy`*[T](d: var NsHeapBox[T]; s: NsHeapBox[T]) {.error.}
+
   proc nsPtrAs*[T, U](p: ptr U; t: typedesc[T]): ptr T {.importcpp: "static_cast<'0>(#)".}
     ## A pointer as one to another class of its family.
   proc nsPassOf*[R](p: ptr R): NsPass[R] {.importcpp: "NsPass<'*1>{#}",
@@ -832,5 +841,13 @@ when defined(cpp):
     proc nsSelfObj*[T](t: typedesc[H[T]]; p: ptr T; box: pointer): H[T] {.inline, inject.} =
       ## `this` as a value: kept alive by its box when N# made it, lent otherwise.
       H[T](p: p, keep: nsKeepOf(box))
+    proc nsBorrow*[T](t: typedesc[H[T]]; p: ptr T): H[T] {.inline, inject.} =
+      ## An object C++ lends (`[return: Borrowed]`): nothing keeps it alive.
+      H[T](p: p)
+    proc nsAdopt*[T](t: typedesc[H[T]]; p: ptr T): H[T] {.inline, inject.} =
+      ## An object C++ hands over (`[return: Owned]`), deleted with the last reference.
+      if p != nil:
+        let b = (ref NsHeapBox[T])(p: p)
+        result = H[T](p: p, keep: b)
     converter nsToRoot*[U](h: H[U]): H[R] {.inject.} = nsAs(h, H[R])
     converter nsToPass*[U](h: H[U]): NsPass[R] {.inject.} = nsPassOf(nsPtrAs(h.p, R))

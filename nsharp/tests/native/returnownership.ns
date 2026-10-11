@@ -1,0 +1,10 @@
+using NSharp.Interop;
+using Toybox;
+namespace Demo
+{
+    [Native("Game::Pool", Header = "game.hpp")]
+    public static class Pool
+    {
+        [return: Borrowed] public static extern int Count();
+    }
+}

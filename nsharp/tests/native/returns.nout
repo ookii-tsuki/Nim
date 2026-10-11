@@ -1,0 +1,8 @@
+by value: colors 4, live 1
+after by value: live 0
+owned: colors 6, live 1
+after owned: live 0
+borrowed: same true, missing true, live 1
+copy: colors 9, live 2, count 9
+borrowed dropped: live 2
+copy dropped: live 1

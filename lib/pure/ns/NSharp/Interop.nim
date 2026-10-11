@@ -32,3 +32,11 @@ type
     ## factory (`T Spawn<T>([Forward] params object[] args) where T : Node`): the
     ## arguments reach the C++ call as they are, and are checked against the
     ## constructors of the type argument (the return type's, or the first one).
+  BorrowedAttribute* = ref object of Attribute
+    ## `[return: Borrowed]` on an `extern` returning a class with no handle: C++
+    ## lends a pointer or reference to an object it keeps owning. Nothing keeps it
+    ## alive; a copy N# owns is made by an `extern` returning one by value.
+  OwnedAttribute* = ref object of Attribute
+    ## `[return: Owned]` on an `extern` returning a class with no handle: C++ hands
+    ## over a pointer it made with `new`, which N# deletes with the last reference.
+    ## Without either, the class is returned by value and N# owns the result.

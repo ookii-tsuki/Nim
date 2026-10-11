@@ -1,0 +1,46 @@
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // What C++ returns: by value it is N#'s own (boxed), `[return: Borrowed]` is lent
+    // and stays C++'s, `[return: Owned]` is handed over and deleted by N#.
+    static class Entry
+    {
+        static void ByValue()
+        {
+            Palette made = Painter.Make("made", 4);
+            Console.Print($"by value: colors {made.colors}, live {Painter.Live()}");
+        }
+
+        static void Handed()
+        {
+            Palette mine = Painter.Create("created", 6);
+            Console.Print($"owned: colors {mine.colors}, live {Painter.Live()}");
+        }
+
+        [Export("nsStart")]
+        public static void Start()
+        {
+            ByValue();
+            Console.Print($"after by value: live {Painter.Live()}");
+            Handed();
+            Console.Print($"after owned: live {Painter.Live()}");
+
+            Palette lent = Painter.Shared();
+            lent.colors = 9;
+            Palette found = Painter.Find(9);
+            Palette missing = Painter.Find(3);
+            Console.Print($"borrowed: same {lent == found}, missing {missing == null}, live {Painter.Live()}");
+
+            // Keeping one: a copy N# owns, made from the borrowed one.
+            Palette kept = Painter.Copy(lent);
+            Console.Print($"copy: colors {kept.colors}, live {Painter.Live()}, count {Painter.Count(kept)}");
+            lent = null;
+            found = null;
+            Console.Print($"borrowed dropped: live {Painter.Live()}");
+            kept = null;
+            Console.Print($"copy dropped: live {Painter.Live()}");
+        }
+    }
+}

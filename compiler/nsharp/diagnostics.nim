@@ -157,6 +157,7 @@ type
     ndNativeFieldStatic
     ndNativeCtorEarly
     ndForwardMisplaced
+    ndReturnOwnership
     ndUnsupported
 
   NsDiagInfo* = tuple[code, msg: string]
@@ -391,6 +392,9 @@ const
                         " may not have finished setting up the native object yet"),
     ndForwardMisplaced: (code: "9911", msg: "'$1': [Forward] applies only to the last" &
                         " parameter, 'params object[]', of a generic 'extern' method"),
+    ndReturnOwnership: (code: "9912", msg: "'$1': [return: Borrowed] and [return: Owned]" &
+                        " apply only to an 'extern' method returning a native class with no" &
+                        " handle, and only one of them"),
     ndUnsupported: (code: "9999", msg: "$1 is currently unsupported"),
   ]
 

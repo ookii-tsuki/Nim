@@ -93,5 +93,10 @@ namespace Toybox
         public static extern int Count(Palette palette);
         public static extern int Weigh(Palette palette);
         public static extern int Live();
+        public static extern Palette Make(string name, int colors);
+        public static extern Palette Copy(Palette palette);
+        [return: Borrowed] public static extern Palette Shared();
+        [return: Borrowed] public static extern Palette Find(int colors);
+        [return: Owned] public static extern Palette Create(string name, int colors);
     }
 }
