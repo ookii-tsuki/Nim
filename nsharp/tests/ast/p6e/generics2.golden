@@ -2157,17 +2157,13 @@ nkStmtList
         nkStrLit "a"
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 's'
+          nkIdent 's'
           nkIdent 'Push'
         nkStrLit "bb"
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 's'
+          nkIdent 's'
           nkIdent 'Count'
       nkVarSection
         nkIdentDefs
@@ -2200,9 +2196,7 @@ nkStmtList
             nkIdent 'Peek'
             nkIdent 'string'
             nkIdent 'int32'
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 's'
+          nkIdent 's'
           nkIdent 'len'
       nkCall
         nkIdent 'WriteLine'
@@ -2216,9 +2210,7 @@ nkStmtList
               nkIdent 'Pop'
           nkCall
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 's'
+              nkIdent 's'
               nkIdent 'Pop'
       nkVarSection
         nkIdentDefs
@@ -2237,18 +2229,14 @@ nkStmtList
           nkIntLit 1
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'ints'
+          nkIdent 'ints'
           nkIdent 'Push'
         nkCall
           nkIdent 'int32'
           nkIntLit 2
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'ints'
+          nkIdent 'ints'
           nkIdent 'Push'
         nkCall
           nkIdent 'int32'
@@ -2257,9 +2245,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'ints'
+            nkIdent 'ints'
             nkIdent 'Sum'
       nkCall
         nkIdent 'WriteLine'

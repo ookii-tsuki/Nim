@@ -1098,9 +1098,7 @@ nkStmtList
               nkIdent 'Old'
           nkCall
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 't'
+              nkIdent 't'
               nkIdent 'New'
             nkIntLit 2
       nkVarSection

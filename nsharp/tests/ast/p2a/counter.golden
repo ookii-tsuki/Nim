@@ -476,17 +476,13 @@ nkStmtList
           nkIdent 'Inc'
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'c'
+          nkIdent 'c'
           nkIdent 'Inc'
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'c'
+            nkIdent 'c'
             nkIdent 'Value'
   nkProcDef
     nkPostfix

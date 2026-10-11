@@ -601,9 +601,7 @@ nkStmtList
                           nkIdent 'Value'
       nkStmtList
         nkDiscardStmt
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'n'
+          nkIdent 'n'
         nkAsgn
           nkDotExpr
             nkIdent 'n'

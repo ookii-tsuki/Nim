@@ -746,9 +746,7 @@ nkStmtList
                 nkIdent 'nsCond'
                 nkEmpty
                 nkDotExpr
-                  nkCall
-                    nkIdent 'nsCheckNilVar'
-                    nkIdent 'a'
+                  nkIdent 'a'
                   nkIdent 'Slot'
             nkIfExpr
               nkElifExpr
@@ -764,9 +762,7 @@ nkStmtList
                   nkIdent 'nsCond'
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'a'
+          nkIdent 'a'
           nkIdent 'Set'
         nkCall
           nkIdent 'none'
@@ -781,9 +777,7 @@ nkStmtList
                 nkIdent 'nsCond'
                 nkEmpty
                 nkDotExpr
-                  nkCall
-                    nkIdent 'nsCheckNilVar'
-                    nkIdent 'a'
+                  nkIdent 'a'
                   nkIdent 'Slot'
             nkIfExpr
               nkElifExpr
@@ -799,9 +793,7 @@ nkStmtList
                   nkIdent 'nsCond'
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'a'
+          nkIdent 'a'
           nkIdent 'SetSlot'
         nkIntLit 11
       nkCall
@@ -815,9 +807,7 @@ nkStmtList
                 nkEmpty
                 nkCall
                   nkDotExpr
-                    nkCall
-                      nkIdent 'nsCheckNilVar'
-                      nkIdent 'a'
+                    nkIdent 'a'
                     nkIdent 'SlotPlus'
                   nkIntLit 1
             nkIfExpr
@@ -834,16 +824,12 @@ nkStmtList
                   nkIdent 'nsCond'
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'a'
+          nkIdent 'a'
           nkIdent 'Show'
         nkIntLit 3
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'a'
+          nkIdent 'a'
           nkIdent 'Show'
         nkCall
           nkIdent 'none'

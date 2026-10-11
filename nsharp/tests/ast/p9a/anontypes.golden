@@ -850,9 +850,7 @@ nkStmtList
               nkIdent 'Name'
             nkStrLit " "
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'p'
+            nkIdent 'p'
             nkIdent 'Age'
       nkCall
         nkIdent 'WriteLine'
@@ -939,9 +937,7 @@ nkStmtList
               nkIdent 's'
             nkIdent 'x'
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 's'
+            nkIdent 's'
             nkIdent 'Name'
       nkVarSection
         nkIdentDefs

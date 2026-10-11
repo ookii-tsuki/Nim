@@ -202,9 +202,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'w'
+            nkIdent 'w'
             nkIdent 'IsEven'
           nkIntLit 7
   nkProcDef

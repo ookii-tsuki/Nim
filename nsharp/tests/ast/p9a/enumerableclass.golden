@@ -1293,18 +1293,14 @@ nkStmtList
                   nkIntLit 1
               nkCall
                 nkDotExpr
-                  nkCall
-                    nkIdent 'nsCheckNilVar'
-                    nkIdent 'nsInit1'
+                  nkIdent 'nsInit1'
                   nkIdent 'Add'
                 nkCall
                   nkIdent 'int32'
                   nkIntLit 2
               nkCall
                 nkDotExpr
-                  nkCall
-                    nkIdent 'nsCheckNilVar'
-                    nkIdent 'nsInit1'
+                  nkIdent 'nsInit1'
                   nkIdent 'Add'
                 nkCall
                   nkIdent 'int32'

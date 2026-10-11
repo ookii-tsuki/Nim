@@ -2034,17 +2034,13 @@ nkStmtList
           nkCall
             nkIdent 'WriteLine'
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 'a'
+              nkIdent 'a'
               nkIdent 'Legs'
           nkCall
             nkIdent 'WriteLine'
             nkCall
               nkDotExpr
-                nkCall
-                  nkIdent 'nsCheckNilVar'
-                  nkIdent 'a'
+                nkIdent 'a'
                 nkIdent 'Kind'
       nkVarSection
         nkIdentDefs

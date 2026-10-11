@@ -722,17 +722,13 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'sh'
+          nkIdent 'sh'
           nkIdent 'Sides'
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'sh'
+            nkIdent 'sh'
             nkIdent 'Doubled'
       nkVarSection
         nkIdentDefs

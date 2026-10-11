@@ -1855,18 +1855,14 @@ nkStmtList
         nkStrLit "x"
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'bag'
+          nkIdent 'bag'
           nkIdent 'Add'
         nkStrLit "y"
       nkForStmt
         nkIdent 's'
         nkCall
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'bag'
+            nkIdent 'bag'
             nkIdent 'Shouted'
         nkStmtList
           nkCall

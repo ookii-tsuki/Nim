@@ -1011,9 +1011,7 @@ nkStmtList
                   nkStrLit "Ann"
               nkStmtList
                 nkDiscardStmt
-                  nkCall
-                    nkIdent 'nsCheckNilVar'
-                    nkIdent 'nsInit1'
+                  nkIdent 'nsInit1'
                 nkAsgn
                   nkDotExpr
                     nkIdent 'nsInit1'
@@ -1050,18 +1048,14 @@ nkStmtList
               nkCall
                 nkDotExpr
                   nkDotExpr
-                    nkCall
-                      nkIdent 'nsCheckNilVar'
-                      nkIdent 'nsInit2'
+                    nkIdent 'nsInit2'
                     nkIdent 'Tags'
                   nkIdent 'Add'
                 nkStrLit "a"
               nkCall
                 nkDotExpr
                   nkDotExpr
-                    nkCall
-                      nkIdent 'nsCheckNilVar'
-                      nkIdent 'nsInit2'
+                    nkIdent 'nsInit2'
                     nkIdent 'Tags'
                   nkIdent 'Add'
                 nkStrLit "b"

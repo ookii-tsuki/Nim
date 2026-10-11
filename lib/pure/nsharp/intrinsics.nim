@@ -132,16 +132,16 @@ proc `>`*[T: SomeNumber](a: Option[T], b: T): bool = a.isSome and a.get > b
 proc `>=`*[T: SomeNumber](a, b: Option[T]): bool = a.isSome and b.isSome and a.get >= b.get
 proc `>=`*[T: SomeNumber](a: Option[T], b: T): bool = a.isSome and a.get >= b
 
+proc nsNilFail*() {.noinline, noreturn.} =
+  raise newException(NilAccessDefect, "attempt to access a nil address")
+
 proc nsCheckNil*[T: ref object](x: T): T {.inline.} =
   ## C# throws when a method is called on a nil receiver even if the body never
   ## touches `self`. A dereference check cannot see that, so the receiver is tested
   ## at the call. `desugar.nim` emits this around a dot-called class receiver; `x`
-  ## is evaluated once, here.
-  if x == nil: raise newException(NilAccessDefect, "attempt to access a nil address")
+  ## is evaluated once, here, and lent back, so no reference is counted.
+  if x == nil: nsNilFail()
   x
-
-proc nsNilFail*() {.noinline, noreturn.} =
-  raise newException(NilAccessDefect, "attempt to access a nil address")
 
 template nsCheckNilVar*(x: untyped): untyped =
   ## `nsCheckNil` for a receiver that is a variable: read twice rather than

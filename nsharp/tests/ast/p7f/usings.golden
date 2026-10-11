@@ -855,9 +855,7 @@ nkStmtList
                 nkIdent 'X'
               nkIntLit 5
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 'p'
+              nkIdent 'p'
               nkIdent 'Y'
       nkCall
         nkIdent 'WriteLine'

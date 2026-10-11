@@ -2158,21 +2158,15 @@ nkStmtList
                 nkIdent 'p'
               nkIdent 'X'
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 'p'
+              nkIdent 'p'
               nkIdent 'Y'
           nkCall
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 'p'
+              nkIdent 'p'
               nkIdent 'Sum'
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'p'
+          nkIdent 'p'
           nkIdent 'Move'
         nkIntLit 10
       nkCall
@@ -2188,15 +2182,11 @@ nkStmtList
                 nkIdent 'p'
                 nkStrLit " "
               nkDotExpr
-                nkCall
-                  nkIdent 'nsCheckNilVar'
-                  nkIdent 'p'
+                nkIdent 'p'
                 nkIdent 'X'
             nkStrLit " "
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'p'
+            nkIdent 'p'
             nkIdent 'Y'
       nkVarSection
         nkIdentDefs
@@ -2218,9 +2208,7 @@ nkStmtList
               nkIdent 'Name'
             nkStrLit " "
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'n'
+            nkIdent 'n'
             nkIdent 'X'
       nkVarSection
         nkIdentDefs
@@ -2240,9 +2228,7 @@ nkStmtList
               nkIdent 'Next'
           nkCall
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 'c'
+              nkIdent 'c'
               nkIdent 'Next'
       nkCall
         nkIdent 'WriteLine'

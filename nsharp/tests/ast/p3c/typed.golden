@@ -509,9 +509,7 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 't'
+          nkIdent 't'
           nkIdent 'Length'
       nkCall
         nkIdent 'WriteLine'

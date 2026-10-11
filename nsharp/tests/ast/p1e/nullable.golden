@@ -711,9 +711,7 @@ nkStmtList
             nkIdent 'int32'
       nkStmtList
         nkDiscardStmt
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'box'
+          nkIdent 'box'
         nkAsgn
           nkDotExpr
             nkIdent 'box'
@@ -752,9 +750,7 @@ nkStmtList
                 nkIdent 'nsCond'
                 nkEmpty
                 nkDotExpr
-                  nkCall
-                    nkIdent 'nsCheckNilVar'
-                    nkIdent 'box'
+                  nkIdent 'box'
                   nkIdent 'Slot'
             nkIfExpr
               nkElifExpr
@@ -770,9 +766,7 @@ nkStmtList
                   nkIdent 'nsCond'
       nkStmtList
         nkDiscardStmt
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'box'
+          nkIdent 'box'
         nkAsgn
           nkDotExpr
             nkIdent 'box'
@@ -811,9 +805,7 @@ nkStmtList
                 nkIdent 'nsCond'
                 nkEmpty
                 nkDotExpr
-                  nkCall
-                    nkIdent 'nsCheckNilVar'
-                    nkIdent 'box'
+                  nkIdent 'box'
                   nkIdent 'Slot'
             nkIfExpr
               nkElifExpr

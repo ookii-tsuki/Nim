@@ -866,9 +866,7 @@ nkStmtList
                   nkStrLit "bob"
               nkStmtList
                 nkDiscardStmt
-                  nkCall
-                    nkIdent 'nsCheckNilVar'
-                    nkIdent 'nsInit2'
+                  nkIdent 'nsInit2'
                 nkAsgn
                   nkDotExpr
                     nkIdent 'nsInit2'

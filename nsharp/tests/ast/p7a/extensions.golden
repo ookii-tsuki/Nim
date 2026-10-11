@@ -1388,9 +1388,7 @@ nkStmtList
           nkCall
             nkIdent 'Abs'
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 'p'
+              nkIdent 'p'
               nkIdent 'Y'
   nkProcDef
     nkPostfix
@@ -1426,9 +1424,7 @@ nkStmtList
           nkInfix
             nkIdent '*'
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 'p'
+              nkIdent 'p'
               nkIdent 'Y'
             nkIdent 'k'
   nkProcDef
@@ -1472,9 +1468,7 @@ nkStmtList
                       nkIdent 'X'
                   nkStrLit ","
                 nkDotExpr
-                  nkCall
-                    nkIdent 'nsCheckNilVar'
-                    nkIdent 'p'
+                  nkIdent 'p'
                   nkIdent 'Y'
               nkStrLit ")"
   nkProcDef

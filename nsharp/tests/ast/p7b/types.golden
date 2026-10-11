@@ -1998,25 +1998,19 @@ nkStmtList
         nkIntLit 50
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'acct'
+          nkIdent 'acct'
           nkIdent 'Withdraw'
         nkIntLit 30
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'acct'
+          nkIdent 'acct'
           nkIdent 'Deposit'
         nkIntLit 5
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'acct'
+            nkIdent 'acct'
             nkIdent 'Summary'
       nkVarSection
         nkIdentDefs

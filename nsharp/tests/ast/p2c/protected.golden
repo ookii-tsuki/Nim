@@ -680,9 +680,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'd'
+            nkIdent 'd'
             nkIdent 'Twice'
   nkProcDef
     nkPostfix

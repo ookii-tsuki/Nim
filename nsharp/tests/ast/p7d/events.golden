@@ -1224,9 +1224,7 @@ nkStmtList
                         nkIdent 'Before'
                     nkStrLit " -> "
                   nkDotExpr
-                    nkCall
-                      nkIdent 'nsCheckNilVar'
-                      nkIdent 'e'
+                    nkIdent 'e'
                     nkIdent 'After'
       nkCall
         nkIdent 'nsSubscribe'
@@ -1282,9 +1280,7 @@ nkStmtList
           nkIntLit 50
       nkStmtList
         nkDiscardStmt
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 's'
+          nkIdent 's'
         nkAsgn
           nkDotExpr
             nkIdent 's'
@@ -1292,9 +1288,7 @@ nkStmtList
           nkIntLit 50
       nkStmtList
         nkDiscardStmt
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 's'
+          nkIdent 's'
         nkAsgn
           nkDotExpr
             nkIdent 's'
@@ -1308,9 +1302,7 @@ nkStmtList
         nkIdent 'log'
       nkStmtList
         nkDiscardStmt
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 's'
+          nkIdent 's'
         nkAsgn
           nkDotExpr
             nkIdent 's'
@@ -1318,9 +1310,7 @@ nkStmtList
           nkIntLit 10
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 's'
+          nkIdent 's'
           nkIdent 'Close'
       nkVarSection
         nkIdentDefs
@@ -1352,9 +1342,7 @@ nkStmtList
         nkIdent 'onClosed'
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 's'
+          nkIdent 's'
           nkIdent 'Close'
       nkCall
         nkIdent 'nsUnsubscribe'
@@ -1364,9 +1352,7 @@ nkStmtList
         nkIdent 'onClosed'
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 's'
+          nkIdent 's'
           nkIdent 'Close'
       nkCall
         nkIdent 'WriteLine'

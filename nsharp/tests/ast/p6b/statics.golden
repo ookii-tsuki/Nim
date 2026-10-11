@@ -942,9 +942,7 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'b'
+          nkIdent 'b'
           nkIdent 'Twice'
       nkCall
         nkIdent 'WriteLine'
@@ -977,9 +975,7 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'a'
+          nkIdent 'a'
           nkIdent 'Ratio'
       nkConstSection
         nkConstDef

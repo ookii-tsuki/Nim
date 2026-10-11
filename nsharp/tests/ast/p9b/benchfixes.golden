@@ -1274,18 +1274,14 @@ nkStmtList
               nkInfix
                 nkIdent '+'
                 nkDotExpr
-                  nkCall
-                    nkIdent 'nsCheckNilVar'
-                    nkIdent 't'
+                  nkIdent 't'
                   nkIdent 'Name'
                 nkStrLit " "
               nkDotExpr
                 nkCall
                   nkIdent 'nsCheckNilVar'
                   nkDotExpr
-                    nkCall
-                      nkIdent 'nsCheckNilVar'
-                      nkIdent 't'
+                    nkIdent 't'
                     nkIdent 'Left'
                 nkIdent 'Name'
             nkStrLit " "
@@ -1299,9 +1295,7 @@ nkStmtList
                     nkCall
                       nkIdent 'nsCheckNilVar'
                       nkDotExpr
-                        nkCall
-                          nkIdent 'nsCheckNilVar'
-                          nkIdent 't'
+                        nkIdent 't'
                         nkIdent 'Left'
                     nkIdent 'Left'
                 nkIdent 'Left'
@@ -1375,9 +1369,7 @@ nkStmtList
                             nkCall
                               nkIdent 'nsCheckNilVar'
                               nkDotExpr
-                                nkCall
-                                  nkIdent 'nsCheckNilVar'
-                                  nkIdent 't'
+                                nkIdent 't'
                                 nkIdent 'Left'
                             nkIdent 'Left'
                         nkIdent 'Left'

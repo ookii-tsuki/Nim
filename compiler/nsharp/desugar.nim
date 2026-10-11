@@ -1355,6 +1355,52 @@ proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode
 
 proc localFuncToNim(l: Lowerer; n: NsNode): PNode
 
+proc cursorUnsafe(l: Lowerer; n: NsNode; local: string): bool =
+  ## Whether `n` might release what a local borrowed from an element points to,
+  ## or change the local: it reassigns the local, writes an element or a field
+  ## that is not a number, or runs code N# cannot see through -- any call but
+  ## `Math`'s, a constructor, a closure, a property of a class it declares.
+  if n == nil: return false
+  case n.kind
+  of nsnAssign:
+    let t = (if n.sons.len > 0: n.sons[0] else: nil)
+    if t != nil:
+      if t.kind == nsnIdent and t.name == local: return true
+      if t.kind == nsnIndex: return true
+      if t.kind == nsnMember and t.typeKind notin {tkInt, tkFloat, tkBool, tkChar}:
+        return true
+  of nsnIncDec:
+    if n.body != nil and n.body.kind == nsnIdent and n.body.name == local: return true
+  of nsnCall:
+    let c = n.body
+    if not (c != nil and c.kind == nsnMember and c.body != nil and
+            c.body.typeKind == tkType and unqualified(c.body.typeName) == "Math"):
+      return true
+  of nsnNew, nsnLambda, nsnLocalFunc, nsnForeach, nsnLocalDecl:
+    if n.kind == nsnLocalDecl:
+      if n.name == local: return true
+    else: return true
+  of nsnMember:
+    if n.body != nil and l.scope.classes.hasKey(n.body.typeName):
+      let m = l.scope.findMemberInfo(n.body.typeName, n.name)
+      if m.isProperty or m.isMethod: return true
+  else: discard
+  if l.cursorUnsafe(n.body, local): return true
+  for x in n.sons:
+    if l.cursorUnsafe(x, local): return true
+  false
+
+proc cursorLocal(l: Lowerer; d: NsNode; rest: openArray[NsNode]): bool =
+  ## `var b = a[i];` where nothing for the rest of the block can release `b`'s
+  ## object or reassign `b`: Nim's `{.cursor.}`, a borrow that counts no
+  ## reference (the element keeps it alive), as C#'s plain reference read does.
+  if d.body == nil or d.body.kind != nsnIndex or d.paramMod.len > 0 or
+     d.declKind == dkConst or d.body.typeKind notin {tkClass, tkString}:
+    return false
+  for x in rest:
+    if l.cursorUnsafe(x, d.name): return false
+  true
+
 proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode =
   ## A block's statements. C# lets a local function be called anywhere in its
   ## block, Nim only after its definition, so each is declared forward first; its
@@ -1365,7 +1411,18 @@ proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode =
       let fwd = l.localFuncToNim(s)
       fwd[6] = empty(s.info)
       result.add fwd
-  for s in stmts: result.add l.stmt(s)
+  for i, s in stmts:
+    let st = l.stmt(s)
+    if s != nil and s.kind == nsnLocalDecl and st.kind in {nkVarSection, nkLetSection} and
+       st.len == 1 and st[0].kind == nkIdentDefs and st[0][0].kind == nkIdent and
+       l.cursorLocal(s, stmts.toOpenArray(i + 1, stmts.len - 1)):
+      st[0][0] = newTree(nkPragmaExpr, s.info, st[0][0],
+                         newTree(nkPragma, s.info, l.id("cursor", s.info)))
+    result.add st
+
+proc addStmts(l: Lowerer; dest: PNode; stmts: seq[NsNode]; info: TLineInfo) =
+  ## A run of statements added to `dest`, lowered as a block's are.
+  for x in l.stmtsToNode(stmts, info): dest.add x
 
 proc stmtSeq(l: Lowerer; blk: NsNode): PNode =
   ## Lowers a `nsnBlock` to an `nkStmtList`.
@@ -1848,10 +1905,10 @@ proc forToNim(l: Lowerer; n: NsNode): PNode =
     if not found: label = ""
   if label.len > 0:
     let body = newNodeI(nkStmtList, n.info)
-    for s in n.sons: body.add l.stmt(s)
+    l.addStmts(body, n.sons, n.info)
     wbody.add newTree(nkBlockStmt, n.info, l.id(label, n.info), body)
   else:
-    for s in n.sons: wbody.add l.stmt(s)
+    l.addStmts(wbody, n.sons, n.info)
   if hasStep:
     wbody.add l.stmt(header.sons[2])
   w.add wbody
@@ -1956,7 +2013,7 @@ proc lockToNim(l: Lowerer; n: NsNode): PNode =
   let info = n.info
   let sl = newNodeI(nkStmtList, info)
   sl.add newTree(nkDiscardStmt, info, l.expr(n.body))
-  for s in n.sons: sl.add l.stmt(s)
+  l.addStmts(sl, n.sons, n.info)
   result = newTree(nkBlockStmt, info, empty(info), sl)
 
 proc tryToNim(l: Lowerer; n: NsNode): PNode =
@@ -2171,7 +2228,7 @@ proc doWhileToNim(l: Lowerer; n: NsNode): PNode =
   assign.add l.id("nsFirst", n.info)
   assign.add l.id("false", n.info)
   body.add assign
-  for s in n.sons: body.add l.stmt(s)
+  l.addStmts(body, n.sons, n.info)
   loop.add body
   scope.add loop
   result.add scope
@@ -2185,7 +2242,7 @@ proc checkedToNim(l: Lowerer; n: NsNode): PNode =
   push.add newTree(nkExprColonExpr, n.info, l.id("overflowChecks", n.info),
                    l.id(if n.kind == nsnChecked: "on" else: "off", n.info))
   result.add push
-  for s in n.sons: result.add l.stmt(s)
+  l.addStmts(result, n.sons, n.info)
   let pop = newNodeI(nkPragma, n.info)
   pop.add l.id("pop", n.info)
   result.add pop
@@ -2342,7 +2399,7 @@ proc enumeratorLoop(l: Lowerer; n: NsNode): PNode =
   body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(n.name, info),
     (if n.typ != nil: l.typeToNim(n.typ, info) else: empty(info)),
     newTree(nkDotExpr, info, l.id(e, info), l.id("Current", info))))
-  for s in n.sons: body.add l.stmt(s)
+  l.addStmts(body, n.sons, n.info)
   sl.add newTree(nkWhileStmt, info, newTree(nkCall, info,
     newTree(nkDotExpr, info, l.id(e, info), l.id("MoveNext", info))), body)
   result = newTree(nkBlockStmt, info, empty(info), sl)
@@ -2831,7 +2888,7 @@ proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
     for a in m.initArgs: icall.add l.expr(a)
     ibody.add icall
   if m.body != nil:
-    for s in m.body.sons: ibody.add l.stmt(s)
+    l.addStmts(ibody, m.body.sons, m.info)
   result = l.mkProc(l.exportedName(m.attrs, "init" & cls.name, m.info), ip, ibody,
                     m.info, withPragmas = true)
 
@@ -4878,6 +4935,152 @@ proc makeMainCall(l: Lowerer; procDef: PNode): PNode =
   result = newTree(nkWhenStmt, info,
                    newTree(nkElifBranch, info, l.id("isMainModule", info), body))
 
+# --- redundant nil checks -----------------------------------------------------
+#
+# Lowering checks a reference at each member access (`nsCheckNilVar(x).f`), as C#
+# throws there. Within a routine, a local once checked stays non-nil until it is
+# assigned, so the later checks are dropped. Conservatively: only the routine's own
+# locals and parameters, never one a closure captures; a check inside a branch, a
+# block, a loop or a `try` holds only there; a local passed bare to a call may be a
+# `var`/`out` argument, so it is forgotten; a loop starts without the locals it
+# assigns.
+
+proc nsIdentName(n: PNode): string =
+  if n == nil: return ""
+  case n.kind
+  of nkIdent: n.ident.s
+  of nkPostfix: (if n.len > 1: nsIdentName(n[1]) else: "")
+  of nkPragmaExpr: (if n.len > 0: nsIdentName(n[0]) else: "")
+  else: ""
+
+proc nsAssignedIn(n: PNode; into: var HashSet[string]) =
+  ## Every local a statement may change: assigned, declared, passed bare to a call
+  ## or taken the address of.
+  if n == nil: return
+  case n.kind
+  of nkAsgn, nkFastAsgn:
+    let nm = nsIdentName(n[0])
+    if nm.len > 0: into.incl nm
+  of nkIdentDefs, nkVarTuple:
+    for k in 0 ..< n.len - 2: into.incl nsIdentName(n[k])
+  of nkCall, nkCommand:
+    if n.len > 0 and n[0].kind == nkIdent and n[0].ident.s == "nsCheckNilVar": return
+    for k in 1 ..< n.len:
+      if n[k].kind == nkIdent: into.incl n[k].ident.s
+  of nkAddr, nkHiddenAddr:
+    let nm = nsIdentName(n[0])
+    if nm.len > 0: into.incl nm
+  of nkForStmt:
+    for k in 0 ..< n.len - 2: into.incl nsIdentName(n[k])
+  else: discard
+  if n.kind notin {nkProcDef, nkMethodDef, nkFuncDef, nkIteratorDef, nkConverterDef,
+                   nkLambda, nkDo, nkTemplateDef, nkMacroDef}:
+    for i in 0 ..< n.safeLen: nsAssignedIn(n[i], into)
+
+proc nsCapturedIn(n: PNode; nested: bool; into: var HashSet[string]) =
+  ## The names a nested routine mentions: a closure may change them at any call.
+  if n == nil: return
+  if n.kind == nkIdent and nested: into.incl n.ident.s
+  let inner = nested or n.kind in {nkProcDef, nkMethodDef, nkFuncDef, nkIteratorDef,
+                                   nkConverterDef, nkLambda, nkDo}
+  for i in 0 ..< n.safeLen: nsCapturedIn(n[i], inner, into)
+
+proc nsLocalsIn(n: PNode; into: var HashSet[string]) =
+  ## The routine's own locals and parameters (not those of routines inside it).
+  if n == nil: return
+  case n.kind
+  of nkIdentDefs, nkVarTuple:
+    for k in 0 ..< n.len - 2: into.incl nsIdentName(n[k])
+  of nkForStmt:
+    for k in 0 ..< n.len - 2: into.incl nsIdentName(n[k])
+  of nkProcDef, nkMethodDef, nkFuncDef, nkIteratorDef, nkConverterDef, nkLambda, nkDo,
+     nkTemplateDef, nkMacroDef:
+    return
+  else: discard
+  for i in 0 ..< n.safeLen: nsLocalsIn(n[i], into)
+
+proc elideIn(n: PNode; facts: var HashSet[string]; tracked: HashSet[string]): PNode
+
+proc elideRoutine(n: PNode) =
+  ## A routine's body, with its own locals tracked from nothing known.
+  if n.len <= 6 or n[6].kind == nkEmpty: return
+  var tracked = initHashSet[string]()
+  nsLocalsIn(n[3], tracked)
+  nsLocalsIn(n[6], tracked)
+  var captured = initHashSet[string]()
+  nsCapturedIn(n[6], false, captured)
+  for c in captured: tracked.excl c
+  var facts = initHashSet[string]()
+  n[6] = elideIn(n[6], facts, tracked)
+
+proc elideIn(n: PNode; facts: var HashSet[string]; tracked: HashSet[string]): PNode =
+  result = n
+  if n == nil: return
+  case n.kind
+  of nkProcDef, nkMethodDef, nkFuncDef, nkIteratorDef, nkConverterDef, nkLambda, nkDo:
+    elideRoutine(n)
+  of nkTemplateDef, nkMacroDef: discard
+  of nkCall, nkCommand:
+    if n.len == 2 and n[0].kind == nkIdent and n[0].ident.s == "nsCheckNilVar" and
+       n[1].kind == nkIdent and n[1].ident.s in tracked:
+      let nm = n[1].ident.s
+      if nm in facts: return n[1]
+      facts.incl nm
+      return n
+    for i in 0 ..< n.len: n[i] = elideIn(n[i], facts, tracked)
+    for k in 1 ..< n.len:
+      if n[k].kind == nkIdent: facts.excl n[k].ident.s
+  of nkAsgn, nkFastAsgn:
+    n[1] = elideIn(n[1], facts, tracked)
+    n[0] = elideIn(n[0], facts, tracked)
+    let nm = nsIdentName(n[0])
+    if nm.len > 0: facts.excl nm
+  of nkIdentDefs, nkVarTuple:
+    n[^1] = elideIn(n[^1], facts, tracked)
+    for k in 0 ..< n.len - 2: facts.excl nsIdentName(n[k])
+  of nkInfix:
+    if n.len == 3 and n[0].kind == nkIdent and n[0].ident.s in ["and", "or"]:
+      n[1] = elideIn(n[1], facts, tracked)
+      var side = facts
+      n[2] = elideIn(n[2], side, tracked)
+    else:
+      for i in 0 ..< n.len: n[i] = elideIn(n[i], facts, tracked)
+  of nkIfStmt, nkIfExpr, nkCaseStmt, nkTryStmt, nkBlockStmt, nkBlockExpr, nkWhenStmt:
+    ## The first condition (or the selector) always runs; anything inside holds
+    ## only there.
+    var changed = initHashSet[string]()
+    nsAssignedIn(n, changed)
+    var first = 0
+    if n.kind in {nkIfStmt, nkIfExpr} and n.len > 0 and n[0].len == 2:
+      n[0][0] = elideIn(n[0][0], facts, tracked)
+      var inside = facts
+      n[0][1] = elideIn(n[0][1], inside, tracked)
+      first = 1
+    elif n.kind == nkCaseStmt and n.len > 0:
+      n[0] = elideIn(n[0], facts, tracked)
+      first = 1
+    for i in first ..< n.len:
+      var inside = facts
+      n[i] = elideIn(n[i], inside, tracked)
+    for c in changed: facts.excl c
+  of nkWhileStmt, nkForStmt:
+    var changed = initHashSet[string]()
+    nsAssignedIn(n, changed)
+    for c in changed: facts.excl c
+    var inside = facts
+    for i in 0 ..< n.len: n[i] = elideIn(n[i], inside, tracked)
+  else:
+    for i in 0 ..< n.safeLen: n[i] = elideIn(n[i], facts, tracked)
+
+proc elideNilChecks(n: PNode) =
+  ## Every routine of the module.
+  if n == nil: return
+  case n.kind
+  of nkProcDef, nkMethodDef, nkFuncDef, nkIteratorDef, nkConverterDef:
+    elideRoutine(n)
+  else:
+    for i in 0 ..< n.safeLen: elideNilChecks(n[i])
+
 proc lowerModule*(module: NsNode; scope: NsModuleScope;
                   cache: IdentCache; config: ConfigRef): PNode =
   ## Lowers a whole `.ns` module to the Nim statements the rest of the compiler
@@ -4961,6 +5164,7 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   for p in l.staticInits: result.add p
   if l.entryPoint != nil:
     result.add makeMainCall(l, l.entryPoint)
+  if l.nilChecks: elideNilChecks(result)
 
 proc splitModuleOutput*(stmts: PNode): tuple[decls, impls: PNode] =
   ## Splits a lowered module into type declarations and implementations, which

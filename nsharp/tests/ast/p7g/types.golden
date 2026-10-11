@@ -1401,9 +1401,7 @@ nkStmtList
           nkIdent '=='
           nkCall
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 'a'
+              nkIdent 'a'
               nkIdent 'GetType'
           nkCall
             nkIdent 'nsTypeOf'
@@ -1414,9 +1412,7 @@ nkStmtList
           nkIdent '=='
           nkCall
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 'a'
+              nkIdent 'a'
               nkIdent 'GetType'
           nkCall
             nkIdent 'nsTypeOf'

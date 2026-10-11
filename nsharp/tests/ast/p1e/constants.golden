@@ -475,9 +475,7 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'c'
+          nkIdent 'c'
           nkIdent 'MaxValue'
   nkProcDef
     nkPostfix

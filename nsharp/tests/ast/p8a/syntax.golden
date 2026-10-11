@@ -987,17 +987,13 @@ nkStmtList
                 nkIdent 'd'
               nkIdent 'Sum'
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'd'
+            nkIdent 'd'
             nkIdent 'A'
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'd'
+            nkIdent 'd'
             nkIdent 'Who'
       nkVarSection
         nkIdentDefs
@@ -1062,9 +1058,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'n'
+            nkIdent 'n'
             nkIdent 'Name'
           nkIdent 'Length'
       nkVarSection

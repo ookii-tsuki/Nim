@@ -561,9 +561,7 @@ nkStmtList
           nkIntLit 3
       nkStmtList
         nkDiscardStmt
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'p'
+          nkIdent 'p'
         nkAsgn
           nkDotExpr
             nkIdent 'p'
@@ -574,14 +572,10 @@ nkStmtList
         nkInfix
           nkIdent '+'
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'p'
+            nkIdent 'p'
             nkIdent 'X'
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'p'
+            nkIdent 'p'
             nkIdent 'Y'
   nkProcDef
     nkPostfix

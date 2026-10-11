@@ -1981,18 +1981,14 @@ nkStmtList
           nkIdent '+'
           nkCall
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNilVar'
-                nkIdent 'b'
+              nkIdent 'b'
               nkIdent 'Get'
           nkIntLit 1
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'b'
+            nkIdent 'b'
             nkIdent 'Get'
       nkVarSection
         nkIdentDefs
@@ -2044,9 +2040,7 @@ nkStmtList
               nkIdent 'p'
             nkIdent 'Key'
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'p'
+            nkIdent 'p'
             nkIdent 'Val'
       nkCall
         nkIdent 'WriteLine'

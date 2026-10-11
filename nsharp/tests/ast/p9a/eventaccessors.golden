@@ -985,9 +985,7 @@ nkStmtList
           nkIdent 'SelfSubscribe'
       nkCall
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'b'
+          nkIdent 'b'
           nkIdent 'Click'
       nkCall
         nkIdent 'nsRemove_Clicked'

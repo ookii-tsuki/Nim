@@ -473,9 +473,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkCall
-              nkIdent 'nsCheckNilVar'
-              nkIdent 'box'
+            nkIdent 'box'
             nkIdent 'Length'
       nkVarSection
         nkIdentDefs

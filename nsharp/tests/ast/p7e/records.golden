@@ -4059,9 +4059,7 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkCall
-            nkIdent 'nsCheckNilVar'
-            nkIdent 'p'
+          nkIdent 'p'
           nkIdent 'Sum'
       nkVarSection
         nkIdentDefs
