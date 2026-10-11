@@ -27,6 +27,10 @@ proc nimToCs(t: PNode; names: seq[string]; args: seq[NsNode];
              info: NsNode): NsNode =
   ## A Nim type from the prelude as a C# type node, its generic parameters replaced.
   if t == nil or t.kind == nkEmpty: return nsnVoidType(info.info)
+  if t.kind in {nkCommand, nkBracketExpr, nkPrefix} and t.len == 2 and
+     t[0].kind == nkIdent and t[0].ident.s == "sink":
+    ## `sink T` moves the argument in; C# sees a `T`.
+    return nimToCs(t[1], names, args, info)
   case t.kind
   of nkIdent:
     let s = t.ident.s
@@ -97,6 +101,10 @@ proc unify(pt, at: NsNode; tps: seq[string]; binding: var seq[NsNode]) =
 
 proc unifyNim(pt: PNode; at: NsNode; names: seq[string]; binding: var seq[NsNode]) =
   ## The same, for a library declaration's Nim parameter type.
+  if pt != nil and pt.kind in {nkCommand, nkBracketExpr, nkPrefix} and pt.len == 2 and
+     pt[0].kind == nkIdent and pt[0].ident.s == "sink":
+    unifyNim(pt[1], at, names, binding)
+    return
   if pt == nil or at == nil: return
   case pt.kind
   of nkVarTy, nkPtrTy, nkRefTy:

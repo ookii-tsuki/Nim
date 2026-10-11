@@ -275,8 +275,8 @@ proc newPriorityQueue*[E, P](capacity: int): PriorityQueue[E, P] =
 
 # --- Count ------------------------------------------------------------------
 
-proc Count*[T](l: List[T]): int32 = int32(l.data.len)
-proc Count*[K, V](t: Dictionary[K, V]): int32 = int32(t.data.len)
+proc Count*[T](l: List[T]): int32 {.inline.} = int32(l.data.len)
+proc Count*[K, V](t: Dictionary[K, V]): int32 {.inline.} = int32(t.data.len)
 proc Count*[T](s: HashSet[T]): int32 = int32(s.data.len)
 proc Count*[T](s: SortedSet[T]): int32 = int32(s.data.len)
 proc Count*[K, V](t: SortedDictionary[K, V]): int32 = int32(t.keys.len)
@@ -288,12 +288,16 @@ proc Count*[E, P](q: PriorityQueue[E, P]): int32 = int32(q.nodes.len)
 
 # --- List<T> ----------------------------------------------------------------
 
-proc `[]`*[T](l: List[T]; i: int): T =
+proc `[]`*[T](l: List[T]; i: int): T {.inline.} =
   checkIndex(i, l.data.len)
-  l.data[i]
-proc `[]=`*[T](l: List[T]; i: int; x: T) =
+  {.push boundChecks: off.}
+  result = l.data[i]  # checked above, with .NET's exception
+  {.pop.}
+proc `[]=`*[T](l: List[T]; i: int; x: sink T) {.inline.} =
   checkIndex(i, l.data.len)
+  {.push boundChecks: off.}
   l.data[i] = x
+  {.pop.}
   touch l
 
 iterator items*[T](l: List[T]): T =
@@ -305,7 +309,7 @@ iterator items*[T](l: List[T]): T =
     yield l.data[i]
     inc i
 
-proc Add*[T](l: List[T]; x: T) =
+proc Add*[T](l: List[T]; x: sink T) =
   l.data.add x
   touch l
 proc AddRange*[T](l: List[T]; collection: Enumerable[T]) =
@@ -433,9 +437,11 @@ proc TrimExcess*[T](l: List[T]) = discard
 # --- Dictionary<K, V> -------------------------------------------------------
 
 proc `[]`*[K, V](t: Dictionary[K, V]; k: K): V =
-  if not t.data.hasKey(k): raise keyMissing(k)
-  t.data[k]
-proc `[]=`*[K, V](t: Dictionary[K, V]; k: K; v: V) =
+  ## One lookup; a missing key raises the table's `KeyError` (C#'s
+  ## `KeyNotFoundException`), given .NET's message.
+  try: result = t.data[k]
+  except KeyError: raise keyMissing(k)
+proc `[]=`*[K, V](t: Dictionary[K, V]; k: K; v: sink V) =
   t.data[k] = v
   touch t
 
@@ -446,8 +452,7 @@ iterator items*[K, V](t: Dictionary[K, V]): KeyValuePair[K, V] =
     checkVersion(t, v)
 
 proc Add*[K, V](t: Dictionary[K, V]; k: K; v: V) =
-  if t.data.hasKey(k): raise keyDuplicate(k)
-  t.data[k] = v
+  if t.data.hasKeyOrPut(k, v): raise keyDuplicate(k)
   touch t
 proc TryAdd*[K, V](t: Dictionary[K, V]; k: K; v: V): bool =
   if t.data.hasKey(k): return false
@@ -457,7 +462,7 @@ proc TryAdd*[K, V](t: Dictionary[K, V]; k: K; v: V): bool =
 proc Clear*[K, V](t: Dictionary[K, V]) =
   t.data.clear()
   touch t
-proc ContainsKey*[K, V](t: Dictionary[K, V]; k: K): bool = t.data.hasKey(k)
+proc ContainsKey*[K, V](t: Dictionary[K, V]; k: K): bool {.inline.} = t.data.hasKey(k)
 proc ContainsValue*[K, V](t: Dictionary[K, V]; v: V): bool =
   for x in t.data.values:
     if x == v: return true

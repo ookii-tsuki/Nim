@@ -1784,7 +1784,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Area'
-                        nkCall
+                        nkCast
                           nkIdent 'Shape'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -1809,7 +1809,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Describe'
-                        nkCall
+                        nkCast
                           nkIdent 'Shape'
                           nkIdent 'self'
                         nkIdent 'precision'
@@ -1831,7 +1831,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Name'
-                        nkCall
+                        nkCast
                           nkIdent 'Shape'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -1945,7 +1945,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Name'
-                        nkCall
+                        nkCast
                           nkIdent 'Shape'
                           nkIdent 'self'
       nkCall
@@ -2234,7 +2234,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Scale'
-                        nkCall
+                        nkCast
                           nkIdent 'Circle'
                           nkIdent 'self'
                         nkIdent 'factor'
@@ -2656,7 +2656,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Name'
-                        nkCall
+                        nkCast
                           nkIdent 'Label'
                           nkIdent 'self'
       nkCall

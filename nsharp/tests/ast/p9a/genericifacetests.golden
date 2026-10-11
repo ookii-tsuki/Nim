@@ -1360,7 +1360,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Get'
-                        nkCall
+                        nkCast
                           nkIdent 'IntBox'
                           nkIdent 'self'
       nkCall
@@ -1458,7 +1458,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Name'
-                        nkCall
+                        nkCast
                           nkIdent 'IntBox'
                           nkIdent 'self'
       nkCall
@@ -1756,7 +1756,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Get'
-                        nkCall
+                        nkCast
                           nkIdent 'StrBox'
                           nkIdent 'self'
       nkCall
@@ -2054,7 +2054,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Get'
-                        nkCall
+                        nkCast
                           nkBracketExpr
                             nkIdent 'Wrap'
                             nkIdent 'T'

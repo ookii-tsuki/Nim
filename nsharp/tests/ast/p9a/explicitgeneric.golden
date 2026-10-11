@@ -751,7 +751,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'nsIBox_int_Get'
-                        nkCall
+                        nkCast
                           nkIdent 'Both'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -772,7 +772,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'nsIBox_int_Kind'
-                        nkCall
+                        nkCast
                           nkIdent 'Both'
                           nkIdent 'self'
       nkCall
@@ -876,7 +876,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'nsIBox_string_Get'
-                        nkCall
+                        nkCast
                           nkIdent 'Both'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -897,7 +897,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Kind'
-                        nkCall
+                        nkCast
                           nkIdent 'Both'
                           nkIdent 'self'
       nkCall

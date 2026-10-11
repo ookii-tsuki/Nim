@@ -1596,7 +1596,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Name'
-                        nkCall
+                        nkCast
                           nkIdent 'Item'
                           nkIdent 'self'
       nkCall

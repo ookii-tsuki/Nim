@@ -1129,7 +1129,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Name'
-                        nkCall
+                        nkCast
                           nkIdent 'Plain'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -1152,7 +1152,7 @@ nkStmtList
                         nkIdent 'nsDefault_IGreeter_Greet'
                         nkCall
                           nkIdent 'nsTo_IGreeter'
-                          nkCall
+                          nkCast
                             nkIdent 'Plain'
                             nkIdent 'self'
                 nkExprColonExpr
@@ -1175,7 +1175,7 @@ nkStmtList
                         nkIdent 'nsDefault_IGreeter_Suffix'
                         nkCall
                           nkIdent 'nsTo_IGreeter'
-                          nkCall
+                          nkCast
                             nkIdent 'Plain'
                             nkIdent 'self'
       nkCall
@@ -1406,7 +1406,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Name'
-                        nkCall
+                        nkCast
                           nkIdent 'Custom'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -1427,7 +1427,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Greet'
-                        nkCall
+                        nkCast
                           nkIdent 'Custom'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -1450,7 +1450,7 @@ nkStmtList
                         nkIdent 'nsDefault_IGreeter_Suffix'
                         nkCall
                           nkIdent 'nsTo_IGreeter'
-                          nkCall
+                          nkCast
                             nkIdent 'Custom'
                             nkIdent 'self'
       nkCall
@@ -1704,7 +1704,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Name'
-                        nkCall
+                        nkCast
                           nkIdent 'Loud'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -1727,7 +1727,7 @@ nkStmtList
                         nkIdent 'nsDefault_IGreeter_Greet'
                         nkCall
                           nkIdent 'nsTo_IGreeter'
-                          nkCall
+                          nkCast
                             nkIdent 'Loud'
                             nkIdent 'self'
                 nkExprColonExpr
@@ -1748,7 +1748,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Suffix'
-                        nkCall
+                        nkCast
                           nkIdent 'Loud'
                           nkIdent 'self'
       nkCall

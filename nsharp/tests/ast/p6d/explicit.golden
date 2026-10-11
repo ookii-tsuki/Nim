@@ -1057,7 +1057,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'nsIGreeter_Greet'
-                        nkCall
+                        nkCast
                           nkIdent 'Polite'
                           nkIdent 'self'
                         nkIdent 'who'

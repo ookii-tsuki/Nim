@@ -643,7 +643,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Area'
-                        nkCall
+                        nkCast
                           nkIdent 'Square'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -664,7 +664,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Name'
-                        nkCall
+                        nkCast
                           nkIdent 'Square'
                           nkIdent 'self'
       nkCall

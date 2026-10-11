@@ -1840,7 +1840,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Name'
-                        nkCall
+                        nkCast
                           nkIdent 'IntRepo'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -1865,7 +1865,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Add'
-                        nkCall
+                        nkCast
                           nkIdent 'IntRepo'
                           nkIdent 'self'
                         nkIdent 'item'
@@ -1891,7 +1891,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Get'
-                        nkCall
+                        nkCast
                           nkIdent 'IntRepo'
                           nkIdent 'self'
                         nkIdent 'i'
@@ -1913,7 +1913,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Count'
-                        nkCall
+                        nkCast
                           nkIdent 'IntRepo'
                           nkIdent 'self'
                 nkExprColonExpr
@@ -2025,7 +2025,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Add'
-                        nkCall
+                        nkCast
                           nkIdent 'IntRepo'
                           nkIdent 'self'
                         nkIdent 'item'
@@ -2051,7 +2051,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Get'
-                        nkCall
+                        nkCast
                           nkIdent 'IntRepo'
                           nkIdent 'self'
                         nkIdent 'i'
@@ -2073,7 +2073,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Count'
-                        nkCall
+                        nkCast
                           nkIdent 'IntRepo'
                           nkIdent 'self'
       nkCall
@@ -2472,7 +2472,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Add'
-                        nkCall
+                        nkCast
                           nkBracketExpr
                             nkIdent 'Repo'
                             nkIdent 'T'
@@ -2500,7 +2500,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Get'
-                        nkCall
+                        nkCast
                           nkBracketExpr
                             nkIdent 'Repo'
                             nkIdent 'T'
@@ -2524,7 +2524,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Count'
-                        nkCall
+                        nkCast
                           nkBracketExpr
                             nkIdent 'Repo'
                             nkIdent 'T'

@@ -2923,9 +2923,10 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
       let me = (if isStruct:
                   newTree(nkDotExpr, info, newTree(nkCall, info, copyTree(boxType),
                                                    l.id("self", info)), l.id("v", info))
-                else: newTree(nkCall, info, (if isException: newTree(nkPar, info,
-                                                copyTree(recvType)) else: copyTree(recvType)),
-                              l.id("self", info)))
+                else:
+                  ## The table is only ever paired with this class's objects, so
+                  ## the object is reread as one without a conversion check.
+                  newTree(nkCast, info, copyTree(recvType), l.id("self", info)))
       let target = l.implementerFor(n, m, iface, mangleType(it))
       var body: PNode
       var implemented = false

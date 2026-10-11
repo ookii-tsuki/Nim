@@ -610,7 +610,7 @@ nkStmtList
                     nkStmtList
                       nkCall
                         nkIdent 'Get'
-                        nkCall
+                        nkCast
                           nkIdent 'IntBox'
                           nkIdent 'self'
       nkCall
