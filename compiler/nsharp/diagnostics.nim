@@ -161,6 +161,7 @@ type
     ndPropertyValueNotVariable
     ndNativeAccessorUnnamed
     ndOnHandleMisplaced
+    ndCStringMisplaced
     ndUnsupported
 
   NsDiagInfo* = tuple[code, msg: string]
@@ -405,6 +406,8 @@ const
     ndOnHandleMisplaced: (code: "9913", msg: "'$1': [OnHandle] applies only to an 'extern'" &
                         " instance member of a [Native] class with a handle, on every" &
                         " overload of its name"),
+    ndCStringMisplaced: (code: "9915", msg: "'$1': [return: CString(\"pattern\")] applies" &
+                        " only to an 'extern' method returning 'string', and needs the pattern"),
     ndUnsupported: (code: "9999", msg: "$1 is currently unsupported"),
   ]
 

@@ -3503,6 +3503,58 @@ proc shiftTypeRefs(pattern: string): string =
     result.add pattern[i]
     inc i
 
+proc returnAttrNode(m: NsNode; name: string): NsNode =
+  ## The `[return: name(...)]` attribute of a member, or nil.
+  for a in m.attributes:
+    if a.strVal == "return" and a.name.split('.')[^1] in [name, name & "Attribute"]:
+      return a
+  nil
+
+proc stringReturn(l: Lowerer; m: NsNode; raw: PNode; pattern, header: string): PNode =
+  ## An `extern` returning `string`: `nsRaw_M`, the C++ call, copies the C string it
+  ## gives into the N# result within the same C++ expression (a temporary it points
+  ## into is still alive), and `M` returns it. The characters are the result itself
+  ## (`const char*`), or what `[return: CString("#.c_str()", Length = "#.size()")]`
+  ## reaches from it.
+  let info = m.info
+  let fp = raw[3]
+  var args: seq[PNode] = @[]
+  for i in 1 ..< fp.len:
+    for k in 0 ..< fp[i].len - 2: args.add l.id(fp[i][k].ident.s, info)
+  let wrapper = newNodeI(nkProcDef, info, 7)
+  wrapper[0] = raw[0]
+  wrapper[1] = empty(info)
+  wrapper[2] = copyTree(raw[2])
+  wrapper[3] = copyTree(fp)
+  wrapper[3][0] = l.id("string", info)
+  wrapper[4] = newTree(nkPragma, info, l.id("discardable", info))
+  wrapper[5] = empty(info)
+  let rawName = "nsRaw_" & m.name
+  raw[0] = l.id(rawName, info)
+  fp[0] = empty(info)
+  fp.sons.insert(l.identDefs("nsDest", newTree(nkPtrTy, info, l.id("string", info)), info), 1)
+  let call = shiftTypeRefs(pattern)
+  var wrapped = "nsSetStr(#, " & call & ")"
+  let cs = (if m.kind == nsnMethodDecl: returnAttrNode(m, "CString") else: nil)
+  if cs != nil:
+    var reach, length = ""
+    for x in cs.sons:
+      if x.kind == nsnStrLit: reach = x.strVal
+      elif x.kind == nsnNamedArg and x.name == "Length" and x.body != nil and
+           x.body.kind == nsnStrLit:
+        length = x.body.strVal
+    wrapped = "nsSetStrVia(#, " & call & ", [&](auto&& nsv) { return " &
+              reach.replace("#", "nsv") & "; }" &
+              (if length.len > 0: ", [&](auto&& nsv) { return " & length.replace("#", "nsv") & "; }"
+               else: "") & ")"
+  ## The binding's own header is included by its types; this one is the helpers'.
+  raw[4] = l.cppPragma(wrapped, "pure/nsharp/nsobj.hpp", info)
+  let c = newTree(nkCall, info, l.id(rawName, info),
+                  newTree(nkCall, info, l.id("addr", info), l.id("result", info)))
+  for a in args: c.add a
+  wrapper[6] = newTree(nkStmtList, info, c)
+  result = newTree(nkStmtList, info, raw, wrapper)
+
 proc ownedReturn(l: Lowerer; m: NsNode; raw: PNode; rt, pattern, header: string): PNode =
   ## An `extern` returning a class N# may own: `nsRaw_M`, the C++ call, and `M`, the
   ## N# reference to what it gives. By value (the default) the result is
@@ -3616,6 +3668,8 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PN
             else: "")
   if rt.len > 0 and l.scope.classes.hasKey(rt) and l.scope.ownedFamily(rt) and not forward:
     result = l.ownedReturn(m, result, rt, pattern, header)
+  elif rt == "string" and not forward:
+    result = l.stringReturn(m, result, pattern, header)
 
 proc ownedNew(l: Lowerer; cls: NsNode; params: seq[PNode]; ctor, header: string;
               info: TLineInfo; into: PNode) =
@@ -3701,7 +3755,11 @@ proc nativeProperty(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
     if handleSide: pd[2] = l.genericParams(@["nsU"], info)
     pd[3] = fp
     pd[4] = l.cppPragma(pattern, header, info)
-    into.add pd
+    if fp[0].kind == nkIdent and fp[0].ident.s == "string":
+      ## A `const char*` getter (its `Get` pattern may say `#->Title().c_str()`).
+      into.add l.stringReturn(m, pd, pattern, header)
+    else:
+      into.add pd
   let getter = (if m.params.len > 0: m.params[0] else: nil)
   let setter = (if m.params.len > 1: m.params[1] else: nil)
   if getter != nil:

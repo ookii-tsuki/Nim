@@ -851,3 +851,10 @@ when defined(cpp):
         result = H[T](p: p, keep: b)
     converter nsToRoot*[U](h: H[U]): H[R] {.inject.} = nsAs(h, H[R])
     converter nsToPass*[U](h: H[U]): NsPass[R] {.inject.} = nsPassOf(nsPtrAs(h.p, R))
+
+  proc nsCopyCStr(dest: pointer; p: cstring; len: int64) {.exportc: "nsCopyCStr", cdecl,
+      codegenDecl: "extern \"C\" $1 $2$3".} =
+    ## A C string C++ returns, copied into the N# string at `dest` (nsobj.hpp).
+    var s = newString(len)
+    if len > 0: copyMem(addr s[0], p, len)
+    cast[ptr string](dest)[] = s

@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <cstring>
 #include <utility>
 #include <vector>
 
@@ -104,6 +105,7 @@ struct Motion : Trait {
     // Accessors in the styles engines use.
     Vec2 GetPosition() const { return Pos; }
     void SetPosition(Vec2 p) { Pos = p; }
+    std::string Describe() const { return "motion at " + std::to_string((int)Pos.x); }
     float get_spin() const { return spin; }
     void set_spin(float s) { spin = s; }
 private:
@@ -307,6 +309,32 @@ public:
 
 template <typename T>
 T* TimerId<T>::Get() const { return static_cast<T*>(Timers::Table()[id].get()); }
+
+// --- labels -------------------------------------------------------------------------
+//
+// Strings in the shapes engines return them: a C string, a std::string by value (a
+// temporary), and the engine's own string class.
+
+namespace Text {
+struct Str {                       // an engine's own string: data, length, no '\0' promise
+    char buf[32];
+    int n;
+    const char* Data() const { return buf; }
+    int Size() const { return n; }
+};
+}
+
+struct Labels {
+    static const char* Plain() { return "plain"; }
+    static const char* Nothing() { return nullptr; }
+    static std::string Built(int k) { return "built-" + std::to_string(k); }
+    static Text::Str Custom() {
+        Text::Str s{};
+        std::memcpy(s.buf, "ab\0cd", 5);   // an embedded '\0', so only the length tells
+        s.n = 5;
+        return s;
+    }
+};
 
 // --- palettes --------------------------------------------------------------------------
 //

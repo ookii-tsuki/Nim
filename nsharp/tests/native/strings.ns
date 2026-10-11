@@ -1,0 +1,30 @@
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // Strings C++ returns, whatever it holds them in.
+    class Rig : Stage
+    {
+        public override void Begin()
+        {
+            Motion m = Spawn<Node>().Attach<Motion>();
+            m.Position = new Vec2(7, 0);
+            Console.Print($"property: {m.Description}");
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start()
+        {
+            Console.Print($"c string: {Labels.Plain()}, null: [{Labels.Nothing()}]");
+            for (int k = 0; k < 3; k++)
+                Console.Print($"temporary: {Labels.Built(k)}");
+            string c = Labels.Custom();
+            Console.Print($"custom: length {c.Length}, ends {c[4]}");
+            Director.Play<Rig>();
+        }
+    }
+}

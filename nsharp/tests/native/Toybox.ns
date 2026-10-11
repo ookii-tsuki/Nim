@@ -39,6 +39,8 @@ namespace Toybox
         public extern float Spin { get; set; }
         [Native(Get = "#->Vel.x")]
         public extern float Speed { get; }
+        [Native(Get = "#->Describe().c_str()")]
+        public extern string Description { get; }
     }
 
     [Native("Toybox::Tag", Header = "toybox.hpp")]
@@ -111,5 +113,14 @@ namespace Toybox
         [return: Borrowed] public static extern Palette Shared();
         [return: Borrowed] public static extern Palette Find(int colors);
         [return: Owned] public static extern Palette Create(string name, int colors);
+    }
+
+    [Native("Toybox::Labels", Header = "toybox.hpp")]
+    public static class Labels
+    {
+        public static extern string Plain();
+        public static extern string Nothing();
+        [return: CString("#.c_str()")] public static extern string Built(int k);
+        [return: CString("#.Data()", Length = "#.Size()")] public static extern string Custom();
     }
 }

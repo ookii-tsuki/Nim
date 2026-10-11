@@ -51,3 +51,10 @@ type
     ## `[OnHandle]` on an `extern` instance member of a handle class: a member of the
     ## handle, not of the object -- called on the handle itself (`#.M(@)`), and not
     ## checked, so it works on an invalid one (`e.IsAlive()`, `e.Id`).
+  CStringAttribute* = ref object of Attribute
+    ## `[return: CString("#.c_str()")]` on an `extern` returning `string`: how to
+    ## reach the characters of what C++ returns, `#` being the returned value
+    ## (`"#.Data()"`, `"#.ptr"`); `Length = "#.size()"` gives the length too, so a
+    ## string may hold a `'\0'`. Without it the C++ result is a `const char*`. The
+    ## characters are copied into the N# string at once, so a temporary they live
+    ## in is still alive; null is the empty string.

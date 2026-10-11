@@ -3632,6 +3632,16 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
         let short = a.name.split('.')[^1]
         if short in ["Borrowed", "BorrowedAttribute"]: borrowed = true
         if short in ["Owned", "OwnedAttribute"]: owned = true
+    if m.attributes.len > 0:
+      for a in m.attributes:
+        if a.strVal == "return" and a.name.split('.')[^1] in ["CString", "CStringAttribute"]:
+          let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
+                    else: "")
+          var reach = false
+          for x in a.sons:
+            if x.kind == nsnStrLit: reach = true
+          if m.kind != nsnMethodDecl or not m.attrs.isExtern or rt != "string" or not reach:
+            nsError(ctx.config, a.info, ndCStringMisplaced, named(m))
     if borrowed or owned:
       let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
                 else: "")
@@ -3692,8 +3702,7 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
             nsError(ctx.config, m.info, ndNativeAccessorUnnamed, named(m), "setter")
         let pt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
                   else: "")
-        if getter != nil and (pt == "string" or
-           (ctx.scope.classes.hasKey(pt) and ctx.scope.ownedFamily(pt))):
+        if getter != nil and ctx.scope.classes.hasKey(pt) and ctx.scope.ownedFamily(pt):
           unsupported(m, "a native property getter returning '" & pt & "'")
       else:
         unsupported(m, "this member in a '[Native]' type")

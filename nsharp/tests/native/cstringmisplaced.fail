@@ -1,0 +1,2 @@
+[return: CString] on an extern that does not return a string.
+code: NS9915

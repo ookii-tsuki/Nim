@@ -1,0 +1,9 @@
+using NSharp.Interop;
+namespace Demo
+{
+    [Native("Game::Body", Header = "game.hpp")]
+    public static class Body
+    {
+        [return: CString("#.c_str()")] public static extern int Count();
+    }
+}

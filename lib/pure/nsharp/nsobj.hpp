@@ -5,6 +5,7 @@
 #pragma once
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <new>
 #include <type_traits>
 
@@ -51,3 +52,20 @@ struct NsPass {
 // A pointer or a reference C++ returns, as a pointer.
 template <typename T> T* nsAddr(T* p) { return p; }
 template <typename T> T* nsAddr(T& r) { return &r; }
+
+// A C string C++ returns, copied into the N# string at `dest` (a Nim proc, in
+// intrinsics.nim) within the expression that made it, so a temporary it points
+// into (`GetTitle().c_str()`) is still alive. `nsSetStrVia` reaches the
+// characters, and optionally the length, through the binding's `[return:
+// CString(...)]`. A null pointer is the empty string.
+extern "C" void nsCopyCStr(void* dest, NCSTRING p, NI64 len);
+inline void nsSetStr(void* d, const char* p) {
+    nsCopyCStr(d, const_cast<char*>(p), p ? static_cast<NI64>(std::strlen(p)) : 0);
+}
+inline void nsSetStr(void* d, const char* p, long long n) {
+    nsCopyCStr(d, const_cast<char*>(p), p ? static_cast<NI64>(n) : 0);
+}
+template <typename V, typename P>
+void nsSetStrVia(void* d, V&& v, P ptr) { nsSetStr(d, ptr(v)); }
+template <typename V, typename P, typename L>
+void nsSetStrVia(void* d, V&& v, P ptr, L len) { nsSetStr(d, ptr(v), static_cast<long long>(len(v))); }
