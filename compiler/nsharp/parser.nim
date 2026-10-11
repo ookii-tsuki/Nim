@@ -463,7 +463,7 @@ proc parseArgumentInner(p: var NsParser): NsNode =
     result.body = p.parseArgument()
     return
   if p.at(nsIdent) and p.peek.text in ["ref", "out", "in"] and
-     p.peekAhead(1).kind == nsIdent:
+     p.peekAhead(1).kind notin {nsComma, nsRParen, nsEof}:
     let t = p.advance
     if t.text == "out" and p.typeShapeEnd(0) > 0 and
        p.peekAhead(p.typeShapeEnd(0)).kind == nsIdent:
@@ -770,6 +770,7 @@ proc parseUnary(p: var NsParser): NsNode =
       of nsPlus: "+"
       else: "not"
     result = nsnUnary(op, operand, p.infoOf(t))
+    if t.kind == nsBang: result.strVal = "!"    ## `!`, as against `~`: both are `not`
   else:
     result = p.parsePostfix()
 
@@ -891,6 +892,8 @@ proc parseBinary(p: var NsParser; minPrec: int): NsNode =
     else:
       let rhs = p.parseBinary(prec + 1)
       result = nsnBinary(opName(opTok.kind), result, rhs, p.infoOf(opTok))
+      if opTok.kind in {nsAmpAmp, nsPipePipe}:
+        result.strVal = "logical"   ## `&&`/`||`, which only take bools
 
 proc parseTernary(p: var NsParser): NsNode =
   result = p.parseBinary(1)

@@ -1038,6 +1038,41 @@ code:
 | `NS0065`/`NS0079` | CS0065/CS0079 | an event with accessors that lacks one, or is used other than by `+=`/`-=` |
 | `NS0574`/`NS0575` | CS0574/CS0575 | a finalizer not named after its class, or in a struct |
 | `NS9998` | - | warning: a finalizer, which never runs in N# |
+| `NS0019`/`NS0023` | CS0019/CS0023 | an operator applied to operands it does not take (`&&` on ints, `-` on a string) |
+| `NS0021`/`NS1579` | CS0021/CS1579 | indexing or `foreach` over a value that has neither |
+| `NS0026`/`NS0120` | CS0026/CS0120 | `this` or an instance member used in a static context |
+| `NS0030`/`NS0173` | CS0030/CS0173 | a cast with no conversion; a `?:` whose branches share no type |
+| `NS0100`/`NS0101`/`NS0102`/`NS0111` | CS0100/CS0101/CS0102/CS0111 | a parameter, type, member or signature declared twice |
+| `NS0103`/`NS0841` | CS0103/CS0841 | a name that is not declared, or used before its declaration |
+| `NS0117`/`NS1061` | CS0117/CS1061 | a type or value with no member of that name |
+| `NS0119`/`NS0201` | CS0119/CS0201 | a type used as a value; an expression that is not a statement |
+| `NS0123`/`NS0428`/`NS1593`/`NS1660` | CS0123/CS0428/CS1593/CS1660 | a method group or lambda that does not fit the delegate or value it is converted to |
+| `NS0126`/`NS0127`/`NS0161` | CS0126/CS0127/CS0161 | a `return` with or without a value against the method's type; a path that returns nothing |
+| `NS0128`/`NS0136` | CS0128/CS0136 | a local declared twice, or shadowing an enclosing one |
+| `NS0132` | CS0132 | a static constructor with parameters |
+| `NS0133` | CS0133 | a `const` local initialised by something not constant |
+| `NS0139` | CS0139 | `break`/`continue` outside a loop (a lambda body included) |
+| `NS0149`/`NS0154` | CS0149/CS0154 | calling a value that is no delegate; reading a set-only property |
+| `NS0152`/`NS0163`/`NS8070`/`NS9135` | CS0152/CS0163/CS8070/CS9135 | a repeated or non-constant `case` label; a section that falls through |
+| `NS0165`/`NS0177` | CS0165/CS0177 | a local read, or a method left, before definite assignment (`compiler/nsharp/flow.nim`) |
+| `NS0176` | CS0176 | a static member reached through an instance |
+| `NS0452`/`NS0453` | CS0452/CS0453 | a type argument that breaks a `class`/`struct` constraint |
+| `NS0547` | CS0547 | a `void` property |
+| `NS0664` | CS0664 | a double literal where a `float` or `decimal` is wanted |
+| `NS0723` | CS0723 | a variable of a static class |
+| `NS0738` | CS0738 | an implicit interface implementation with another return type |
+| `NS0815`/`NS0818` | CS0815/CS0818 | `var` with no value, or with `null`/`void` |
+| `NS1002` | CS1002 | a missing `;` |
+| `NS1501`/`NS1503` | CS1501/CS1503 | no overload takes this many arguments, or an argument does not convert (library methods and explicit type arguments included) |
+| `NS1510`/`NS1620` | CS1510/CS1620 | `ref`/`out` on a non-variable, or missing where the parameter needs it |
+| `NS1656` | CS1656 | assigning a `foreach` variable |
+| `NS1721`/`NS0527` | CS1721/CS0527 | two base classes, or a class in a struct's or interface's base list |
+| `NS1739` | CS1739 | a named argument no overload has |
+
+Every check reports only when it is certain; what N# cannot classify is left to Nim.
+`run_diag.sh` compares the code N# reports on each wrong program in
+`tests/diag/cases` with Roslyn's, including a held-out set (`h_*`) written apart
+from the checks, so a regression from a matching code fails the gate.
 | `NS0616` | CS0616 | an attribute names a class that does not derive from `Attribute` |
 | `NS0618`/`NS0612`/`NS0619` | CS0618/CS0612/CS0619 | a use of an `[Obsolete]` member or class |
 | `NS0070` | CS0070 | an event used outside its type other than by `+=`/`-=` |

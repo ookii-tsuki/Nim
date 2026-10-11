@@ -57,6 +57,19 @@ type
     ndInterfaceNotImplemented
     ndNoCollectionTarget
     ndNestedFileType
+    ndUnaryOperand
+    ndLambdaToValue
+    ndStaticVariable
+    ndNoStaticMember
+    ndIterVarAssign
+    ndNotConstant
+    ndRefNotVariable
+    ndDuplicateParam
+    ndDuplicateType
+    ndIfaceReturn
+    ndStaticCtorParams
+    ndMultipleBases
+    ndNotInterface
     ndVoidProperty
     ndConstantExpected
     ndUsedBeforeDecl
@@ -208,6 +221,21 @@ const
     ndNoCollectionTarget: (code: "9176", msg: "There is no target type for the collection expression."),
     ndNestedFileType: (code: "9054", msg: "File-local type '$1' must be defined in a top level type;" &
                      " '$1' is a nested type."),
+    ndUnaryOperand: (code: "0023", msg: "Operator '$1' cannot be applied to operand of type '$2'"),
+    ndLambdaToValue: (code: "1660", msg: "Cannot convert lambda expression to type '$1' because it is" &
+                    " not a delegate type"),
+    ndStaticVariable: (code: "0723", msg: "Cannot declare a variable of static type '$1'"),
+    ndNoStaticMember: (code: "0117", msg: "'$1' does not contain a definition for '$2'"),
+    ndIterVarAssign: (code: "1656", msg: "Cannot assign to '$1' because it is a '$2'"),
+    ndNotConstant: (code: "0133", msg: "The expression being assigned to '$1' must be constant"),
+    ndRefNotVariable: (code: "1510", msg: "A ref or out value must be an assignable variable"),
+    ndDuplicateParam: (code: "0100", msg: "The parameter name '$1' is a duplicate"),
+    ndDuplicateType: (code: "0101", msg: "The namespace '$1' already contains a definition for '$2'"),
+    ndIfaceReturn: (code: "0738", msg: "'$1' does not implement interface member '$2'. '$3'" &
+      " cannot implement '$2' because it does not have the matching return type of '$4'."),
+    ndStaticCtorParams: (code: "0132", msg: "'$1': a static constructor must be parameterless"),
+    ndMultipleBases: (code: "1721", msg: "Class '$1' cannot have multiple base classes: '$2' and '$3'"),
+    ndNotInterface: (code: "0527", msg: "Type '$1' in interface list is not an interface"),
     ndVoidProperty: (code: "0547", msg: "'$1': property or indexer cannot have void type"),
     ndConstantExpected: (code: "9135", msg: "A constant value of type '$1' is expected"),
     ndUsedBeforeDecl: (code: "0841", msg: "Cannot use local variable '$1' before it is declared"),
