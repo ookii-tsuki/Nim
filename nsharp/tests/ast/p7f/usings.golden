@@ -131,11 +131,15 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -150,11 +154,15 @@ nkStmtList
       nkIdent 'Point'
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -439,11 +447,15 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -468,11 +480,15 @@ nkStmtList
       nkIdent 'Point'
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -826,13 +842,13 @@ nkStmtList
               nkIdent 'Max'
               nkDotExpr
                 nkCall
-                  nkIdent 'nsCheckNil'
+                  nkIdent 'nsCheckNilVar'
                   nkIdent 'p'
                 nkIdent 'X'
               nkIntLit 5
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'p'
               nkIdent 'Y'
       nkCall

@@ -260,11 +260,15 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'before'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'after'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -279,11 +283,15 @@ nkStmtList
       nkIdent 'PriceChangedEventArgs'
       nkIdentDefs
         nkIdent 'before'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'after'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -382,7 +390,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -397,7 +407,9 @@ nkStmtList
       nkIdent 'Stock'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -711,11 +723,15 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'before'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'after'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -743,11 +759,15 @@ nkStmtList
       nkIdent 'PriceChangedEventArgs'
       nkIdentDefs
         nkIdent 'before'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'after'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -865,7 +885,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -910,7 +932,9 @@ nkStmtList
       nkIdent 'Stock'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1195,13 +1219,13 @@ nkStmtList
                         nkStrLit ": "
                       nkDotExpr
                         nkCall
-                          nkIdent 'nsCheckNil'
+                          nkIdent 'nsCheckNilVar'
                           nkIdent 'e'
                         nkIdent 'Before'
                     nkStrLit " -> "
                   nkDotExpr
                     nkCall
-                      nkIdent 'nsCheckNil'
+                      nkIdent 'nsCheckNilVar'
                       nkIdent 'e'
                     nkIdent 'After'
       nkCall
@@ -1238,7 +1262,7 @@ nkStmtList
                   nkIdent '>'
                   nkDotExpr
                     nkCall
-                      nkIdent 'nsCheckNil'
+                      nkIdent 'nsCheckNilVar'
                       nkIdent 'e'
                     nkIdent 'After'
                   nkIntLit 100
@@ -1249,7 +1273,7 @@ nkStmtList
       nkStmtList
         nkDiscardStmt
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 's'
         nkAsgn
           nkDotExpr
@@ -1259,7 +1283,7 @@ nkStmtList
       nkStmtList
         nkDiscardStmt
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 's'
         nkAsgn
           nkDotExpr
@@ -1269,7 +1293,7 @@ nkStmtList
       nkStmtList
         nkDiscardStmt
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 's'
         nkAsgn
           nkDotExpr
@@ -1285,7 +1309,7 @@ nkStmtList
       nkStmtList
         nkDiscardStmt
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 's'
         nkAsgn
           nkDotExpr
@@ -1295,7 +1319,7 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 's'
           nkIdent 'Close'
       nkVarSection
@@ -1329,7 +1353,7 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 's'
           nkIdent 'Close'
       nkCall
@@ -1341,7 +1365,7 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 's'
           nkIdent 'Close'
       nkCall

@@ -1,0 +1,29 @@
+using System;
+using System.Collections.Generic;
+
+namespace Bench
+{
+    class Program
+    {
+        static void Main()
+        {
+            long total = 0;
+            for (int rep = 0; rep < 200; rep++)
+            {
+                var parts = new List<string>();
+                for (int i = 0; i < 2000; i++) parts.Add($"item{i}:{i * rep % 97}");
+                string joined = string.Join(",", parts.ToArray());
+                var back = joined.Split(',');
+                foreach (var p in back)
+                {
+                    if (p.StartsWith("item1")) total += p.Length;
+                    total += p.IndexOf(':');
+                }
+                string s = "";
+                for (int i = 0; i < 300; i++) s += (char)('a' + i % 26);
+                total += s.ToUpper().Length + s.Substring(10, 20).IndexOf("k");
+            }
+            Console.WriteLine(total);
+        }
+    }
+}

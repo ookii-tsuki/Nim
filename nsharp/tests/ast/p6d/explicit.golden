@@ -186,7 +186,8 @@ nkStmtList
         nkIdent 'who'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -247,7 +248,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'ICounter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -783,7 +785,8 @@ nkStmtList
         nkIdent 'who'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -794,7 +797,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f0'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -870,7 +873,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'ICounter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -881,7 +885,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f0'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -1587,7 +1591,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'p'
             nkIdent 'Greet'
           nkStrLit "ann"

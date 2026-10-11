@@ -833,7 +833,7 @@ nkStmtList
               nkStmtList
                 nkDiscardStmt
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'nsInit1'
                 nkAsgn
                   nkDotExpr
@@ -857,7 +857,7 @@ nkStmtList
               nkStmtList
                 nkDiscardStmt
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'nsInit2'
                 nkAsgn
                   nkDotExpr
@@ -867,7 +867,7 @@ nkStmtList
               nkStmtList
                 nkDiscardStmt
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'nsInit2'
                 nkAsgn
                   nkDotExpr
@@ -878,7 +878,7 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'b'
           nkIdent 'Retag'
         nkStrLit "x"

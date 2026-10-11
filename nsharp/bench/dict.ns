@@ -1,0 +1,41 @@
+using System;
+using System.Collections.Generic;
+
+namespace Bench
+{
+    class Program
+    {
+        static void Main()
+        {
+            var counts = new Dictionary<int, int>();
+            long seed = 12345;
+            for (int i = 0; i < 4000000; i++)
+            {
+                seed = (seed * 1103515245 + 12345) % 2147483648;
+                int key = (int)(seed % 100000);
+                if (counts.ContainsKey(key)) counts[key] = counts[key] + 1;
+                else counts[key] = 1;
+            }
+            long total = 0;
+            int best = 0;
+            foreach (var kv in counts)
+            {
+                total += kv.Value * (long)kv.Key;
+                if (kv.Value > best) best = kv.Value;
+            }
+            var names = new Dictionary<string, int>();
+            for (int i = 0; i < 300000; i++)
+            {
+                string k = "k" + (i % 5000);
+                if (names.ContainsKey(k)) names[k] += i % 7;
+                else names.Add(k, 0);
+            }
+            long ns = 0;
+            foreach (var kv in names) ns += kv.Value;
+            Console.WriteLine(counts.Count);
+            Console.WriteLine(total);
+            Console.WriteLine(best);
+            Console.WriteLine(ns);
+        }
+    }
+}

@@ -180,7 +180,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -195,7 +197,9 @@ nkStmtList
       nkIdent 'Person'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -611,7 +615,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -639,7 +645,9 @@ nkStmtList
       nkIdent 'Person'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -994,7 +1002,7 @@ nkStmtList
               nkStmtList
                 nkDiscardStmt
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'nsInit1'
                 nkAsgn
                   nkDotExpr
@@ -1004,7 +1012,7 @@ nkStmtList
               nkStmtList
                 nkDiscardStmt
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'nsInit1'
                 nkAsgn
                   nkDotExpr
@@ -1032,7 +1040,7 @@ nkStmtList
               nkStmtList
                 nkDiscardStmt
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'nsInit2'
                 nkAsgn
                   nkDotExpr
@@ -1043,7 +1051,7 @@ nkStmtList
                 nkDotExpr
                   nkDotExpr
                     nkCall
-                      nkIdent 'nsCheckNil'
+                      nkIdent 'nsCheckNilVar'
                       nkIdent 'nsInit2'
                     nkIdent 'Tags'
                   nkIdent 'Add'
@@ -1052,7 +1060,7 @@ nkStmtList
                 nkDotExpr
                   nkDotExpr
                     nkCall
-                      nkIdent 'nsCheckNil'
+                      nkIdent 'nsCheckNilVar'
                       nkIdent 'nsInit2'
                     nkIdent 'Tags'
                   nkIdent 'Add'
@@ -1069,7 +1077,7 @@ nkStmtList
           nkDotExpr
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'q'
               nkIdent 'Tags'
             nkIdent 'Count'
@@ -1123,7 +1131,7 @@ nkStmtList
               nkStmtList
                 nkDiscardStmt
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'nsInit4'
                 nkAsgn
                   nkDotExpr
@@ -1274,7 +1282,7 @@ nkStmtList
                     nkStmtList
                       nkDiscardStmt
                         nkCall
-                          nkIdent 'nsCheckNil'
+                          nkIdent 'nsCheckNilVar'
                           nkIdent 'nsInit9'
                       nkAsgn
                         nkDotExpr

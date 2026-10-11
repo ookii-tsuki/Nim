@@ -481,7 +481,7 @@ nkStmtList
               nkStmtList
                 nkDiscardStmt
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'nsInit1'
                 nkAsgn
                   nkDotExpr
@@ -508,7 +508,7 @@ nkStmtList
               nkStmtList
                 nkDiscardStmt
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'nsInit2'
                 nkAsgn
                   nkDotExpr
@@ -520,7 +520,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'q'
           nkIdent 'X'
   nkProcDef

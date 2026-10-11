@@ -277,7 +277,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent ''
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -292,7 +294,9 @@ nkStmtList
       nkIdent 'nsAnon0'
       nkIdentDefs
         nkIdent ''
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -661,7 +665,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent ''
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -681,7 +687,9 @@ nkStmtList
       nkIdent 'nsAnon0'
       nkIdentDefs
         nkIdent ''
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'

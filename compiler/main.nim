@@ -150,6 +150,11 @@ proc commandNifC(graph: ModuleGraph) =
 proc commandCompileToC(graph: ModuleGraph) =
   let conf = graph.config
   extccomp.initVars(conf)
+  when defined(nsharp):
+    if conf.isNsharpProject and conf.symbolFiles == disabledSf:
+      ## N#: a C# virtual call is one indirect call through the type's vtable, as
+      ## in .NET, rather than a chain of type tests.
+      incl conf.features, Feature.vtables
   if conf.symbolFiles == disabledSf:
     if {optRun, optForceFullMake} * conf.globalOptions == {optRun} or isDefined(conf, "nimBetterRun"):
       if not changeDetectedViaJsonBuildInstructions(conf, conf.jsonBuildInstructionsFile):

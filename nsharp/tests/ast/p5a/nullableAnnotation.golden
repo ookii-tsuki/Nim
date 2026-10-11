@@ -98,7 +98,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'id'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -113,7 +115,9 @@ nkStmtList
       nkIdent 'Gadget'
       nkIdentDefs
         nkIdent 'id'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -285,7 +289,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'id'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -305,7 +311,9 @@ nkStmtList
       nkIdent 'Gadget'
       nkIdentDefs
         nkIdent 'id'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -390,7 +398,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'g'
           nkIdent 'Id'
       nkVarSection

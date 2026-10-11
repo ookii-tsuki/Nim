@@ -110,7 +110,11 @@ proc expr(c: var DaCtx; n: NsNode; s: var DaState) =
 proc stmt(c: var DaCtx; n: NsNode; s: var DaState)
 
 proc stmts(c: var DaCtx; ns: seq[NsNode]; s: var DaState) =
+  ## A statement list is a scope: what it declares is forgotten at its end, so a
+  ## sibling scope may declare the name again.
+  let saved = c.tracked
   for x in ns: c.stmt(x, s)
+  c.tracked = saved
 
 proc leave(c: var DaCtx; s: DaState; info: TLineInfo) =
   ## Control leaves the method: every `out` parameter must be assigned (CS0177).
@@ -175,7 +179,7 @@ proc stmt(c: var DaCtx; n: NsNode; s: var DaState) =
       else:
         hasElse = true
         var branch = rest
-        if b.kind == nsnElseBranch: c.stmt(b.body, branch) else: c.stmts(b.sons, branch)
+        c.stmts(b.sons, branch)
         after = merge(after, branch)
     s = (if hasElse: after else: merge(after, rest))
   of nsnWhile:

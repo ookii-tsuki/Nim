@@ -127,7 +127,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'start'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -142,7 +144,9 @@ nkStmtList
       nkIdent 'Counter'
       nkIdentDefs
         nkIdent 'start'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -359,7 +363,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'start'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -379,7 +385,9 @@ nkStmtList
       nkIdent 'Counter'
       nkIdentDefs
         nkIdent 'start'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -463,13 +471,13 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'c'
           nkIdent 'Inc'
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'c'
           nkIdent 'Inc'
       nkCall
@@ -477,7 +485,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'c'
             nkIdent 'Value'
   nkProcDef

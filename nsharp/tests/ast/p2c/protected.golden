@@ -109,7 +109,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -124,7 +126,9 @@ nkStmtList
       nkIdent 'Base'
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -207,7 +211,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -222,7 +228,9 @@ nkStmtList
       nkIdent 'Derived'
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -410,7 +418,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -430,7 +440,9 @@ nkStmtList
       nkIdent 'Base'
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -529,7 +541,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -548,7 +562,9 @@ nkStmtList
       nkIdent 'Derived'
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -657,7 +673,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'd'
             nkIdent 'GetSecret'
       nkCall
@@ -665,7 +681,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'd'
             nkIdent 'Twice'
   nkProcDef

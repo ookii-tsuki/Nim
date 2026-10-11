@@ -404,7 +404,7 @@ nkStmtList
       nkStmtList
         nkDiscardStmt
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'b'
         nkAsgn
           nkDotExpr

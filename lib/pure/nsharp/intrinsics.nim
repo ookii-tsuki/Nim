@@ -140,6 +140,15 @@ proc nsCheckNil*[T: ref object](x: T): T {.inline.} =
   if x == nil: raise newException(NilAccessDefect, "attempt to access a nil address")
   x
 
+proc nsNilFail*() {.noinline, noreturn.} =
+  raise newException(NilAccessDefect, "attempt to access a nil address")
+
+template nsCheckNilVar*(x: untyped): untyped =
+  ## `nsCheckNil` for a receiver that is a variable: read twice rather than
+  ## copied, so the check costs no reference count, and the throw is out of line.
+  (if x == nil: nsNilFail()
+   x)
+
 proc nsIfaceCast*[T](v: T; src: RootRef): T =
   ## `(I)x` for an interface `I`: `v` is what the object's class answered for `I`,
   ## empty when it does not implement it. C# throws `InvalidCastException` then,

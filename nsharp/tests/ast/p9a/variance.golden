@@ -453,7 +453,8 @@ nkStmtList
           nkIdent 'IProducer'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -520,7 +521,8 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1246,7 +1248,8 @@ nkStmtList
           nkIdent 'IProducer'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1257,7 +1260,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f0'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -1335,7 +1338,8 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1346,7 +1350,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f0'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -1903,7 +1907,7 @@ nkStmtList
           nkStrLit "vet sees "
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'a'
             nkIdent 'Name'
   nkProcDef
@@ -2136,7 +2140,7 @@ nkStmtList
                   nkStrLit "act "
                   nkDotExpr
                     nkCall
-                      nkIdent 'nsCheckNil'
+                      nkIdent 'nsCheckNilVar'
                       nkIdent 'a'
                     nkIdent 'Name'
       nkVarSection
@@ -2218,7 +2222,7 @@ nkStmtList
                   nkStrLit "sink "
                   nkDotExpr
                     nkCall
-                      nkIdent 'nsCheckNil'
+                      nkIdent 'nsCheckNilVar'
                       nkIdent 'a'
                     nkIdent 'Name'
       nkVarSection

@@ -465,7 +465,7 @@ nkStmtList
             nkIdent 'WriteLine'
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'g'
               nkIdent 'Size'
         nkExceptBranch
@@ -484,7 +484,7 @@ nkStmtList
             nkCall
               nkDotExpr
                 nkCall
-                  nkIdent 'nsCheckNil'
+                  nkIdent 'nsCheckNilVar'
                   nkIdent 'g'
                 nkIdent 'Ignore'
         nkExceptBranch

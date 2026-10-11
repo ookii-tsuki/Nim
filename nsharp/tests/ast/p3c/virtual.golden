@@ -431,7 +431,7 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'b'
           nkIdent 'Speak'
   nkProcDef

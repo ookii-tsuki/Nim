@@ -983,12 +983,12 @@ nkStmtList
           nkCall
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'd'
               nkIdent 'Sum'
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'd'
             nkIdent 'A'
       nkCall
@@ -996,7 +996,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'd'
             nkIdent 'Who'
       nkVarSection
@@ -1020,7 +1020,7 @@ nkStmtList
               nkStmtList
                 nkDiscardStmt
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'nsInit1'
                 nkAsgn
                   nkDotExpr
@@ -1038,7 +1038,7 @@ nkStmtList
                       nkStmtList
                         nkDiscardStmt
                           nkCall
-                            nkIdent 'nsCheckNil'
+                            nkIdent 'nsCheckNilVar'
                             nkIdent 'nsInit2'
                         nkAsgn
                           nkDotExpr
@@ -1051,10 +1051,10 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'n'
               nkIdent 'Next'
           nkIdent 'Name'
@@ -1063,7 +1063,7 @@ nkStmtList
         nkDotExpr
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'n'
             nkIdent 'Name'
           nkIdent 'Length'

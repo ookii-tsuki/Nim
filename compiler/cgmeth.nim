@@ -160,7 +160,8 @@ proc fixupDispatcher(meth, disp: PSym; conf: ConfigRef) =
 proc methodDef*(g: ModuleGraph; idgen: IdGenerator; s: PSym) =
   var witness: PSym = nil
   if s.typ.firstParamType.owner.getModule != s.getModule and vtables in g.config.features and not
-      g.config.isDefined("nimInternalNonVtablesTesting") and sfFromGeneric notin s.flags:
+      g.config.isDefined("nimInternalNonVtablesTesting") and sfFromGeneric notin s.flags and
+      not g.config.isNsharpProject:
     # `sfFromGeneric` excepted: this is the same-module restriction for vtable
     # slot placement, and it must be judged on the GENERIC method, not on an
     # instance. The generic `method skip[T](x: Input[T])` never reaches here

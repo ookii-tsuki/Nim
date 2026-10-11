@@ -543,7 +543,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'a'
             nkIdent 'Equals'
           nkIdent 'b'

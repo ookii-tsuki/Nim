@@ -202,7 +202,8 @@ nkStmtList
           nkIdent 'IBox'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -259,7 +260,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'INamed'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -830,7 +832,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'v'
-        nkIdent 'T'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -851,7 +855,9 @@ nkStmtList
         nkIdent 'T'
       nkIdentDefs
         nkIdent 'v'
-        nkIdent 'T'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'T'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1088,7 +1094,8 @@ nkStmtList
           nkIdent 'IBox'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1099,7 +1106,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f0'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -1167,7 +1174,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'INamed'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1178,7 +1186,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f0'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -2172,7 +2180,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'v'
-        nkIdent 'T'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -2198,7 +2208,9 @@ nkStmtList
         nkIdent 'T'
       nkIdentDefs
         nkIdent 'v'
-        nkIdent 'T'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'T'
         nkEmpty
     nkPragma
       nkIdent 'discardable'

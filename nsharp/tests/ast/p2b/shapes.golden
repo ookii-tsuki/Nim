@@ -159,7 +159,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -174,7 +176,9 @@ nkStmtList
       nkIdent 'Shape'
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -241,7 +245,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -256,7 +262,9 @@ nkStmtList
       nkIdent 'Square'
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -494,7 +502,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -514,7 +524,9 @@ nkStmtList
       nkIdent 'Shape'
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -593,7 +605,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -612,7 +626,9 @@ nkStmtList
       nkIdent 'Square'
       nkIdentDefs
         nkIdent 's'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -696,7 +712,7 @@ nkStmtList
       nkStmtList
         nkDiscardStmt
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'sh'
         nkAsgn
           nkDotExpr
@@ -707,7 +723,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'sh'
           nkIdent 'Sides'
       nkCall
@@ -715,7 +731,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'sh'
             nkIdent 'Doubled'
       nkVarSection
@@ -729,7 +745,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'sq'
           nkIdent 'Sides'
   nkProcDef

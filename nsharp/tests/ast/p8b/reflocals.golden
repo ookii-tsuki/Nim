@@ -696,7 +696,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 's'
             nkIdent 'Show'
       nkProcDef

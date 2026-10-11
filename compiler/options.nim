@@ -1141,6 +1141,13 @@ proc findModuleImpl(conf: ConfigRef; mIn, currentModule: string): AbsoluteFile =
       result = findFile(conf, m)
   patchModule(conf)
 
+proc isNsharpProject*(conf: ConfigRef): bool =
+  ## True when the program being compiled is an N# one: its main file is `.ns`.
+  ## The N# library declares `method`s on `RootRef` (C#'s `object`) outside
+  ## `system`, which vtable dispatch allows for a whole-program build.
+  when defined(nsharp): conf.projectFull.string.splitFile.ext == ".ns"
+  else: false
+
 proc findModule*(conf: ConfigRef; modulename, currentModule: string): AbsoluteFile =
   # returns path to module
   when defined(nsharp):

@@ -254,11 +254,15 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'X'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'Y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -273,11 +277,15 @@ nkStmtList
       nkIdent 'Point'
       nkIdentDefs
         nkIdent 'X'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'Y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -369,11 +377,15 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'a'
-        nkIdent 'Point'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'Point'
         nkEmpty
       nkIdentDefs
         nkIdent 'b'
-        nkIdent 'Point'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'Point'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -388,11 +400,15 @@ nkStmtList
       nkIdent 'Seg'
       nkIdentDefs
         nkIdent 'a'
-        nkIdent 'Point'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'Point'
         nkEmpty
       nkIdentDefs
         nkIdent 'b'
-        nkIdent 'Point'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'Point'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -891,11 +907,15 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'X'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'Y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -920,11 +940,15 @@ nkStmtList
       nkIdent 'Point'
       nkIdentDefs
         nkIdent 'X'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'Y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1039,11 +1063,15 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'a'
-        nkIdent 'Point'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'Point'
         nkEmpty
       nkIdentDefs
         nkIdent 'b'
-        nkIdent 'Point'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'Point'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1068,11 +1096,15 @@ nkStmtList
       nkIdent 'Seg'
       nkIdentDefs
         nkIdent 'a'
-        nkIdent 'Point'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'Point'
         nkEmpty
       nkIdentDefs
         nkIdent 'b'
-        nkIdent 'Point'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'Point'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1429,7 +1461,7 @@ nkStmtList
                                               nkStrLit "first quadrant "
                                               nkDotExpr
                                                 nkCall
-                                                  nkIdent 'nsCheckNil'
+                                                  nkIdent 'nsCheckNilVar'
                                                   nkIdent 'q'
                                                 nkIdent 'X'
                                           nkElseExpr
@@ -1813,7 +1845,7 @@ nkStmtList
                   nkStrLit "seg to "
                   nkDotExpr
                     nkCall
-                      nkIdent 'nsCheckNil'
+                      nkIdent 'nsCheckNilVar'
                       nkIdent 'end'
                     nkIdent 'X'
       nkVarSection

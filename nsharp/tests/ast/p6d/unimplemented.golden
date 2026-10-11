@@ -108,7 +108,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IShape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -123,7 +124,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IShape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -433,7 +435,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IShape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -444,7 +447,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f0'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -460,7 +463,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IShape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -471,7 +475,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f1'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'

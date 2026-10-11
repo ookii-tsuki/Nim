@@ -316,7 +316,8 @@ nkStmtList
         nkIdent 'item'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -341,7 +342,8 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -362,7 +364,8 @@ nkStmtList
           nkIdent 'IRepo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -425,7 +428,8 @@ nkStmtList
           nkIdent 'INamedRepo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -450,7 +454,8 @@ nkStmtList
         nkIdent 'item'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -475,7 +480,8 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -496,7 +502,8 @@ nkStmtList
           nkIdent 'INamedRepo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1134,7 +1141,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'c'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1149,7 +1158,9 @@ nkStmtList
       nkIdent 'Money'
       nkIdentDefs
         nkIdent 'c'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1330,7 +1341,8 @@ nkStmtList
         nkIdent 'item'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1341,7 +1353,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f0'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -1368,7 +1380,8 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1379,7 +1392,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f1'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -1402,7 +1415,8 @@ nkStmtList
           nkIdent 'IRepo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1413,7 +1427,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f2'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -1487,7 +1501,8 @@ nkStmtList
           nkIdent 'INamedRepo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1498,7 +1513,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f0'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -1524,7 +1539,8 @@ nkStmtList
         nkIdent 'item'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1535,7 +1551,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f1'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -1562,7 +1578,8 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1573,7 +1590,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f2'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -1596,7 +1613,8 @@ nkStmtList
           nkIdent 'INamedRepo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkStmtList
       nkCall
@@ -1607,7 +1625,7 @@ nkStmtList
               nkIdent 'nsVt'
             nkIdent 'f3'
         nkCall
-          nkIdent 'nsCheckNil'
+          nkIdent 'nsCheckNilVar'
           nkDotExpr
             nkIdent 'self'
             nkIdent 'nsObj'
@@ -2851,7 +2869,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'c'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -2871,7 +2891,9 @@ nkStmtList
       nkIdent 'Money'
       nkIdentDefs
         nkIdent 'c'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -2913,7 +2935,7 @@ nkStmtList
             nkIdent 'CompareTo'
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'other'
             nkIdent 'Cents'
   nkMethodDef
@@ -3122,7 +3144,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'a'
             nkIdent 'CompareTo'
           nkCall

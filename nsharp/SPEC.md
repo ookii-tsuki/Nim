@@ -385,7 +385,7 @@ and the namespaces must be merged or layered.
 | **Methods** `R M(P a) { }` | method | ✅ v1 | front (→ `proc`) |
 | Expression-bodied method `=> e;` | `R M() => e;` | ✅ v1 | desugar |
 | `static` methods | type-level | ✅ v1 | desugar (`proc M(t: typedesc[C], ...)`, called `M(C, ...)`, so a static method never competes with an instance member through Nim's dot-call) |
-| `virtual` / `override` / `abstract` | dispatch | ✅ v1 | desugar (`virtual`/`abstract` → `method {.base.}`, `override` → `method`; an override without a slot is NS0115) |
+| `virtual` / `override` / `abstract` | dispatch | ✅ v1 | desugar (`virtual`/`abstract` → `method {.base.}`, `override` → `method`; an override without a slot is NS0115). An N# program is built with Nim's vtables (`compiler/main.nim` turns the feature on when the main file is `.ns`), so a virtual call is one indirect call, as in .NET |
 | `sealed override` | stop override | ✅ v1 | sem (overriding it again is NS0239) |
 | `new` (hide) | shadow base | ✅ v1 | desugar (a plain proc beside the base's `method`, so static type decides, as in C#) |
 | **Constructors** `C(a) { }` | init | ✅ v1 | desugar (→ `proc new`) |
@@ -578,7 +578,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | `switch` fallthrough | forbidden (empty cases group) | no fallthrough | maps to Nim `case`; empty-case groups allowed; a trailing `break;` is dropped; a non-exhaustive switch gets `else: discard` | front |
 | `Main` / `args` | `Main(string[])`, exit code | module top-level | support both (D5); `int` return → exit code | front |
 | Interpolation format | `$"{x:F2}"` | `strformat`/`formatFloat` | a hole lowers to `nsFmt(x, spec)`, which renders .NET's standard numeric specs (`C D E F G N P R X` with precision) and custom ones (`0 # . , %`) as .NET's en-US culture does; a hole without a spec is the value's `$`, so N#'s float rendering applies there | desugar/lib |
-| `null` deref | `NullReferenceException` | no runtime check | `desugar.nim` wraps the receiver of a field access or dot-called method on a class reference in the intrinsics' `nsCheckNil`, so null raises `NullAccessDefect` -- aliased to `NullReferenceException` -- instead of faulting; off under `-d:danger` / `--nilChecks:off` | front/lib |
+| `null` deref | `NullReferenceException` | no runtime check | `desugar.nim` wraps the receiver of a field access or dot-called method on a class reference in the intrinsics' `nsCheckNil`, so null raises `NullAccessDefect` -- aliased to `NullReferenceException` -- instead of faulting; off under `-d:danger` / `--nilChecks:off`. A receiver that is a variable or a field of one is tested in place (`nsCheckNilVar`), costing no reference count; the throw is out of line | front/lib |
 | Arrays | `T[]`, `new T[n]` | `seq[T]` | `T[]` → `seq[T]`; `new T[n]` → `newSeq[T](n)`; `new T[]{..}` → `@[..]`; `.Length` is the library's `openArray` proc, reached by Nim's dot-call | front/lib |
 | Enum field scope | scoped to the enum type | unqualified globals | `E.A` resolves via Nim qualified access; two enums must not share a field name | front |
 | Exceptions | all derive from `Exception` | `Exception` is the root of both `CatchableError` and `Defect` | C# `Exception` → Nim's exception root, so `catch (Exception)` catches runtime errors too; the .NET names are declared by the library, aliasing the defect Nim raises where one exists (`OverflowException` → `OverflowDefect`); `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` | front/lib |

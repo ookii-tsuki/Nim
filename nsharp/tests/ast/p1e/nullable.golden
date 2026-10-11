@@ -100,7 +100,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'start'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -115,7 +117,9 @@ nkStmtList
       nkIdent 'Box'
       nkIdentDefs
         nkIdent 'start'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -287,7 +291,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'start'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -311,7 +317,9 @@ nkStmtList
       nkIdent 'Box'
       nkIdentDefs
         nkIdent 'start'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -692,7 +700,7 @@ nkStmtList
       nkStmtList
         nkDiscardStmt
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'box'
         nkAsgn
           nkDotExpr
@@ -704,7 +712,7 @@ nkStmtList
       nkStmtList
         nkDiscardStmt
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'box'
         nkAsgn
           nkDotExpr
@@ -745,7 +753,7 @@ nkStmtList
                 nkEmpty
                 nkDotExpr
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'box'
                   nkIdent 'Slot'
             nkIfExpr
@@ -763,7 +771,7 @@ nkStmtList
       nkStmtList
         nkDiscardStmt
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'box'
         nkAsgn
           nkDotExpr
@@ -804,7 +812,7 @@ nkStmtList
                 nkEmpty
                 nkDotExpr
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'box'
                   nkIdent 'Slot'
             nkIfExpr

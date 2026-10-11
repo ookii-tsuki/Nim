@@ -128,7 +128,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'n'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -143,7 +145,9 @@ nkStmtList
       nkIdent 'Resource'
       nkIdentDefs
         nkIdent 'n'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -407,7 +411,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'n'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -433,7 +439,9 @@ nkStmtList
       nkIdent 'Resource'
       nkIdentDefs
         nkIdent 'n'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -610,7 +618,7 @@ nkStmtList
             nkCall
               nkDotExpr
                 nkCall
-                  nkIdent 'nsCheckNil'
+                  nkIdent 'nsCheckNilVar'
                   nkIdent 'r'
                 nkIdent 'Use'
       nkBlockStmt
@@ -644,7 +652,7 @@ nkStmtList
             nkCall
               nkDotExpr
                 nkCall
-                  nkIdent 'nsCheckNil'
+                  nkIdent 'nsCheckNilVar'
                   nkIdent 'a'
                 nkIdent 'Use'
       nkBlockStmt
@@ -666,7 +674,7 @@ nkStmtList
           nkCall
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'r2'
               nkIdent 'Use'
           nkCall
@@ -975,7 +983,7 @@ nkStmtList
             nkCall
               nkDotExpr
                 nkCall
-                  nkIdent 'nsCheckNil'
+                  nkIdent 'nsCheckNilVar'
                   nkIdent 'shared'
                 nkIdent 'Use'
       nkBlockStmt

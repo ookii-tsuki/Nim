@@ -194,7 +194,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'w'
             nkIdent 'IsEven'
           nkIntLit 10
@@ -203,7 +203,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'w'
             nkIdent 'IsEven'
           nkIntLit 7

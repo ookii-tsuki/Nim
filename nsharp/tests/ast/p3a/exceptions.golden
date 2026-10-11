@@ -45,7 +45,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'm'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -61,7 +63,9 @@ nkStmtList
         nkIdent 'AppException'
       nkIdentDefs
         nkIdent 'm'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -182,7 +186,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'm'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -203,7 +209,9 @@ nkStmtList
         nkIdent 'AppException'
       nkIdentDefs
         nkIdent 'm'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'

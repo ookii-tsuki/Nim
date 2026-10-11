@@ -2400,7 +2400,11 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       if n.name in ["shl", "shr"]:
         ## The count is an `int`; the result is the promoted left operand.
         numResult = unaryPromoted(ln)
-        needConv(n.sons[0], numResult)
+        if isConstantLit(n.sons[0]) and n.sons[0].typeName.len == 0:
+          ## `shl` gives a literal no context to take its type from.
+          n.sons[0].conv = numResult
+        else:
+          needConv(n.sons[0], numResult)
       elif n.name in ["==", "!=", "<", ">", "<=", ">="] and ln == "char" and rn == "char":
         discard
       else:

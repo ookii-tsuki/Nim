@@ -200,7 +200,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'g'
             nkIdent 'Name'
       nkCall
@@ -208,7 +208,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 't'
             nkIdent 'IsNamed'
           nkIdent 'g'

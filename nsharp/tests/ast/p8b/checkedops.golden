@@ -98,7 +98,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'v'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -113,7 +115,9 @@ nkStmtList
       nkIdent 'Small'
       nkIdentDefs
         nkIdent 'v'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -386,7 +390,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'v'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -406,7 +412,9 @@ nkStmtList
       nkIdent 'Small'
       nkIdentDefs
         nkIdent 'v'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'

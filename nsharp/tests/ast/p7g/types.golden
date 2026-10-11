@@ -1391,7 +1391,7 @@ nkStmtList
           nkCall
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'a'
               nkIdent 'GetType'
           nkIdent 'Name'
@@ -1402,7 +1402,7 @@ nkStmtList
           nkCall
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'a'
               nkIdent 'GetType'
           nkCall
@@ -1415,7 +1415,7 @@ nkStmtList
           nkCall
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'a'
               nkIdent 'GetType'
           nkCall

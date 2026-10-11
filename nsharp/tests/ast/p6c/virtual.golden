@@ -180,7 +180,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -195,7 +197,9 @@ nkStmtList
       nkIdent 'Animal'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -313,7 +317,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -328,7 +334,9 @@ nkStmtList
       nkIdent 'Dog'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -428,7 +436,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -443,7 +453,9 @@ nkStmtList
       nkIdent 'Puppy'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -542,7 +554,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -557,7 +571,9 @@ nkStmtList
       nkIdent 'Bird'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1036,7 +1052,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1056,7 +1074,9 @@ nkStmtList
       nkIdent 'Animal'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1207,7 +1227,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1226,7 +1248,9 @@ nkStmtList
       nkIdent 'Dog'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1360,7 +1384,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1379,7 +1405,9 @@ nkStmtList
       nkIdent 'Puppy'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1494,7 +1522,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1513,7 +1543,9 @@ nkStmtList
       nkIdent 'Bird'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1994,14 +2026,14 @@ nkStmtList
             nkCall
               nkDotExpr
                 nkCall
-                  nkIdent 'nsCheckNil'
+                  nkIdent 'nsCheckNilVar'
                   nkIdent 'a'
                 nkIdent 'Describe'
           nkCall
             nkIdent 'WriteLine'
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'a'
               nkIdent 'Legs'
           nkCall
@@ -2009,7 +2041,7 @@ nkStmtList
             nkCall
               nkDotExpr
                 nkCall
-                  nkIdent 'nsCheckNil'
+                  nkIdent 'nsCheckNilVar'
                   nkIdent 'a'
                 nkIdent 'Kind'
       nkVarSection
@@ -2024,7 +2056,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'p'
             nkIdent 'Kind'
       nkCall

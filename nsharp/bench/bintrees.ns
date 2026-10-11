@@ -1,0 +1,32 @@
+using System;
+
+namespace Bench
+{
+    class Node
+    {
+        public Node Left, Right;
+        public Node(Node l, Node r) { Left = l; Right = r; }
+        public int Check() => Left == null ? 1 : 1 + Left.Check() + Right.Check();
+    }
+
+    class Program
+    {
+        static Node Make(int d) => d == 0 ? new Node(null, null) : new Node(Make(d - 1), Make(d - 1));
+
+        static void Main()
+        {
+            int maxDepth = 18;
+            int stretch = maxDepth + 1;
+            Console.WriteLine($"stretch tree of depth {stretch}\t check: {Make(stretch).Check()}");
+            var longLived = Make(maxDepth);
+            for (int d = 4; d <= maxDepth; d += 2)
+            {
+                int iters = 1 << (maxDepth - d + 4);
+                int check = 0;
+                for (int i = 0; i < iters; i++) check += Make(d).Check();
+                Console.WriteLine($"{iters}\t trees of depth {d}\t check: {check}");
+            }
+            Console.WriteLine($"long lived tree of depth {maxDepth}\t check: {longLived.Check()}");
+        }
+    }
+}

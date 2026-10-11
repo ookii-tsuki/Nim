@@ -235,10 +235,12 @@ proc throwToNim(l: Lowerer; n: NsNode): PNode
 proc checkedExprToNim(l: Lowerer; n: NsNode): PNode
 proc assignToNim(l: Lowerer; n: NsNode): PNode
 
-proc paramDef(l: Lowerer; p: NsNode): PNode =
+proc paramDef(l: Lowerer; p: NsNode; sink = false): PNode =
   ## One parameter: `ref`/`out` are Nim `var` parameters (`in` is a read-only
   ## reference, which a Nim parameter already is), `params T[]` is `varargs[T]`,
-  ## and a default value is Nim's.
+  ## and a default value is Nim's. A constructor's or setter's plain parameter is
+  ## `sink`: what it is given is usually stored, so the caller moves its last use
+  ## in rather than copying it (a reference count, or a whole string).
   result = newNodeI(nkIdentDefs, p.info)
   result.add l.id(p.name, p.info)
   var t = l.typeToNim(p.typ, p.info)
@@ -248,6 +250,8 @@ proc paramDef(l: Lowerer; p: NsNode): PNode =
     if p.typ != nil and p.typ.kind == nsnArrayType:
       t = newTree(nkBracketExpr, p.info, l.id("varargs", p.info),
                   l.typeToNim(p.typ.typ, p.info))
+  of "":
+    if sink: t = newTree(nkBracketExpr, p.info, l.id("sink", p.info), t)
   else: discard
   result.add t
   result.add (if p.body != nil: l.expr(p.body) else: empty(p.info))
@@ -414,6 +418,7 @@ proc typeRef(l: Lowerer; t: NsNode): PNode =
     result = newTree(nkBracketExpr, t.info, result)
     for a in t.typeArgs: result.add l.typeToNim(a, t.info)
 
+proc checkNil(l: Lowerer; recvNs: NsNode; recv: PNode; info: TLineInfo): PNode
 proc memberReceiverChecked(l: Lowerer; n: NsNode): PNode
 
 proc indexArgToNim(l: Lowerer; a: NsNode): PNode =
@@ -509,14 +514,12 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
       result.add head
     var recv = l.expr(callee.body)
     if l.nilChecks and l.nilableReceiver(callee.body):
-      recv = newTree(nkCall, n.info, l.id("nsCheckNil", n.info), recv)
+      recv = l.checkNil(callee.body, recv, n.info)
     result.add recv
     for a in l.argsToNim(n): result.add a
     return
   if l.nilChecks and callee.kind == nsnMember and l.nilableReceiver(callee.body):
-    let checked = newNodeI(nkCall, n.info)
-    checked.add l.id("nsCheckNil", n.info)
-    checked.add l.expr(callee.body)
+    let checked = l.checkNil(callee.body, l.expr(callee.body), n.info)
     result.add newTree(nkDotExpr, n.info, checked, l.id(callee.name, n.info))
   else:
     result.add l.expr(callee)
@@ -655,16 +658,35 @@ proc nilableReceiver(l: Lowerer; n: NsNode): bool =
   name.len > 0 and l.scope.classes.hasKey(name) and
     l.scope.classes[name].classKind == ckClass
 
+proc pureRead(l: Lowerer; n: NsNode): bool =
+  ## A receiver that reads the same twice as once: a variable, `this`, or a
+  ## field of one -- not a property, whose getter runs each time.
+  if n == nil: return false
+  case n.kind
+  of nsnIdent, nsnThis: true
+  of nsnMember:
+    if not l.pureRead(n.body): return false
+    let owner = n.body.typeName
+    if owner.len == 0 or not l.scope.classes.hasKey(owner): return false
+    let m = l.scope.findMemberInfo(owner, n.name)
+    m.name.len > 0 and not m.isMethod and not m.isProperty and not m.isEvent
+  else: false
+
+proc checkNil(l: Lowerer; recvNs: NsNode; recv: PNode; info: TLineInfo): PNode =
+  ## `nsCheckNil(recv)`; for a receiver that is a variable or a field of one
+  ## `nsCheckNilVar`, which rereads it instead of copying the reference.
+  let simple = recv.kind in {nkIdent, nkSym} or
+               (recv.kind == nkDotExpr and l.pureRead(recvNs))
+  let name = (if simple: "nsCheckNilVar" else: "nsCheckNil")
+  newTree(nkCall, info, l.id(name, info), recv)
+
 proc memberReceiverChecked(l: Lowerer; n: NsNode): PNode =
   ## A field access on a class reference tests the receiver first, so dereferencing
   ## null raises `NullReferenceException` instead of faulting. C# tests at the
   ## access, and `-d:danger` / `--nilChecks:off` turn the whole check off.
   result = l.memberReceiver(n)
   if l.nilChecks and l.nilableReceiver(n.body):
-    let checked = newNodeI(nkCall, n.info)
-    checked.add l.id("nsCheckNil", n.info)
-    checked.add result
-    result = checked
+    result = l.checkNil(n.body, result, n.info)
 
 proc condTail(l: Lowerer; nd: NsNode; absent: PNode): PNode =
   ## The body of a `?.`: read the guarded value once, then either yield `absent` or
@@ -1855,9 +1877,7 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
   if l.nilChecks and target != nil and target.kind == nsnMember and
      target.body != nil and target.body.kind == nsnIdent and
      l.nilableReceiver(target.body):
-    let check = newNodeI(nkCall, n.info)
-    check.add l.id("nsCheckNil", n.info)
-    check.add bare.expr(target.body)
+    let check = l.checkNil(target.body, bare.expr(target.body), n.info)
     result = newTree(nkStmtList, n.info,
                      newTree(nkDiscardStmt, n.info, check), result)
 
@@ -2516,7 +2536,7 @@ proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
   let ip = newNodeI(nkFormalParams, m.info)
   ip.add empty(m.info)
   ip.add l.selfDefs(cls.name, isException, m.info, mutable = true)
-  for p in m.params: ip.add l.paramDef(p)
+  for p in m.params: ip.add l.paramDef(p, sink = true)
   let ibody = newNodeI(nkStmtList, m.info)
   let sc = l.staticCtorCall(m.info)
   if sc != nil: ibody.add sc
@@ -2554,7 +2574,7 @@ proc lowerAllocator(l: Lowerer; cls, m: NsNode; isException: bool): PNode =
   let ap = newNodeI(nkFormalParams, m.info)
   ap.add (if isException: newTree(nkRefTy, m.info, l.clsType(cls.name, m.info))
           else: l.clsType(cls.name, m.info))
-  for p in m.params: ap.add l.paramDef(p)
+  for p in m.params: ap.add l.paramDef(p, sink = true)
   let abody = newNodeI(nkStmtList, m.info)
   if cls.classKind == ckClass:
     let newCall = newNodeI(nkCall, m.info)
@@ -2717,7 +2737,7 @@ proc lowerInterface(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     call.add newTree(nkPar, info, newTree(nkDotExpr, info,
                      newTree(nkDotExpr, info, l.id("self", info), l.id("nsVt", info)),
                      l.id("f" & $k, info)))
-    call.add newTree(nkCall, info, l.id("nsCheckNil", info),
+    call.add newTree(nkCall, info, l.id("nsCheckNilVar", info),
                      newTree(nkDotExpr, info, l.id("self", info), l.id("nsObj", info)))
     if m.kind == nsnMethodDecl:
       for p in m.params:
@@ -2727,7 +2747,10 @@ proc lowerInterface(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       fp.add l.identDefs("value", l.subType(m.typ, slot, info), info)
       call.add l.id("value", info)
     let name = (if slot.setter: m.name & "=" else: m.name)
-    into.add l.mkProc(l.exportId(name, info), fp, newTree(nkStmtList, info, call), info)
+    let disp = l.mkProc(l.exportId(name, info), fp, newTree(nkStmtList, info, call), info)
+    ## A dispatcher is one indirect call: inlined, an interface call costs no more.
+    disp[4] = newTree(nkPragma, info, l.id("inline", info))
+    into.add disp
   # default implementations (C# 8): `nsDefault_I_M(self: I, params)`, whose `this`
   # is the interface value, so the members it calls dispatch through the table
   for m in n.sons:

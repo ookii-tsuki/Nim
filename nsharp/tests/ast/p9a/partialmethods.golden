@@ -561,7 +561,7 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'w'
           nkIdent 'Rename'
         nkStrLit "x"
@@ -570,7 +570,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'w'
             nkIdent 'Describe'
   nkProcDef

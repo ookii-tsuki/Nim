@@ -1993,21 +1993,21 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'acct'
           nkIdent 'Deposit'
         nkIntLit 50
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'acct'
           nkIdent 'Withdraw'
         nkIntLit 30
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'acct'
           nkIdent 'Deposit'
         nkIntLit 5
@@ -2016,7 +2016,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'acct'
             nkIdent 'Summary'
       nkVarSection

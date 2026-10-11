@@ -317,7 +317,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -332,7 +334,9 @@ nkStmtList
       nkIdent 'Counter'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -707,7 +711,9 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -730,7 +736,9 @@ nkStmtList
       nkIdent 'Counter'
       nkIdentDefs
         nkIdent 'name'
-        nkIdent 'string'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'string'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -915,7 +923,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'a'
             nkIdent 'Describe'
       nkCall
@@ -923,7 +931,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
+              nkIdent 'nsCheckNilVar'
               nkIdent 'b'
             nkIdent 'Describe'
       nkCall
@@ -935,7 +943,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'b'
           nkIdent 'Twice'
       nkCall
@@ -970,7 +978,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
+            nkIdent 'nsCheckNilVar'
             nkIdent 'a'
           nkIdent 'Ratio'
       nkConstSection

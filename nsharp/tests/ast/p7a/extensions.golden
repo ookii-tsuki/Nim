@@ -452,11 +452,15 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -471,11 +475,15 @@ nkStmtList
       nkIdent 'Point'
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1244,11 +1252,15 @@ nkStmtList
         nkEmpty
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1273,11 +1285,15 @@ nkStmtList
       nkIdent 'Point'
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
       nkIdentDefs
         nkIdent 'y'
-        nkIdent 'int32'
+        nkBracketExpr
+          nkIdent 'sink'
+          nkIdent 'int32'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1366,14 +1382,14 @@ nkStmtList
             nkIdent 'Abs'
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'p'
               nkIdent 'X'
           nkCall
             nkIdent 'Abs'
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'p'
               nkIdent 'Y'
   nkProcDef
@@ -1403,7 +1419,7 @@ nkStmtList
             nkIdent '*'
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'p'
               nkIdent 'X'
             nkIdent 'k'
@@ -1411,7 +1427,7 @@ nkStmtList
             nkIdent '*'
             nkDotExpr
               nkCall
-                nkIdent 'nsCheckNil'
+                nkIdent 'nsCheckNilVar'
                 nkIdent 'p'
               nkIdent 'Y'
             nkIdent 'k'
@@ -1451,13 +1467,13 @@ nkStmtList
                     nkStrLit "("
                     nkDotExpr
                       nkCall
-                        nkIdent 'nsCheckNil'
+                        nkIdent 'nsCheckNilVar'
                         nkIdent 'p'
                       nkIdent 'X'
                   nkStrLit ","
                 nkDotExpr
                   nkCall
-                    nkIdent 'nsCheckNil'
+                    nkIdent 'nsCheckNilVar'
                     nkIdent 'p'
                   nkIdent 'Y'
               nkStrLit ")"

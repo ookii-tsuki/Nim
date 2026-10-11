@@ -408,7 +408,7 @@ nkStmtList
               nkIdent 'WriteLine'
               nkDotExpr
                 nkCall
-                  nkIdent 'nsCheckNil'
+                  nkIdent 'nsCheckNilVar'
                   nkIdent 'g'
                 nkIdent 'Id'
   nkProcDef
