@@ -468,6 +468,28 @@ nkStmtList
     nkProcDef
       nkPostfix
         nkIdent '*'
+        nkIdent 'nsBaseCall_Stage_Begin'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Stage'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Toybox::Stage::Begin(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
         nkIdent 'Spawn'
       nkEmpty
       nkGenericParams

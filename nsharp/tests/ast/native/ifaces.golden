@@ -1,0 +1,1745 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
+  nkImportStmt
+    nkStrLit "NSharp/Interop"
+  nkImportStmt
+    nkStrLit "Toybox"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsVT_IScore'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsReady'
+            nkIdent 'bool'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'f0'
+            nkProcTy
+              nkFormalParams
+                nkIdent 'int32'
+                nkIdentDefs
+                  nkIdent 'self'
+                  nkIdent 'RootRef'
+                  nkEmpty
+              nkPragma
+                nkIdent 'nimcall'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'IScore'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsObj'
+            nkIdent 'RootRef'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'nsVt'
+            nkPtrTy
+              nkIdent 'nsVT_IScore'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Crate'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'exportc'
+            nkStrLit "Crate"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkIdent 'Node'
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'n'
+            nkIdent 'int32'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsBox_Crate'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+            nkIdentDefs
+              nkPostfix
+                nkIdent '*'
+                nkIdent 'v'
+              nkBracketExpr
+                nkIdent 'NsH_Node'
+                nkIdent 'Crate'
+              nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Swatch'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'exportc'
+            nkStrLit "Swatch"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkIdent 'Palette'
+        nkRecList
+          nkIdentDefs
+            nkIdent 'nsOwner'
+            nkIdent 'NsOwner'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsBox_Swatch'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+            nkIdentDefs
+              nkPostfix
+                nkIdent '*'
+                nkIdent 'v'
+              nkBracketExpr
+                nkIdent 'NsH_Palette'
+                nkIdent 'Swatch'
+              nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Board'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'exportc'
+            nkStrLit "Board"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkIdent 'Stage'
+        nkRecList
+          nkIdentDefs
+            nkIdent 'nsOwner'
+            nkIdent 'NsOwner'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Entry'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsCrate_bonus'
+      nkIdent 'int32'
+      nkEmpty
+  nkTemplateDef
+    nkIdent 'bonus'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Crate'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsCrate_bonus'
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsBoard_All'
+      nkBracketExpr
+        nkIdent 'List'
+        nkIdent 'IScore'
+      nkEmpty
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'All'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Board'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsBoard_All'
+  nkProcDef
+    nkIdent 'nsStaticInitCrate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsStaticInitBoard'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Score'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScore'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent '$'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScore'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScore'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScore'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'RootRef'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'OnBegin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Crate'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_OnBegin()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_OnBegin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Crate'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "OnBegin()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Score'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Crate'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Score()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Score'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Crate'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Score()"
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'nsBox_Crate'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Crate_IScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IScore'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTo_IScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScore'
+      nkIdentDefs
+        nkIdent 'x'
+        nkBracketExpr
+          nkIdent 'NsH_Node'
+          nkIdent 'Crate'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScore'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'nsBox_Crate'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Score'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Swatch'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Score()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Score'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Swatch'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Score()"
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'nsBox_Swatch'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Swatch_IScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IScore'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTo_IScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScore'
+      nkIdentDefs
+        nkIdent 'x'
+        nkBracketExpr
+          nkIdent 'NsH_Palette'
+          nkIdent 'Swatch'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScore'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'nsBox_Swatch'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Board'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Board'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Start'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsStart'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'exportc'
+        nkStrLit "nsStart"
+      nkIdent 'cdecl'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Entry'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initEntry'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newEntry'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Entry'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkCall
+    nkIdent 'nsStaticInitCrate'
+  nkCall
+    nkIdent 'nsStaticInitBoard'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Score'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScore'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkPar
+          nkDotExpr
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'nsVt'
+            nkIdent 'f0'
+        nkCall
+          nkIdent 'nsCheckNilVar'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'nsObj'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent '$'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScore'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '$'
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'nsObj'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'IScore'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '$'
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'nsObj'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScore'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'RootRef'
+        nkEmpty
+    nkPragma
+      nkIdent 'base'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'default'
+        nkIdent 'IScore'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'OnBegin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Crate'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_OnBegin()"
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'n'
+        nkInfix
+          nkIdent '+'
+          nkDotExpr
+            nkDotExpr
+              nkIdent 'Board'
+              nkIdent 'All'
+            nkIdent 'Count'
+          nkIntLit 1
+      nkCall
+        nkDotExpr
+          nkDotExpr
+            nkIdent 'Board'
+            nkIdent 'All'
+          nkIdent 'Add'
+        nkCall
+          nkIdent 'nsAs'
+          nkCall
+            nkIdent 'nsSelfOf_Node'
+            nkIdent 'self'
+          nkBracketExpr
+            nkIdent 'NsH_Node'
+            nkIdent 'Crate'
+  nkProcDef
+    nkIdent 'nsCpp_OnBegin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Crate'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "OnBegin()"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'OnBegin'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Crate.OnBegin"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Score'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Crate'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Score()"
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '+'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'n'
+          nkDotExpr
+            nkIdent 'Crate'
+            nkIdent 'bonus'
+  nkProcDef
+    nkIdent 'nsCpp_Score'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Crate'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Score()"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Score'
+              nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Crate.Score"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'nsBox_Crate'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Crate"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Crate_IScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IScore'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsStore'
+            nkPragma
+              nkIdent 'global'
+          nkIdent 'nsVT_IScore'
+          nkEmpty
+      nkIfStmt
+        nkElifBranch
+          nkPrefix
+            nkIdent 'not'
+            nkDotExpr
+              nkIdent 'nsStore'
+              nkIdent 'nsReady'
+          nkStmtList
+            nkAsgn
+              nkIdent 'nsStore'
+              nkObjConstr
+                nkIdent 'nsVT_IScore'
+                nkExprColonExpr
+                  nkIdent 'nsReady'
+                  nkIdent 'true'
+                nkExprColonExpr
+                  nkIdent 'f0'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkIdent 'int32'
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Score'
+                        nkCall
+                          nkIdent 'nsDeref'
+                          nkDotExpr
+                            nkCall
+                              nkIdent 'nsBox_Crate'
+                              nkIdent 'self'
+                            nkIdent 'v'
+      nkCall
+        nkIdent 'addr'
+        nkIdent 'nsStore'
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTo_IScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScore'
+      nkIdentDefs
+        nkIdent 'x'
+        nkBracketExpr
+          nkIdent 'NsH_Node'
+          nkIdent 'Crate'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'IScore'
+        nkExprColonExpr
+          nkIdent 'nsObj'
+          nkObjConstr
+            nkIdent 'nsBox_Crate'
+            nkExprColonExpr
+              nkIdent 'v'
+              nkIdent 'x'
+        nkExprColonExpr
+          nkIdent 'nsVt'
+          nkCall
+            nkIdent 'nsVtGet_Crate_IScore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScore'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'nsBox_Crate'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'IScore'
+        nkExprColonExpr
+          nkIdent 'nsObj'
+          nkIdent 'x'
+        nkExprColonExpr
+          nkIdent 'nsVt'
+          nkCall
+            nkIdent 'nsVtGet_Crate_IScore'
+  nkStmtList
+    nkProcDef
+      nkIdent 'nsPlace_Swatch'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Swatch'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Swatch()"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newSwatch'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Palette'
+          nkIdent 'Swatch'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Swatch'
+        nkCall
+          nkIdent 'nsPlace_Swatch'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkDotExpr
+            nkDotExpr
+              nkCall
+                nkIdent 'nsAt'
+                nkIdent 'nsB'
+              nkIdent 'nsOwner'
+            nkIdent 'box'
+          nkCast
+            nkIdent 'pointer'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Palette'
+              nkIdent 'Swatch'
+            nkIdent 'nsB'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Score'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Swatch'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Score()"
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '*'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'colors'
+          nkIntLit 7
+  nkProcDef
+    nkIdent 'nsCpp_Score'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Swatch'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Score()"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Score'
+              nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Swatch.Score"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'nsBox_Swatch'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Swatch"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Swatch_IScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkIdent 'nsVT_IScore'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsStore'
+            nkPragma
+              nkIdent 'global'
+          nkIdent 'nsVT_IScore'
+          nkEmpty
+      nkIfStmt
+        nkElifBranch
+          nkPrefix
+            nkIdent 'not'
+            nkDotExpr
+              nkIdent 'nsStore'
+              nkIdent 'nsReady'
+          nkStmtList
+            nkAsgn
+              nkIdent 'nsStore'
+              nkObjConstr
+                nkIdent 'nsVT_IScore'
+                nkExprColonExpr
+                  nkIdent 'nsReady'
+                  nkIdent 'true'
+                nkExprColonExpr
+                  nkIdent 'f0'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkIdent 'int32'
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Score'
+                        nkCall
+                          nkIdent 'nsDeref'
+                          nkDotExpr
+                            nkCall
+                              nkIdent 'nsBox_Swatch'
+                              nkIdent 'self'
+                            nkIdent 'v'
+      nkCall
+        nkIdent 'addr'
+        nkIdent 'nsStore'
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTo_IScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScore'
+      nkIdentDefs
+        nkIdent 'x'
+        nkBracketExpr
+          nkIdent 'NsH_Palette'
+          nkIdent 'Swatch'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'IScore'
+        nkExprColonExpr
+          nkIdent 'nsObj'
+          nkObjConstr
+            nkIdent 'nsBox_Swatch'
+            nkExprColonExpr
+              nkIdent 'v'
+              nkIdent 'x'
+        nkExprColonExpr
+          nkIdent 'nsVt'
+          nkCall
+            nkIdent 'nsVtGet_Swatch_IScore'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsAsIScore'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'IScore'
+      nkIdentDefs
+        nkIdent 'x'
+        nkIdent 'nsBox_Swatch'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'IScore'
+        nkExprColonExpr
+          nkIdent 'nsObj'
+          nkIdent 'x'
+        nkExprColonExpr
+          nkIdent 'nsVt'
+          nkCall
+            nkIdent 'nsVtGet_Swatch_IScore'
+  nkStmtList
+    nkProcDef
+      nkIdent 'nsPlace_Board'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Board'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Board()"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newBoard'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Stage'
+          nkIdent 'Board'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Board'
+        nkCall
+          nkIdent 'nsPlace_Board'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkDotExpr
+            nkDotExpr
+              nkCall
+                nkIdent 'nsAt'
+                nkIdent 'nsB'
+              nkIdent 'nsOwner'
+            nkIdent 'box'
+          nkCast
+            nkIdent 'pointer'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Stage'
+              nkIdent 'Board'
+            nkIdent 'nsB'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Board'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Begin()"
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'Spawn'
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'NsH_Node'
+          nkIdent 'Crate'
+      nkCall
+        nkIdent 'Spawn'
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'NsH_Node'
+          nkIdent 'Crate'
+      nkCall
+        nkDotExpr
+          nkDotExpr
+            nkIdent 'Board'
+            nkIdent 'All'
+          nkIdent 'Add'
+        nkCall
+          nkIdent 'newSwatch'
+      nkForStmt
+        nkIdent 's'
+        nkDotExpr
+          nkIdent 'Board'
+          nkIdent 'All'
+        nkStmtList
+          nkCall
+            nkIdent 'Print'
+            nkIdent 'Console'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "score "
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkDotExpr
+                    nkIdent 's'
+                    nkIdent 'Score'
+                nkStrLit ""
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'first'
+          nkIdent 'IScore'
+          nkBracketExpr
+            nkDotExpr
+              nkIdent 'Board'
+              nkIdent 'All'
+            nkIntLit 0
+      nkStmtList
+        nkVarSection
+          nkIdentDefs
+            nkIdent 'c'
+            nkBracketExpr
+              nkIdent 'NsH_Node'
+              nkIdent 'Crate'
+            nkEmpty
+        nkIfStmt
+          nkElifBranch
+            nkBlockExpr
+              nkEmpty
+              nkStmtList
+                nkLetSection
+                  nkIdentDefs
+                    nkIdent 'nsSubj1'
+                    nkEmpty
+                    nkIdent 'first'
+                nkInfix
+                  nkIdent 'and'
+                  nkInfix
+                    nkIdent 'of'
+                    nkDotExpr
+                      nkIdent 'nsSubj1'
+                      nkIdent 'nsObj'
+                    nkIdent 'nsBox_Crate'
+                  nkStmtListExpr
+                    nkAsgn
+                      nkIdent 'c'
+                      nkDotExpr
+                        nkCall
+                          nkIdent 'nsBox_Crate'
+                          nkDotExpr
+                            nkIdent 'nsSubj1'
+                            nkIdent 'nsObj'
+                        nkIdent 'v'
+                    nkIdent 'true'
+            nkStmtList
+              nkCall
+                nkIdent 'Print'
+                nkIdent 'Console'
+                nkInfix
+                  nkIdent '&'
+                  nkStrLit "first is a crate: "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkCall
+                      nkDotExpr
+                        nkCall
+                          nkIdent 'nsDeref'
+                          nkIdent 'c'
+                        nkIdent 'Score'
+                    nkStrLit ""
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'back'
+          nkBracketExpr
+            nkIdent 'NsH_Node'
+            nkIdent 'Crate'
+          nkDotExpr
+            nkCall
+              nkIdent 'nsBox_Crate'
+              nkDotExpr
+                nkBracketExpr
+                  nkDotExpr
+                    nkIdent 'Board'
+                    nkIdent 'All'
+                  nkIntLit 1
+                nkIdent 'nsObj'
+            nkIdent 'v'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "second back: "
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkDotExpr
+                    nkCall
+                      nkIdent 'nsDeref'
+                      nkIdent 'back'
+                    nkIdent 'Score'
+                nkStrLit ""
+            nkStrLit ", swatch is crate: "
+          nkCall
+            nkIdent 'nsFmt'
+            nkInfix
+              nkIdent 'of'
+              nkDotExpr
+                nkBracketExpr
+                  nkDotExpr
+                    nkIdent 'Board'
+                    nkIdent 'All'
+                  nkIntLit 2
+                nkIdent 'nsObj'
+              nkIdent 'nsBox_Crate'
+            nkStrLit ""
+  nkProcDef
+    nkIdent 'nsCpp_Begin'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Board'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Begin() override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Begin'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Board.Begin"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Entry"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Entry"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Entry"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Start'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'Play'
+        nkIdent 'Director'
+        nkBracketExpr
+          nkIdent 'NsH_Stage'
+          nkIdent 'Board'
+  nkProcDef
+    nkIdent 'nsStart'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'exportc'
+        nkStrLit "nsStart"
+      nkIdent 'cdecl'
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Start'
+            nkIdent 'Entry'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Entry.Start"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Entry'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newEntry'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initEntry'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newEntry'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Entry'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initEntry'
+        nkIdent 'result'
+  nkProcDef
+    nkIdent 'nsStaticInitCrate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStmtList
+        nkAsgn
+          nkDotExpr
+            nkIdent 'Crate'
+            nkIdent 'bonus'
+          nkIntLit 100
+  nkProcDef
+    nkIdent 'nsStaticInitBoard'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'nsBoard_All'
+        nkCall
+          nkBracketExpr
+            nkIdent 'newList'
+            nkIdent 'IScore'

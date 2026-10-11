@@ -61,6 +61,14 @@ namespace Toybox
         [OnHandle, Native(Get = "#.version")] public extern uint Version { get; }
     }
 
+    [Native("Toybox::Plaque", Header = "toybox.hpp")]
+    public class Plaque : Node
+    {
+        public int size;
+        public extern Plaque(string text, int size);
+        [Native(Get = "#->text.c_str()")] public extern string Text { get; }
+    }
+
     [Native("Toybox::Stage", Header = "toybox.hpp")]
     public class Stage
     {
@@ -100,9 +108,14 @@ namespace Toybox
     public class Palette
     {
         public int colors;
+        public int touched;
         public extern Palette();
         public extern Palette(string name, int colors);
         public virtual extern int Weight();
+        [Native(Qualifiers = "const")] public virtual extern int Shade();
+        [Native(Qualifiers = "noexcept")] public virtual extern void Touch();
+        [Native(Qualifiers = "const")] public extern int Hue();
+        public extern void Fade();
     }
 
     [Native("Toybox::Painter", Header = "toybox.hpp")]
@@ -111,11 +124,15 @@ namespace Toybox
         public static extern int Count(Palette palette);
         public static extern int Weigh(Palette palette);
         public static extern int Live();
+        public static extern int ShadeOf(Palette palette);
+        public static extern void TouchOf(Palette palette);
         public static extern Palette Make(string name, int colors);
         public static extern Palette Copy(Palette palette);
         [return: Borrowed] public static extern Palette Shared();
         [return: Borrowed] public static extern Palette Find(int colors);
         [return: Owned] public static extern Palette Create(string name, int colors);
+        [return: Owned]
+        public static extern T Build<T>([Forward] params object[] args) where T : Palette;
 
         // The same, as properties: the getter's own [return: ...] says what it is.
         [Native(Get = "Shared")]

@@ -246,6 +246,7 @@ type
     argParam*: NsNode         ## a call argument: the parameter it fills (set by sema)
     argElement*: bool         ## ... as one element of a `params` array
     argForward*: bool         ## ... passed on as it is, by a `[Forward]` parameter
+    argNative*: bool          ## ... to a native class's constructor (C++ types)
     typeKind*: NsTypeKind     ## set by `sema.nim` on expressions
     typeName*: string         ## the resolved type name behind `typeKind`
     argConv*: NsArgConv       ## `nsnCall`/`nsnNew` argument: C#'s implicit conversion

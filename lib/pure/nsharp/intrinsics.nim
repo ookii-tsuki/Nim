@@ -817,6 +817,8 @@ when defined(cpp):
     if b.p != nil: nsDelete(b.p)
   proc `=copy`*[T](d: var NsHeapBox[T]; s: NsHeapBox[T]) {.error.}
 
+  proc nsUnconst*[T](p: ptr T): ptr T {.importcpp: "const_cast<'0>(#)".}
+    ## `this` in a `const` member function, as the N# body it runs takes it.
   proc nsPtrAs*[T, U](p: ptr U; t: typedesc[T]): ptr T {.importcpp: "static_cast<'0>(#)".}
     ## A pointer as one to another class of its family.
   proc nsPassOf*[R](p: ptr R): NsPass[R] {.importcpp: "NsPass<'*1>{#}",
@@ -858,6 +860,11 @@ when defined(cpp):
       if p != nil:
         let b = (ref NsHeapBox[T])(p: p)
         result = H[T](p: p, keep: b)
+    proc nsAdoptPtr*[T](t: typedesc[H[T]]; p: pointer): H[T] {.inline, inject.} =
+      ## `nsAdopt` of what a `[Forward]` factory returns.
+      nsAdopt(H[T], cast[ptr T](p))
+    proc nsBorrowPtr*[T](t: typedesc[H[T]]; p: pointer): H[T] {.inline, inject.} =
+      nsBorrow(H[T], cast[ptr T](p))
     converter nsToRoot*[U](h: H[U]): H[R] {.inject.} = nsAs(h, H[R])
     converter nsToPass*[U](h: H[U]): NsPass[R] {.inject.} = nsPassOf(nsPtrAs(h.p, R))
 

@@ -188,6 +188,12 @@ proc baseCall(l: Lowerer; name: string; args: seq[PNode]; info: TLineInfo): PNod
 # (interfaces: see below)
 # --- types ------------------------------------------------------------------
 
+proc boxedImpl(l: Lowerer; name: string): bool =
+  ## A class an interface value holds boxed: a struct (a copy, as C# boxes it), or
+  ## an N# class deriving a native one (its handle, or N# reference).
+  l.scope.classes.hasKey(name) and (l.scope.classes[name].classKind == ckStruct or
+    (l.scope.nativeBased(name) and not l.scope.isNative(name)))
+
 proc writtenName(n: NsNode): string =
   ## A receiver as written, `A.B.C`, when it is a chain of names; "" otherwise.
   if n == nil: return ""
@@ -280,6 +286,7 @@ proc fresh(l: Lowerer; base: string): string
 proc throwToNim(l: Lowerer; n: NsNode): PNode
 proc checkedExprToNim(l: Lowerer; n: NsNode): PNode
 proc assignToNim(l: Lowerer; n: NsNode): PNode
+proc nativeParamType(l: Lowerer; t: NsNode; info: TLineInfo): PNode
 
 proc paramDef(l: Lowerer; p: NsNode; sink = false): PNode =
   ## One parameter: `ref`/`out` are Nim `var` parameters (`in` is a read-only
@@ -448,7 +455,9 @@ proc argsToNim(l: Lowerer; call: NsNode): seq[PNode] =
       let pt = (if a.argParam != nil: a.argParam.typ else: nil)
       if pt != nil and pt.kind == nsnTypeName and l.nameableType(pt) and v != nil and
          v.kind != nsnNull:
-        arg = newTree(nkCall, a.info, l.typeToNim(pt, a.info), arg)
+        ## A native class's constructor takes C++'s types (`const char*`).
+        arg = newTree(nkCall, a.info, (if a.argNative: l.nativeParamType(pt, a.info)
+                                       else: l.typeToNim(pt, a.info)), arg)
       result.add newTree(nkCall, a.info, l.id("nsFwd", a.info), arg)
       continue
     if a.argElement and a.argParam != nil and a.argParam.typ != nil and
@@ -561,6 +570,21 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
     ## `base.M(args)` calls the base implementation, never the override.
     var args: seq[PNode] = @[]
     for a in l.argsToNim(n): args.add a
+    if l.curClass != nil and l.curClass.typ != nil and l.scope.nativeBased(l.curClass.name) and
+       not l.scope.isNative(l.curClass.name):
+      ## In a class deriving a native one: a native base's C++ function, called
+      ## without dispatch, or an N# base class's own body.
+      let mi = l.scope.findMemberInfo(canonicalTypeName(l.curClass.typ.name), callee.name)
+      if mi.name.len > 0 and l.scope.isNative(mi.owner):
+        result = newTree(nkCall, n.info,
+                         l.id("nsBaseCall_" & mi.owner & "_" & callee.name, n.info),
+                         l.id("self", n.info))
+      else:
+        result = newTree(nkCall, n.info, l.id(callee.name, n.info),
+                         newTree(nkCast, n.info, newTree(nkPtrTy, n.info, l.id(mi.owner, n.info)),
+                                 l.id("self", n.info)))
+      for a in args: result.add a
+      return
     return l.baseCall(callee.name, args, n.info)
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
      l.scope.classes.hasKey(callee.body.typeName):
@@ -1467,8 +1491,7 @@ proc typeTest(l: Lowerer; subj: PNode; pat: NsNode; target: NsNode;
       result = newTree(nkInfix, info, l.id("and", info), result, l.assignTrue(bindName,
         newTree(nkCall, info, l.id("nsUnbox", info), copyTree(obj), copyTree(t)), info))
     return
-  let targetIsStruct = l.scope.classes.hasKey(tname) and
-                       l.scope.classes[tname].classKind == ckStruct
+  let targetIsStruct = l.boxedImpl(tname)
   if subjIface or l.isRefKindName(pat.typeKind, pat.typeName) or
      pat.typeKind == tkUnknown and not targetIsStruct and
      l.surface.kindOfName(tname) notin {tkInt, tkFloat, tkBool, tkChar, tkString}:
@@ -1620,8 +1643,7 @@ proc patTest(l: Lowerer; subj: PNode; pat: NsNode): PNode =
     if pat.typ != nil:
       parts.add l.typeTest(subj, pat, pat.typ, "")
       let tname = canonicalTypeName(pat.typ.name)
-      if l.scope.classes.hasKey(tname) and l.scope.classes[tname].classKind == ckStruct and
-         (subjIface or l.isRefKindName(pat.typeKind, pat.typeName)):
+      if l.boxedImpl(tname) and (subjIface or l.isRefKindName(pat.typeKind, pat.typeName)):
         owner = newTree(nkDotExpr, info, newTree(nkCall, info,
                         l.id("nsBox_" & tname, info), owner), l.id("v", info))
       elif l.isRefKindName(pat.typeKind, pat.typeName) or subjIface or
@@ -3065,12 +3087,15 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
   let info = n.info
   let ifaces = l.scope.directInterfaceTypes(n.name)
   if ifaces.len == 0: return
-  let isStruct = n.classKind == ckStruct
+  let nativeDerived = l.scope.nativeBased(n.name) and not l.scope.isNative(n.name)
+  let isStruct = n.classKind == ckStruct or nativeDerived
   let boxName = "nsBox_" & n.name
   let boxType = l.ifaceTypeNim(boxName, tpNodes(l.clsTypeParams, info), info)
+  let heldType = (if nativeDerived: l.typeToNim(nsnTypeName(n.name, info), info)
+                  else: l.clsType(n.name, info))
   if isStruct:
     let rec = newNodeI(nkRecList, info)
-    let vd = l.identDefs("v", l.clsType(n.name, info), info)
+    let vd = l.identDefs("v", copyTree(heldType), info)
     vd[0] = l.exportId("v", info)
     rec.add vd
     let obj = newTree(nkObjectTy, info, empty(info),
@@ -3083,8 +3108,9 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
     fp.add l.id("string", info)
     fp.add l.identDefs("self", copyTree(boxType), info)
     into.add l.mkProc(l.exportId("ToString", info), fp, newTree(nkStmtList, info,
-      newTree(nkPrefix, info, l.id("$", info),
-              newTree(nkDotExpr, info, l.id("self", info), l.id("v", info)))), info,
+      (if nativeDerived: newAtom(nkStrLit, n.name, info)
+       else: newTree(nkPrefix, info, l.id("$", info),
+                     newTree(nkDotExpr, info, l.id("self", info), l.id("v", info))))), info,
       kind = nkMethodDef)
   let recvType = (if isStruct: copyTree(boxType)
                   elif isException: newTree(nkRefTy, info, l.clsType(n.name, info))
@@ -3111,7 +3137,11 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
       for i in 0 .. 6: lam[i] = empty(info)
       lam[3] = copyTree(pt[0])
       lam[4] = copyTree(pt[1])
-      let me = (if isStruct:
+      let me = (if nativeDerived:
+                  newTree(nkCall, info, l.id("nsDeref", info),
+                    newTree(nkDotExpr, info, newTree(nkCall, info, copyTree(boxType),
+                                                     l.id("self", info)), l.id("v", info)))
+                elif isStruct:
                   newTree(nkDotExpr, info, newTree(nkCall, info, copyTree(boxType),
                                                    l.id("self", info)), l.id("v", info))
                 else:
@@ -3170,7 +3200,7 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
     let cfp = newNodeI(nkFormalParams, info)
     cfp.add l.ifaceTypeNim(iface, args, info)
     cfp.add l.identDefs("x", (if isException: newTree(nkRefTy, info, l.clsType(n.name, info))
-                              else: l.clsType(n.name, info)), info)
+                              else: copyTree(heldType)), info)
     let objExpr = (if isStruct: newTree(nkObjConstr, info, copyTree(boxType),
                                         newTree(nkExprColonExpr, info, l.id("v", info),
                                                 l.id("x", info)))
@@ -3272,8 +3302,7 @@ proc ifaceTypeOp(l: Lowerer; n: NsNode): PNode =
     ## From an interface value to a class: the object is tested or converted.
     let obj = l.objOf(n.body)
     let target = canonicalTypeName(if n.typ != nil: n.typ.name else: "")
-    let isStruct = l.scope.classes.hasKey(target) and
-                   l.scope.classes[target].classKind == ckStruct
+    let isStruct = l.boxedImpl(target)
     case n.kind
     of nsnIs:
       result = newTree(nkInfix, info, l.id("of", info), obj,
@@ -3790,7 +3819,8 @@ proc ownedReturn(l: Lowerer; m: NsNode; raw: PNode; rt, pattern, header: string)
   wrapper[6] = body
   result = newTree(nkStmtList, info, raw, wrapper)
 
-proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PNode =
+proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
+                  patternOverride = ""): PNode =
   ## `extern R M<T>(args)` as `proc M[T](self: ptr C; t: typedesc[T]; args): R` over
   ## the C++ call; each type parameter is a `typedesc` argument, which the C++
   ## pattern names as `'k` (`'**k` for a handle: the `typedesc`, then the handle, are
@@ -3831,7 +3861,7 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PN
     var t = l.nativeParamType(p.typ, p.info)
     if p.paramMod in ["ref", "out"]: t = newTree(nkVarTy, p.info, t)
     fp.add l.identDefs(p.name, t, p.info)
-  var pattern = nativeOf(m).cpp
+  var pattern = (if patternOverride.len > 0: patternOverride else: nativeOf(m).cpp)
   if pattern.len == 0:
     let targ = (if targs.len > 0: "<" & targs.join(", ") & ">" else: "")
     pattern =
@@ -3853,6 +3883,49 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PN
   result[6] = empty(info)
   let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
             else: "")
+  if forward and m.typ != nil and m.typ.kind == nsnTypeName:
+    ## A `[Forward]` factory of a class N# may own (`T Create<T>(...) where T :
+    ## Palette`), handed over or lent: a template passes the arguments on to the
+    ## C++ call, whose pointer becomes the reference.
+    var owned = false
+    for w in m.constraints:
+      if w.name == m.typ.name:
+        for c in w.sons:
+          if c.kind == nsnTypeName and l.scope.classes.hasKey(canonicalTypeName(c.name)) and
+             l.scope.ownedFamily(canonicalTypeName(c.name)):
+            owned = true
+    if owned:
+      let info = m.info
+      let raw = result
+      raw[0] = l.id("nsRaw_" & m.name, info)
+      raw[3][0] = l.id("pointer", info)
+      raw[4] = l.cppPragma("nsAddr(" & pattern & ")", header, info, ["varargs"])
+      let tp = newNodeI(nkFormalParams, info)
+      tp.add l.id("untyped", info)
+      var names: seq[string] = @[]
+      var typeArg = ""
+      for i in 1 ..< raw[3].len:
+        let d = raw[3][i]
+        for k in 0 ..< d.len - 2:
+          let nm = d[k].ident.s
+          names.add nm
+          if nm == "ns_" & m.typ.name: typeArg = nm
+          tp.add l.identDefs(nm, (if d[^2].kind == nkBracketExpr and d[^2][0].kind == nkIdent and
+                                     d[^2][0].ident.s == "typedesc": l.id("typedesc", info)
+                                  else: copyTree(d[^2])), info)
+      tp.add l.identDefs("nsArgs", newTree(nkBracketExpr, info, l.id("varargs", info),
+                                           l.id("untyped", info)), info)
+      let call = newTree(nkCall, info, l.id("nsRaw_" & m.name, info))
+      for nm in names: call.add l.id(nm, info)
+      call.add l.id("nsArgs", info)
+      let how = (if returnAttr(m, "Owned"): "nsAdoptPtr" else: "nsBorrowPtr")
+      let t = newNodeI(nkTemplateDef, info, 7)
+      t[0] = l.exportId(m.name, info)
+      for i in 1 .. 6: t[i] = empty(info)
+      t[3] = tp
+      t[6] = newTree(nkStmtList, info,
+                     newTree(nkCall, info, l.id(how, info), l.id(typeArg, info), call))
+      return newTree(nkStmtList, info, raw, t)
   if rt.len > 0 and l.scope.classes.hasKey(rt) and l.scope.ownedFamily(rt) and not forward:
     result = l.ownedReturn(m, result, rt, pattern, header)
   elif rt == "string" and not forward:
@@ -4121,9 +4194,24 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     case m.kind
     of nsnMethodDecl:
       procs.add l.nativeMethod(n, m, nat, header)
+      if m.attrs.isVirtual and not m.attrs.isStatic and m.typeParams.len == 0:
+        ## `nsBaseCall_C_M`: the C++ class's own `M`, called without dispatch,
+        ## which `base.M()` in an override is.
+        var bc: NsNode
+        new(bc)
+        bc[] = m[]
+        bc.name = "nsBaseCall_" & n.name & "_" & m.name
+        bc.attributes = @[]
+        for a in m.attributes:
+          if a.strVal == "return": bc.attributes.add a
+        procs.add l.nativeMethod(n, bc, nat, header, "#->" & nat.cpp & "::" & m.name & "(@)")
     of nsnCtorDecl:
       if m.attrs.isStatic: continue
       if m.params.len == 0: paramless = true
+      if n.classKind == ckClass and l.scope.engineOwned(n.name):
+        ## The engine makes these: the constructor is only a derived class's
+        ## `: base(...)`, which C++ calls by name.
+        continue
       if n.classKind == ckClass:
         ## A class N# may own: `new C(...)` makes one in a box.
         var ps: seq[PNode] = @[]
@@ -4199,7 +4287,13 @@ proc cppEntry(l: Lowerer; cls, m: NsNode; np: PNode; quals = ""): PNode =
   ## the N# `M` behind the boundary `guardEntry` keeps.
   let info = m.info
   var sig = m.name & cppParamSig(np)
-  let call = newTree(nkCall, info, l.id(m.name, info), l.id("self", info))
+  ## A `const` one reaches the N# body through `const_cast`: N# keeps the body from
+  ## changing the object (NS9916/NS9917), and its managed fields are read through
+  ## `nsVal`, which takes them as variables.
+  let recv = (if isConstQualified(quals): newTree(nkCall, info, l.id("nsUnconst", info),
+                                                  l.id("self", info))
+              else: l.id("self", info))
+  let call = newTree(nkCall, info, l.id(m.name, info), recv)
   for i in 2 ..< np.len:
     for j in 0 ..< np[i].len - 2:
       call.add l.id(np[i][j].ident.s, info)
@@ -4289,7 +4383,8 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       recList.add newTree(nkIdentDefs, m.info, l.exportId(m.name, m.info), t, empty(m.info))
       if m.body != nil: inits.add m
   let owned = l.scope.ownedFamily(n.name)
-  if owned:
+  if owned and n.typ != nil and l.scope.isNative(canonicalTypeName(n.typ.name)):
+    ## (Once: the first N# class above the native one has it, and its own derive it.)
     ## The box N# made it in, if it did, which `this` as a value keeps alive.
     recList.add newTree(nkIdentDefs, info, l.id("nsOwner", info), l.id("NsOwner", info),
                         empty(info))
@@ -4309,6 +4404,7 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     ## No constructor of its own: the field initializers are a C++ default
     ## constructor, which is what the engine's `T obj;` runs.
     ctors.add nil
+  var ctorIndex = 0
   for c in ctors:
     ## A constructor: a C++ one, which the engine runs when a `[Forward]` factory
     ## creates the object, and which starts with the field initializers. Its body
@@ -4348,6 +4444,54 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     for i in 1 .. 6: pd[i] = empty(cinfo)
     pd[3] = fp
     pd[4] = newTree(nkPragma, cinfo, l.id("constructor", cinfo))
+    if c != nil and c.initKind == "base" and c.initArgs.len > 0:
+      ## `: base(args)`: the C++ initializer list. A parameter passes as it is; any
+      ## other argument is a function of the parameters (`nsBase_C_k_j`), which the
+      ## list calls -- C++ runs it before the constructor's body, as C# does.
+      var names: seq[string] = @[]
+      var sig = n.name & "("
+      for i, p in c.params:
+        if i > 0: sig.add ", "
+        sig.add "'" & $(i + 1) & " #" & $(i + 1)
+        names.add p.name
+      let baseName = canonicalTypeName(n.typ.name)
+      let baseCpp = (if l.scope.isNative(baseName): l.scope.classes[baseName].native.cpp
+                     else: baseName)
+      var args: seq[string] = @[]
+      for j, a in c.initArgs:
+        let v = (if a.kind == nsnNamedArg: a.body else: a)
+        let pt = (if a.argParam != nil: a.argParam.typ else: nil)
+        let isStr = pt != nil and pt.kind == nsnTypeName and
+                    canonicalTypeName(pt.name) == "string"
+        let k = (if v.kind == nsnIdent: names.find(v.name) else: -1)
+        if k >= 0 and not isStr:
+          args.add "#" & $(k + 1)
+          continue
+        let helper = "nsBase_" & n.name & "_" & $ctorIndex & "_" & $j
+        let hp = newNodeI(nkFormalParams, cinfo)
+        hp.add (if pt != nil: l.nativeParamType(pt, cinfo) else: empty(cinfo))
+        for p in c.params: hp.add l.paramDef(p)
+        var value = l.expr(v)
+        if isStr: value = newTree(nkCall, cinfo, l.id("cstring", cinfo), value)
+        elif pt != nil and v.kind in {nsnIntLit, nsnFloatLit}:
+          value = newTree(nkCall, cinfo, l.typeToNim(pt, cinfo), value)
+        let h = newNodeI(nkProcDef, cinfo, 7)
+        h[0] = l.id(helper, cinfo)
+        for i in 1 .. 6: h[i] = empty(cinfo)
+        h[3] = hp
+        h[4] = newTree(nkPragma, cinfo,
+                       newTree(nkExprColonExpr, cinfo, l.id("exportc", cinfo), strLit(helper, cinfo)),
+                       l.id("cdecl", cinfo))
+        h[6] = newTree(nkStmtList, cinfo, value)
+        into.add h
+        var call = helper & "("
+        for i in 0 ..< c.params.len:
+          if i > 0: call.add ", "
+          call.add "#" & $(i + 1)
+        args.add call & ")"
+      pd[4] = newTree(nkPragma, cinfo, newTree(nkExprColonExpr, cinfo, l.id("constructor", cinfo),
+        strLit(sig & ") : " & baseCpp & "(" & args.join(", ") & ")", cinfo)))
+    inc ctorIndex
     pd[6] = body
     into.add pd
   if owned and not n.attrs.isAbstract:
@@ -4363,6 +4507,7 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     ## In a statement list, which the module's forward declarations leave alone:
     ## `nsPlace_D` is an `importcpp` proc, with no body to follow.
     into.add made
+  var staticCtor: seq[PNode] = @[]
   var staticInits: seq[PNode] = @[]
   for m in n.sons:
     var inner = l
@@ -4395,11 +4540,27 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         ## The C++ member function, which the engine finds by name (a concept), or
         ## the override of a native `virtual`: it runs the N# one (which N# calls
         ## itself, so its exceptions reach an N# `catch`), and stops one escaping
-        ## into C++.
-        into.add l.cppEntry(n, m, np)
+        ## into C++. It has the qualifiers of the C++ function it overrides
+        ## (`const`, `noexcept`), or `const` for a `readonly` method.
+        let quals =
+          if m.attrs.isOverride: l.scope.nativeQualifiers(n.name, m.name)
+          elif m.attrs.isReadonly: "const"
+          else: ""
+        into.add l.cppEntry(n, m, np, quals)
       let w = l.exportWrapper(n, m)
       if w != nil: into.add w
+    of nsnCtorDecl:
+      if m.attrs.isStatic and m.body != nil:
+        ## The static constructor: after the static fields' initializers, when the
+        ## module starts.
+        var st = l
+        st.thisName = ""
+        staticCtor.add st.stmtSeq(m.body)
     else: discard
+  for st in staticCtor: staticInits.add st
+  ## The interfaces it implements: its handle, boxed, is the interface value's
+  ## object, and each table entry calls the member on what the handle reaches.
+  l.lowerImplementations(n, false, into)
   if staticInits.len > 0:
     let fp = newNodeI(nkFormalParams, info)
     fp.add empty(info)

@@ -188,6 +188,30 @@ nkStmtList
         nkEmpty
         nkRecList
     nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Plaque'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::Plaque"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkIdent 'Node'
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'size'
+            nkIdent 'int32'
+            nkEmpty
+    nkTypeDef
       nkPostfix
         nkIdent '*'
         nkIdent 'NsH_Stage'
@@ -366,6 +390,12 @@ nkStmtList
             nkPostfix
               nkIdent '*'
               nkIdent 'colors'
+            nkIdent 'int32'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'touched'
             nkIdent 'int32'
             nkEmpty
     nkTypeDef
@@ -1084,6 +1114,56 @@ nkStmtList
       nkEmpty
       nkEmpty
   nkStmtList
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Text'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkEmpty
+          nkIdentDefs
+            nkIdent 'nsDest'
+            nkPtrTy
+              nkIdent 'string'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Plaque'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsSetStr(#, #->text.c_str())"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "pure/nsharp/nsobj.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Text'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkIdent 'string'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Plaque'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkCall
+            nkIdent 'nsRaw_Text'
+            nkCall
+              nkIdent 'addr'
+              nkIdent 'result'
+            nkIdent 'self'
+  nkStmtList
     nkCall
       nkIdent 'nsObjProcs'
       nkIdent 'NsH_Stage'
@@ -1113,6 +1193,28 @@ nkStmtList
     nkProcDef
       nkPostfix
         nkIdent '*'
+        nkIdent 'nsBaseCall_Stage_Begin'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Stage'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Toybox::Stage::Begin(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
         nkIdent 'Tick'
       nkEmpty
       nkEmpty
@@ -1131,6 +1233,32 @@ nkStmtList
         nkExprColonExpr
           nkIdent 'importcpp'
           nkStrLit "#->Tick(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsBaseCall_Stage_Tick'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Stage'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'dt'
+          nkIdent 'float32'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Toybox::Stage::Tick(@)"
         nkExprColonExpr
           nkIdent 'header'
           nkStrLit "toybox.hpp"
@@ -1611,6 +1739,164 @@ nkStmtList
         nkIdent 'discardable'
       nkEmpty
       nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsBaseCall_Palette_Weight'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'int32'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Palette'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Toybox::Palette::Weight(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Shade'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'int32'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Palette'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Shade(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsBaseCall_Palette_Shade'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'int32'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Palette'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Toybox::Palette::Shade(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Touch'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Palette'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Touch(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsBaseCall_Palette_Touch'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Palette'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Toybox::Palette::Touch(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Hue'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'int32'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Palette'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Hue(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Fade'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Palette'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Fade(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
   nkStmtList
     nkProcDef
       nkPostfix
@@ -1694,6 +1980,65 @@ nkStmtList
           nkIdent 'header'
           nkStrLit "toybox.hpp"
         nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'ShadeOf'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'int32'
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Painter'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'palette'
+          nkBracketExpr
+            nkIdent 'NsPass'
+            nkIdent 'Palette'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "Toybox::Painter::ShadeOf(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'TouchOf'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Painter'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'palette'
+          nkBracketExpr
+            nkIdent 'NsPass'
+            nkIdent 'Palette'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "Toybox::Painter::TouchOf(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
       nkEmpty
       nkEmpty
     nkStmtList
@@ -2049,6 +2394,72 @@ nkStmtList
                 nkIdent 't'
                 nkIdent 'name'
                 nkIdent 'colors'
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Build'
+        nkEmpty
+        nkGenericParams
+          nkIdentDefs
+            nkIdent 'T'
+            nkEmpty
+            nkEmpty
+        nkFormalParams
+          nkIdent 'pointer'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Painter'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'ns_T'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'T'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr(Toybox::Painter::Build<'**2>(@))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+          nkIdent 'varargs'
+        nkEmpty
+        nkEmpty
+      nkTemplateDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Build'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkIdent 'untyped'
+          nkIdentDefs
+            nkIdent 't'
+            nkIdent 'typedesc'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'ns_T'
+            nkIdent 'typedesc'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'nsArgs'
+            nkBracketExpr
+              nkIdent 'varargs'
+              nkIdent 'untyped'
+            nkEmpty
+        nkEmpty
+        nkEmpty
+        nkStmtList
+          nkCall
+            nkIdent 'nsAdoptPtr'
+            nkIdent 'ns_T'
+            nkCall
+              nkIdent 'nsRaw_Build'
+              nkIdent 't'
+              nkIdent 'ns_T'
+              nkIdent 'nsArgs'
     nkStmtList
       nkProcDef
         nkIdent 'nsRaw_Featured'

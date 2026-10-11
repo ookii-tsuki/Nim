@@ -1,0 +1,52 @@
+using System.Collections.Generic;
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // Overrides of qualified C++ virtuals: `const` and `noexcept` come from the
+    // binding, so C++ calls these, not the base's.
+    class Tinted : Palette
+    {
+        List<string> notes = new List<string>();
+        int extra = 3;
+
+        // const: reads its fields (a managed one too), calls const members only.
+        public override int Shade() => Hue() * 100 + extra + notes.Count + Label();
+
+        // An N# method C++ sees as const.
+        public readonly int Label() => 7;
+
+        // noexcept, not const: it may change the object. `base.Touch()` is the C++
+        // one, called without dispatch.
+        public override void Touch()
+        {
+            base.Touch();
+            extra++;
+            notes.Add("touched");
+        }
+
+        public override int Weight() => base.Weight() * 10;
+    }
+
+    // An N# base's override, through `base` as well.
+    class Deep : Tinted
+    {
+        public override int Shade() => base.Shade() + 1000;
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start()
+        {
+            Tinted t = new Tinted();
+            Console.Print($"shade {Painter.ShadeOf(t)}");
+            Painter.TouchOf(t);
+            Console.Print($"after touch: shade {Painter.ShadeOf(t)}, base counted {t.touched}");
+            Console.Print($"weight {Painter.Weigh(t)}, deep shade {Painter.ShadeOf(new Deep())}");
+            Palette plain = new Palette("p", 4);
+            Console.Print($"plain: shade {Painter.ShadeOf(plain)}");
+        }
+    }
+}

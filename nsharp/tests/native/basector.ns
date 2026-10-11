@@ -1,0 +1,35 @@
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // Deriving C++ classes whose constructors need arguments: `: base(...)`.
+    class Brass : Plaque
+    {
+        int k;
+        public Brass(int k) : base("brass", k * 2 + 1) { this.k = k; }
+        void OnBegin() => Console.Print($"{Text}: size {size}, k {k}");
+    }
+
+    class Named : Palette
+    {
+        public Named(string name, int colors) : base(name, colors) { }
+    }
+
+    class Hall : Stage
+    {
+        public override void Begin()
+        {
+            Spawn<Brass>(5);
+            Spawn<Brass>(2);
+            Named n = new Named("named", 6);
+            Console.Print($"named: colors {n.colors}, shade {Painter.ShadeOf(n)}");
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start() => Director.Play<Hall>();
+    }
+}

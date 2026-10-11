@@ -651,6 +651,72 @@ nkStmtList
               nkIdent 'Live'
               nkIdent 'Painter'
             nkStrLit ""
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'built'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+          nkCall
+            nkIdent 'Build'
+            nkIdent 'Painter'
+            nkBracketExpr
+              nkIdent 'NsH_Palette'
+              nkIdent 'Palette'
+            nkCall
+              nkIdent 'nsFwd'
+              nkCall
+                nkIdent 'cstring'
+                nkStrLit "built"
+            nkCall
+              nkIdent 'nsFwd'
+              nkCall
+                nkIdent 'int32'
+                nkIntLit 5
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "built "
+              nkCall
+                nkIdent 'nsFmt'
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'built'
+                  nkIdent 'colors'
+                nkStrLit ""
+            nkStrLit ", live "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'Live'
+              nkIdent 'Painter'
+            nkStrLit ""
+      nkAsgn
+        nkIdent 'built'
+        nkCall
+          nkIdent 'nsNull'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkStrLit "built dropped: live "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'Live'
+              nkIdent 'Painter'
+            nkStrLit ""
   nkProcDef
     nkIdent 'nsStart'
     nkEmpty

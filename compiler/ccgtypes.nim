@@ -1295,6 +1295,13 @@ proc genMemberProcHeader(m: BModule; prc: PSym; result: var Builder; asPtr: bool
     name = typDesc
   if isFnConst:
     fnConst = " const"
+  block:
+    ## `noexcept` after the parameters is kept too: an override of a `noexcept`
+    ## virtual must repeat it, or C++ rejects its looser exception specification.
+    let sig = prc.constraint.strVal
+    let close = sig.rfind(')')
+    if not isCtor and close >= 0 and sig.find("noexcept", close) > -1:
+      fnConst.add " noexcept"
   if not isCtor:
     # The call-site form (`x->salute(@)`), not the mangled Nim name. Set it on
     # BOTH paths: whole-program cgen always emitted the out-of-class definition

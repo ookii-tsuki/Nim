@@ -1,0 +1,58 @@
+using System.Collections.Generic;
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    interface IScore
+    {
+        int Score();
+    }
+
+    // A node the engine owns, seen through an interface: the interface value holds
+    // its handle, and a call reaches whatever object the handle does now.
+    class Crate : Node, IScore
+    {
+        static int bonus;
+        int n;
+
+        static Crate() { bonus = 100; }
+
+        void OnBegin()
+        {
+            n = Board.All.Count + 1;
+            Board.All.Add(this);
+        }
+
+        public int Score() => n + bonus;
+    }
+
+    // A palette N# owns, as an interface value too.
+    class Swatch : Palette, IScore
+    {
+        public int Score() => colors * 7;
+    }
+
+    class Board : Stage
+    {
+        public static List<IScore> All = new List<IScore>();
+
+        public override void Begin()
+        {
+            Spawn<Crate>();
+            Spawn<Crate>();
+            All.Add(new Swatch());
+            foreach (var s in All) Console.Print($"score {s.Score()}");
+            IScore first = All[0];
+            if (first is Crate c) Console.Print($"first is a crate: {c.Score()}");
+            Crate back = (Crate)All[1];
+            Console.Print($"second back: {back.Score()}, swatch is crate: {All[2] is Crate}");
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start() => Director.Play<Board>();
+    }
+}

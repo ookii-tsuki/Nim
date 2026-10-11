@@ -1,0 +1,4 @@
+shade 210
+after touch: shade 212, base counted 1
+weight 10, deep shade 1210
+plain: shade 8

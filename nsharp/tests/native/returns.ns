@@ -50,6 +50,12 @@ namespace Demo
             fresh = null;
             spare = null;
             Console.Print($"property ones dropped: live {Painter.Live()}");
+
+            // A forwarding factory handing over what it builds.
+            Palette built = Painter.Build<Palette>("built", 5);
+            Console.Print($"built {built.colors}, live {Painter.Live()}");
+            built = null;
+            Console.Print($"built dropped: live {Painter.Live()}");
         }
     }
 }

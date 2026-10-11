@@ -30,7 +30,9 @@ type
     ## function's name (`#->GetPosition()`, `#->SetPosition(value)`), or a pattern
     ## (`Get = "#->Children().size()"`). Nothing is guessed: an accessor with
     ## neither is an error, except that a static property with neither is the C++
-    ## type's static member. On an `extern` member,
+    ## type's static member. On an `extern` method, `Qualifiers = "const noexcept"`
+    ## gives its C++ qualifiers, which an N# override repeats so that it overrides,
+    ## and which make a `const` one callable from a const member function. On an `extern` member,
     ## `[Native("pattern")]` gives the C++ call as a Nim `importcpp` pattern.
   ExportAttribute* = ref object of Attribute
     ## `[Export("name")]` on a static method: C++ calls it by that name.

@@ -203,6 +203,14 @@ struct Pool : PoolBase {
     }
 };
 
+// A node with no default constructor: a class deriving it must pass the arguments.
+class Plaque : public Node {
+public:
+    std::string text;
+    int size;
+    Plaque(const char* t, int s) : text(t), size(s) {}
+};
+
 // --- stages -----------------------------------------------------------------------
 
 class Stage {
@@ -375,6 +383,12 @@ public:
     Palette& operator=(const Palette&) = delete;
     virtual ~Palette() { Live()--; }
     virtual int Weight() { return colors; }
+    // Qualified virtuals: an override must repeat `const` and `noexcept`.
+    virtual int Shade() const { return colors * 2; }
+    virtual void Touch() noexcept { touched++; }
+    int Hue() const { return colors + 1; }
+    void Fade() { colors--; }
+    int touched = 0;
 };
 
 // Takes them as a pointer (null allowed) or as a reference.
@@ -382,6 +396,8 @@ struct Painter {
     static int Count(Palette* p) { return p ? p->colors : -1; }
     static int Weigh(const Palette& p) { return const_cast<Palette&>(p).Weight(); }
     static int Live() { return Palette::Live(); }
+    static int ShadeOf(const Palette& p) { return p.Shade(); }
+    static void TouchOf(Palette& p) { p.Touch(); }
 
     // Hands one out by value, lends one (by reference, or by pointer that may be
     // null), or hands one over that the caller must delete.
@@ -390,6 +406,9 @@ struct Painter {
     static Palette& Shared() { static Palette shared("shared", 9); return shared; }
     static Palette* Find(int colors) { return colors == Shared().colors ? &Shared() : nullptr; }
     static Palette* Create(const char* n, int c) { return new Palette(n, c); }
+    // A factory of any palette class, forwarding the constructor's arguments.
+    template <typename T, typename... A>
+    static T* Build(A&&... a) { return new T(std::forward<A>(a)...); }
 };
 
 } // namespace Toybox

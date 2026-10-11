@@ -162,6 +162,8 @@ type
     ndNativeAccessorUnnamed
     ndOnHandleMisplaced
     ndCStringMisplaced
+    ndConstFieldWrite
+    ndConstCall
     ndUnsupported
 
   NsDiagInfo* = tuple[code, msg: string]
@@ -409,6 +411,11 @@ const
     ndCStringMisplaced: (code: "9915", msg: "'$1': [CString(\"pattern\")] applies only to" &
                         " the 'string' result or a 'string' parameter of an 'extern' method," &
                         " and needs the pattern"),
+    ndConstFieldWrite: (code: "9916", msg: "'$1' cannot be assigned in '$2', which is const" &
+                        " (it overrides a const C++ function, or is readonly)"),
+    ndConstCall: (code: "9917", msg: "'$1' cannot be called from '$2', which is const: it is" &
+                        " not const itself (an N# method is made so by 'readonly', a native" &
+                        " one by [Native(Qualifiers = \"const\")])"),
     ndUnsupported: (code: "9999", msg: "$1 is currently unsupported"),
   ]
 

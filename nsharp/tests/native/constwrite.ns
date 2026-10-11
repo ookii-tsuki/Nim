@@ -1,0 +1,9 @@
+using Toybox;
+namespace Demo
+{
+    class Tinted : Palette
+    {
+        int extra;
+        public override int Shade() { extra = 1; return extra; }
+    }
+}

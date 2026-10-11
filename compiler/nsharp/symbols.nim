@@ -45,6 +45,7 @@ type
     null*: string                  ## the invalid handle (`Ns::Id<{0}>::Invalid()`)
     deref*: string                 ## a handle's object pointer (`#.Get()`)
     get*, set*: string             ## an `extern` property's accessors (`GetPosition`)
+    qualifiers*: string            ## an `extern` method's C++ qualifiers (`const noexcept`)
 
   NsClassSymbol* = object
     name*: string
@@ -148,6 +149,7 @@ proc nativeOf*(n: NsNode): NsNative =
       of "Deref": result.deref = x.body.strVal
       of "Get": result.get = x.body.strVal
       of "Set": result.set = x.body.strVal
+      of "Qualifiers": result.qualifiers = x.body.strVal
       else: discard
 
 proc collectClass(scope: NsModuleScope; cls: NsNode) =
@@ -724,3 +726,25 @@ proc ownedFamily*(scope: NsModuleScope; clsName: string): bool =
   ## and holds what C++ gives it as a borrowed pointer.
   let r = scope.handleRoot(clsName)
   r.len > 0 and scope.classes[r].native.handle.len == 0
+proc nativeQualifiers*(scope: NsModuleScope; clsName, member: string): string =
+  ## The C++ qualifiers (`[Native(Qualifiers = "const")]`) of the native method a
+  ## member of `clsName` is, or overrides: "" when it is none.
+  for c in scope.chain(clsName):
+    if not scope.isNative(c) or scope.classes[c].decl == nil: continue
+    for m in scope.classes[c].decl.sons:
+      if m.kind == nsnMethodDecl and m.name == member and m.attrs.isExtern:
+        return nativeOf(m).qualifiers
+  ""
+
+proc isConstQualified*(q: string): bool = "const" in q.splitWhitespace()
+
+proc constMember*(scope: NsModuleScope; clsName, member: string): bool =
+  ## A member function C++ sees as `const`: a native one so qualified, the override
+  ## of one, or an N# method marked `readonly`.
+  if isConstQualified(scope.nativeQualifiers(clsName, member)): return true
+  for c in scope.chain(clsName):
+    if scope.isNative(c) or scope.classes[c].decl == nil: continue
+    for m in scope.classes[c].decl.sons:
+      if m.kind == nsnMethodDecl and m.name == member and m.attrs.isReadonly: return true
+  false
+

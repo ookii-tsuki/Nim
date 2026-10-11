@@ -1,0 +1,2 @@
+Calling non-const members from the override of a const C++ function.
+code: NS9917

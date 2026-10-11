@@ -1,0 +1,9 @@
+using Toybox;
+namespace Demo
+{
+    class Tinted : Palette
+    {
+        int Count() => 1;
+        public override int Shade() { Fade(); return Count(); }
+    }
+}

@@ -50,6 +50,7 @@ type
     curMember: NsNode                          ## the member whose body is walked
     tmpCounter: int                            ## numbers the temporaries sema introduces
     inCtor: bool                               ## inside a constructor of `clsName`
+    constBody: string                          ## `Class.Member` of a const member function being walked
     ctorIsStatic: bool                         ## ... and it is the static one
     yieldHost: NsYieldHost                     ## what a `yield` here would belong to
     types: TableRef[string, NsTypeInfo]        ## locals, params, loop variables
@@ -1419,6 +1420,14 @@ proc libraryHas(ctx: NsCheckContext; recv: string; kind: NsTypeKind; name: strin
     if m.name == name: return true
   ctx.scope.extensions.hasKey(name)
 
+proc checkConstCall(ctx: NsCheckContext; n: NsNode) =
+  ## In a const member function, `this` reaches only const members (NS9917).
+  if ctx.constBody.len == 0 or n.body == nil or n.body.kind != nsnThis: return
+  let mi = ctx.scope.findMemberInfo(ctx.clsName, n.name)
+  if mi.name.len == 0 or not mi.isMethod or mi.isStatic: return
+  if not ctx.scope.constMember(ctx.clsName, n.name):
+    nsError(ctx.config, n.info, ndConstCall, mi.owner & "." & n.name, ctx.constBody)
+
 proc checkOnHandleThis(ctx: NsCheckContext; n: NsNode) =
   ## `this.M()` on an `[OnHandle]` member needs the object's own handle, which only
   ## `SelfHandle` gives (NS9903).
@@ -1805,6 +1814,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ctx.checkMemberUse(callee)
       ctx.warnEarlyNative(callee)
       ctx.checkOnHandleThis(callee)
+      ctx.checkConstCall(callee)
       owner = callee.body.typeName
       kind = ctx.memberKind(owner, callee.name)
       let mt = ctx.memberTypeOf(callee.body, owner, callee.name)
@@ -1906,7 +1916,9 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ctx.checkCallArgs(ctx.scope.ctorOverloads(target),
                         (if n.sons.len > own: n.sons[own .. ^1] else: @[]),
                         target, target, true, n.info)
-    for j in own ..< n.sons.len: n.sons[j].argForward = true
+    for j in own ..< n.sons.len:
+      n.sons[j].argForward = true
+      n.sons[j].argNative = target.len > 0 and ctx.scope.isNative(target)
   elif callee != nil and (callee.kind == nsnMember or cands.len > 0):
     ctx.checkCallArgs(cands, n.sons, callee.name, owner, false, n.info)
   let sigs = callLambdaSigs(ctx.scope, ctx.surface, n)
@@ -3169,6 +3181,12 @@ proc checkAssignable(ctx: NsCheckContext; target: NsNode) =
         if ctx.scope.classes.hasKey(pt) and ctx.scope.classes[pt].classKind == ckStruct:
           nsError(ctx.config, inner.info, ndPropertyValueNotVariable, pm.owner & "." & pm.name)
           return
+  if ctx.constBody.len > 0 and target != nil and target.kind == nsnMember and
+     target.body != nil and target.body.kind == nsnThis:
+    let fm = ctx.scope.findMemberInfo(ctx.clsName, target.name)
+    if fm.name.len > 0 and not fm.isStatic and not fm.isMethod:
+      nsError(ctx.config, target.info, ndConstFieldWrite, fm.owner & "." & fm.name, ctx.constBody)
+      return
   ctx.noteMutation(target)
   ## A `const` is never assigned (CS0131); a `readonly` field only by its own class's
   ## constructors -- the static one, for a static field (CS0191 / CS0198).
@@ -3518,11 +3536,20 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     ctx.checkBodyFlow(m.body, m.typ, ctx.clsName & "." & m.name, m.info)
     let savedIter = ctx.inIterator
     ctx.inIterator = hasYieldStmt(m.body)
+    let savedConst = ctx.constBody
+    ## A member function C++ sees as `const` (the override of a const one, or
+    ## `readonly`) cannot change its object.
+    ctx.constBody =
+      if not m.attrs.isStatic and ctx.scope.classes.hasKey(ctx.clsName) and
+         ctx.scope.nativeBased(ctx.clsName) and not ctx.scope.isNative(ctx.clsName) and
+         ctx.scope.constMember(ctx.clsName, m.name): ctx.clsName & "." & m.name
+      else: ""
     ctx.pushScope()
     for p in m.params: ctx.walkDecl(p)
     if m.body != nil:
       ctx.walkInScope(m.body.sons)
     checkDefiniteAssignment(ctx.config, m.params, m.body)
+    ctx.constBody = savedConst
     ctx.inIterator = savedIter
     ctx.popScope()
     ctx.members = saved
@@ -3540,6 +3567,22 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
     ctx.pushScope()
     for p in m.params: ctx.walkDecl(p)
     for a in m.initArgs: discard ctx.walkExpr(a)
+    if m.initKind == "base" and m.initArgs.len > 0 and not m.attrs.isStatic:
+      let cls = ctx.scope.classes.getOrDefault(ctx.clsName)
+      if cls.decl != nil and cls.decl.typ != nil and ctx.scope.nativeBased(ctx.clsName) and
+         not ctx.scope.isNative(ctx.clsName):
+        ## `: base(args)` in a class deriving a native one: the base's constructors
+        ## take them, in the C++ constructor's initializer list.
+        let b = canonicalTypeName(cls.decl.typ.name)
+        ctx.checkCallArgs(ctx.scope.ctorOverloads(b), m.initArgs, b, b, true, m.info)
+        for a in m.initArgs:
+          let v = (if a.kind == nsnNamedArg: a.body else: a)
+          let pt = (if a.argParam != nil and a.argParam.typ != nil and
+                       a.argParam.typ.kind == nsnTypeName: canonicalTypeName(a.argParam.typ.name)
+                    else: "")
+          if pt == "string" and v.kind notin {nsnStrLit, nsnIdent}:
+            nsError(ctx.config, v.info, ndUnsupported,
+                    "a computed string argument to a native base constructor")
     if m.body != nil:
       ctx.walkInScope(m.body.sons)
     checkDefiniteAssignment(ctx.config, m.params, m.body)
@@ -3669,18 +3712,25 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
         if m.kind != nsnMethodDecl or not m.attrs.isExtern or pt != "string" or
            p.paramMod.len > 0 or not reach:
           nsError(ctx.config, a.info, ndCStringMisplaced, named(m))
+    ## The class a method returns: its own type, or the class a type parameter it
+    ## returns is constrained to (`T Create<T>() where T : Palette`).
+    var rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
+              else: "")
+    if m.typ != nil and m.typ.kind == nsnTypeName:
+      for w in m.constraints:
+        if w.name == m.typ.name:
+          for c in w.sons:
+            if c.kind == nsnTypeName and ctx.scope.classes.hasKey(canonicalTypeName(c.name)):
+              rt = canonicalTypeName(c.name)
+    let ownedRt = rt.len > 0 and ctx.scope.classes.hasKey(rt) and ctx.scope.ownedFamily(rt)
     if borrowed or owned:
-      let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
-                else: "")
-      if m.kind != nsnMethodDecl or not m.attrs.isExtern or (borrowed and owned) or
-         rt.len == 0 or not ctx.scope.classes.hasKey(rt) or not ctx.scope.ownedFamily(rt):
+      if m.kind != nsnMethodDecl or not m.attrs.isExtern or (borrowed and owned) or not ownedRt:
         nsError(ctx.config, m.info, ndReturnOwnership, named(m))
     if m.kind == nsnMethodDecl and m.attrs.isExtern and m.params.len > 0 and
-       m.params[^1] != nil and m.params[^1].attributeNamed("Forward") != nil and
-       m.typ != nil and m.typ.kind == nsnTypeName and
-       ctx.scope.classes.hasKey(canonicalTypeName(m.typ.name)) and
-       ctx.scope.ownedFamily(canonicalTypeName(m.typ.name)):
-      unsupported(m, "a [Forward] factory returning a native class with no handle")
+       m.params[^1] != nil and m.params[^1].attributeNamed("Forward") != nil and ownedRt:
+      if not borrowed and not owned:
+        unsupported(m, "a [Forward] factory returning a native class with no handle by value" &
+                       " (say [return: Owned] or [return: Borrowed])")
     if m.attributeNamed("OnHandle") != nil:
       var ok = m.kind in {nsnMethodDecl, nsnPropertyDecl} and m.attrs.isExtern and
                not m.attrs.isStatic and native and cls.classKind == ckClass and
@@ -3708,10 +3758,7 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
         if m.attrs.isStatic or m.body != nil:
           nsError(ctx.config, m.info, ndNativeFieldStatic, named(m))
       of nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl:
-        if m.kind == nsnCtorDecl and cls.classKind == ckClass and not m.attrs.isStatic and
-           ctx.scope.engineOwned(cls.name):
-          nsError(ctx.config, m.info, ndNativeCtor, named(m))
-        elif not m.attrs.isExtern or m.body != nil:
+        if not m.attrs.isExtern or m.body != nil:
           nsError(ctx.config, m.info, ndNativeMemberNotExtern, named(m))
       of nsnIndexerDecl:
         ## `extern T this[...]`: each accessor is the C++ it names, never guessed.
@@ -3759,8 +3806,6 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
       unsupported(cls, "a struct deriving a native type")
     if cls.typeParams.len > 0:
       unsupported(cls, "a generic class deriving a native one")
-    if cls.bases.len > (if cls.typ != nil: 1 else: 0):
-      unsupported(cls, "an interface on a class deriving a native one")
     for m in cls.sons:
       case m.kind
       of nsnFieldDecl:
@@ -3771,11 +3816,8 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
       of nsnCtorDecl:
         ## A C++ constructor, which the engine runs when it creates the object
         ## through a `[Forward]` factory.
-        if m.attrs.isStatic:
-          unsupported(m, "a static constructor in a class deriving a native one")
-        elif m.initKind == "this" or m.initArgs.len > 0:
-          unsupported(m, "': base(...)' or ': this(...)' on a constructor of a class" &
-                         " deriving a native one")
+        if m.initKind == "this":
+          unsupported(m, "': this(...)' on a constructor of a class deriving a native one")
       else:
         unsupported(m, "this member in a class deriving a native one")
 

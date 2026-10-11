@@ -1,0 +1,1143 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
+  nkImportStmt
+    nkStrLit "NSharp/Interop"
+  nkImportStmt
+    nkStrLit "Toybox"
+  nkTypeSection
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Tinted'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'exportc'
+            nkStrLit "Tinted"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkIdent 'Palette'
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'notes'
+            nkBracketExpr
+              nkIdent 'NsField'
+              nkBracketExpr
+                nkIdent 'List'
+                nkIdent 'string'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'extra'
+            nkIdent 'int32'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'nsOwner'
+            nkIdent 'NsOwner'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Deep'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'exportc'
+            nkStrLit "Deep"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkIdent 'Tinted'
+        nkRecList
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Entry'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkIdent 'nsInit_Tinted'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Tinted'
+    nkPragma
+      nkIdent 'constructor'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Shade()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Shade() const override"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Label'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Label()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Label'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Label() const"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Touch'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Touch()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Touch'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Touch() noexcept override"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Weight'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Weight()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Weight'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Weight() override"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Deep'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Shade()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Deep'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Shade() const override"
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Start'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsStart'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'exportc'
+        nkStrLit "nsStart"
+      nkIdent 'cdecl'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Entry'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initEntry'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newEntry'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Entry'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkCall
+    nkIdent 'nsUseField'
+    nkBracketExpr
+      nkIdent 'List'
+      nkIdent 'string'
+  nkProcDef
+    nkIdent 'nsInit_Tinted'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Tinted'
+    nkPragma
+      nkIdent 'constructor'
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkCall
+          nkIdent 'nsVal'
+          nkDotExpr
+            nkIdent 'result'
+            nkIdent 'notes'
+        nkCall
+          nkBracketExpr
+            nkIdent 'newList'
+            nkIdent 'string'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
+          nkIdent 'extra'
+        nkCall
+          nkIdent 'int32'
+          nkIntLit 3
+  nkStmtList
+    nkProcDef
+      nkIdent 'nsPlace_Tinted'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Tinted'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Tinted(@)"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newTinted'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Palette'
+          nkIdent 'Tinted'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Tinted'
+        nkCall
+          nkIdent 'nsPlace_Tinted'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkDotExpr
+            nkDotExpr
+              nkCall
+                nkIdent 'nsAt'
+                nkIdent 'nsB'
+              nkIdent 'nsOwner'
+            nkIdent 'box'
+          nkCast
+            nkIdent 'pointer'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Palette'
+              nkIdent 'Tinted'
+            nkIdent 'nsB'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Shade()"
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '*'
+                nkCall
+                  nkIdent 'Hue'
+                  nkIdent 'self'
+                nkIntLit 100
+              nkDotExpr
+                nkIdent 'self'
+                nkIdent 'extra'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsVal'
+                nkDotExpr
+                  nkIdent 'self'
+                  nkIdent 'notes'
+              nkIdent 'Count'
+          nkCall
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'Label'
+  nkProcDef
+    nkIdent 'nsCpp_Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Shade() const override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Shade'
+              nkCall
+                nkIdent 'nsUnconst'
+                nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Tinted.Shade"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Label'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Label()"
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkIntLit 7
+  nkProcDef
+    nkIdent 'nsCpp_Label'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Label() const"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Label'
+              nkCall
+                nkIdent 'nsUnconst'
+                nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Tinted.Label"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Touch'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Touch()"
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsBaseCall_Palette_Touch'
+        nkIdent 'self'
+      nkCommand
+        nkIdent 'inc'
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'extra'
+      nkCall
+        nkDotExpr
+          nkCall
+            nkIdent 'nsVal'
+            nkDotExpr
+              nkIdent 'self'
+              nkIdent 'notes'
+          nkIdent 'Add'
+        nkStrLit "touched"
+  nkProcDef
+    nkIdent 'nsCpp_Touch'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Touch() noexcept override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Touch'
+            nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Tinted.Touch"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Weight'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Weight()"
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '*'
+          nkCall
+            nkIdent 'nsBaseCall_Palette_Weight'
+            nkIdent 'self'
+          nkIntLit 10
+  nkProcDef
+    nkIdent 'nsCpp_Weight'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Weight() override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Weight'
+              nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Tinted.Weight"
+  nkStmtList
+    nkProcDef
+      nkIdent 'nsPlace_Deep'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Deep'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Deep()"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newDeep'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Palette'
+          nkIdent 'Deep'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Deep'
+        nkCall
+          nkIdent 'nsPlace_Deep'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkDotExpr
+            nkDotExpr
+              nkCall
+                nkIdent 'nsAt'
+                nkIdent 'nsB'
+              nkIdent 'nsOwner'
+            nkIdent 'box'
+          nkCast
+            nkIdent 'pointer'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Palette'
+              nkIdent 'Deep'
+            nkIdent 'nsB'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Deep'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Shade()"
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '+'
+          nkCall
+            nkIdent 'Shade'
+            nkCast
+              nkPtrTy
+                nkIdent 'Tinted'
+              nkIdent 'self'
+          nkIntLit 1000
+  nkProcDef
+    nkIdent 'nsCpp_Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Deep'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Shade() const override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Shade'
+              nkCall
+                nkIdent 'nsUnconst'
+                nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Deep.Shade"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Entry"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Entry"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Entry"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Start'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Tinted'
+          nkCall
+            nkIdent 'newTinted'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkStrLit "shade "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'ShadeOf'
+              nkIdent 'Painter'
+              nkCall
+                nkIdent 'nsAs'
+                nkIdent 't'
+                nkBracketExpr
+                  nkIdent 'NsH_Palette'
+                  nkIdent 'Palette'
+            nkStrLit ""
+      nkCall
+        nkIdent 'TouchOf'
+        nkIdent 'Painter'
+        nkCall
+          nkIdent 'nsAs'
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "after touch: shade "
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkIdent 'ShadeOf'
+                  nkIdent 'Painter'
+                  nkCall
+                    nkIdent 'nsAs'
+                    nkIdent 't'
+                    nkBracketExpr
+                      nkIdent 'NsH_Palette'
+                      nkIdent 'Palette'
+                nkStrLit ""
+            nkStrLit ", base counted "
+          nkCall
+            nkIdent 'nsFmt'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsDeref'
+                nkIdent 't'
+              nkIdent 'touched'
+            nkStrLit ""
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "weight "
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkIdent 'Weigh'
+                  nkIdent 'Painter'
+                  nkCall
+                    nkIdent 'nsAs'
+                    nkIdent 't'
+                    nkBracketExpr
+                      nkIdent 'NsH_Palette'
+                      nkIdent 'Palette'
+                nkStrLit ""
+            nkStrLit ", deep shade "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'ShadeOf'
+              nkIdent 'Painter'
+              nkCall
+                nkIdent 'nsAs'
+                nkCall
+                  nkIdent 'newDeep'
+                nkBracketExpr
+                  nkIdent 'NsH_Palette'
+                  nkIdent 'Palette'
+            nkStrLit ""
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'plain'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Palette'
+          nkCall
+            nkIdent 'newPalette'
+            nkStrLit "p"
+            nkIntLit 4
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkStrLit "plain: shade "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'ShadeOf'
+              nkIdent 'Painter'
+              nkIdent 'plain'
+            nkStrLit ""
+  nkProcDef
+    nkIdent 'nsStart'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'exportc'
+        nkStrLit "nsStart"
+      nkIdent 'cdecl'
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Start'
+            nkIdent 'Entry'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Entry.Start"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Entry'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newEntry'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initEntry'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Entry'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newEntry'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Entry'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initEntry'
+        nkIdent 'result'

@@ -1,0 +1,197 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "Toybox"
+  nkTypeSection
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Tinted'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'exportc'
+            nkStrLit "Tinted"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkIdent 'Palette'
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'extra'
+            nkIdent 'int32'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'nsOwner'
+            nkIdent 'NsOwner'
+            nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Shade()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Shade() const override"
+    nkEmpty
+    nkEmpty
+  nkStmtList
+    nkProcDef
+      nkIdent 'nsPlace_Tinted'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Tinted'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Tinted()"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newTinted'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Palette'
+          nkIdent 'Tinted'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Tinted'
+        nkCall
+          nkIdent 'nsPlace_Tinted'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkDotExpr
+            nkDotExpr
+              nkCall
+                nkIdent 'nsAt'
+                nkIdent 'nsB'
+              nkIdent 'nsOwner'
+            nkIdent 'box'
+          nkCast
+            nkIdent 'pointer'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Palette'
+              nkIdent 'Tinted'
+            nkIdent 'nsB'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Shade()"
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'extra'
+        nkIntLit 1
+      nkReturnStmt
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'extra'
+  nkProcDef
+    nkIdent 'nsCpp_Shade'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Shade() const override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Shade'
+              nkCall
+                nkIdent 'nsUnconst'
+                nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Tinted.Shade"
