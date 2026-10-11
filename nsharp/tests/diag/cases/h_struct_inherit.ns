@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class A {} struct S : A {}
+    class Program
+    {
+        static void Main()
+        {
+            
+        }
+    }
+}

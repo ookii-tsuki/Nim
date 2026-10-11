@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class A { public abstract void M(); }
+    class Program
+    {
+        static void Main()
+        {
+            
+        }
+    }
+}

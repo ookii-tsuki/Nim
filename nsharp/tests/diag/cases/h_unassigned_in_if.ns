@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static bool Flag() => false;
+        static void Main()
+        {
+            int x; if (Flag()) x = 1; Console.WriteLine(x);
+        }
+    }
+}

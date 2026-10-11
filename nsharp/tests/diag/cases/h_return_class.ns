@@ -1,0 +1,14 @@
+using System;
+namespace Demo
+{
+    class A {}
+    class B {}
+    class Program
+    {
+        static A F() { return new B(); }
+        static void Main()
+        {
+            F();
+        }
+    }
+}

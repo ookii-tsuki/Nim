@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static T Id<T>(T x) => x;
+        static void Main()
+        {
+            var y = Id<int>("s");
+        }
+    }
+}

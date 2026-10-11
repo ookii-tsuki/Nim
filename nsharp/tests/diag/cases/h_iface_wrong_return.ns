@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    interface I { int M(); } class C : I { public string M() => ""; }
+    class Program
+    {
+        static void Main()
+        {
+            
+        }
+    }
+}

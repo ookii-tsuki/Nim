@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class A { public string S { get; set; } = 3; }
+    class Program
+    {
+        static void Main()
+        {
+            
+        }
+    }
+}
