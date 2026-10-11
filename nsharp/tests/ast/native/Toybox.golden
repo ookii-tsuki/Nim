@@ -539,6 +539,7 @@ nkStmtList
       nkStrLit "toybox.hpp"
       nkStrLit "static_cast<bool>(#)"
       nkStrLit "Toybox::TraitRef<'1>()"
+      nkStrLit "#.operator->()"
   nkStmtList
     nkProcDef
       nkPostfix
@@ -566,6 +567,124 @@ nkStmtList
           nkStrLit "toybox.hpp"
       nkEmpty
       nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Position'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'Vec2'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Motion'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->GetPosition()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Position='
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Motion'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'value'
+          nkIdent 'Vec2'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->SetPosition(#)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Spin'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'float32'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Motion'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->get_spin()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Spin='
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Motion'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'value'
+          nkIdent 'float32'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->set_spin(#)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Speed'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'float32'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Motion'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Vel.x"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
   nkStmtList
   nkStmtList
     nkCall
@@ -575,6 +694,7 @@ nkStmtList
       nkStrLit "toybox.hpp"
       nkStrLit "static_cast<bool>(#)"
       nkStrLit "Toybox::NodeRef<'1>()"
+      nkStrLit "#.operator->()"
     nkProcDef
       nkPostfix
         nkIdent '*'
@@ -663,6 +783,61 @@ nkStmtList
           nkIdent 'header'
           nkStrLit "toybox.hpp"
         nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Slot'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'nsU'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'uint32'
+        nkIdentDefs
+          nkIdent 'self'
+          nkBracketExpr
+            nkIdent 'NsH_Node'
+            nkIdent 'nsU'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#.Slot(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Version'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'nsU'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'uint32'
+        nkIdentDefs
+          nkIdent 'self'
+          nkBracketExpr
+            nkIdent 'NsH_Node'
+            nkIdent 'nsU'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#.version"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
       nkEmpty
       nkEmpty
   nkStmtList
@@ -837,6 +1012,56 @@ nkStmtList
     nkProcDef
       nkPostfix
         nkIdent '*'
+        nkIdent 'TimeScale'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'float32'
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Director'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "Toybox::Director::GetTimeScale()@"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'TimeScale='
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Director'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'value'
+          nkIdent 'float32'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "Toybox::Director::SetTimeScale(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
         nkIdent 'Play'
       nkEmpty
       nkGenericParams
@@ -875,6 +1100,62 @@ nkStmtList
       nkStrLit "toybox.hpp"
       nkStrLit "Toybox::Timers::Alive(#)"
       nkStrLit "Toybox::TimerId<'1>::None()"
+      nkStrLit "#.Get()"
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Id'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'nsU'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'uint32'
+        nkIdentDefs
+          nkIdent 'self'
+          nkBracketExpr
+            nkIdent 'NsH_Timer'
+            nkIdent 'nsU'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#.Id()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'RawId'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'nsU'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'uint32'
+        nkIdentDefs
+          nkIdent 'self'
+          nkBracketExpr
+            nkIdent 'NsH_Timer'
+            nkIdent 'nsU'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#.id"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
   nkStmtList
     nkProcDef
       nkPostfix

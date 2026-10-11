@@ -529,6 +529,10 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
         var ol = l
         ol.objTypes = true
         result.add ol.typeToNim(nsnTypeName(callee.body.typeName, n.info), n.info)
+      elif l.scope.onHandle(callee.body.typeName, callee.name):
+        ## A member of the handle: the handle itself, unchecked (`this`'s own,
+        ## through `SelfHandle`).
+        result.add l.expr(callee.body)
       else:
         result.add l.recvOf(callee.body)
       for t in callee.typeArgs: result.add l.typeToNim(t, n.info)
@@ -754,6 +758,10 @@ proc memberReceiver(l: Lowerer; n: NsNode): PNode =
   if dotted and name.len > 0 and not l.scope.classes.hasKey(name):
     let spelled = l.surface.nimSpellingOf(name)
     if spelled.len > 0: return l.id(spelled, n.info)
+  if n.body != nil and l.scope.classes.hasKey(n.body.typeName) and
+     l.scope.onHandle(n.body.typeName, n.name):
+    ## A member of the handle (`[OnHandle]`): the handle itself, unchecked.
+    return l.expr(n.body)
   l.recvOf(n.body)
 
 proc nilableReceiver(l: Lowerer; n: NsNode): bool =
@@ -3557,11 +3565,18 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PN
     ol.objTypes = true
     fp.add l.identDefs("t", newTree(nkBracketExpr, info, l.id("typedesc", info),
                                     ol.typeToNim(nsnTypeName(cls.name, info), info)), info)
-  else:
-    fp.add l.identDefs("self", (if isStruct: l.id(cls.name, info)
-                                else: newTree(nkPtrTy, info, l.id(cls.name, info))), info)
   var targs: seq[string] = @[]
   var tps: seq[string] = @[]
+  let handleSide = m.attributeNamed("OnHandle") != nil and not m.attrs.isStatic
+  if handleSide:
+    ## `[OnHandle]`: the receiver is a handle of any class of the family.
+    tps.add "nsU"
+    fp.add l.identDefs("self", newTree(nkBracketExpr, info,
+                                       l.id("NsH_" & l.scope.handleRoot(cls.name), info),
+                                       l.id("nsU", info)), info)
+  elif not m.attrs.isStatic:
+    fp.add l.identDefs("self", (if isStruct: l.id(cls.name, info)
+                                else: newTree(nkPtrTy, info, l.id(cls.name, info))), info)
   for i, tp in m.typeParams:
     tps.add tp.name
     fp.add l.identDefs("ns_" & tp.name, newTree(nkBracketExpr, info, l.id("typedesc", info),
@@ -3582,7 +3597,8 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string): PN
     let targ = (if targs.len > 0: "<" & targs.join(", ") & ">" else: "")
     pattern =
       if m.attrs.isStatic: nat.cpp & "::" & m.name & targ & "(@)"
-      elif isStruct: "#." & (if targs.len > 0: "template " else: "") & m.name & targ & "(@)"
+      elif isStruct or handleSide:
+        "#." & (if targs.len > 0: "template " else: "") & m.name & targ & "(@)"
       else: "#->" & (if targs.len > 0: "template " else: "") & m.name & targ & "(@)"
   result = newNodeI(nkProcDef, info, 7)
   result[0] = l.exportId(m.name, info)
@@ -3642,6 +3658,64 @@ proc ownedNew(l: Lowerer; cls: NsNode; params: seq[PNode]; ctor, header: string;
   pd[6] = body
   into.add pd
 
+proc nativeProperty(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
+                    into: PNode) =
+  ## `extern T P { get; set; }`: a getter `P` and a setter `P=` over the C++ the
+  ## property's `[Native(Get = .., Set = ..)]` names -- a member function's name
+  ## (`#->GetPosition()`, `#->SetPosition(value)`), or a pattern. A static one with
+  ## neither is the C++ type's static member. `[OnHandle]` puts it on the handle.
+  let info = m.info
+  let pn = nativeOf(m)
+  let isStatic = m.attrs.isStatic
+  let handleSide = m.attributeNamed("OnHandle") != nil and not isStatic
+  let isStruct = cls.classKind == ckStruct
+  let access = (if handleSide or isStruct: "#." else: "#->")
+  var ol = l
+  ol.objTypes = true
+  proc recvDefs(mutable: bool): PNode =
+    if isStatic:
+      l.identDefs("t", newTree(nkBracketExpr, info, l.id("typedesc", info),
+                               ol.typeToNim(nsnTypeName(cls.name, info), info)), info)
+    elif handleSide:
+      l.identDefs("self", newTree(nkBracketExpr, info,
+                                  l.id("NsH_" & l.scope.handleRoot(cls.name), info),
+                                  l.id("nsU", info)), info)
+    elif isStruct:
+      l.identDefs("self", (if mutable: newTree(nkVarTy, info, l.id(cls.name, info))
+                           else: l.id(cls.name, info)), info)
+    else:
+      l.identDefs("self", newTree(nkPtrTy, info, l.id(cls.name, info)), info)
+  proc expand(given: string; setter: bool): string =
+    ## A name is a member function (or, static, one of the type); a pattern is
+    ## kept, with a static one's `typedesc` consumed first.
+    if given.len == 0:
+      if isStatic: return nat.cpp & "::" & m.name & (if setter: " = @" else: "@")
+      return ""
+    if '#' in given: return (if isStatic: "#" & given else: given)
+    if isStatic: return nat.cpp & "::" & given & (if setter: "(@)" else: "()@")
+    access & given & (if setter: "(#)" else: "()")
+  proc emit(name: PNode; fp: PNode; pattern: string) =
+    let pd = newNodeI(nkProcDef, info, 7)
+    pd[0] = name
+    for i in 1 .. 6: pd[i] = empty(info)
+    if handleSide: pd[2] = l.genericParams(@["nsU"], info)
+    pd[3] = fp
+    pd[4] = l.cppPragma(pattern, header, info)
+    into.add pd
+  let getter = (if m.params.len > 0: m.params[0] else: nil)
+  let setter = (if m.params.len > 1: m.params[1] else: nil)
+  if getter != nil:
+    let pattern = expand(pn.get, false)
+    if pattern.len > 0:
+      emit(l.exportId(m.name, info),
+           newTree(nkFormalParams, info, l.typeToNim(m.typ, info), recvDefs(false)), pattern)
+  if setter != nil:
+    let pattern = expand(pn.set, true)
+    if pattern.len > 0:
+      emit(l.exportId(m.name & "=", info),
+           newTree(nkFormalParams, info, empty(info), recvDefs(true),
+                   l.identDefs("value", l.nativeParamType(m.typ, info), info)), pattern)
+
 proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let info = n.info
   let nat = l.scope.classes[n.name].native
@@ -3697,13 +3771,15 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
                       l.id(n.name, info))
   if nat.handle.len > 0:
     ## Validity is the handle's `explicit operator bool` unless `Valid` says how to
-    ## test it; the invalid handle is a default-constructed one unless `Null` names it.
+    ## test it; the invalid handle is a default-constructed one unless `Null` names
+    ## it; the object is the handle's `operator->` unless `Deref` says how to reach it.
     let valid = (if nat.valid.len > 0: nat.valid else: "static_cast<bool>(#)")
     let null = (if nat.null.len > 0: nat.null.replace("{0}", "'1")
                 else: nat.handle.replace("{0}", "'1") & "()")
+    let deref = (if nat.deref.len > 0: nat.deref else: "#.operator->()")
     procs.add newTree(nkCall, info, l.id("nsHandleProcs", info), l.id("NsH_" & n.name, info),
                       l.id(n.name, info), strLit(header, info), strLit(valid, info),
-                      strLit(null, info))
+                      strLit(null, info), strLit(deref, info))
   if nat.handle.len > 0 and nat.selfHandle.len > 0:
     ## `nsSelfOf_<Class>(self)`: an object's own handle, through `SelfHandle` -- a
     ## C++ pattern (`#->GetId()`), or a member name standing for `#->name`.
@@ -3741,17 +3817,7 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       pd[4] = l.cppPragma(nat.cpp & "(@)", header, m.info, ["constructor"])
       procs.add pd
     of nsnPropertyDecl:
-      ## `static extern T P { get; }`: a static member of the C++ type.
-      let fp = newNodeI(nkFormalParams, m.info)
-      fp.add l.typeToNim(m.typ, m.info)
-      fp.add l.identDefs("t", newTree(nkBracketExpr, m.info, l.id("typedesc", m.info),
-                                      ol.typeToNim(nsnTypeName(n.name, m.info), m.info)), m.info)
-      let pd = newNodeI(nkProcDef, m.info, 7)
-      pd[0] = l.exportId(m.name, m.info)
-      for i in 1 .. 6: pd[i] = empty(m.info)
-      pd[3] = fp
-      pd[4] = l.cppPragma(nat.cpp & "::" & m.name & "@", header, m.info)
-      procs.add pd
+      l.nativeProperty(n, m, nat, header, procs)
     of nsnOperatorDecl:
       let fp = newNodeI(nkFormalParams, m.info)
       fp.add l.typeToNim(m.typ, m.info)

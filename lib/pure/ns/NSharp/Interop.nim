@@ -23,7 +23,14 @@ type
     ## `explicit operator bool` says so, unless `Valid` gives the test as a pattern
     ## over it (`"#.IsAlive()"`, `"Ns::World::Exists(#)"`); using an invalid one
     ## throws `NullReferenceException`. `null` is a default-constructed handle,
-    ## unless `Null` names the invalid one (`"Ns::Id<{0}>::Invalid()"`). On an `extern` member,
+    ## unless `Null` names the invalid one (`"Ns::Id<{0}>::Invalid()"`). The object
+    ## is the handle's `operator->`, unless `Deref` gives the pointer as a pattern
+    ## over it (`"#.Get()"`, `"Ns::World::Find(#)"`). On an `extern` property,
+    ## `Get = "GetPosition", Set = "SetPosition"` names the C++ accessors: a member
+    ## function's name (`#->GetPosition()`, `#->SetPosition(value)`), or a pattern
+    ## (`Get = "#->Children().size()"`). Nothing is guessed: an accessor with
+    ## neither is an error, except that a static property with neither is the C++
+    ## type's static member. On an `extern` member,
     ## `[Native("pattern")]` gives the C++ call as a Nim `importcpp` pattern.
   ExportAttribute* = ref object of Attribute
     ## `[Export("name")]` on a static method: C++ calls it by that name.
@@ -40,3 +47,7 @@ type
     ## `[return: Owned]` on an `extern` returning a class with no handle: C++ hands
     ## over a pointer it made with `new`, which N# deletes with the last reference.
     ## Without either, the class is returned by value and N# owns the result.
+  OnHandleAttribute* = ref object of Attribute
+    ## `[OnHandle]` on an `extern` instance member of a handle class: a member of the
+    ## handle, not of the object -- called on the handle itself (`#.M(@)`), and not
+    ## checked, so it works on an invalid one (`e.IsAlive()`, `e.Id`).

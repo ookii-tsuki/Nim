@@ -54,6 +54,7 @@ struct NodeRef {
 
     T* operator->() const;
     explicit operator bool() const;
+    std::uint32_t Slot() const { return slot; }   // the handle's own, not the node's
 };
 
 // slot -> (version, address). A pool re-points a slot whenever it moves a node,
@@ -100,6 +101,13 @@ struct Motion : Trait {
     Vec2 Pos;
     Vec2 Vel;
     void Push(Vec2 f) { Vel = Vel + f; }
+    // Accessors in the styles engines use.
+    Vec2 GetPosition() const { return Pos; }
+    void SetPosition(Vec2 p) { Pos = p; }
+    float get_spin() const { return spin; }
+    void set_spin(float s) { spin = s; }
+private:
+    float spin = 0;
 };
 
 struct Tag : Trait {
@@ -241,6 +249,9 @@ TraitRef<C> Node::Find() {
 
 class Director {
 public:
+    static float& Scale() { static float scale = 1; return scale; }
+    static float GetTimeScale() { return Scale(); }
+    static void SetTimeScale(float s) { Scale() = s; }
     static std::unique_ptr<Stage>& Current() { static std::unique_ptr<Stage> s; return s; }
     template <typename T>
         requires std::derived_from<T, Stage>
@@ -260,8 +271,9 @@ public:
 
 // --- timers -------------------------------------------------------------------------
 //
-// A handle with no `operator bool`: whether it is alive is the timer table's to say,
-// and the empty one is `TimerId<T>::None()`.
+// A handle with no `operator bool` and no `operator->`: whether it is alive is the
+// timer table's to say, the empty one is `TimerId<T>::None()`, and `Get()` gives
+// the timer.
 
 struct Timer {
     float left = 0;
@@ -272,7 +284,8 @@ template <typename T>
 struct TimerId {
     std::uint32_t id = 0;
     static TimerId None() { return TimerId{}; }
-    T* operator->() const;
+    T* Get() const;
+    std::uint32_t Id() const { return id; }
 };
 
 class Timers {
@@ -293,7 +306,7 @@ public:
 };
 
 template <typename T>
-T* TimerId<T>::operator->() const { return static_cast<T*>(Timers::Table()[id].get()); }
+T* TimerId<T>::Get() const { return static_cast<T*>(Timers::Table()[id].get()); }
 
 // --- palettes --------------------------------------------------------------------------
 //

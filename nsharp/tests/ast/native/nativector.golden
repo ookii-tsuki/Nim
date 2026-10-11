@@ -56,6 +56,7 @@ nkStmtList
       nkStrLit "game.hpp"
       nkStrLit "static_cast<bool>(#)"
       nkStrLit "Game::Ref<'1>()"
+      nkStrLit "#.operator->()"
     nkProcDef
       nkIdent 'nsPlace_Thing'
       nkEmpty

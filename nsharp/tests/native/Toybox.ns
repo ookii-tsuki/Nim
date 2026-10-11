@@ -33,6 +33,12 @@ namespace Toybox
         public Vec2 Pos;
         public Vec2 Vel;
         public extern void Push(Vec2 force);
+        [Native(Get = "GetPosition", Set = "SetPosition")]
+        public extern Vec2 Position { get; set; }
+        [Native(Get = "get_spin", Set = "set_spin")]
+        public extern float Spin { get; set; }
+        [Native(Get = "#->Vel.x")]
+        public extern float Speed { get; }
     }
 
     [Native("Toybox::Tag", Header = "toybox.hpp")]
@@ -46,6 +52,8 @@ namespace Toybox
     {
         public extern T Attach<T>() where T : Trait;
         public extern T Find<T>() where T : Trait;
+        [OnHandle] public extern uint Slot();
+        [OnHandle, Native(Get = "#.version")] public extern uint Version { get; }
     }
 
     [Native("Toybox::Stage", Header = "toybox.hpp")]
@@ -60,15 +68,20 @@ namespace Toybox
     [Native("Toybox::Director", Header = "toybox.hpp")]
     public static class Director
     {
+        [Native(Get = "GetTimeScale", Set = "SetTimeScale")]
+        public static extern float TimeScale { get; set; }
         public static extern void Play<T>() where T : Stage;
     }
 
     [Native("Toybox::Timer", Header = "toybox.hpp", Handle = "Toybox::TimerId<{0}>",
-            Valid = "Toybox::Timers::Alive(#)", Null = "Toybox::TimerId<{0}>::None()")]
+            Valid = "Toybox::Timers::Alive(#)", Null = "Toybox::TimerId<{0}>::None()",
+            Deref = "#.Get()")]
     public class Timer
     {
         public float left;
         public int fired;
+        [OnHandle, Native(Get = "Id")] public extern uint Id { get; }
+        [OnHandle, Native("#.id")] public extern uint RawId();
     }
 
     [Native("Toybox::Timers", Header = "toybox.hpp")]

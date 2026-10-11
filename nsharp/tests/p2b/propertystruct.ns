@@ -1,0 +1,26 @@
+// A property of a struct type gives a copy: assigning to a field of it is CS1612.
+using System;
+
+namespace Demo
+{
+    struct Point
+    {
+        public int X;
+        public int Y;
+    }
+
+    class Shape
+    {
+        public Point Origin { get; set; }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var s = new Shape();
+            s.Origin.X = 3;
+            Console.WriteLine(s.Origin.X);
+        }
+    }
+}

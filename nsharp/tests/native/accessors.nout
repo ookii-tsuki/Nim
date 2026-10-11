@@ -1,0 +1,5 @@
+marker: own slot 1, version 1
+position 10,2, spin 35, speed 4
+handle: slot 1, version 1
+time scale 6
+stopped timer: null true, id 1, raw 1

@@ -1,0 +1,12 @@
+using Toybox;
+namespace Demo
+{
+    class Rig : Stage
+    {
+        public override void Begin()
+        {
+            Motion m = Spawn<Node>().Attach<Motion>();
+            m.Position.x = 5;
+        }
+    }
+}

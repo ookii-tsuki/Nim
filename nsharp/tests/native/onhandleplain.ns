@@ -1,0 +1,9 @@
+using NSharp.Interop;
+namespace Demo
+{
+    [Native("Game::Body", Header = "game.hpp")]
+    public class Body
+    {
+        [OnHandle] public extern int Id();
+    }
+}

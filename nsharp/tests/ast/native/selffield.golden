@@ -375,6 +375,7 @@ nkStmtList
       nkStrLit "toybox.hpp"
       nkStrLit "static_cast<bool>(#)"
       nkStrLit "Toybox::NodeRef<'1>()"
+      nkStrLit "#.operator->()"
     nkProcDef
       nkPostfix
         nkIdent '*'

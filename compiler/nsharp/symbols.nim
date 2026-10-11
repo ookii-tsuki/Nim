@@ -43,6 +43,8 @@ type
     selfHandle*: string
     valid*: string                 ## a handle's validity test (`#.IsAlive()`)
     null*: string                  ## the invalid handle (`Ns::Id<{0}>::Invalid()`)
+    deref*: string                 ## a handle's object pointer (`#.Get()`)
+    get*, set*: string             ## an `extern` property's accessors (`GetPosition`)
 
   NsClassSymbol* = object
     name*: string
@@ -142,6 +144,9 @@ proc nativeOf*(n: NsNode): NsNative =
       of "SelfHandle": result.selfHandle = x.body.strVal
       of "Valid": result.valid = x.body.strVal
       of "Null": result.null = x.body.strVal
+      of "Deref": result.deref = x.body.strVal
+      of "Get": result.get = x.body.strVal
+      of "Set": result.set = x.body.strVal
       else: discard
 
 proc collectClass(scope: NsModuleScope; cls: NsNode) =
@@ -682,6 +687,17 @@ proc handleRoot*(scope: NsModuleScope; clsName: string): string =
     if k.native.handle.len > 0: return c
     if k.native.cpp.len > 0 and k.classKind == ckClass and not k.isStatic: top = c
   top
+
+proc onHandle*(scope: NsModuleScope; clsName, member: string): bool =
+  ## A member of a native class's handle rather than of the object (`[OnHandle]`):
+  ## called on the handle itself, unchecked, so it works on an invalid one.
+  for c in scope.chain(clsName):
+    let d = scope.classes[c].decl
+    if d == nil: continue
+    for m in d.sons:
+      if m.kind in {nsnMethodDecl, nsnPropertyDecl} and m.name == member:
+        return m.attributeNamed("OnHandle") != nil
+  false
 
 proc engineOwned*(scope: NsModuleScope; clsName: string): bool =
   ## A class whose objects the engine creates and owns: its family has a `Handle`.

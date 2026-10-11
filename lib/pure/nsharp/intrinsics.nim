@@ -700,11 +700,11 @@ proc nsAsByKey*[I](o: RootRef; t: typedesc[I]): I =
 # is invalid; using one throws `NullReferenceException`, as a null reference
 # does in C#, unless checks are off (`-d:danger`).
 
-template nsHandleProcs*(H, R: untyped; hdr, validPat, nullPat: untyped) =
+template nsHandleProcs*(H, R: untyped; hdr, validPat, nullPat, derefPat: untyped) =
   ## A handle family's helpers: `validPat` tests a handle (`static_cast<bool>(#)`,
-  ## or the binding's `Valid`), and `nullPat` makes the invalid one, with `'1` the
-  ## class.
-  proc nsRawDeref[T](h: H[T]): ptr T {.importcpp: "#.operator->()", header: hdr.}
+  ## or the binding's `Valid`), `nullPat` makes the invalid one, with `'1` the
+  ## class, and `derefPat` reaches the object (`#.operator->()`, or `Deref`).
+  proc nsRawDeref[T](h: H[T]): ptr T {.importcpp: derefPat, header: hdr.}
   proc nsValid*[T](h: H[T]): bool {.importcpp: validPat, header: hdr, inject.}
   proc nsNullOf[T](t: typedesc[T]; h: typedesc[H[T]]): H[T] {.importcpp: nullPat, header: hdr.}
     ## `h` keeps one family's from being taken for another's.

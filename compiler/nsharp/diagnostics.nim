@@ -158,6 +158,9 @@ type
     ndNativeCtorEarly
     ndForwardMisplaced
     ndReturnOwnership
+    ndPropertyValueNotVariable
+    ndNativeAccessorUnnamed
+    ndOnHandleMisplaced
     ndUnsupported
 
   NsDiagInfo* = tuple[code, msg: string]
@@ -395,6 +398,13 @@ const
     ndReturnOwnership: (code: "9912", msg: "'$1': [return: Borrowed] and [return: Owned]" &
                         " apply only to an 'extern' method returning a native class with no" &
                         " handle, and only one of them"),
+    ndPropertyValueNotVariable: (code: "1612", msg: "Cannot modify the return value of" &
+                        " '$1' because it is not a variable"),
+    ndNativeAccessorUnnamed: (code: "9914", msg: "'$1': the $2 names no C++ function; give" &
+                        " it in [Native(Get = ..., Set = ...)]"),
+    ndOnHandleMisplaced: (code: "9913", msg: "'$1': [OnHandle] applies only to an 'extern'" &
+                        " instance member of a [Native] class with a handle, on every" &
+                        " overload of its name"),
     ndUnsupported: (code: "9999", msg: "$1 is currently unsupported"),
   ]
 

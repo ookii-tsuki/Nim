@@ -1409,6 +1409,16 @@ proc libraryHas(ctx: NsCheckContext; recv: string; kind: NsTypeKind; name: strin
     if m.name == name: return true
   ctx.scope.extensions.hasKey(name)
 
+proc checkOnHandleThis(ctx: NsCheckContext; n: NsNode) =
+  ## `this.M()` on an `[OnHandle]` member needs the object's own handle, which only
+  ## `SelfHandle` gives (NS9903).
+  if n.body == nil or n.body.kind != nsnThis or not ctx.scope.classes.hasKey(ctx.clsName) or
+     not ctx.scope.onHandle(ctx.clsName, n.name):
+    return
+  let root = ctx.scope.handleRoot(ctx.clsName)
+  if root.len > 0 and ctx.scope.classes[root].native.selfHandle.len == 0:
+    nsError(ctx.config, n.info, ndNativeNoSelfHandle, ctx.clsName, root)
+
 proc warnEarlyNative(ctx: NsCheckContext; n: NsNode) =
   ## `this.M()` on a native member in a constructor of a class deriving a native
   ## one: C++ has constructed the base, but the engine may set the object up only
@@ -1615,6 +1625,7 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ctx.checkMemberAccess(n)
     ctx.checkMemberUse(n)
     ctx.warnEarlyNative(n)
+    ctx.checkOnHandleThis(n)
     kind = ctx.memberKind(n.body.typeName, n.name)
     if ctx.scope.findMemberInfo(n.body.typeName, n.name).isMethod:
       ## A method named without a call is a method group: a delegate value.
@@ -1779,6 +1790,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     elif rk == tkClass:
       ctx.checkMemberUse(callee)
       ctx.warnEarlyNative(callee)
+      ctx.checkOnHandleThis(callee)
       owner = callee.body.typeName
       kind = ctx.memberKind(owner, callee.name)
       let mt = ctx.memberTypeOf(callee.body, owner, callee.name)
@@ -3130,6 +3142,19 @@ proc checkAssignable(ctx: NsCheckContext; target: NsNode) =
       nsError(ctx.config, target.info, ndNotAssignable)
       return
     else: discard
+  if target != nil and target.kind == nsnMember and target.body != nil and
+     target.body.kind == nsnMember and target.body.body != nil:
+    ## `t.Position.x = v` with `Position` a property of a struct type: the getter
+    ## gives a copy, so the assignment would be lost (CS1612).
+    let inner = target.body
+    let io = (if inner.body.kind == nsnThis: ctx.clsName else: inner.body.typeName)
+    if io.len > 0 and ctx.scope.classes.hasKey(io):
+      let pm = ctx.scope.findMemberInfo(io, inner.name)
+      if pm.name.len > 0 and pm.isProperty and pm.typ != nil and pm.typ.kind == nsnTypeName:
+        let pt = canonicalTypeName(pm.typ.name)
+        if ctx.scope.classes.hasKey(pt) and ctx.scope.classes[pt].classKind == ckStruct:
+          nsError(ctx.config, inner.info, ndPropertyValueNotVariable, pm.owner & "." & pm.name)
+          return
   ctx.noteMutation(target)
   ## A `const` is never assigned (CS0131); a `readonly` field only by its own class's
   ## constructors -- the static one, for a static field (CS0191 / CS0198).
@@ -3619,6 +3644,15 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
        ctx.scope.classes.hasKey(canonicalTypeName(m.typ.name)) and
        ctx.scope.ownedFamily(canonicalTypeName(m.typ.name)):
       unsupported(m, "a [Forward] factory returning a native class with no handle")
+    if m.attributeNamed("OnHandle") != nil:
+      var ok = m.kind in {nsnMethodDecl, nsnPropertyDecl} and m.attrs.isExtern and
+               not m.attrs.isStatic and native and cls.classKind == ckClass and
+               ctx.scope.engineOwned(cls.name)
+      for o in cls.sons:
+        if o != m and o.kind == m.kind and o.name == m.name and
+           o.attributeNamed("OnHandle") == nil:
+          ok = false
+      if not ok: nsError(ctx.config, m.info, ndOnHandleMisplaced, named(m))
     if m.kind in {nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl}:
       for i, p in m.params:
         if p == nil or p.attributeNamed("Forward") == nil: continue
@@ -3643,8 +3677,24 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
         elif not m.attrs.isExtern or m.body != nil:
           nsError(ctx.config, m.info, ndNativeMemberNotExtern, named(m))
       of nsnPropertyDecl:
-        if not m.attrs.isExtern or not m.attrs.isStatic:
-          unsupported(m, "a '[Native]' property that is not 'static extern'")
+        ## Each accessor is the C++ its `[Native(Get = .., Set = ..)]` names; a
+        ## static one with neither is the type's static member.
+        let pn = nativeOf(m)
+        let getter = (if m.params.len > 0: m.params[0] else: nil)
+        let setter = (if m.params.len > 1: m.params[1] else: nil)
+        if not m.attrs.isExtern or (getter != nil and getter.kind != nsnEmpty) or
+           (setter != nil and setter.kind != nsnEmpty):
+          nsError(ctx.config, m.info, ndNativeMemberNotExtern, named(m))
+        elif not m.attrs.isStatic or pn.get.len > 0 or pn.set.len > 0:
+          if getter != nil and pn.get.len == 0:
+            nsError(ctx.config, m.info, ndNativeAccessorUnnamed, named(m), "getter")
+          if setter != nil and pn.set.len == 0:
+            nsError(ctx.config, m.info, ndNativeAccessorUnnamed, named(m), "setter")
+        let pt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
+                  else: "")
+        if getter != nil and (pt == "string" or
+           (ctx.scope.classes.hasKey(pt) and ctx.scope.ownedFamily(pt))):
+          unsupported(m, "a native property getter returning '" & pt & "'")
       else:
         unsupported(m, "this member in a '[Native]' type")
   elif based:

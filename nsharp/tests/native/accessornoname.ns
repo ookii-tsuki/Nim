@@ -1,0 +1,9 @@
+using NSharp.Interop;
+namespace Demo
+{
+    [Native("Game::Body", Header = "game.hpp")]
+    public class Body
+    {
+        public extern float Mass { get; set; }
+    }
+}

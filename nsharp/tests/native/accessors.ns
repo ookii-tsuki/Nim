@@ -1,0 +1,44 @@
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // A node that asks its own handle (`[OnHandle]` on `this`, through SelfHandle).
+    class Marker : Node
+    {
+        void OnBegin() => Console.Print($"marker: own slot {Slot()}, version {Version}");
+    }
+
+    // C++ getters and setters as properties, and members of the handle itself.
+    class Rig : Stage
+    {
+        public override void Begin()
+        {
+            Node n = Spawn<Marker>();
+            Motion m = n.Attach<Motion>();
+            m.Position = new Vec2(1, 2);
+            m.Spin = 2.5f;
+            m.Spin += 1;
+            m.Push(new Vec2(4, 0));
+            Vec2 p = m.Position;
+            p.x = 10;
+            m.Position = p;
+            Console.Print($"position {(int)m.Position.x},{(int)m.Position.y}, spin {(int)(m.Spin * 10)}, speed {(int)m.Speed}");
+            Console.Print($"handle: slot {n.Slot()}, version {n.Version}");
+
+            Director.TimeScale = 2;
+            Director.TimeScale *= 3;
+            Console.Print($"time scale {(int)Director.TimeScale}");
+
+            Timer t = Timers.Start(1);
+            Timers.Stop(t);
+            Console.Print($"stopped timer: null {t == null}, id {t.Id}, raw {t.RawId()}");
+        }
+    }
+
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start() => Director.Play<Rig>();
+    }
+}
