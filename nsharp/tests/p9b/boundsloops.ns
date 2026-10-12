@@ -1,0 +1,88 @@
+using System;
+
+namespace Demo
+{
+    // Counted loops over an array: where the counter provably stays inside it the
+    // element is read unchecked; wherever the array or the counter can change in
+    // the loop, the check stays and throws as C#'s does.
+    class Program
+    {
+        static int[] shared = new int[] { 1, 2, 3, 4 };
+
+        static void Shrink() { shared = new int[1]; }
+
+        static int ThroughRef(ref int[] a)
+        {
+            int s = 0;
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (i == 1) Shrink();          // `a` is `shared`: it shrinks here
+                s += a[i];
+            }
+            return s;
+        }
+
+        static int Try(string what, Func<int> f)
+        {
+            int r = -1;
+            try { r = f(); }
+            catch (IndexOutOfRangeException) { Console.WriteLine($"{what}: out of range"); }
+            return r;
+        }
+
+        static void Sums()
+        {
+            int[] a = { 1, 2, 3, 4, 5 };
+            int s = 0;
+            for (int i = 0; i < a.Length; i++) s += a[i];
+            for (int i = 0; i < a.Length; i++) a[i] *= 2;
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (i == 2) continue;
+                if (i == 4) break;
+                s += a[i];
+            }
+            for (int i = 0; i < a.Length; i++)
+                for (int j = i + 1; j < a.Length; j++)
+                    s += a[i] * a[j];
+            Console.WriteLine($"sums: {s}");
+
+            int[] e = { 5, 6, 7 };
+            int u = 0;
+            for (int i = 0; i < e.Length; i++) u += e[i] + e[e.Length - 1 - i];
+            Console.WriteLine($"mirror: {u}");
+        }
+
+        static void Main()
+        {
+            Sums();
+
+            Try("replaced", () =>
+            {
+                int[] b = { 1, 2, 3 };
+                int t = 0;
+                for (int i = 0; i < b.Length; i++) { if (i == 1) b = new int[1]; t += b[i]; }
+                return t;
+            });
+
+            int[] c = { 1, 2, 3 };
+            Action cut = () => c = new int[1];
+            Try("captured", () =>
+            {
+                int t = 0;
+                for (int i = 0; i < c.Length; i++) { if (i == 1) cut(); t += c[i]; }
+                return t;
+            });
+
+            Try("by ref", () => ThroughRef(ref shared));
+
+            Try("counter moved", () =>
+            {
+                int[] d = { 1, 2, 3 };
+                int t = 0;
+                for (int i = 0; i < d.Length; i++) { t += d[i]; i += 3; t += d[i]; }
+                return t;
+            });
+        }
+    }
+}

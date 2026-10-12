@@ -288,11 +288,12 @@ proc Count*[E, P](q: PriorityQueue[E, P]): int32 = int32(q.nodes.len)
 
 # --- List<T> ----------------------------------------------------------------
 
-proc `[]`*[T](l: List[T]; i: int): T {.inline.} =
+{.push boundChecks: off.}
+proc `[]`*[T](l: List[T]; i: int): lent T {.inline.} =
+  ## The element itself, lent: reading one counts no reference.
   checkIndex(i, l.data.len)
-  {.push boundChecks: off.}
-  result = l.data[i]  # checked above, with .NET's exception
-  {.pop.}
+  l.data[i]  # checked above, with .NET's exception
+{.pop.}
 proc `[]=`*[T](l: List[T]; i: int; x: sink T) {.inline.} =
   checkIndex(i, l.data.len)
   {.push boundChecks: off.}

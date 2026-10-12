@@ -207,6 +207,10 @@ proc headSpelling(n: PNode): string =
   of nkObjectTy:
     result = (if n.len > 1: headSpelling(n[1]) else: "")
   of nkOfInherit: result = (if n.len > 0: headSpelling(n[0]) else: "")
+  of nkCommand, nkCall:
+    ## `lent T` and `sink T` are the type `T`, passed or returned without a copy.
+    if n.len == 2 and declaredName(n[0]) in ["lent", "sink"]: result = headSpelling(n[1])
+    else: result = ""
   else: result = ""
 
 proc constraintSpelling(n: PNode): string =

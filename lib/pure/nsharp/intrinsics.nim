@@ -135,13 +135,14 @@ proc `>=`*[T: SomeNumber](a: Option[T], b: T): bool = a.isSome and a.get >= b
 proc nsNilFail*() {.noinline, noreturn.} =
   raise newException(NilAccessDefect, "attempt to access a nil address")
 
-proc nsCheckNil*[T: ref object](x: T): T {.inline.} =
+template nsCheckNil*(x: untyped): untyped =
   ## C# throws when a method is called on a nil receiver even if the body never
   ## touches `self`. A dereference check cannot see that, so the receiver is tested
-  ## at the call. `desugar.nim` emits this around a dot-called class receiver; `x`
-  ## is evaluated once, here, and lent back, so no reference is counted.
-  if x == nil: nsNilFail()
-  x
+  ## at the call. `desugar.nim` emits this around a dot-called class receiver that
+  ## is not a plain variable (`list[i].M()`); `x` is evaluated once, into a
+  ## variable that owns nothing, so no reference is counted when `x` lends it (a
+  ## temporary `x` makes is destroyed with the statement, as it would be anyway).
+  (let nsR {.cursor.} = x; (if nsR == nil: nsNilFail()); nsR)
 
 template nsCheckNilVar*(x: untyped): untyped =
   ## `nsCheckNil` for a receiver that is a variable: read twice rather than
@@ -627,6 +628,18 @@ proc len*[T](a: NsArray[T]): int {.inline.} =
   nsArrCheck(a)
   a.nsData.len
 proc high*[T](a: NsArray[T]): int {.inline.} = a.len - 1
+
+template nsForBound*(i, a: untyped; cond: bool): bool =
+  ## A counted loop's condition (`i < a.Length`), marked for the lowering's own
+  ## bounds-check removal; a marker it leaves is the condition.
+  cond
+
+{.push boundChecks: off.}
+proc nsAtUnchecked*[T](a: NsArray[T]; i: SomeInteger): var T {.inline.} =
+  ## `a[i]` in a loop that keeps `0 <= i < a.Length` and the array: neither the
+  ## null test (the condition made it) nor the bounds check.
+  a.nsData[int(i)]
+{.pop.}
 
 iterator items*[T](a: NsArray[T]): T =
   nsArrCheck(a)

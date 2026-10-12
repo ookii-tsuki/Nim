@@ -656,7 +656,8 @@ nkStmtList
                 nkIdent 'Length'
             nkStmtList
               nkAsgn
-                nkBracketExpr
+                nkCall
+                  nkIdent 'nsAtUnchecked'
                   nkIdent 'dst'
                   nkIdent 'i'
                 nkInfix

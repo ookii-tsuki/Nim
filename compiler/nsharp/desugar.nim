@@ -59,6 +59,8 @@ type
       ## the handle locals in scope whose object pointer is kept (`nsP_x`)
     noCache: bool
       ## lowering a statement that may move engine objects: handles resolve afresh
+    nonneg: seq[string]
+      ## the counters of the `for` loops being lowered that are never negative
   NsHoist = ref object
     names: seq[tuple[name, cls: string]]
     moves: Table[string, bool]   ## memo: whether an N# member may move engine objects
@@ -548,6 +550,7 @@ proc typeRef(l: Lowerer; t: NsNode): PNode =
 proc checkNil(l: Lowerer; recvNs: NsNode; recv: PNode; info: TLineInfo): PNode
 proc recvOf(l: Lowerer; n: NsNode): PNode
 proc isHoisted(l: Lowerer; name: string): bool
+proc assignsLocal(n: NsNode; name: string): bool
 proc cacheResets(l: Lowerer; info: TLineInfo): seq[PNode]
 proc afterThrow(l: Lowerer; body: PNode): PNode
 proc isManagedNativeField(l: Lowerer; cls, field: string): bool
@@ -1899,17 +1902,80 @@ proc labelForContinues(n: NsNode; label: string; found: var bool) =
                   nsnUsingStmt, nsnLock}:
       labelForContinues(n.body, label, found)
 
+proc mutatesLocal(n: NsNode; name: string): bool =
+  ## Whether a statement assigns a local, steps it, or passes it as `ref`/`out`.
+  if n == nil or n.kind in {nsnLambda, nsnLocalFunc}: return false
+  if n.kind == nsnIncDec and n.body != nil and n.body.kind == nsnIdent and
+     n.body.name == name:
+    return true
+  if assignsLocal(n, name): return true
+  if mutatesLocal(n.body, name): return true
+  for x in n.sons:
+    if mutatesLocal(x, name): return true
+  false
+
+proc counterOf(l: Lowerer; n: NsNode): string =
+  ## A `for` loop's counter when it is never negative: an `int` local starting at
+  ## a non-negative constant (or a counter of an enclosing such loop, plus one),
+  ## stepped only by `++` in the header. "" otherwise.
+  let header = n.body
+  if header == nil or header.sons.len < 3: return ""
+  let init = header.sons[0]
+  var step = header.sons[2]
+  if step != nil and step.kind == nsnExprStmt: step = step.body
+  if init == nil or init.kind != nsnLocalDecl or init.body == nil: return ""
+  if step == nil or step.kind != nsnIncDec or step.name != "inc" or step.body == nil or
+     step.body.kind != nsnIdent or step.body.name != init.name:
+    return ""
+  if init.typ == nil or init.typ.kind != nsnTypeName or
+     canonicalTypeName(init.typ.name) notin ["int", "Int32"]:
+    return ""
+  proc nonneg(l: Lowerer; e: NsNode): bool =
+    if e == nil: return false
+    case e.kind
+    of nsnIntLit: e.intVal >= 0
+    of nsnIdent: e.name in l.nonneg
+    of nsnBinary: e.name == "+" and e.sons.len == 2 and l.nonneg(e.sons[0]) and
+                  l.nonneg(e.sons[1])
+    else: false
+  if not l.nonneg(init.body): return ""
+  let c = init.name
+  if mutatesLocal(header.sons[1], c): return ""
+  for x in n.sons:
+    if mutatesLocal(x, c): return ""
+  c
+
 proc forToNim(l: Lowerer; n: NsNode): PNode =
   ## `for (init; cond; step) body` -> `block: (init; while cond: (body; step))`,
   ## since Nim has no C-style `for`.
   let header = n.body
+  var l = l
+  let counter = l.counterOf(n)
+  var bound = ""   ## the array `counter < a.Length` keeps the counter inside
+  if counter.len > 0:
+    l.nonneg.add counter
+    let cond = header.sons[1]
+    if cond != nil and cond.kind == nsnBinary and cond.name == "<" and cond.sons.len == 2 and
+       cond.sons[0].kind == nsnIdent and cond.sons[0].name == counter and
+       cond.sons[1].kind == nsnMember and cond.sons[1].name == "Length" and
+       cond.sons[1].body != nil and cond.sons[1].body.kind == nsnIdent and
+       cond.sons[1].body.typeName.endsWith("[]"):
+      let a = cond.sons[1].body.name
+      var changed = false
+      for x in n.sons: changed = changed or mutatesLocal(x, a)
+      if not changed: bound = a
   let blk = newNodeI(nkBlockStmt, n.info)
   blk.add empty(n.info)
   let sl = newNodeI(nkStmtList, n.info)
   if header != nil and header.sons.len > 0 and header.sons[0] != nil:
     sl.add l.stmt(header.sons[0])
   let w = newNodeI(nkWhileStmt, n.info)
-  if header != nil and header.sons.len > 1 and header.sons[1] != nil:
+  if bound.len > 0:
+    ## Marked for `elideBounds`, which drops the checks on `a[counter]` in the body
+    ## once it has seen that neither is a closure's or a `var` parameter.
+    w.add newTree(nkCall, n.info, l.id("nsForBound", n.info), l.id(counter, n.info),
+                  l.id(bound, n.info), l.expr(header.sons[1]))
+  elif header != nil and header.sons.len > 1 and header.sons[1] != nil:
     w.add l.expr(header.sons[1])
   else:
     w.add l.id("true", n.info)
@@ -5395,6 +5461,77 @@ proc elideIn(n: PNode; facts: var HashSet[string]; tracked: HashSet[string]): PN
   else:
     for i in 0 ..< n.safeLen: n[i] = elideIn(n[i], facts, tracked)
 
+# --- bounds checks in counted loops -------------------------------------------
+#
+# `for (int i = 0; i < a.Length; i++)` over an array the body never replaces, with a
+# counter the body never changes, keeps `i` inside the array: `forToNim` marks the
+# loop `while nsForBound(i, a, cond)`, and here `a[i]` in its body reads the element
+# unchecked -- when `i` and `a` are the routine's own, no closure captures them, and
+# `a` is not a `var` parameter, which something else could replace. The marker
+# itself is dropped either way.
+
+proc nsUncheckedIn(n: PNode; a, i: string; cache: IdentCache): PNode =
+  result = n
+  if n == nil: return
+  case n.kind
+  of nkProcDef, nkMethodDef, nkFuncDef, nkIteratorDef, nkConverterDef, nkLambda, nkDo,
+     nkTemplateDef, nkMacroDef:
+    return
+  of nkBracketExpr:
+    if n.len == 2 and n[0].kind == nkIdent and n[0].ident.s == a and
+       n[1].kind == nkIdent and n[1].ident.s == i:
+      return newTree(nkCall, n.info, newIdentNode(cache.getIdent("nsAtUnchecked"), n.info),
+                     n[0], n[1])
+  else: discard
+  for k in 0 ..< n.safeLen: n[k] = nsUncheckedIn(n[k], a, i, cache)
+
+proc boundsIn(n: PNode; owned: HashSet[string]; cache: IdentCache)
+
+proc boundsRoutine(n: PNode; cache: IdentCache) =
+  ## A routine: its own locals and parameters, less those a closure captures and
+  ## its `var` parameters.
+  if n.len <= 6 or n[6].kind == nkEmpty: return
+  var owned = initHashSet[string]()
+  nsLocalsIn(n[3], owned)
+  nsLocalsIn(n[6], owned)
+  var captured = initHashSet[string]()
+  nsCapturedIn(n[6], false, captured)
+  for c in captured: owned.excl c
+  if n[3].kind == nkFormalParams:
+    for k in 1 ..< n[3].len:
+      let d = n[3][k]
+      if d.kind == nkIdentDefs and d.len >= 2 and d[^2].kind == nkVarTy:
+        for j in 0 ..< d.len - 2: owned.excl nsIdentName(d[j])
+  boundsIn(n[6], owned, cache)
+
+proc boundsIn(n: PNode; owned: HashSet[string]; cache: IdentCache) =
+  if n == nil: return
+  case n.kind
+  of nkProcDef, nkMethodDef, nkFuncDef, nkIteratorDef, nkConverterDef, nkLambda, nkDo:
+    boundsRoutine(n, cache)
+    return
+  of nkTemplateDef, nkMacroDef: return
+  of nkWhileStmt:
+    let c = n[0]
+    if c.kind == nkCall and c.len == 4 and c[0].kind == nkIdent and
+       c[0].ident.s == "nsForBound":
+      let i = c[1].ident.s
+      let a = c[2].ident.s
+      n[0] = c[3]
+      if i in owned and a in owned:
+        n[1] = nsUncheckedIn(n[1], a, i, cache)
+  else: discard
+  for k in 0 ..< n.safeLen: boundsIn(n[k], owned, cache)
+
+proc elideBounds(n: PNode; cache: IdentCache) =
+  ## Every routine of the module.
+  if n == nil: return
+  case n.kind
+  of nkProcDef, nkMethodDef, nkFuncDef, nkIteratorDef, nkConverterDef:
+    boundsRoutine(n, cache)
+  else:
+    for i in 0 ..< n.safeLen: elideBounds(n[i], cache)
+
 proc elideNilChecks(n: PNode) =
   ## Every routine of the module.
   if n == nil: return
@@ -5489,6 +5626,7 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   if l.entryPoint != nil:
     result.add makeMainCall(l, l.entryPoint)
   if l.nilChecks: elideNilChecks(result)
+  elideBounds(result, l.cache)
 
 proc splitModuleOutput*(stmts: PNode): tuple[decls, impls: PNode] =
   ## Splits a lowered module into type declarations and implementations, which
