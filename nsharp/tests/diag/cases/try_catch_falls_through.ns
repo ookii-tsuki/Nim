@@ -1,0 +1,9 @@
+class P
+{
+    static int F(int x)
+    {
+        try { return 10 / x; }
+        catch (System.DivideByZeroException) { System.Console.WriteLine("zero"); }
+    }
+    static void Main() { System.Console.WriteLine(F(2)); }
+}

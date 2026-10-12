@@ -1197,11 +1197,11 @@ proc stmtEndReachable(n: NsNode): bool =
       if sec.body != nil and breaksOut(sec.body): return true
     not hasDefault
   of nsnTry:
+    ## The protected block is the node's body; its sons are the clauses.
     var fin: NsNode = nil
-    var any = false
-    for i, x in n.sons:
+    var any = stmtEndReachable(n.body)
+    for x in n.sons:
       if x.kind == nsnFinally: fin = x
-      elif i == 0: any = any or stmtEndReachable(x)
       elif x.kind == nsnCatch: any = any or stmtEndReachable(x.body)
     if fin != nil and not stmtEndReachable(fin.body): return false
     any

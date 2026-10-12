@@ -1,0 +1,52 @@
+using System;
+
+namespace Demo
+{
+    // A method whose every path returns through a `try`: from the block, from each
+    // `catch`, or from a `finally`-guarded block.
+    class Program
+    {
+        static int Divide(int a, int b)
+        {
+            try { return a / b; }
+            catch (DivideByZeroException) { return -1; }
+        }
+
+        static int Digit(char c)
+        {
+            if (c < '0' || c > '9') throw new FormatException();
+            return c - '0';
+        }
+
+        static string ReadNumber(string s)
+        {
+            try
+            {
+                if (s.Length > 9) throw new OverflowException();
+                int v = 0;
+                foreach (char c in s) v = v * 10 + Digit(c);
+                return v.ToString();
+            }
+            catch (FormatException) { return "bad"; }
+            catch (OverflowException) { return "big"; }
+            finally { Console.WriteLine($"read {s}"); }
+        }
+
+        static int Guarded(int x)
+        {
+            try { if (x > 0) return x; throw new InvalidOperationException(); }
+            catch (InvalidOperationException) { return 0; }
+        }
+
+        static void Main()
+        {
+            Console.WriteLine(Divide(10, 2));
+            Console.WriteLine(Divide(1, 0));
+            Console.WriteLine(ReadNumber("42"));
+            Console.WriteLine(ReadNumber("x"));
+            Console.WriteLine(ReadNumber("99999999999"));
+            Console.WriteLine(Guarded(5));
+            Console.WriteLine(Guarded(-5));
+        }
+    }
+}

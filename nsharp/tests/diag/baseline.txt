@@ -130,6 +130,7 @@ switch_dup_case CS0152 match
 switch_fallthrough CS0163 match
 ternary_mismatch CS0173 match
 this_in_static CS0026 match
+try_catch_falls_through CS0161 match
 tuple_wrong CS0029 match
 type_as_value CS0119 match
 unassigned_local CS0165 match
