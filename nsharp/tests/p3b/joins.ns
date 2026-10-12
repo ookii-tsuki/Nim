@@ -1,0 +1,37 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    // string.Join over every kind of collection: a list of strings, an array or a
+    // list of numbers (each element's ToString), a set, a dictionary's keys and
+    // values, and a char separator.
+    class Point
+    {
+        public int X, Y;
+        public Point(int x, int y) { X = x; Y = y; }
+        public override string ToString() => $"({X}, {Y})";
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var names = new List<string> { "ann", "bob", "cy" };
+            Console.WriteLine(string.Join(", ", names));
+            Console.WriteLine(string.Join(", ", new[] { "x", "y" }));
+            Console.WriteLine(string.Join("-", new[] { 1, 2, 3 }));
+            Console.WriteLine(string.Join("+", new List<int> { 4, 5, 6 }));
+            Console.WriteLine(string.Join(' ', names));
+            Console.WriteLine(string.Join('|', new[] { 7, 8 }));
+            Console.WriteLine(string.Join(", ", new HashSet<string> { "a", "b", "a", "c" }));
+            var ages = new Dictionary<string, int> { ["ann"] = 31, ["bob"] = 27 };
+            Console.WriteLine(string.Join(" & ", ages.Keys));
+            Console.WriteLine(string.Join(' ', ages.Values));
+            Console.WriteLine(string.Join("; ", new List<Point> { new Point(1, 2), new Point(3, 4) }));
+            Console.WriteLine("[" + string.Join(",", new List<int>()) + "]");
+            Console.WriteLine(string.Join(", ", new Queue<string>(names)));
+            Console.WriteLine(String.Join("/", names));
+        }
+    }
+}

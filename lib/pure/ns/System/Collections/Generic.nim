@@ -70,6 +70,9 @@ from ../../../nsharp/intrinsics import Type, nsTypeNamed, nsTypeOf, FullName, ns
   NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
 export Collections
 
+# `{.nsStatic: "T".}`: a proc C# reaches through the type `T` (see `System`).
+template nsStatic(typ: string) {.pragma.}
+
 type
   List*[T] = ref object
     ## C#'s `List<T>`: a growable array.
@@ -840,6 +843,35 @@ iterator items*[K, V](c: ValueCollection[K, V]): V =
     for kv in c.sorted: yield kv.Value
   else:
     for kv in c.list: yield kv.Value
+
+# --- String.Join over collections --------------------------------------------
+#
+# `string.Join(", ", xs)` over any collection (C#'s `IEnumerable<string>` and
+# `Join<T>(string, IEnumerable<T>)`), a dictionary's `Keys` or `Values` included:
+# each element as string concatenation renders it. The `string[]` overloads are
+# `System`'s.
+
+template joinAll(separator, xs: untyped): string =
+  var r = ""
+  var first = true
+  for x in xs:
+    if first: first = false
+    else: r.add separator
+    r.add $x
+  r
+
+proc Join*[T](separator: string; values: Enumerable[T]): string {.nsStatic: "String".} =
+  joinAll(separator, snapshot(values))
+proc Join*[T](separator: char; values: Enumerable[T]): string {.nsStatic: "String".} =
+  joinAll(separator, snapshot(values))
+proc Join*[K, V](separator: string; values: KeyCollection[K, V]): string {.nsStatic: "String".} =
+  joinAll(separator, values)
+proc Join*[K, V](separator: string; values: ValueCollection[K, V]): string {.nsStatic: "String".} =
+  joinAll(separator, values)
+proc Join*[K, V](separator: char; values: KeyCollection[K, V]): string {.nsStatic: "String".} =
+  joinAll(separator, values)
+proc Join*[K, V](separator: char; values: ValueCollection[K, V]): string {.nsStatic: "String".} =
+  joinAll(separator, values)
 
 proc CopyTo*[K, V](c: KeyCollection[K, V]; arr: NsArray[K]; index: int) =
   var i = index

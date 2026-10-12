@@ -1178,6 +1178,43 @@ nkStmtList
                     nkDotExpr
                       nkIdent 'k'
                       nkIdent 'ToString'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'odd'
+          nkIdent 'int32'
+          nkIntLit 0
+      nkForStmt
+        nkIdent 'v'
+        nkDotExpr
+          nkIdent 'big'
+          nkIdent 'Values'
+        nkStmtList
+          nkIfStmt
+            nkElifBranch
+              nkInfix
+                nkIdent '=='
+                nkCall
+                  nkIdent 'nsMod'
+                  nkIdent 'v'
+                  nkIntLit 2
+                nkIntLit 1
+              nkStmtList
+                nkAsgn
+                  nkIdent 'odd'
+                  nkInfix
+                    nkIdent '+'
+                    nkIdent 'odd'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'v'
+                        nkIdent 'CompareTo'
+                      nkIntLit 0
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkStrLit "odd values: "
+          nkIdent 'odd'
       nkCall
         nkIdent 'WriteLine'
         nkInfix

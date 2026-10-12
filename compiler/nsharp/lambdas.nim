@@ -246,6 +246,45 @@ proc libResultType*(surface: NsBclSurface; recv: NsNode; name: string;
     return nil
   nil
 
+proc libGenericResult*(surface: NsBclSurface; recv: NsNode; name: string;
+                       nargs: int): NsNode =
+  ## The result type of a library member that is itself a generic type
+  ## (`d.Keys` is a `KeyCollection<K, V>`, `xs.Where(f)` an `IEnumerable<T>`), its
+  ## parameters bound by the receiver's type arguments; nil when any stays open.
+  if recv == nil or recv.rtype == nil or recv.rtype.kind != nsnTypeName: return nil
+  let rt = recv.rtype
+  let nimName = surface.nimSpellingOf(rt.name)
+  if nimName.len == 0: return nil
+  for m in surface.members.getOrDefault(nimName):
+    if m.name != name or m.paramTypes.len != nargs + 1 or m.retType == nil: continue
+    if m.retType.kind != nkBracketExpr: continue
+    var nb = newSeq[NsNode](m.genParams.len)
+    unifyNim(m.paramTypes[0], rt, m.genParams, nb)
+    var ok = true
+    for b in nb:
+      if b == nil: ok = false
+    if not ok: continue
+    return nimToCs(m.retType, m.genParams, nb, recv)
+  nil
+
+proc libIterElement*(surface: NsBclSurface; coll: NsNode): NsNode =
+  ## What `foreach` yields over a library collection: the result of the library's
+  ## `items` iterator for it, bound by the collection's type arguments.
+  if coll == nil or coll.rtype == nil or coll.rtype.kind != nsnTypeName: return nil
+  let rt = coll.rtype
+  let nimName = surface.nimSpellingOf(rt.name)
+  if nimName.len == 0: return nil
+  for m in surface.members.getOrDefault(nimName):
+    if m.name != "items" or m.paramTypes.len != 1 or m.retType == nil: continue
+    var nb = newSeq[NsNode](m.genParams.len)
+    unifyNim(m.paramTypes[0], rt, m.genParams, nb)
+    var ok = true
+    for b in nb:
+      if b == nil: ok = false
+    if not ok: continue
+    return nimToCs(m.retType, m.genParams, nb, coll)
+  nil
+
 proc libParams*(m: NsBclMember; recv: NsNode; staticCall: bool; info: NsNode):
     tuple[params: seq[NsNode], variadic: bool] =
   ## The C# parameter types of a library overload after its receiver, its generic

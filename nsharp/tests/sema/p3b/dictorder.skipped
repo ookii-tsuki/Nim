@@ -1,5 +1,6 @@
 Dictionary.GetValueOrDefault = type-parameter
 Dictionary.Keys = result:other
+Dictionary.Values = result:other
 KeyValuePair.Key = type-parameter
 KeyValuePair.Value = type-parameter
 List.ToArray = type-parameter

@@ -1700,6 +1700,8 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ## Not a member this module declares: the prelude may declare one
       ## (`Equals`, `ToString`, `q.Count`), or nothing does.
       kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
+      ## A result of a generic library type (`d.Keys`), bound by the receiver.
+      if n.rtype == nil: n.rtype = libGenericResult(ctx.surface, n.body, n.name, 0)
     if kind != tkDelegate or
        not ctx.scope.findMemberInfo(n.body.typeName, n.name).isMethod:
       ## A member of a generic class, seen through a receiver whose type arguments
@@ -1727,6 +1729,7 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of tkSequence, tkString, tkException, tkNullable:
     if rk in {tkString, tkSequence}: ctx.checkMemberUse(n)
     kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
+    if n.rtype == nil: n.rtype = libGenericResult(ctx.surface, n.body, n.name, 0)
   of tkType:
     ## A namespace's member is a type (`System.Console`); a declared type's member
     ## is one of its statics, which the library answers for (`string.Empty`,
@@ -1869,6 +1872,9 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       if kind == tkUnknown:
         ## Likewise, a member of a class the prelude declares (`Queue.Dequeue`).
         kind = ctx.memberKindOfSurface(rk, owner, callee.name, tn)
+      if n.rtype == nil:
+        ## A result of a generic library type (`xs.Where(f)`), bound by the receiver.
+        n.rtype = libGenericResult(ctx.surface, callee.body, callee.name, n.sons.len)
     if callee.typeArgs.len > 0 and ctx.scope.classes.hasKey(owner):
       ## `M<Transform>()`: the written type arguments give the result its type.
       let mi = ctx.scope.findMemberInfo(owner, callee.name)
@@ -3055,12 +3061,14 @@ proc enumeratedElement(ctx: NsCheckContext; n: NsNode): NsNode =
   result = iteratorElement(coll.rtype)
   if result != nil: return
   if coll.rtype != nil and coll.rtype.kind == nsnTypeName and
-     coll.rtype.sons.len == 1 and
-     not ctx.scope.classes.hasKey(canonicalTypeName(coll.rtype.name)) and
-     ctx.surface.member(coll.typeName, coll.typeKind, "items").name.len > 0:
-    ## A library collection of one element type (`List<T>`, `Queue<T>`), which the
-    ## library walks with `items`, yields that type.
-    return coll.rtype.sons[0]
+     not ctx.scope.classes.hasKey(canonicalTypeName(coll.rtype.name)):
+    ## A library collection: what the library's `items` for it yields, its type
+    ## parameters bound by the collection's (`d.Keys` yields the dictionary's `K`).
+    let e = libIterElement(ctx.surface, coll)
+    if e != nil: return e
+    if coll.rtype.sons.len == 1 and
+       ctx.surface.member(coll.typeName, coll.typeKind, "items").name.len > 0:
+      return coll.rtype.sons[0]
   if coll.typeKind != tkClass or not ctx.scope.classes.hasKey(coll.typeName): return
   let ge = ctx.scope.findMemberInfo(coll.typeName, "GetEnumerator")
   if ge.name.len == 0 or not ge.isMethod: return

@@ -36,6 +36,8 @@ type
     isVirtual*: bool      ## declared as a Nim `method`: a C# `virtual` member
     genParams*: seq[string] ## the declaration's generic parameters
     paramTypes*: seq[PNode] ## every parameter's type, the receiver's first
+    qualifier*: string    ## the `{.nsStatic: "T".}` this declaration carries, if any
+    retType*: PNode       ## the declared result type, as written (nil for `void`)
 
   NsStaticDecl* = tuple[typ, member, module: string]
     ## A `{.nsStatic: "T".}` pragma: the qualifier, the proc, and its module.
@@ -453,16 +455,23 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
                            ret: ret, isStatic: isStatic,
                            retIsParam: ret.len > 0 and constraints.hasKey(ret),
                            isVirtual: n.kind == nkMethodDef,
-                           genParams: gps, paramTypes: ptypes)
+                           genParams: gps, paramTypes: ptypes,
+                           qualifier: nsStaticOf(n),
+                           retType: (if fp[0].kind == nkEmpty: nil else: fp[0]))
   let qualifier = nsStaticOf(n)
-  if qualifier.len > 0:
+  if qualifier.len > 0 and (typ: qualifier, member: name, module: module) notin s.staticDecls:
     ## Queued for `applyStatics`, which runs once every file has been read.
     s.staticDecls.add (typ: qualifier, member: name, module: module)
 
 proc sameDecl(a, b: NsBclMember): bool =
-  ## The same declaration filed under different receiver keys.
-  a.name == b.name and a.path == b.path and a.recv == b.recv and
-    a.ret == b.ret and a.isStatic == b.isStatic
+  ## The same declaration filed under different receiver keys: its parameters are
+  ## the very nodes, where an overload's differ (`Join(string, xs)`, `Join(char, xs)`).
+  if a.name != b.name or a.path != b.path or a.ret != b.ret or
+     a.paramTypes.len != b.paramTypes.len:
+    return false
+  for i in 0 ..< a.paramTypes.len:
+    if a.paramTypes[i] != b.paramTypes[i]: return false
+  true
 
 proc applyStatics(s: var NsBclSurface; config: ConfigRef) =
   ## Re-files each `{.nsStatic: "T".}` member under the type its qualifier names and
@@ -486,9 +495,13 @@ proc applyStatics(s: var NsBclSurface; config: ConfigRef) =
         for c in cands:
           if sameDecl(c, m): dup = true
         if not dup: cands.add m
-    ## One candidate: the name is the identity. Several: the receiver's kind decides.
+    ## The declarations that carry this very pragma; for an older prelude entry
+    ## without one, the receiver's kind decides between several.
     var chosen: seq[NsBclMember] = @[]
-    if cands.len == 1: chosen = cands
+    for c in cands:
+      if c.qualifier == e.typ: chosen.add c
+    if chosen.len > 0: discard
+    elif cands.len == 1: chosen = cands
     else:
       for c in cands:
         if s.kindOfSpelling(c.recv) == targetKind: chosen.add c

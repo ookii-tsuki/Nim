@@ -16,4 +16,5 @@ An item with the same key has already been added. Key: the
 False True
 chars (4): m=1, i=4, s=4, p=2
 suits (3): Spades=4, Diamonds=2, Hearts=3
+odd values: 53
 reused: 233 1 2 232 4 5 231 7 8 230 10 11 count 106

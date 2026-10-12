@@ -1,0 +1,28 @@
+using System
+using System.Collections.Generic
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
