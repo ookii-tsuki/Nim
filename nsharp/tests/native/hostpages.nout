@@ -1,0 +1,5 @@
+checksum: 104445
+regions from the host during start-up: yes
+regions from the host: yes
+all page-aligned: yes
+peak above 1 MB: yes

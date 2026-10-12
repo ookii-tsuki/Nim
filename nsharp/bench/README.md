@@ -16,3 +16,12 @@ both print the same thing, and reports the best of three wall-clock times.
 | `dict` | `Dictionary<int, int>` and `Dictionary<string, int>` |
 | `shapes` | interface and virtual calls |
 | `strings` | interpolation, `Join`, `Split`, concatenation |
+
+`native/run.sh` times N# programs driven by C++ over the test engine against
+the same work written in plain C++.
+
+`hostpages.c` is a host for `-d:nimAllocPagesViaHost`, where Nim's allocator
+takes its memory from the program embedding it instead of from the OS:
+
+    NS_BENCH_FLAGS="-d:release -d:nimAllocPagesViaHost --compile:$PWD/hostpages.c" \
+      NIM=../../bin/nim1 ./run_bench.sh bintrees

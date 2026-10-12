@@ -1,0 +1,36 @@
+using System.Collections.Generic;
+using NSharp.Interop;
+
+namespace Demo
+{
+    // Built with -d:nimAllocPagesViaHost (hostpages.flags): every object, string
+    // and list below lives in regions hostpages.cpp hands out.
+    class Leaf
+    {
+        public int Value;
+        public Leaf Next;
+    }
+
+    static class Entry
+    {
+        [Export("nsChurn")]
+        public static long Churn(int rounds)
+        {
+            long sum = 0;
+            for (int r = 0; r < rounds; r++)
+            {
+                var keep = new List<Leaf>();
+                Leaf chain = null;
+                for (int i = 0; i < 20000; i++)
+                {
+                    chain = new Leaf { Value = i, Next = i % 50 == 0 ? null : chain };
+                    if (i % 50 == 49) keep.Add(chain);
+                }
+                var text = "";
+                for (int i = 0; i < 200; i++) text += i.ToString();
+                sum += keep.Count + text.Length + chain.Value;
+            }
+            return sum;
+        }
+    }
+}

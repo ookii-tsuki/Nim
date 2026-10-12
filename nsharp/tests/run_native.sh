@@ -33,10 +33,13 @@ for ns in "$dir"/*.ns; do
   [ -f "$cpp" ] && [ -f "$exp" ] || continue
   count=$((count + 1))
   bin="/tmp/ns_native_$$"
+  ## `<name>.flags`, when present, replaces the default allocator flag.
+  flags="-d:useMalloc"
+  [ -f "${ns%.ns}.flags" ] && flags="$(cat "${ns%.ns}.flags")"
   ## AddressSanitizer (over malloc, so it sees Nim's heap too) turns a reference
   ## count C++ got wrong -- a field freed twice, or never -- into a failure.
   if ! "$NIM" cpp --noMain --exceptions:goto --hints:off --warnings:off --lib:"$lib" \
-        -d:useMalloc --passC:"-std=c++20 -I$dir/toybox $asan" --passL:"$asan" \
+        $flags --passC:"-std=c++20 -I$dir/toybox $asan" --passL:"$asan" \
         --compile:"$cpp" -o:"$bin" "$ns" \
         > /tmp/ns_native_compile.log 2>&1; then
     echo "COMPILE FAIL: ${ns#$root/}"

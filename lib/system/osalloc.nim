@@ -30,7 +30,41 @@ const doNotUnmap = not (defined(amd64) or defined(i386)) or
                    defined(windows) or defined(nimAllocNoUnmap)
 
 
-when defined(nimAllocPagesViaMalloc):
+when defined(nimAllocPagesViaHost):
+  # The program embedding Nim provides the memory: Nim's allocator asks it for
+  # page-aligned regions and gives each back whole, with the size it was given.
+  # The host defines (C linkage):
+  #   void* nimHostAllocPages(size_t size, size_t alignment);  // NULL if out of memory
+  #   void  nimHostDeallocPages(void* p, size_t size);
+  # They are called from every thread that allocates, and from before `NimMain`
+  # finishes.
+  when not defined(gcArc) and not defined(gcOrc) and not defined(gcAtomicArc) and not defined(gcYrc):
+    {.error: "-d:nimAllocPagesViaHost is only supported with --mm:arc or --mm:atomicArc or --mm:orc or --mm:yrc".}
+
+  proc nimHostAllocPages(size, alignment: csize_t): pointer {.importc, cdecl, nodecl.}
+  proc nimHostDeallocPages(p: pointer; size: csize_t) {.importc, cdecl, nodecl.}
+  {.emit: """/*TYPESECTION*/
+#ifdef __cplusplus
+extern "C" {
+#endif
+void* nimHostAllocPages(size_t size, size_t alignment);
+void nimHostDeallocPages(void* p, size_t size);
+#ifdef __cplusplus
+}
+#endif
+""".}
+
+  proc osTryAllocPages(size: int): pointer {.inline.} =
+    result = nimHostAllocPages(csize_t size, csize_t PageSize)
+
+  proc osAllocPages(size: int): pointer {.inline.} =
+    result = osTryAllocPages(size)
+    if result == nil: raiseOutOfMem()
+
+  proc osDeallocPages(p: pointer, size: int) {.inline.} =
+    nimHostDeallocPages(p, csize_t size)
+
+elif defined(nimAllocPagesViaMalloc):
   when not defined(gcArc) and not defined(gcOrc) and not defined(gcAtomicArc) and not defined(gcYrc):
     {.error: "-d:nimAllocPagesViaMalloc is only supported with --mm:arc or --mm:atomicArc or --mm:orc or --mm:yrc".}
 
