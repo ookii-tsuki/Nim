@@ -1,0 +1,14 @@
+removed 3, 6; added 30 31 32 (9): 1 2 31 4 5 30 7 8 32
+except 7 2 5; added 70 71 (7): 1 71 3 4 70 6 8
+intersect; added 10 11 (5): 2 4 11 10 8
+intersect with nothing; added 99 (1): 99
+symmetric except (list); added 40 (9): 1 3 40 5 6 7 8 20 21
+symmetric except (set); added 40 (9): 1 20 3 21 5 6 7 8 40
+2
+remove multiples of 3; added 50 51 (8): 1 2 51 4 5 50 7 8
+copy of a set with gaps; added 60 (7): 1 3 4 60 6 7 8
+copy of a mostly empty set; added 1000 (6): 95 96 97 98 99 1000
+except itself; added 5 (1): 5
+union, clear, add 7 (1): 7
+pear,lime,kiwi,plum
+True False

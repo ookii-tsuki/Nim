@@ -5,7 +5,7 @@
 # Every collection is a class, as it is in .NET: a `ref object` that owns its
 # storage, so `var b = a;` aliases the same list and `null` is a valid value. This
 # is the Nim a user's own `class List<T>` would lower to, written ahead of time; the
-# containers (`seq`, `NsHashMap`, `OrderedSet`, `Deque`) are private fields,
+# containers (`seq`, `NsHashMap`, `Deque`) are private fields,
 # never the type itself. `KeyValuePair<K,V>` is the one struct.
 #
 # C# names are kept at the source level (SPEC section 15, "Naming"): members are
@@ -63,7 +63,8 @@
 import std/[sets, deques, algorithm, sequtils]
 import ../../System
 import ../Collections
-from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remove
+from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remove,
+  copyOfSet
 from ../../../nsharp/hashmap as nshash import nil
 from ../../../nsharp/intrinsics import Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName,
   NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
@@ -84,8 +85,9 @@ type
     data: NsHashMap[K, V]
     version: int
   HashSet*[T] = ref object
-    ## C#'s `HashSet<T>`, insertion-ordered: .NET's order while nothing is removed.
-    data: OrderedSet[T]
+    ## C#'s `HashSet<T>`, over the same hash table as `Dictionary`: it enumerates
+    ## in .NET's order, a removed element's place reused by the next added.
+    data: NsHashMap[T, bool]
     version: int
   SortedSet*[T] = ref object
     ## C#'s `SortedSet<T>`: a sorted array, searched by bisection.
@@ -221,9 +223,9 @@ proc newDictionary*[K, V](dictionary: Dictionary[K, V]): Dictionary[K, V] =
   result = Dictionary[K, V](data: initNsHashMap[K, V](nshash.len(dictionary.data)))
   for k, v in nshash.pairs(dictionary.data): discard result.data.put(k, v, false)
 
-proc newHashSet*[T](): HashSet[T] = HashSet[T](data: initOrderedSet[T]())
+proc newHashSet*[T](): HashSet[T] = HashSet[T](data: initNsHashMap[T, bool]())
 proc newHashSet*[T](capacity: int): HashSet[T] =
-  HashSet[T](data: initOrderedSet[T](max(capacity, 0)))
+  HashSet[T](data: initNsHashMap[T, bool](max(capacity, 0)))
 proc newSortedSet*[T](): SortedSet[T] = SortedSet[T]()
 
 proc newSortedDictionary*[K, V](): SortedDictionary[K, V] = SortedDictionary[K, V]()
@@ -243,8 +245,11 @@ proc newStack*[T](capacity: int): Stack[T] =
 
 proc listOf[T](s: seq[T]): List[T] = List[T](data: s)
 proc hashSetOf[T](s: seq[T]): HashSet[T] =
-  result = HashSet[T](data: initOrderedSet[T]())
-  for x in s: result.data.incl x
+  result = HashSet[T](data: initNsHashMap[T, bool]())
+  for x in s: discard result.data.put(x, true, false)
+proc hashSetOf[T](s: HashSet[T]): HashSet[T] =
+  ## From another set, as .NET copies one (see `copyOfSet`).
+  HashSet[T](data: copyOfSet(s.data))
 proc sortedSetOf[T](s: seq[T]): SortedSet[T] =
   result = SortedSet[T](data: s)
   algorithm.sort(result.data)
@@ -256,7 +261,8 @@ template fromEnumerable(ctor, build: untyped) =
   proc ctor*[T](collection: openArray[T]): auto = build(@collection)
   proc ctor*[T](collection: NsArray[T]): auto = build(collection.nsData)
   proc ctor*[T](collection: List[T]): auto = build(snapshot(collection))
-  proc ctor*[T](collection: HashSet[T]): auto = build(snapshot(collection))
+  proc ctor*[T](collection: HashSet[T]): auto =
+    when compiles(build(collection)): build(collection) else: build(snapshot(collection))
   proc ctor*[T](collection: SortedSet[T]): auto = build(snapshot(collection))
   proc ctor*[T](collection: Queue[T]): auto = build(snapshot(collection))
   proc ctor*[T](collection: Stack[T]): auto = build(snapshot(collection))
@@ -281,7 +287,7 @@ proc newPriorityQueue*[E, P](capacity: int): PriorityQueue[E, P] =
 
 proc Count*[T](l: List[T]): int32 {.inline.} = int32(l.data.len)
 proc Count*[K, V](t: Dictionary[K, V]): int32 {.inline.} = int32(nshash.len(t.data))
-proc Count*[T](s: HashSet[T]): int32 = int32(s.data.len)
+proc Count*[T](s: HashSet[T]): int32 = int32(nshash.len(s.data))
 proc Count*[T](s: SortedSet[T]): int32 = int32(s.data.len)
 proc Count*[K, V](t: SortedDictionary[K, V]): int32 = int32(t.keys.len)
 proc Count*[K, V](t: SortedList[K, V]): int32 = int32(t.keys.len)
@@ -485,59 +491,86 @@ proc Values*[K, V](t: Dictionary[K, V]): ValueCollection[K, V] =
   ValueCollection[K, V](dict: t)
 
 # --- HashSet<T> -------------------------------------------------------------
+#
+# The set operations change the set in .NET's order, which decides the places
+# later additions take: `ExceptWith` removes in the other collection's order,
+# `IntersectWith` and `RemoveWhere` in the set's own.
 
 iterator items*[T](s: HashSet[T]): T =
   let v = s.version
-  for x in sets.items(s.data):
+  for x in nshash.keys(s.data):
     yield x
     checkVersion(s, v)
 
 proc Add*[T](s: HashSet[T]; x: T): bool =
   ## Reports whether the element was new, exactly as .NET's does.
-  if s.data.containsOrIncl(x): false
-  else:
-    touch s
-    true
+  result = s.data.put(x, true, false)
+  if result: touch s
 proc Clear*[T](s: HashSet[T]) =
-  s.data.clear()
+  nshash.clear(s.data)
   touch s
-proc Contains*[T](s: HashSet[T]; x: T): bool = x in s.data
+proc Contains*[T](s: HashSet[T]; x: T): bool = nshash.contains(s.data, x)
 proc Remove*[T](s: HashSet[T]; x: T): bool =
-  if s.data.missingOrExcl(x): false
-  else:
-    touch s
-    true
+  result = s.data.remove(x)
+  if result: touch s
 proc RemoveWhere*[T](s: HashSet[T]; match: Predicate[T]): int32 =
   var gone: seq[T] = @[]
-  for x in sets.items(s.data):
+  for x in nshash.keys(s.data):
     if match(x): gone.add x
-  for x in gone: s.data.excl x
+  for x in gone: discard s.data.remove(x)
   if gone.len > 0: touch s
   int32(gone.len)
 proc ToArray*[T](s: HashSet[T]): NsArray[T] =
   var xs: seq[T] = @[]
-  for x in sets.items(s.data): xs.add x
+  for x in nshash.keys(s.data): xs.add x
   nsArrayOf(xs)
 proc UnionWith*[T](s: HashSet[T]; other: Enumerable[T]) =
-  for x in snapshot(other): s.data.incl x
+  for x in snapshot(other): discard s.data.put(x, true, false)
   touch s
 proc IntersectWith*[T](s: HashSet[T]; other: Enumerable[T]) =
+  if nshash.len(s.data) == 0: return
   var keep = initHashSet[T]()
   for x in snapshot(other): keep.incl x
-  var next = initOrderedSet[T]()
-  for x in sets.items(s.data):
-    if x in keep: next.incl x
-  s.data = next
+  if keep.len == 0:
+    ## .NET clears the set then, which also forgets the free places.
+    nshash.clear(s.data)
+    touch s
+    return
+  var gone: seq[T] = @[]
+  for x in nshash.keys(s.data):
+    if x notin keep: gone.add x
+  for x in gone: discard s.data.remove(x)
   touch s
 proc ExceptWith*[T](s: HashSet[T]; other: Enumerable[T]) =
-  for x in snapshot(other): s.data.excl x
+  when other is HashSet[T]:
+    if other == s:
+      nshash.clear(s.data)
+      touch s
+      return
+  if nshash.len(s.data) == 0: return
+  for x in snapshot(other): discard s.data.remove(x)
   touch s
 proc SymmetricExceptWith*[T](s: HashSet[T]; other: Enumerable[T]) =
-  var seen = initHashSet[T]()
-  for x in snapshot(other):
-    if seen.containsOrIncl(x): continue
-    if x in s.data: s.data.excl x
-    else: s.data.incl x
+  when other is HashSet[T]:
+    ## .NET's path for a set: each element removed if present, else added.
+    if other == s:
+      nshash.clear(s.data)
+      touch s
+      return
+    for x in snapshot(other):
+      if not s.data.remove(x): discard s.data.put(x, true, false)
+  else:
+    ## .NET's path for any other collection: the new elements are added first,
+    ## then the ones both had are removed, in the set's order.
+    var seen = initHashSet[T]()
+    var common = initHashSet[T]()
+    for x in snapshot(other):
+      if seen.containsOrIncl(x): continue
+      if not s.data.put(x, true, false): common.incl x
+    var gone: seq[T] = @[]
+    for x in nshash.keys(s.data):
+      if x in common: gone.add x
+    for x in gone: discard s.data.remove(x)
   touch s
 
 # The set comparisons read `other` as a set: duplicates in it do not count.
@@ -547,33 +580,33 @@ proc otherSet[T](other: Enumerable[T]): sets.HashSet[T] =
 
 proc IsSubsetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
   let o = otherSet(other)
-  for x in sets.items(s.data):
+  for x in nshash.keys(s.data):
     if x notin o: return false
   true
 proc IsProperSubsetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
   let o = otherSet(other)
-  if o.len <= s.data.len: return false
-  for x in sets.items(s.data):
+  if o.len <= nshash.len(s.data): return false
+  for x in nshash.keys(s.data):
     if x notin o: return false
   true
 proc IsSupersetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
   for x in snapshot(other):
-    if x notin s.data: return false
+    if not nshash.contains(s.data, x): return false
   true
 proc IsProperSupersetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
   let o = otherSet(other)
-  if o.len >= s.data.len: return false
+  if o.len >= nshash.len(s.data): return false
   for x in sets.items(o):
-    if x notin s.data: return false
+    if not nshash.contains(s.data, x): return false
   true
 proc Overlaps*[T](s: HashSet[T]; other: Enumerable[T]): bool =
   for x in snapshot(other):
-    if x in s.data: return true
+    if nshash.contains(s.data, x): return true
 proc SetEquals*[T](s: HashSet[T]; other: Enumerable[T]): bool =
   let o = otherSet(other)
-  if o.len != s.data.len: return false
+  if o.len != nshash.len(s.data): return false
   for x in sets.items(o):
-    if x notin s.data: return false
+    if not nshash.contains(s.data, x): return false
   true
 
 # --- SortedSet<T> -----------------------------------------------------------

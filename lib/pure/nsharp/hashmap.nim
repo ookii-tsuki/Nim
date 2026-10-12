@@ -175,3 +175,12 @@ iterator keys*[K, V](m: NsHashMap[K, V]): K =
 
 iterator values*[K, V](m: NsHashMap[K, V]): V =
   for _, v in m.pairs: yield v
+
+proc copyOfSet*[K, V](src: NsHashMap[K, V]): NsHashMap[K, V] =
+  ## .NET's `HashSet<T>(HashSet<T>)`: the source's exact layout, free places and
+  ## all, unless it is larger than its elements need (`ExpandPrime(Count + 1)` is
+  ## smaller than its buckets); then its elements in order, compacted.
+  if src.len == 0: return initNsHashMap[K, V]()
+  if int(getPrime(2 * (src.len + 1))) >= src.buckets.len: return src
+  result = initNsHashMap[K, V](src.len)
+  for k, v in src.pairs: discard result.put(k, v, false)

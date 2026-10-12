@@ -892,7 +892,7 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | `Math.*` | ✅ v1 | `lib` (Nim `math`) |
 | `List<T>` | ✅ v1 | class over `seq[T]` (SS15.1) |
 | `Dictionary<K,V>`, `KeyValuePair<K,V>` | ✅ v1 | class over `NsHashMap[K,V]` (`lib/pure/nsharp/hashmap.nim`, .NET's own hash table: entries in an array with a free list, prime-sized buckets, `FastMod`, an integer key its own hash); struct (SS15.1) |
-| `HashSet<T>` | ✅ v1 | class over `OrderedSet[T]` (SS15.1) |
+| `HashSet<T>` | ✅ v1 | class over `NsHashMap[T, bool]`, the table `Dictionary` uses (SS15.1) |
 | `SortedSet<T>`, `SortedDictionary<K,V>`, `SortedList<K,V>` | ✅ v1 | classes over sorted `seq`s (SS15.1) |
 | `Queue<T>`, `Stack<T>` | ✅ v1 | classes over `Deque[T]` / `seq[T]` (SS15.1) |
 | `LinkedList<T>`, `LinkedListNode<T>` | ✅ v1 | doubly-linked `ref object` nodes (SS15.1) |
@@ -928,16 +928,16 @@ by the proc the prelude declares, and lowering reaches it through Nim's dot-call
 ### 15.1 Collections - pinned member surface (3b)
 
 Every collection is a **class**, as in .NET: a `ref object` that owns its storage
-(`seq`, `NsHashMap`, `OrderedSet`, `Deque`) as a private field. So `var b = a;`
+(`seq`, `NsHashMap`, `Deque`) as a private field. So `var b = a;`
 aliases one collection, `null` is a valid value, and the prelude type is exactly
 what a user's own `class List<T>` would lower to. `KeyValuePair<K,V>` is the one
 struct. C# properties (`Count`, `First`, `Keys`) are procs taking only the
 receiver; the frontend resolves every member from these declarations, and nothing
 in it names a collection.
 
-Behaviour follows .NET where it is observable: `Dictionary` enumerates in .NET's
-order (insertion order, a key added after a removal taking the place of the last
-removed), `HashSet` in insertion order; `Stack` enumerates and `ToArray`s top first; mutating a collection
+Behaviour follows .NET where it is observable: `Dictionary` and `HashSet` enumerate
+in .NET's order (insertion order, an entry added after a removal taking the place of
+the last removed, the set operations removing in .NET's order); `Stack` enumerates and `ToArray`s top first; mutating a collection
 inside its own `foreach` throws `InvalidOperationException`; a bad index throws
 `ArgumentOutOfRangeException`, a missing key `KeyNotFoundException`, an empty
 `Queue`/`Stack`/`LinkedList`/`PriorityQueue` `InvalidOperationException`, with

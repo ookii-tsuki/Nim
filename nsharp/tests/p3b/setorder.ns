@@ -1,0 +1,95 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    // The order a HashSet enumerates in is .NET's: an element added after removals
+    // takes the last removed element's place, and each set operation removes and
+    // adds in .NET's own order.
+    class Program
+    {
+        static void Show(string label, HashSet<int> s)
+        {
+            var parts = new List<string>();
+            foreach (var x in s) parts.Add(x.ToString());
+            Console.WriteLine(label + " (" + s.Count + "): " + string.Join(" ", parts.ToArray()));
+        }
+
+        static HashSet<int> Make() => new HashSet<int> { 1, 2, 3, 4, 5, 6, 7, 8 };
+
+        static void Main()
+        {
+            var s = Make();
+            s.Remove(3);
+            s.Remove(6);
+            s.Add(30);
+            s.Add(31);
+            s.Add(32);
+            Show("removed 3, 6; added 30 31 32", s);
+
+            s = Make();
+            s.ExceptWith(new[] { 7, 2, 5 });
+            s.Add(70);
+            s.Add(71);
+            Show("except 7 2 5; added 70 71", s);
+
+            s = Make();
+            s.IntersectWith(new List<int> { 8, 2, 4, 9 });
+            s.Add(10);
+            s.Add(11);
+            Show("intersect; added 10 11", s);
+
+            s = Make();
+            s.IntersectWith(new int[0]);
+            s.Add(99);
+            Show("intersect with nothing; added 99", s);
+
+            s = Make();
+            s.SymmetricExceptWith(new List<int> { 2, 20, 4, 21, 2 });
+            s.Add(40);
+            Show("symmetric except (list); added 40", s);
+
+            s = Make();
+            s.SymmetricExceptWith(new HashSet<int> { 2, 20, 4, 21 });
+            s.Add(40);
+            Show("symmetric except (set); added 40", s);
+
+            s = Make();
+            Console.WriteLine(s.RemoveWhere(x => x % 3 == 0));
+            s.Add(50);
+            s.Add(51);
+            Show("remove multiples of 3; added 50 51", s);
+
+            s = Make();
+            s.Remove(2);
+            s.Remove(5);
+            var copy = new HashSet<int>(s);
+            copy.Add(60);
+            Show("copy of a set with gaps; added 60", copy);
+
+            var big = new HashSet<int>();
+            for (int i = 0; i < 100; i++) big.Add(i);
+            for (int i = 0; i < 95; i++) big.Remove(i);
+            var small = new HashSet<int>(big);
+            small.Add(1000);
+            Show("copy of a mostly empty set; added 1000", small);
+
+            s = Make();
+            s.ExceptWith(s);
+            s.Add(5);
+            Show("except itself; added 5", s);
+
+            s = Make();
+            s.UnionWith(new[] { 9, 1, 10 });
+            s.Clear();
+            s.Add(7);
+            Show("union, clear, add 7", s);
+
+            var words = new HashSet<string> { "pear", "fig", "kiwi", "plum" };
+            words.Remove("fig");
+            words.Add("lime");
+            Console.WriteLine(string.Join(",", new List<string>(words).ToArray()));
+            Console.WriteLine(words.Contains("lime") + " " + words.Contains("fig"));
+        }
+    }
+}
