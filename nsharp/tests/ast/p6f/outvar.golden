@@ -185,14 +185,13 @@ nkStmtList
         nkVarSection
           nkIdentDefs
             nkIdent 'n'
-            nkCall
-              nkIdent 'typeof'
-              nkIdent 'nsUntyped'
+            nkIdent 'int32'
             nkEmpty
         nkIfStmt
           nkElifBranch
             nkCall
               nkIdent 'TryParse'
+              nkIdent 'int32'
               nkStrLit "12"
               nkIdent 'n'
             nkStmtList

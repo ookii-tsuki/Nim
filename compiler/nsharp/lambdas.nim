@@ -260,6 +260,9 @@ proc libParams*(m: NsBclMember; recv: NsNode; staticCall: bool; info: NsNode):
     if overType or not staticCall: start = 1
     if not staticCall and recv != nil and recv.rtype != nil:
       unifyNim(p0, recv.rtype, m.genParams, nb)
+    elif overType and staticCall and recv != nil and recv.typeName.len > 0 and p0.len == 2:
+      ## `int.TryParse(...)` over `typedesc[T]`: the qualifier is `T`.
+      unifyNim(p0[1], nsnTypeName(recv.typeName, recv.info), m.genParams, nb)
   ## A generic parameter the receiver does not bind is `$T`: the arguments bind it.
   for k in 0 ..< nb.len:
     if nb[k] == nil: nb[k] = nsnTypeName("$" & m.genParams[k], info.info)

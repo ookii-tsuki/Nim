@@ -888,7 +888,7 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | `string` members `.Length`, `.Substring`, `.IndexOf`, `.ToUpper/Lower`, `.Split`, `.Trim`, `.Contains`, `.Replace`, `.StartsWith`… | ✅ v1 | `lib` wrappers on Nim `string` |
 | `string.Format`, `Join`, `IsNullOrEmpty` | ✅ v1 | `lib` |
 | `string.RuneCount` / `.Runes` (char count) | ✅ v1 | `lib` (N# helper; `.Length` is bytes, §4.4) |
-| `int`/`double` `.ToString`, `.Parse`, `.TryParse` | ✅ v1 | `lib` (`parseInt`, `parseFloat`) |
+| `T.Parse(s)`, `T.TryParse(s, out x)` on every integer type, `float`/`double`, `bool`, `char`; `double.IsNaN`/`IsInfinity`/`IsPositiveInfinity`/`IsNegativeInfinity`/`IsFinite` | ✅ v1 | `lib/pure/ns/System.nim`, over `typedesc[T]`; .NET's rules under en-US, the culture N# follows: an integer is white space, a sign and digits, a floating-point number also takes a point, an exponent, `,` group separators and `NaN`/`∞`, one too large becoming an infinity; `FormatException` / `OverflowException` with .NET's messages. A library member over a `typedesc` keeps its qualifier (`Parse(int32, s)`), and a member the library does not declare on a built-in type is CS0117 |
 | `Math.*` | ✅ v1 | `lib` (Nim `math`) |
 | `List<T>` | ✅ v1 | class over `seq[T]` (SS15.1) |
 | `Dictionary<K,V>`, `KeyValuePair<K,V>` | ✅ v1 | class over `OrderedTable[K,V]`; struct (SS15.1) |

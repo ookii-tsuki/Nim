@@ -1,5 +1,5 @@
-// Valid C# that N# rejects: `out var` needs the parameter's type, which N# cannot
-// see for a library method it has no declaration of.
+// `out var` on a library method: the variable takes the type of the parameter it
+// fills, which N# reads from the library's declaration.
 using System;
 
 namespace Demo

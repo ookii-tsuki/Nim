@@ -1005,6 +1005,39 @@ proc checkLibraryCall(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]) =
   else:
     nsError(ctx.config, callee.info, ndArgumentNoOverload, callee.name, $args.len)
 
+proc libraryOutTypes(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]) =
+  ## `T.M(..., out var x)` of a library member: `x` takes the type of the parameter it
+  ## fills, in the overload the other arguments fit. Only an overload of this arity
+  ## that types the parameter (its generic parameters bound) is taken.
+  let recv = callee.body
+  if recv == nil: return
+  var wanted = false
+  for a in args:
+    if a != nil and a.kind == nsnOutDecl and a.typ == nil: wanted = true
+  if not wanted: return
+  let staticCall = recv.typeKind == tkType
+  let recvName = (if staticCall: unqualified(recv.typeName) else: recv.typeName)
+  let recvKind = (if staticCall: ctx.surface.kindOfName(recvName) else: recv.typeKind)
+  for m in ctx.surface.overloads(recvName, recvKind, callee.name):
+    if m.isStatic != staticCall and not staticCall: continue
+    let (ps, variadic) = libParams(m, recv, staticCall, callee)
+    if variadic or ps.len != args.len: continue
+    var fits = true
+    for j, a in args:
+      let pt = ps[j]
+      if a.kind == nsnOutDecl:
+        if a.typ == nil and (pt == nil or pt.kind != nsnTypeName or pt.name.startsWith("$")):
+          fits = false
+      elif pt != nil and not (pt.kind == nsnTypeName and pt.name.startsWith("$")) and
+           a.typeKind notin {tkUnknown, tkDelegate} and a.kind notin {nsnNamedArg, nsnRefArg} and
+           ctx.incompatible(a, ctx.targetOfType(pt)):
+        fits = false
+      if not fits: break
+    if not fits: continue
+    for j, a in args:
+      if a.kind == nsnOutDecl and a.typ == nil: a.typ = ps[j]
+    return
+
 proc checkCondition(ctx: NsCheckContext; cond: NsNode) =
   ## C# requires a `bool` condition, and says CS0029 when it does not get one. A `T?`
   ## is not a `bool` either, but its spelling keeps the `?` C# prints.
@@ -1529,7 +1562,16 @@ proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
 proc checkStaticMember(ctx: NsCheckContext; cls, name: string; info: TLineInfo) =
   ## `C.name` on a class of this compilation that declares no such member (CS0117).
   let c = canonicalTypeName(cls)
-  if not ctx.scope.classes.hasKey(c) or not ctx.chainInScope(c): return
+  if not ctx.scope.classes.hasKey(c):
+    ## A built-in type (`int.Foo`): what the library does not declare on it, it
+    ## does not have. Lowering would otherwise drop the qualifier and reach any
+    ## `Foo` in scope.
+    let k = ctx.surface.kindOfName(c)
+    if k in {tkInt, tkFloat, tkBool, tkChar, tkString} and
+       not ctx.libraryHas(c, k, name) and not ctx.libraryHas("object", tkClass, name):
+      nsError(ctx.config, info, ndNoStaticMember, cls, name)
+    return
+  if not ctx.chainInScope(c): return
   if ctx.scope.enums.contains(c) or ctx.scope.classes.hasKey(name): return
   if ctx.scope.findMemberInfo(c, name).name.len > 0: return
   if ctx.libraryHas("object", tkClass, name): return
@@ -1935,6 +1977,8 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         if pt != nil: ctx.coerce(v, declTypeName(pt), v.info, pt)
         continue
       discard ctx.walkExpr(a)
+  if callee != nil and callee.kind == nsnMember and cands.len == 0:
+    ctx.libraryOutTypes(callee, n.sons)
   for a in n.sons:
     let v = argValue(a)
     if v != nil and v.kind == nsnOutDecl and not ctx.types.hasKey(v.name):

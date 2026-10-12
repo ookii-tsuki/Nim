@@ -1,0 +1,83 @@
+using System;
+
+namespace Demo
+{
+    // Parse and TryParse on the built-in types, by .NET's rules: white space and a
+    // sign around an integer, decimal point, exponent and group separators in a
+    // floating-point number, and the exceptions for a bad format or a value out of
+    // range.
+    class Program
+    {
+        // A class's own `Parse` does not hide the built-in types' ones.
+        static string Parse(string s) => "mine:" + s;
+
+        static void TryInt(string s)
+        {
+            try { Console.WriteLine($"int '{s}' -> {int.Parse(s)}"); }
+            catch (FormatException e) { Console.WriteLine($"int '{s}' -> FormatException: {e.Message}"); }
+            catch (OverflowException e) { Console.WriteLine($"int '{s}' -> OverflowException: {e.Message}"); }
+        }
+
+        static void TryDouble(string s)
+        {
+            try { Console.WriteLine($"double '{s}' -> {double.Parse(s)}"); }
+            catch (FormatException) { Console.WriteLine($"double '{s}' -> FormatException"); }
+        }
+
+        static void Main()
+        {
+            Console.WriteLine(Parse("x"));
+            foreach (var s in new[] { "42", "  -17 ", "+5", "2147483647", "-2147483648",
+                                      "2147483648", "", " ", "-", "12a", "1.5", "1,000",
+                                      "99999999999999999999", "99999999999999999999x" })
+                TryInt(s);
+
+            Console.WriteLine(long.Parse("-9223372036854775808"));
+            Console.WriteLine(long.Parse("9223372036854775807"));
+            Console.WriteLine(uint.Parse("4294967295"));
+            Console.WriteLine(ulong.Parse("18446744073709551615"));
+            Console.WriteLine(short.Parse("-32768"));
+            Console.WriteLine(byte.Parse(" 255"));
+            Console.WriteLine(sbyte.Parse("-128"));
+            Console.WriteLine(ushort.Parse("65535"));
+            try { byte.Parse("256"); }
+            catch (OverflowException e) { Console.WriteLine(e.Message); }
+            try { uint.Parse("-1"); }
+            catch (OverflowException e) { Console.WriteLine(e.Message); }
+            try { long.Parse("9223372036854775808"); }
+            catch (OverflowException e) { Console.WriteLine(e.Message); }
+
+            foreach (var s in new[] { "3.25", " -0.5 ", "1e3", "2.5E-2", ".5", "5.", "1,234.5", "1,2,3", ",5",
+                                      "abc", "1e", "1.2.3", "", "e5" })
+                TryDouble(s);
+            Console.WriteLine(double.IsInfinity(double.Parse("1e400")));
+            Console.WriteLine(double.IsNaN(double.Parse("NaN")));
+            Console.WriteLine(double.IsPositiveInfinity(double.Parse("1e400")));
+            Console.WriteLine(double.IsNegativeInfinity(double.Parse("-1e400")));
+            Console.WriteLine(double.IsNaN(double.Parse("-nan")));
+            Console.WriteLine(float.Parse("1.5") * 2);
+
+            Console.WriteLine(int.TryParse("123", out int a) + " " + a);
+            Console.WriteLine(int.TryParse("12x", out int b) + " " + b);
+            Console.WriteLine(int.TryParse("99999999999", out var c) + " " + c);
+            Console.WriteLine(long.TryParse("-5", out long d) + " " + d);
+            Console.WriteLine(double.TryParse("2.5", out double f) + " " + f);
+            Console.WriteLine(double.TryParse("x", out double g) + " " + g);
+            if (int.TryParse("7", out var h) && h > 5) Console.WriteLine("seven");
+
+            Console.WriteLine(bool.Parse("True"));
+            Console.WriteLine(bool.Parse("  false "));
+            Console.WriteLine(bool.Parse("TRUE"));
+            try { bool.Parse("yes"); }
+            catch (FormatException e) { Console.WriteLine(e.Message); }
+            Console.WriteLine(bool.TryParse("False", out bool p) + " " + p);
+            Console.WriteLine(bool.TryParse("1", out bool q) + " " + q);
+
+            Console.WriteLine(char.Parse("z"));
+            try { char.Parse("zz"); }
+            catch (FormatException e) { Console.WriteLine(e.Message); }
+            Console.WriteLine(char.TryParse("q", out char r) + " " + r);
+            Console.WriteLine(char.TryParse("", out char u) + " " + (int)u);
+        }
+    }
+}

@@ -7,6 +7,7 @@ assign_to_const CS0131 match
 assign_to_rvalue CS0131 match
 base_no_ctor CS7036 match
 break_outside CS0139 match
+builtin_no_static CS0117 match
 call_non_method CS0149 match
 case_not_const CS9135 match
 cast_invalid CS0030 match

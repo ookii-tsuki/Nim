@@ -134,6 +134,184 @@ proc CompareTo*[T: SomeFloat](a, b: T): int32 = int32(cmp(a, b))
 proc CompareTo*(a, b: char): int32 = int32(cmp(a, b))
 proc CompareTo*(a, b: bool): int32 = int32(cmp(a, b))
 
+# `double.IsNaN(x)` and the rest of the floating-point tests.
+proc IsNaN*[T: SomeFloat](t: typedesc[T]; x: T): bool = x != x
+proc IsInfinity*[T: SomeFloat](t: typedesc[T]; x: T): bool = x == T(Inf) or x == T(NegInf)
+proc IsPositiveInfinity*[T: SomeFloat](t: typedesc[T]; x: T): bool = x == T(Inf)
+proc IsNegativeInfinity*[T: SomeFloat](t: typedesc[T]; x: T): bool = x == T(NegInf)
+proc IsFinite*[T: SomeFloat](t: typedesc[T]; x: T): bool =
+  x == x and x != T(Inf) and x != T(NegInf)
+
+# --- Parse / TryParse on the built-in types -----------------------------------
+#
+# .NET's rules under the en-US culture, N#'s (as `ToString` follows it). An integer
+# is surrounding white space,
+# an optional sign and digits (`NumberStyles.Integer`); anything else is a
+# `FormatException`, a value the type cannot hold an `OverflowException` (the format
+# is judged first, over the whole string). A floating-point number also takes a
+# decimal point, an exponent, `,` group separators after the integral part's first
+# digit and the symbols `NaN` and `∞`, signed or not (`NumberStyles.Float |
+# AllowThousands`); one too
+# large becomes an infinity, as since .NET Core 3.0. `TryParse` answers whether it
+# could, leaving the default value when not.
+
+type NsParsed = enum npOk, npFormat, npOverflow
+
+proc nsNetName(T: typedesc): string =
+  ## How .NET's overflow message names the type.
+  when T is int8: "a signed byte"
+  elif T is uint8: "an unsigned byte"
+  elif T is int16: "an Int16"
+  elif T is uint16: "a UInt16"
+  elif T is int32: "an Int32"
+  elif T is uint32: "a UInt32"
+  elif T is int64: "an Int64"
+  elif T is uint64: "a UInt64"
+  elif T is float32: "a Single"
+  else: "a Double"
+
+proc nsTrimmed(s: string): (int, int) =
+  var i = 0
+  var e = s.len
+  while i < e and s[i] in Whitespace: inc i
+  while e > i and s[e - 1] in Whitespace: dec e
+  (i, e)
+
+proc nsParseInteger(s: string; posLimit, negLimit: uint64;
+                    v: var uint64; neg: var bool): NsParsed =
+  ## The magnitude and sign of an integer; out of range when the magnitude passes
+  ## the limit for its sign.
+  var (i, e) = nsTrimmed(s)
+  neg = false
+  v = 0
+  if i < e and s[i] in {'+', '-'}:
+    neg = s[i] == '-'
+    inc i
+  if i >= e: return npFormat
+  var over = false
+  for k in i ..< e:
+    let c = s[k]
+    if c notin {'0'..'9'}: return npFormat
+    let d = uint64(ord(c) - ord('0'))
+    if not over:
+      if v > (high(uint64) - d) div 10: over = true
+      else: v = v * 10 + d
+  if over or v > (if neg: negLimit else: posLimit): return npOverflow
+  npOk
+
+proc nsParseInt[T: SomeInteger](s: string; r: var T): NsParsed =
+  var v: uint64
+  var neg: bool
+  when T is SomeSignedInt:
+    result = nsParseInteger(s, uint64(high(T)), uint64(high(T)) + 1, v, neg)
+    if result == npOk: r = (if neg: T(cast[int64](0'u64 - v)) else: T(v))
+  else:
+    result = nsParseInteger(s, uint64(high(T)), 0, v, neg)
+    if result == npOk: r = T(v)
+
+proc nsParseFloat(s: string; r: var float64): NsParsed =
+  let (i0, e) = nsTrimmed(s)
+  var i = i0
+  var neg = false
+  if i < e and s[i] in {'+', '-'}:
+    neg = s[i] == '-'
+    inc i
+  let rest = s.substr(i, e - 1).toLowerAscii
+  if rest == "∞":
+    r = (if neg: NegInf else: Inf)
+    return npOk
+  if rest == "nan":
+    r = system.NaN
+    return npOk
+  var clean = (if neg: "-" else: "")
+  var digits = 0
+  while i < e and (s[i] in {'0'..'9'} or (s[i] == ',' and digits > 0)):
+    if s[i] != ',':
+      clean.add s[i]
+      inc digits
+    inc i
+  if i < e and s[i] == '.':
+    clean.add '.'
+    inc i
+    while i < e and s[i] in {'0'..'9'}:
+      clean.add s[i]
+      inc digits
+      inc i
+  if digits == 0: return npFormat
+  if i < e and s[i] in {'e', 'E'}:
+    clean.add 'e'
+    inc i
+    if i < e and s[i] in {'+', '-'}:
+      clean.add s[i]
+      inc i
+    if i >= e or s[i] notin {'0'..'9'}: return npFormat
+    while i < e and s[i] in {'0'..'9'}:
+      clean.add s[i]
+      inc i
+  if i != e: return npFormat
+  r = parseFloat(clean)
+  npOk
+
+proc nsParseFail(s, T: string; how: NsParsed) {.noinline, noreturn.} =
+  if how == npFormat:
+    raise newException(FormatException,
+                       "The input string '" & s & "' was not in a correct format.")
+  raise newException(OverflowException,
+                     "Value was either too large or too small for " & T & ".")
+
+proc Parse*[T: SomeInteger](t: typedesc[T]; s: string): T =
+  let how = nsParseInt(s, result)
+  if how != npOk: nsParseFail(s, nsNetName(T), how)
+
+proc TryParse*[T: SomeInteger](t: typedesc[T]; s: string; value: var T): bool =
+  value = 0
+  var r: T
+  result = nsParseInt(s, r) == npOk
+  if result: value = r
+
+proc Parse*[T: SomeFloat](t: typedesc[T]; s: string): T =
+  var r: float64
+  let how = nsParseFloat(s, r)
+  if how != npOk: nsParseFail(s, nsNetName(T), how)
+  T(r)
+
+proc TryParse*[T: SomeFloat](t: typedesc[T]; s: string; value: var T): bool =
+  value = 0
+  var r: float64
+  result = nsParseFloat(s, r) == npOk
+  if result: value = T(r)
+
+proc nsParseBool(s: string; r: var bool): bool =
+  ## `True` or `False` in any case, white space (and NULs) around it allowed.
+  var i = 0
+  var e = s.len
+  while i < e and s[i] in Whitespace + {'\0'}: inc i
+  while e > i and s[e - 1] in Whitespace + {'\0'}: dec e
+  let w = s.substr(i, e - 1).toLowerAscii
+  if w == "true": r = true
+  elif w == "false": r = false
+  else: return false
+  true
+
+proc Parse*(t: typedesc[bool]; s: string): bool =
+  if not nsParseBool(s, result):
+    raise newException(FormatException,
+                       "String '" & s & "' was not recognized as a valid Boolean.")
+
+proc TryParse*(t: typedesc[bool]; s: string; value: var bool): bool =
+  value = false
+  nsParseBool(s, value)
+
+proc Parse*(t: typedesc[char]; s: string): char =
+  if s.len != 1: raise newException(FormatException, "String must be exactly one character long.")
+  s[0]
+
+proc TryParse*(t: typedesc[char]; s: string; value: var char): bool =
+  value = '\0'
+  if s.len != 1: return false
+  value = s[0]
+  true
+
 # --- System.Object ----------------------------------------------------------
 #
 # `object` is `RootRef`. `ToString` is in the intrinsics; `GetHashCode` has no

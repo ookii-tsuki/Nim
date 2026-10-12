@@ -1,0 +1,5 @@
+class P
+{
+    static int Frobnicate(string s) => s.Length;
+    static void Main() { System.Console.WriteLine(int.Frobnicate("12")); }
+}

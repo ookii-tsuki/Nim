@@ -572,6 +572,23 @@ proc indexArgToNim(l: Lowerer; a: NsNode): PNode =
                    newTree(nkPrefix, info, l.id("^", info), newIntNode(nkIntLit, 1)))
   newTree(nkInfix, info, l.id("..<", info), start, l.indexArgToNim(stop))
 
+proc typedescQualifier(l: Lowerer; qual: NsNode; member: string): string =
+  ## The library's spelling of a type qualifier (`int32` for `int`) when the library
+  ## declares the member over that type's `typedesc`; "" for any other qualifier,
+  ## such as a static class whose members take no type (`Console.WriteLine`).
+  if qual == nil: return ""
+  let tn = (if qual.typeName.len > 0: qual.typeName else: qual.name)
+  if tn.len == 0 or l.scope.classes.hasKey(tn): return ""
+  let spelled = l.surface.nimSpellingOf(tn)
+  if spelled.len == 0: return ""
+  for m in l.surface.overloads(tn, l.surface.kindOfName(tn), member):
+    if m.paramTypes.len > 0:
+      let p0 = m.paramTypes[0]
+      if p0.kind == nkBracketExpr and p0.len == 2 and p0[0].kind == nkIdent and
+         p0[0].ident.s == "typedesc":
+        return spelled
+  ""
+
 proc callToNim(l: Lowerer; n: NsNode): PNode =
   var callee = n.body
   if callee != nil and callee.kind == nsnMember and callee.strVal == "event":
@@ -654,6 +671,16 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
     result = newTree(nkCall, n.info, head, l.typeRef(callee.body))
     for a in l.argsToNim(n): result.add a
     return
+  if callee != nil and callee.kind == nsnMember and callee.body != nil and
+     callee.body.typeKind == tkType:
+    let q = l.typedescQualifier(callee.body, callee.name)
+    if q.len > 0:
+      ## `int.Parse(s)`: the library declares it over the type (`typedesc[int32]`),
+      ## so the type is its first argument, as for `int.MaxValue`.
+      l.noteMemberImport(callee)
+      result = newTree(nkCall, n.info, l.id(callee.name, n.info), l.id(q, n.info))
+      for a in l.argsToNim(n): result.add a
+      return
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
      callee.body.typeKind == tkType:
     ## A static member: the qualifier is dropped, so the declaration it names has to
