@@ -121,7 +121,7 @@ type
     wInOut = "inout", wOneWay = "oneway",
     # end of codegen keywords
 
-    wBitsize = "bitsize", wImportHidden = "all",
+    wBitsize = "bitsize", wImportHidden = "all", wCyclic = "cyclic",
     wSendable = "sendable"
 
   TSpecialWords* = set[TSpecialWord]
