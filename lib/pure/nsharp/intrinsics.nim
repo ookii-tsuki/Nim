@@ -493,6 +493,15 @@ method nsTypeName*(b: NsBoxed): string = b.nsType
 proc nsBoxEquals*(a: NsBoxed; b: RootRef): bool = a.nsEq(a, b)
 proc nsBoxHash*(a: NsBoxed): int32 = a.nsHash(a)
 
+method Equals*(a, b: RootRef): bool {.base.} = a == b
+  ## `object.Equals`: the reference, unless a class overrides it.
+method GetHashCode*(x: RootRef): int32 {.base.} =
+  ## `object.GetHashCode`: the reference's address, folded to 32 bits.
+  cast[int32](cast[int](x) xor (cast[int](x) shr 32))
+method Equals*(a: NsBoxed; b: RootRef): bool = a.nsEq(a, b)
+  ## A boxed value is equal to a box of an equal value (see `NsBox`).
+method GetHashCode*(x: NsBoxed): int32 = x.nsHash(x)
+
 proc nsUnbox*[T](o: RootRef; t: typedesc[T]): T =
   ## `(T)o`: the boxed value, which must be exactly a `T`.
   when T is RootRef:
@@ -696,9 +705,18 @@ method nsVtByKey*(x: RootRef; key: string): pointer {.base.} = nil
 
 proc nsKeyOf*(t: typedesc): string = name(t)
 
+proc nsIfaceObject*[I: object](v: I): RootRef {.inline.} =
+  ## An interface value used as an `object`: the instance it holds (null for none).
+  v.nsObj
+
 proc nsAsByKey*[I](o: RootRef; t: typedesc[I]): I =
   ## The interface value of `o`, or the empty one when its class does not
-  ## implement `I`.
+  ## implement `I`. A library interface may answer for objects it knows by type
+  ## (`nsLibAs`: an `int[]` is an `IList<int>`).
+  mixin nsLibAs
+  when compiles(nsLibAs(o, t)):
+    result = nsLibAs(o, t)
+    if result.nsObj != nil: return
   if o != nil:
     let p = nsVtByKey(o, nsKeyOf(I))
     if p != nil:

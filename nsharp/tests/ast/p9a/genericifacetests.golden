@@ -2917,22 +2917,26 @@ nkStmtList
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '=='
-          nkBlockExpr
-            nkEmpty
-            nkStmtList
-              nkLetSection
-                nkIdentDefs
-                  nkIdent 'nsSrc'
-                  nkEmpty
+          nkCall
+            nkIdent 'RootRef'
+            nkDotExpr
+              nkBlockExpr
+                nkEmpty
+                nkStmtList
+                  nkLetSection
+                    nkIdentDefs
+                      nkIdent 'nsSrc'
+                      nkEmpty
+                      nkCall
+                        nkIdent 'RootRef'
+                        nkIdent 'o'
                   nkCall
-                    nkIdent 'RootRef'
-                    nkIdent 'o'
-              nkCall
-                nkIdent 'nsAsByKey'
-                nkIdent 'nsSrc'
-                nkBracketExpr
-                  nkIdent 'IBox'
-                  nkIdent 'string'
+                    nkIdent 'nsAsByKey'
+                    nkIdent 'nsSrc'
+                    nkBracketExpr
+                      nkIdent 'IBox'
+                      nkIdent 'string'
+              nkIdent 'nsObj'
           nkNilLit
       nkVarSection
         nkIdentDefs

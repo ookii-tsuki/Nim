@@ -199,7 +199,7 @@ proc declaredName(n: PNode): string =
   of nkSym: result = n.sym.name.s
   else: result = ""
 
-proc headSpelling(n: PNode): string =
+proc headSpelling*(n: PNode): string =
   ## The type a written type is headed by: `Table[K, V]` is `Table`.
   if n == nil: return ""
   case n.kind
@@ -602,6 +602,14 @@ proc libraryInterfaces*(s: NsBclSurface): HashSet[string] =
   result = initHashSet[string]()
   for k, t in s.types:
     if t.isInterface: result.incl k
+
+proc libraryValueInterfaces*(s: NsBclSurface): HashSet[string] =
+  ## The library interfaces that are values: declared, as a user interface lowers,
+  ## as an object holding the instance (`nsObj`) and its table (`nsVt`). The rest
+  ## (`IComparable<T>`) are contracts a class is checked against by name.
+  result = initHashSet[string]()
+  for k, t in s.types:
+    if t.isInterface and "nsObj" in t.fields: result.incl k
 
 proc isExceptionType*(s: NsBclSurface; name: string;
                       chain: seq[string] = @[]): bool =

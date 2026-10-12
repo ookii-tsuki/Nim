@@ -1,0 +1,114 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    // Comparers, and a user's classes implementing the library's interfaces:
+    // IComparer<T> and IEqualityComparer<T> passed to sorts, searches, dictionaries
+    // and sets; Comparer<T>.Default and Create; EqualityComparer<T>.Default;
+    // StringComparer; and a user collection used as an IReadOnlyList<T>.
+    class ByLength : IComparer<string>
+    {
+        public int Compare(string a, string b) => a.Length != b.Length ? a.Length - b.Length : string.CompareOrdinal(a, b);
+    }
+
+    class Mod10 : IEqualityComparer<int>
+    {
+        public bool Equals(int a, int b) => a % 10 == b % 10;
+        public int GetHashCode(int x) => x % 10;
+    }
+
+    class Version : IComparable<Version>
+    {
+        public int Major, Minor;
+        public Version(int major, int minor) { Major = major; Minor = minor; }
+        public int CompareTo(Version other) => Major != other.Major ? Major.CompareTo(other.Major) : Minor.CompareTo(other.Minor);
+        public override string ToString() => $"{Major}.{Minor}";
+    }
+
+    class Squares : IReadOnlyList<int>
+    {
+        int n;
+        public Squares(int n) { this.n = n; }
+        public int Count => n;
+        public int this[int i] => i * i;
+        public IEnumerator<int> GetEnumerator()
+        {
+            for (int i = 0; i < n; i++) yield return i * i;
+        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    class Program
+    {
+        static int SumAll(IReadOnlyList<int> xs)
+        {
+            int s = 0;
+            for (int i = 0; i < xs.Count; i++) s += xs[i];
+            return s;
+        }
+
+        static void Main()
+        {
+            var words = new List<string> { "pear", "fig", "banana", "kiwi", "apple" };
+            words.Sort(new ByLength());
+            Console.WriteLine(string.Join(",", words));
+            Console.WriteLine(words.BinarySearch("kiwi", new ByLength()) + " " + words.BinarySearch("zz", new ByLength()));
+
+            IComparer<string> cmp = new ByLength();
+            Console.WriteLine(cmp.Compare("aa", "b") + " " + cmp.Compare("a", "b"));
+            object o = cmp;
+            Console.WriteLine((o is IComparer<string>) + " " + (o is IComparer<int>) + " " + (o is ByLength));
+
+            var nums = new[] { 5, 3, 9, 1 };
+            Array.Sort(nums);
+            Console.WriteLine(string.Join(",", nums));
+            Array.Sort(nums, (a, b) => b - a);
+            Console.WriteLine(string.Join(",", nums));
+            Array.Sort(nums, Comparer<int>.Default);
+            Console.WriteLine(string.Join(",", nums));
+            Console.WriteLine(Comparer<int>.Default.Compare(1, 2) + " " + Comparer<string>.Default.Compare("b", "a"));
+
+            var desc = Comparer<int>.Create((a, b) => b.CompareTo(a));
+            var list = new List<int> { 2, 8, 4 };
+            list.Sort(desc);
+            Console.WriteLine(string.Join(",", list));
+
+            var versions = new List<Version> { new Version(1, 10), new Version(1, 2), new Version(0, 9) };
+            versions.Sort(Comparer<Version>.Default);
+            Console.WriteLine(string.Join(" ", versions));
+
+            var byDigit = new HashSet<int>(new Mod10()) { 11, 21, 3, 13, 5 };
+            Console.WriteLine(byDigit.Count + " " + string.Join(",", byDigit) + " " + byDigit.Contains(31));
+            var counts = new Dictionary<int, int>(new Mod10());
+            foreach (var x in new[] { 1, 11, 2, 21, 32 }) counts[x] = counts.GetValueOrDefault(x) + 1;
+            foreach (var kv in counts) Console.Write(kv.Key + "=" + kv.Value + " ");
+            Console.WriteLine();
+
+            var ci = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            ci["Hello"] = 1;
+            ci["HELLO"] += 1;
+            Console.WriteLine(ci.Count + " " + ci["hello"] + " " + ci.ContainsKey("hElLo"));
+            var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "a", "A", "b" };
+            Console.WriteLine(tags.Count);
+            Console.WriteLine(StringComparer.Ordinal.Compare("a", "c") + " " + StringComparer.Ordinal.Equals("x", "X") +
+                              " " + StringComparer.OrdinalIgnoreCase.Equals("x", "X"));
+            var names = new List<string> { "b", "A", "c" };
+            names.Sort(StringComparer.Ordinal);
+            Console.WriteLine(string.Join(",", names));
+
+            var eq = EqualityComparer<int>.Default;
+            Console.WriteLine(eq.Equals(3, 3) + " " + eq.Equals(3, 4));
+
+            var sq = new Squares(5);
+            Console.WriteLine(SumAll(sq) + " " + SumAll(new List<int> { 1, 2 }));
+            IReadOnlyList<int> rl = sq;
+            Console.WriteLine(rl.Count + " " + rl[3]);
+            foreach (var x in rl) Console.Write(x + " ");
+            Console.WriteLine();
+            object os = sq;
+            Console.WriteLine((os is IReadOnlyList<int>) + " " + (os is IReadOnlyCollection<int>) + " " + (os is IList<int>));
+        }
+    }
+}

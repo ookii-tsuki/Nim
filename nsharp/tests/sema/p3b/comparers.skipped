@@ -1,0 +1,8 @@
+Comparer.Create = type-parameter
+Comparer.Default = type-parameter
+Dictionary.GetValueOrDefault = type-parameter
+EqualityComparer.Default = type-parameter
+KeyValuePair.Key = type-parameter
+KeyValuePair.Value = type-parameter
+StringComparer.Ordinal = result:other
+StringComparer.OrdinalIgnoreCase = result:other

@@ -49,12 +49,11 @@
 # `IEnumerable<T>` likewise takes any collection or array.
 #
 # Deliberately absent, with the reason:
-#   * `TryGetValue`, `TryDequeue`, `TryPeek`, `TryPop`, `Remove(key, out value)`:
-#     `out` parameters are not parsed yet.
-#   * the interfaces other than `IEnumerable<T>`/`IEnumerator<T>` (`IList<T>`,
-#     `IComparer<T>`, ...) and the overloads that take them. `IEnumerable<T>` is a
-#     concrete type here: iterator methods return it and collections convert to
-#     it, but a class cannot implement it.
+#   * `TryDequeue`, `TryPeek`, `TryPop`, `Remove(key, out value)`: not yet written
+#     (`Dictionary.TryGetValue` is).
+#   * `IComparer<T>`, `IEqualityComparer<T>` and the overloads that take them.
+#     `IEnumerable<T>` is a concrete type here. The collection interfaces
+#     (`IList<T>`, `IDictionary<K,V>`, ...) are at the end of this file.
 #   * `Comparer<T>`, `EqualityComparer<T>`, `Capacity`, `AsReadOnly`, collection
 #     initialisers (`new List<int> { 1, 2 }`, a language feature).
 #   * a constructor from `Keys`/`Values` (`new List<K>(d.Keys)`): the view has two
@@ -64,17 +63,22 @@ import std/[sets, deques, algorithm, sequtils]
 import ../../System
 import ../Collections
 from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remove,
-  copyOfSet
+  copyOfSet, nsKeyHash, withComparer, initLike
 from ../../../nsharp/hashmap as nshash import nil
 from ../../../nsharp/intrinsics import Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName,
+  nsVtByKey, nsKeyOf, Equals, GetHashCode,
   NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
 export Collections
 
 # `{.nsStatic: "T".}`: a proc C# reaches through the type `T` (see `System`).
 template nsStatic(typ: string) {.pragma.}
+# `{.nsInterface.}`: a C# interface (see `System`).
+template nsInterface() {.pragma.}
 
 type
-  List*[T] = ref object
+  NsCollectionBase* = object of RootObj
+    ## The library's collections: classes, but not a user's (see `nsToIEnumerable`).
+  List*[T] = ref object of NsCollectionBase
     ## C#'s `List<T>`: a growable array.
     data: seq[T]
     version: int
@@ -82,12 +86,12 @@ type
     ## C#'s `KeyValuePair<K,V>`, the element a dictionary's `foreach` yields.
     Key*: K
     Value*: V
-  Dictionary*[K, V] = ref object
+  Dictionary*[K, V] = ref object of NsCollectionBase
     ## C#'s `Dictionary<K,V>`, over .NET's own hash table (`nsharp/hashmap`): it
     ## enumerates in .NET's order, a removed entry's place reused by the next added.
     data: NsHashMap[K, V]
     version: int
-  HashSet*[T] = ref object
+  HashSet*[T] = ref object of NsCollectionBase
     ## C#'s `HashSet<T>`, over the same hash table as `Dictionary`: it enumerates
     ## in .NET's order, a removed element's place reused by the next added.
     data: NsHashMap[T, bool]
@@ -106,11 +110,11 @@ type
     keys: seq[K]
     vals: seq[V]
     version: int
-  Queue*[T] = ref object
+  Queue*[T] = ref object of NsCollectionBase
     ## C#'s `Queue<T>` (FIFO).
     data: Deque[T]
     version: int
-  Stack*[T] = ref object
+  Stack*[T] = ref object of NsCollectionBase
     ## C#'s `Stack<T>` (LIFO). The top is the end of `data`.
     data: seq[T]
     version: int
@@ -121,18 +125,18 @@ type
     Value*: T
     owner: LinkedList[T]
     next, prev: LinkedListNode[T]
-  LinkedList*[T] = ref object
+  LinkedList*[T] = ref object of NsCollectionBase
     ## C#'s `LinkedList<T>`: a doubly-linked list of `LinkedListNode<T>`.
     head, tail: LinkedListNode[T]
     count: int
     version: int
-  KeyCollection*[K, V] = ref object
+  KeyCollection*[K, V] = ref object of NsCollectionBase
     ## C#'s `Dictionary<K,V>.KeyCollection` (and the sorted dictionaries'): a live
     ## view of the keys. Exactly one of the owners is set.
     dict: Dictionary[K, V]
     sorted: SortedDictionary[K, V]
     list: SortedList[K, V]
-  ValueCollection*[K, V] = ref object
+  ValueCollection*[K, V] = ref object of NsCollectionBase
     ## C#'s `Dictionary<K,V>.ValueCollection`: a live view of the values.
     dict: Dictionary[K, V]
     sorted: SortedDictionary[K, V]
@@ -151,8 +155,140 @@ type
   IEnumerable*[T] = ref object
     ## C#'s `IEnumerable<T>`: something that hands out enumerators.
     make: proc(): IEnumerator[T]
+  nsVT_IReadOnlyCollection*[T] = object
+    fCount*: proc (o: RootRef): int32 {.nimcall.}
+    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+  IReadOnlyCollection*[T] {.nsInterface.} = object
+    ## C#'s `IReadOnlyCollection<T>`: `Count`, and enumerable.
+    nsObj*: RootRef
+    nsVt*: ptr nsVT_IReadOnlyCollection[T]
+  nsVT_IReadOnlyList*[T] = object
+    fCount*: proc (o: RootRef): int32 {.nimcall.}
+    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fGet*: proc (o: RootRef; i: int32): T {.nimcall.}
+  IReadOnlyList*[T] {.nsInterface.} = object
+    ## C#'s `IReadOnlyList<T>`: an `IReadOnlyCollection<T>` with an indexer to read.
+    nsObj*: RootRef
+    nsVt*: ptr nsVT_IReadOnlyList[T]
+  nsVT_ICollection*[T] = object
+    fCount*: proc (o: RootRef): int32 {.nimcall.}
+    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fIsReadOnly*: bool
+    fAdd*: proc (o: RootRef; x: T) {.nimcall.}
+    fClear*: proc (o: RootRef) {.nimcall.}
+    fContains*: proc (o: RootRef; x: T): bool {.nimcall.}
+    fCopyTo*: proc (o: RootRef; arr: NsArray[T]; index: int32) {.nimcall.}
+    fRemove*: proc (o: RootRef; x: T): bool {.nimcall.}
+  ICollection*[T] {.nsInterface.} = object
+    ## C#'s `ICollection<T>`.
+    nsObj*: RootRef
+    nsVt*: ptr nsVT_ICollection[T]
+  nsVT_IList*[T] = object
+    fCount*: proc (o: RootRef): int32 {.nimcall.}
+    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fIsReadOnly*: bool
+    fAdd*: proc (o: RootRef; x: T) {.nimcall.}
+    fClear*: proc (o: RootRef) {.nimcall.}
+    fContains*: proc (o: RootRef; x: T): bool {.nimcall.}
+    fCopyTo*: proc (o: RootRef; arr: NsArray[T]; index: int32) {.nimcall.}
+    fRemove*: proc (o: RootRef; x: T): bool {.nimcall.}
+    fGet*: proc (o: RootRef; i: int32): T {.nimcall.}
+    fSet*: proc (o: RootRef; i: int32; x: T) {.nimcall.}
+    fIndexOf*: proc (o: RootRef; x: T): int32 {.nimcall.}
+    fInsert*: proc (o: RootRef; i: int32; x: T) {.nimcall.}
+    fRemoveAt*: proc (o: RootRef; i: int32) {.nimcall.}
+  IList*[T] {.nsInterface.} = object
+    ## C#'s `IList<T>`: an `ICollection<T>` with an index.
+    nsObj*: RootRef
+    nsVt*: ptr nsVT_IList[T]
+  nsVT_ISet*[T] = object
+    fCount*: proc (o: RootRef): int32 {.nimcall.}
+    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fIsReadOnly*: bool
+    fAdd*: proc (o: RootRef; x: T) {.nimcall.}
+    fClear*: proc (o: RootRef) {.nimcall.}
+    fContains*: proc (o: RootRef; x: T): bool {.nimcall.}
+    fCopyTo*: proc (o: RootRef; arr: NsArray[T]; index: int32) {.nimcall.}
+    fRemove*: proc (o: RootRef; x: T): bool {.nimcall.}
+    fAddNew*: proc (o: RootRef; x: T): bool {.nimcall.}
+    fUnionWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
+    fIntersectWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
+    fExceptWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
+    fSymmetricExceptWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
+    fIsSubsetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsSupersetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsProperSubsetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsProperSupersetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fOverlaps*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fSetEquals*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+  ISet*[T] {.nsInterface.} = object
+    ## C#'s `ISet<T>`: an `ICollection<T>` with the set operations.
+    nsObj*: RootRef
+    nsVt*: ptr nsVT_ISet[T]
+  nsVT_IReadOnlySet*[T] = object
+    fCount*: proc (o: RootRef): int32 {.nimcall.}
+    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fContains*: proc (o: RootRef; x: T): bool {.nimcall.}
+    fIsSubsetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsSupersetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsProperSubsetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsProperSupersetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fOverlaps*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fSetEquals*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+  IReadOnlySet*[T] {.nsInterface.} = object
+    ## C#'s `IReadOnlySet<T>`: `Contains` and the set comparisons.
+    nsObj*: RootRef
+    nsVt*: ptr nsVT_IReadOnlySet[T]
+  nsVT_IReadOnlyDictionary*[K, V] = object
+    fCount*: proc (o: RootRef): int32 {.nimcall.}
+    fEnum*: proc (o: RootRef): IEnumerable[KeyValuePair[K, V]] {.nimcall.}
+    fGet*: proc (o: RootRef; k: K): V {.nimcall.}
+    fContainsKey*: proc (o: RootRef; k: K): bool {.nimcall.}
+    fTryGetValue*: proc (o: RootRef; k: K; v: var V): bool {.nimcall.}
+    fKeys*: proc (o: RootRef): IEnumerable[K] {.nimcall.}
+    fValues*: proc (o: RootRef): IEnumerable[V] {.nimcall.}
+  IReadOnlyDictionary*[K, V] {.nsInterface.} = object
+    ## C#'s `IReadOnlyDictionary<K,V>`.
+    nsObj*: RootRef
+    nsVt*: ptr nsVT_IReadOnlyDictionary[K, V]
+  nsVT_IDictionary*[K, V] = object
+    fCount*: proc (o: RootRef): int32 {.nimcall.}
+    fEnum*: proc (o: RootRef): IEnumerable[KeyValuePair[K, V]] {.nimcall.}
+    fGet*: proc (o: RootRef; k: K): V {.nimcall.}
+    fSet*: proc (o: RootRef; k: K; v: V) {.nimcall.}
+    fContainsKey*: proc (o: RootRef; k: K): bool {.nimcall.}
+    fTryGetValue*: proc (o: RootRef; k: K; v: var V): bool {.nimcall.}
+    fAdd*: proc (o: RootRef; k: K; v: V) {.nimcall.}
+    fRemove*: proc (o: RootRef; k: K): bool {.nimcall.}
+    fClear*: proc (o: RootRef) {.nimcall.}
+    fKeys*: proc (o: RootRef): ICollection[K] {.nimcall.}
+    fValues*: proc (o: RootRef): ICollection[V] {.nimcall.}
+  IDictionary*[K, V] {.nsInterface.} = object
+    ## C#'s `IDictionary<K,V>`.
+    nsObj*: RootRef
+    nsVt*: ptr nsVT_IDictionary[K, V]
+  nsVT_IComparer*[T] = object
+    fCompare*: proc (o: RootRef; a, b: T): int32 {.nimcall.}
+  IComparer*[T] {.nsInterface.} = object
+    ## C#'s `IComparer<T>`: `Compare(a, b)`.
+    nsObj*: RootRef
+    nsVt*: ptr nsVT_IComparer[T]
+  nsVT_IEqualityComparer*[T] = object
+    fEquals*: proc (o: RootRef; a, b: T): bool {.nimcall.}
+    fGetHashCode*: proc (o: RootRef; x: T): int32 {.nimcall.}
+  IEqualityComparer*[T] {.nsInterface.} = object
+    ## C#'s `IEqualityComparer<T>`: `Equals(a, b)` and `GetHashCode(x)`.
+    nsObj*: RootRef
+    nsVt*: ptr nsVT_IEqualityComparer[T]
+  Comparer*[T] = ref object of NsCollectionBase
+    ## C#'s `Comparer<T>`: `Comparer<T>.Default`, or `Comparer<T>.Create(f)`.
+    compare: proc (a, b: T): int32
+  EqualityComparer*[T] = ref object of NsCollectionBase
+    ## C#'s `EqualityComparer<T>`: `EqualityComparer<T>.Default`.
+    discard
   Enumerable[T] = NsArray[T] | seq[T] | List[T] | HashSet[T] | SortedSet[T] | Queue[T] |
-                  Stack[T] | LinkedList[T] | IEnumerable[T]
+                  Stack[T] | LinkedList[T] | IEnumerable[T] | IList[T] | ICollection[T] |
+                  IReadOnlyList[T] | IReadOnlyCollection[T] | ISet[T] | IReadOnlySet[T]
     ## What a C# `IEnumerable<T>` parameter takes here: an array or a collection.
 
 const
@@ -227,6 +363,33 @@ proc newDictionary*[K, V](dictionary: Dictionary[K, V]): Dictionary[K, V] =
   for k, v in nshash.pairs(dictionary.data): discard result.data.put(k, v, false)
 
 proc newHashSet*[T](): HashSet[T] = HashSet[T](data: initNsHashMap[T, bool]())
+
+proc nsUseComparer[K, V](m: var NsHashMap[K, V]; c: IEqualityComparer[K]) =
+  ## Keys compared by `c`; a null comparer is the default one.
+  if c.nsObj != nil:
+    let cc = c
+    m.withComparer(proc (a, b: K): bool = cc.Equals(a, b),
+                   proc (k: K): int32 = cc.GetHashCode(k))
+
+proc newDictionary*[K, V](comparer: IEqualityComparer[K]): Dictionary[K, V] =
+  result = Dictionary[K, V](data: initNsHashMap[K, V]())
+  result.data.nsUseComparer(comparer)
+proc newDictionary*[K, V](capacity: int; comparer: IEqualityComparer[K]): Dictionary[K, V] =
+  result = Dictionary[K, V](data: initNsHashMap[K, V](max(capacity, 0)))
+  result.data.nsUseComparer(comparer)
+proc newDictionary*[K, V](dictionary: Dictionary[K, V]; comparer: IEqualityComparer[K]):
+    Dictionary[K, V] =
+  result = Dictionary[K, V](data: initNsHashMap[K, V](nshash.len(dictionary.data)))
+  result.data.nsUseComparer(comparer)
+  for k, v in nshash.pairs(dictionary.data):
+    if not result.data.put(k, v, false): raise keyDuplicate(k)
+proc newHashSet*[T](comparer: IEqualityComparer[T]): HashSet[T] =
+  result = HashSet[T](data: initNsHashMap[T, bool]())
+  result.data.nsUseComparer(comparer)
+proc newHashSet*[T](collection: Enumerable[T]; comparer: IEqualityComparer[T]): HashSet[T] =
+  result = HashSet[T](data: initNsHashMap[T, bool]())
+  result.data.nsUseComparer(comparer)
+  for x in snapshot(collection): discard result.data.put(x, true, false)
 proc newHashSet*[T](capacity: int): HashSet[T] =
   HashSet[T](data: initNsHashMap[T, bool](max(capacity, 0)))
 proc newSortedSet*[T](): SortedSet[T] = SortedSet[T]()
@@ -488,6 +651,15 @@ proc GetValueOrDefault*[K, V](t: Dictionary[K, V]; k: K; defaultValue: V): V =
 proc Remove*[K, V](t: Dictionary[K, V]; k: K): bool =
   result = t.data.remove(k)
   if result: touch t
+proc TryGetValue*[K, V](t: Dictionary[K, V]; k: K; value: var V): bool =
+  ## The value under `k` when there is one; `value` is the default when not.
+  let p = t.data.getPtr(k)
+  if p == nil:
+    value = default(V)
+    false
+  else:
+    value = p[]
+    true
 proc Keys*[K, V](t: Dictionary[K, V]): KeyCollection[K, V] =
   KeyCollection[K, V](dict: t)
 proc Values*[K, V](t: Dictionary[K, V]): ValueCollection[K, V] =
@@ -523,6 +695,16 @@ proc RemoveWhere*[T](s: HashSet[T]; match: Predicate[T]): int32 =
   for x in gone: discard s.data.remove(x)
   if gone.len > 0: touch s
   int32(gone.len)
+proc CopyTo*[T](s: HashSet[T]; arr: NsArray[T]) =
+  var i = 0
+  for x in nshash.keys(s.data):
+    arr[i] = x
+    inc i
+proc CopyTo*[T](s: HashSet[T]; arr: NsArray[T]; arrayIndex: int) =
+  var i = arrayIndex
+  for x in nshash.keys(s.data):
+    arr[i] = x
+    inc i
 proc ToArray*[T](s: HashSet[T]): NsArray[T] =
   var xs: seq[T] = @[]
   for x in nshash.keys(s.data): xs.add x
@@ -532,16 +714,16 @@ proc UnionWith*[T](s: HashSet[T]; other: Enumerable[T]) =
   touch s
 proc IntersectWith*[T](s: HashSet[T]; other: Enumerable[T]) =
   if nshash.len(s.data) == 0: return
-  var keep = initHashSet[T]()
-  for x in snapshot(other): keep.incl x
-  if keep.len == 0:
+  var keep = s.data.initLike(bool)
+  for x in snapshot(other): discard keep.put(x, true, false)
+  if nshash.len(keep) == 0:
     ## .NET clears the set then, which also forgets the free places.
     nshash.clear(s.data)
     touch s
     return
   var gone: seq[T] = @[]
   for x in nshash.keys(s.data):
-    if x notin keep: gone.add x
+    if not nshash.contains(keep, x): gone.add x
   for x in gone: discard s.data.remove(x)
   touch s
 proc ExceptWith*[T](s: HashSet[T]; other: Enumerable[T]) =
@@ -565,50 +747,56 @@ proc SymmetricExceptWith*[T](s: HashSet[T]; other: Enumerable[T]) =
   else:
     ## .NET's path for any other collection: the new elements are added first,
     ## then the ones both had are removed, in the set's order.
-    var seen = initHashSet[T]()
-    var common = initHashSet[T]()
+    var seen = s.data.initLike(bool)
+    var common = s.data.initLike(bool)
     for x in snapshot(other):
-      if seen.containsOrIncl(x): continue
-      if not s.data.put(x, true, false): common.incl x
+      if not seen.put(x, true, false): continue
+      if not s.data.put(x, true, false): discard common.put(x, true, false)
     var gone: seq[T] = @[]
     for x in nshash.keys(s.data):
-      if x in common: gone.add x
+      if nshash.contains(common, x): gone.add x
     for x in gone: discard s.data.remove(x)
   touch s
 
-# The set comparisons read `other` as a set: duplicates in it do not count.
-proc otherSet[T](other: Enumerable[T]): sets.HashSet[T] =
-  result = initHashSet[T]()
-  for x in snapshot(other): result.incl x
+proc plainSet[T](other: Enumerable[T]): NsHashMap[T, bool] =
+  ## `other` as a set by its elements' own equality.
+  result = initNsHashMap[T, bool]()
+  for x in snapshot(other): discard result.put(x, true, false)
+
+# The set comparisons read `other` as a set, by the set's own comparer: duplicates
+# in it do not count.
+proc otherSet[T](s: HashSet[T]; other: Enumerable[T]): NsHashMap[T, bool] =
+  result = s.data.initLike(bool)
+  for x in snapshot(other): discard result.put(x, true, false)
 
 proc IsSubsetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
-  let o = otherSet(other)
+  let o = s.otherSet(other)
   for x in nshash.keys(s.data):
-    if x notin o: return false
+    if not nshash.contains(o, x): return false
   true
 proc IsProperSubsetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
-  let o = otherSet(other)
-  if o.len <= nshash.len(s.data): return false
+  let o = s.otherSet(other)
+  if nshash.len(o) <= nshash.len(s.data): return false
   for x in nshash.keys(s.data):
-    if x notin o: return false
+    if not nshash.contains(o, x): return false
   true
 proc IsSupersetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
   for x in snapshot(other):
     if not nshash.contains(s.data, x): return false
   true
 proc IsProperSupersetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
-  let o = otherSet(other)
-  if o.len >= nshash.len(s.data): return false
-  for x in sets.items(o):
+  let o = s.otherSet(other)
+  if nshash.len(o) >= nshash.len(s.data): return false
+  for x in nshash.keys(o):
     if not nshash.contains(s.data, x): return false
   true
 proc Overlaps*[T](s: HashSet[T]; other: Enumerable[T]): bool =
   for x in snapshot(other):
     if nshash.contains(s.data, x): return true
 proc SetEquals*[T](s: HashSet[T]; other: Enumerable[T]): bool =
-  let o = otherSet(other)
-  if o.len != nshash.len(s.data): return false
-  for x in sets.items(o):
+  let o = s.otherSet(other)
+  if nshash.len(o) != nshash.len(s.data): return false
+  for x in nshash.keys(o):
     if not nshash.contains(s.data, x): return false
   true
 
@@ -663,47 +851,47 @@ proc UnionWith*[T](s: SortedSet[T]; other: Enumerable[T]) =
   for x in snapshot(other): discard s.Add(x)
   touch s
 proc IntersectWith*[T](s: SortedSet[T]; other: Enumerable[T]) =
-  let o = otherSet(other)
+  let o = plainSet(other)
   var kept: seq[T] = @[]
   for x in s.data:
-    if x in o: kept.add x
+    if nshash.contains(o, x): kept.add x
   s.data = kept
   touch s
 proc ExceptWith*[T](s: SortedSet[T]; other: Enumerable[T]) =
   for x in snapshot(other): discard s.Remove(x)
   touch s
 proc SymmetricExceptWith*[T](s: SortedSet[T]; other: Enumerable[T]) =
-  for x in sets.items(otherSet(other)):
+  for x in nshash.keys(plainSet(other)):
     if not s.Remove(x): discard s.Add(x)
   touch s
 proc IsSubsetOf*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
-  let o = otherSet(other)
+  let o = plainSet(other)
   for x in s.data:
-    if x notin o: return false
+    if not nshash.contains(o, x): return false
   true
 proc IsProperSubsetOf*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
-  let o = otherSet(other)
-  if o.len <= s.data.len: return false
+  let o = plainSet(other)
+  if nshash.len(o) <= s.data.len: return false
   for x in s.data:
-    if x notin o: return false
+    if not nshash.contains(o, x): return false
   true
 proc IsSupersetOf*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
   for x in snapshot(other):
     if not s.Contains(x): return false
   true
 proc IsProperSupersetOf*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
-  let o = otherSet(other)
-  if o.len >= s.data.len: return false
-  for x in sets.items(o):
+  let o = plainSet(other)
+  if nshash.len(o) >= s.data.len: return false
+  for x in nshash.keys(o):
     if not s.Contains(x): return false
   true
 proc Overlaps*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
   for x in snapshot(other):
     if s.Contains(x): return true
 proc SetEquals*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
-  let o = otherSet(other)
-  if o.len != s.data.len: return false
-  for x in sets.items(o):
+  let o = plainSet(other)
+  if nshash.len(o) != s.data.len: return false
+  for x in nshash.keys(o):
     if not s.Contains(x): return false
   true
 
@@ -854,7 +1042,7 @@ iterator items*[K, V](c: ValueCollection[K, V]): V =
 template joinAll(separator, xs: untyped): string =
   var r = ""
   var first = true
-  for x in xs:
+  for x in items(xs):
     if first: first = false
     else: r.add separator
     r.add $x
@@ -875,12 +1063,12 @@ proc Join*[K, V](separator: char; values: ValueCollection[K, V]): string {.nsSta
 
 proc CopyTo*[K, V](c: KeyCollection[K, V]; arr: NsArray[K]; index: int) =
   var i = index
-  for k in c:
+  for k in items(c):
     arr[i] = k
     inc i
 proc CopyTo*[K, V](c: ValueCollection[K, V]; arr: NsArray[V]; index: int) =
   var i = index
-  for v in c:
+  for v in items(c):
     arr[i] = v
     inc i
 proc IndexOfKey*[K, V](t: SortedList[K, V]; k: K): int32 = int32(findKey(t.keys, k))
@@ -1097,7 +1285,7 @@ proc Clear*[T](l: LinkedList[T]) =
   touch l
 proc CopyTo*[T](l: LinkedList[T]; arr: NsArray[T]; arrayIndex: int) =
   var i = arrayIndex
-  for x in l:
+  for x in items(l):
     arr[i] = x
     inc i
 
@@ -1204,7 +1392,7 @@ template nsEnumerable*(T: typedesc; body: untyped): untyped =
 template nsSequenceView(xs: untyped; T: typedesc): untyped =
   IEnumerable[T](make: proc(): IEnumerator[T] =
     nsEnumeratorOf[T](iterator(): T {.closure.} =
-      for x in xs: yield x))
+      for x in items(xs): yield x))
 
 # The compiler calls these where C# converts an array or a collection to
 # `IEnumerable<T>` implicitly, so the view is enumerated live. A Nim converter
@@ -1252,16 +1440,660 @@ proc nsTypeOf*[K, V](t: typedesc[KeyValuePair[K, V]]): Type =
 
 proc nsToIEnumerator*[T](e: IEnumerator[T]): IEnumerator[T] = e
 
-proc nsToIEnumerator*[C: ref RootObj and not NsArrayBase](c: C): auto =
+proc nsToIEnumerator*[C: ref RootObj and not NsArrayBase and not ref NsCollectionBase](c: C): auto =
   ## A user enumerator as the library's: each `MoveNext` steps the class's.
   mixin Current, MoveNext
   type E = typeof(c.Current)
   nsEnumeratorOf[E](iterator(): E {.closure.} =
     while c.MoveNext(): yield c.Current)
 
-proc nsToIEnumerable*[C: ref RootObj and not NsArrayBase](c: C): auto =
+proc nsToIEnumerable*[C: ref RootObj and not NsArrayBase and not ref NsCollectionBase](c: C): auto =
   ## A user sequence as the library's: each enumeration asks it for a new
   ## enumerator.
   mixin GetEnumerator
   type E = typeof(nsToIEnumerator(c.GetEnumerator()).Current)
   IEnumerable[E](make: proc(): IEnumerator[E] = nsToIEnumerator(c.GetEnumerator()))
+
+# --- the collection interfaces --------------------------------------------------
+#
+# `IList<T>`, `ICollection<T>`, `IReadOnlyList<T>`, `IReadOnlyCollection<T>`: each is
+# what a user interface lowers to, written ahead of time -- a value holding the
+# instance (`nsObj`) and a table of its members (`nsVt`). A table is built once per
+# implementing type by a generic builder that calls that type's own members by
+# name; where the type cannot do something (adding to an array) the entry throws
+# what .NET throws. The compiler converts a collection to an interface through
+# `nsTo<Interface>`, as it does to `IEnumerable<T>`, and `is`/`as` ask the object
+# through `nsVtByKey`.
+
+proc nsFixedSize() {.noinline, noreturn.} =
+  raise newException(NotSupportedException, "Collection was of a fixed size.")
+
+template nsIfaceObj(v: untyped): RootRef =
+  ## The instance behind an interface value; null throws, as a call on it does.
+  (if v.nsObj == nil: raise newException(NullReferenceException,
+                                         "Object reference not set to an instance of an object.");
+   v.nsObj)
+
+# The tables. `C` is the implementing type; an array is fixed in size and takes no
+# `Add`, `Insert`, `Remove`, `RemoveAt` or `Clear` through an interface.
+
+proc nsEnumOf[C, T](c: C): IEnumerable[T] =
+  ## A sequence over what implements an interface: the library's collections and
+  ## arrays walk their own items; a user's class its `GetEnumerator`.
+  mixin nsToIEnumerable
+  when C is NsArray or C is ref NsCollectionBase: nsSequenceView(c, T)
+  else: nsToIEnumerable(c)
+
+proc nsReadOnlyCollectionVt[C, T](): ptr nsVT_IReadOnlyCollection[T] =
+  mixin Count
+  var store {.global.}: nsVT_IReadOnlyCollection[T]
+  var ready {.global.} = false
+  if not ready:
+    ready = true
+    store = nsVT_IReadOnlyCollection[T](
+      fCount: proc (o: RootRef): int32 {.nimcall.} =
+        when C is NsArray: int32(cast[C](o).len) else: Count(cast[C](o)),
+      fEnum: proc (o: RootRef): IEnumerable[T] {.nimcall.} = nsEnumOf[C, T](cast[C](o)))
+  addr store
+
+proc nsReadOnlyListVt[C, T](): ptr nsVT_IReadOnlyList[T] =
+  mixin Count
+  var store {.global.}: nsVT_IReadOnlyList[T]
+  var ready {.global.} = false
+  if not ready:
+    ready = true
+    store = nsVT_IReadOnlyList[T](
+      fCount: proc (o: RootRef): int32 {.nimcall.} =
+        when C is NsArray: int32(cast[C](o).len) else: Count(cast[C](o)),
+      fEnum: proc (o: RootRef): IEnumerable[T] {.nimcall.} = nsEnumOf[C, T](cast[C](o)),
+      fGet: proc (o: RootRef; i: int32): T {.nimcall.} = cast[C](o)[i])
+  addr store
+
+proc nsViewMutated(C: typedesc) {.noinline, noreturn.} =
+  ## A dictionary's `Keys` or `Values` changed through `ICollection<T>`.
+  let what = (when C is KeyCollection: "key" else: "value")
+  raise newException(NotSupportedException,
+                     "Mutating a " & what & " collection derived from a dictionary is not allowed.")
+
+template nsIsView(C: typedesc): bool = C is KeyCollection or C is ValueCollection
+
+proc nsCollectionVt[C, T](): ptr nsVT_ICollection[T] =
+  mixin Count, Add, AddLast, Clear, Contains, CopyTo, Remove
+  var store {.global.}: nsVT_ICollection[T]
+  var ready {.global.} = false
+  if not ready:
+    ready = true
+    store = nsVT_ICollection[T](
+      fCount: proc (o: RootRef): int32 {.nimcall.} =
+        when C is NsArray: int32(cast[C](o).len) else: Count(cast[C](o)),
+      fEnum: proc (o: RootRef): IEnumerable[T] {.nimcall.} = nsEnumOf[C, T](cast[C](o)),
+      fIsReadOnly: C is NsArray or nsIsView(C),
+      fAdd: proc (o: RootRef; x: T) {.nimcall.} =
+        when C is NsArray: nsFixedSize()
+        elif nsIsView(C): nsViewMutated(C)
+        elif C is LinkedList: discard AddLast(cast[C](o), x)
+        elif typeof(Add(cast[C](o), x)) is void: Add(cast[C](o), x)
+        else: discard Add(cast[C](o), x),
+      fClear: proc (o: RootRef) {.nimcall.} =
+        when C is NsArray: nsFixedSize()
+        elif nsIsView(C): nsViewMutated(C)
+        else: Clear(cast[C](o)),
+      fContains: proc (o: RootRef; x: T): bool {.nimcall.} =
+        when C is NsArray: IndexOf(cast[C](o), x) >= 0
+        elif nsIsView(C):
+          for y in cast[C](o):
+            if y == x: return true
+          false
+        else: Contains(cast[C](o), x),
+      fCopyTo: proc (o: RootRef; arr: NsArray[T]; index: int32) {.nimcall.} =
+        when C is NsArray:
+          var i = index
+          for x in cast[C](o):
+            arr[i] = x
+            inc i
+        else: CopyTo(cast[C](o), arr, index),
+      fRemove: proc (o: RootRef; x: T): bool {.nimcall.} =
+        when C is NsArray: nsFixedSize()
+        elif nsIsView(C): nsViewMutated(C)
+        else: Remove(cast[C](o), x))
+  addr store
+
+proc nsListVt[C, T](): ptr nsVT_IList[T] =
+  var store {.global.}: nsVT_IList[T]
+  var ready {.global.} = false
+  if not ready:
+    ready = true
+    let c = nsCollectionVt[C, T]()
+    store.fCount = c.fCount
+    store.fEnum = c.fEnum
+    store.fIsReadOnly = c.fIsReadOnly
+    store.fAdd = c.fAdd
+    store.fClear = c.fClear
+    store.fContains = c.fContains
+    store.fCopyTo = c.fCopyTo
+    store.fRemove = c.fRemove
+    store.fGet = proc (o: RootRef; i: int32): T {.nimcall.} = cast[C](o)[i]
+    store.fSet = proc (o: RootRef; i: int32; x: T) {.nimcall.} = cast[C](o)[i] = x
+    store.fIndexOf = proc (o: RootRef; x: T): int32 {.nimcall.} =
+      when C is NsArray: IndexOf(cast[C](o), x) else: IndexOf(cast[C](o), x)
+    store.fInsert = proc (o: RootRef; i: int32; x: T) {.nimcall.} =
+      when C is NsArray: nsFixedSize() else: Insert(cast[C](o), i, x)
+    store.fRemoveAt = proc (o: RootRef; i: int32) {.nimcall.} =
+      when C is NsArray: nsFixedSize() else: RemoveAt(cast[C](o), i)
+  addr store
+
+
+proc nsSetVt[C, T](): ptr nsVT_ISet[T] =
+  mixin Add, UnionWith, IntersectWith, ExceptWith, SymmetricExceptWith, IsSubsetOf, IsSupersetOf, IsProperSubsetOf, IsProperSupersetOf, Overlaps, SetEquals
+  var store {.global.}: nsVT_ISet[T]
+  var ready {.global.} = false
+  if not ready:
+    ready = true
+    let c = nsCollectionVt[C, T]()
+    store.fCount = c.fCount
+    store.fEnum = c.fEnum
+    store.fIsReadOnly = c.fIsReadOnly
+    store.fAdd = c.fAdd
+    store.fClear = c.fClear
+    store.fContains = c.fContains
+    store.fCopyTo = c.fCopyTo
+    store.fRemove = c.fRemove
+    store.fAddNew = proc (o: RootRef; x: T): bool {.nimcall.} = Add(cast[C](o), x)
+    store.fUnionWith = proc (o: RootRef; other: NsArray[T]) {.nimcall.} = UnionWith(cast[C](o), other)
+    store.fIntersectWith = proc (o: RootRef; other: NsArray[T]) {.nimcall.} = IntersectWith(cast[C](o), other)
+    store.fExceptWith = proc (o: RootRef; other: NsArray[T]) {.nimcall.} = ExceptWith(cast[C](o), other)
+    store.fSymmetricExceptWith = proc (o: RootRef; other: NsArray[T]) {.nimcall.} = SymmetricExceptWith(cast[C](o), other)
+    store.fIsSubsetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsSubsetOf(cast[C](o), other)
+    store.fIsSupersetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsSupersetOf(cast[C](o), other)
+    store.fIsProperSubsetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsProperSubsetOf(cast[C](o), other)
+    store.fIsProperSupersetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsProperSupersetOf(cast[C](o), other)
+    store.fOverlaps = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = Overlaps(cast[C](o), other)
+    store.fSetEquals = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = SetEquals(cast[C](o), other)
+  addr store
+
+proc nsReadOnlySetVt[C, T](): ptr nsVT_IReadOnlySet[T] =
+  mixin Count, Contains, IsSubsetOf, IsSupersetOf, IsProperSubsetOf, IsProperSupersetOf, Overlaps, SetEquals
+  var store {.global.}: nsVT_IReadOnlySet[T]
+  var ready {.global.} = false
+  if not ready:
+    ready = true
+    store.fCount = proc (o: RootRef): int32 {.nimcall.} = Count(cast[C](o))
+    store.fEnum = proc (o: RootRef): IEnumerable[T] {.nimcall.} = nsEnumOf[C, T](cast[C](o))
+    store.fContains = proc (o: RootRef; x: T): bool {.nimcall.} = Contains(cast[C](o), x)
+    store.fIsSubsetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsSubsetOf(cast[C](o), other)
+    store.fIsSupersetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsSupersetOf(cast[C](o), other)
+    store.fIsProperSubsetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsProperSubsetOf(cast[C](o), other)
+    store.fIsProperSupersetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsProperSupersetOf(cast[C](o), other)
+    store.fOverlaps = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = Overlaps(cast[C](o), other)
+    store.fSetEquals = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = SetEquals(cast[C](o), other)
+  addr store
+
+proc nsReadOnlyDictionaryVt[C, K, V](): ptr nsVT_IReadOnlyDictionary[K, V] =
+  mixin Count, ContainsKey, TryGetValue, Keys, Values
+  var store {.global.}: nsVT_IReadOnlyDictionary[K, V]
+  var ready {.global.} = false
+  if not ready:
+    ready = true
+    store.fCount = proc (o: RootRef): int32 {.nimcall.} = Count(cast[C](o))
+    store.fEnum = proc (o: RootRef): IEnumerable[KeyValuePair[K, V]] {.nimcall.} =
+      nsEnumOf[C, KeyValuePair[K, V]](cast[C](o))
+    store.fGet = proc (o: RootRef; k: K): V {.nimcall.} = cast[C](o)[k]
+    store.fContainsKey = proc (o: RootRef; k: K): bool {.nimcall.} = ContainsKey(cast[C](o), k)
+    store.fTryGetValue = proc (o: RootRef; k: K; v: var V): bool {.nimcall.} =
+      TryGetValue(cast[C](o), k, v)
+    store.fKeys = proc (o: RootRef): IEnumerable[K] {.nimcall.} = nsSequenceView(Keys(cast[C](o)), K)
+    store.fValues = proc (o: RootRef): IEnumerable[V] {.nimcall.} =
+      nsSequenceView(Values(cast[C](o)), V)
+  addr store
+
+proc nsDictionaryVt[C, K, V](): ptr nsVT_IDictionary[K, V] =
+  mixin Count, ContainsKey, TryGetValue, Keys, Values, Add, Remove, Clear
+  var store {.global.}: nsVT_IDictionary[K, V]
+  var ready {.global.} = false
+  if not ready:
+    ready = true
+    store.fCount = proc (o: RootRef): int32 {.nimcall.} = Count(cast[C](o))
+    store.fEnum = proc (o: RootRef): IEnumerable[KeyValuePair[K, V]] {.nimcall.} =
+      nsEnumOf[C, KeyValuePair[K, V]](cast[C](o))
+    store.fGet = proc (o: RootRef; k: K): V {.nimcall.} = cast[C](o)[k]
+    store.fSet = proc (o: RootRef; k: K; v: V) {.nimcall.} = cast[C](o)[k] = v
+    store.fContainsKey = proc (o: RootRef; k: K): bool {.nimcall.} = ContainsKey(cast[C](o), k)
+    store.fTryGetValue = proc (o: RootRef; k: K; v: var V): bool {.nimcall.} =
+      TryGetValue(cast[C](o), k, v)
+    store.fAdd = proc (o: RootRef; k: K; v: V) {.nimcall.} = Add(cast[C](o), k, v)
+    store.fRemove = proc (o: RootRef; k: K): bool {.nimcall.} = Remove(cast[C](o), k)
+    store.fClear = proc (o: RootRef) {.nimcall.} = Clear(cast[C](o))
+    store.fKeys = proc (o: RootRef): ICollection[K] {.nimcall.} =
+      let ks = Keys(cast[C](o))
+      ICollection[K](nsObj: ks, nsVt: nsCollectionVt[typeof(ks), K]())
+    store.fValues = proc (o: RootRef): ICollection[V] {.nimcall.} =
+      let vs = Values(cast[C](o))
+      ICollection[V](nsObj: vs, nsVt: nsCollectionVt[typeof(vs), V]())
+  addr store
+
+# The members, through the table.
+
+proc Count*[T](v: IReadOnlyCollection[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
+iterator items*[T](v: IReadOnlyCollection[T]): T =
+  let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
+  while e.MoveNext(): yield e.Current
+proc `$`*[T](v: IReadOnlyCollection[T]): string = $v.nsObj
+proc ToString*[T](v: IReadOnlyCollection[T]): string = $v.nsObj
+proc nsToIEnumerable*[T](v: IReadOnlyCollection[T]): IEnumerable[T] =
+  if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
+proc Count*[T](v: IReadOnlyList[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
+iterator items*[T](v: IReadOnlyList[T]): T =
+  let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
+  while e.MoveNext(): yield e.Current
+proc `$`*[T](v: IReadOnlyList[T]): string = $v.nsObj
+proc ToString*[T](v: IReadOnlyList[T]): string = $v.nsObj
+proc nsToIEnumerable*[T](v: IReadOnlyList[T]): IEnumerable[T] =
+  if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
+proc Count*[T](v: ICollection[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
+iterator items*[T](v: ICollection[T]): T =
+  let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
+  while e.MoveNext(): yield e.Current
+proc `$`*[T](v: ICollection[T]): string = $v.nsObj
+proc ToString*[T](v: ICollection[T]): string = $v.nsObj
+proc nsToIEnumerable*[T](v: ICollection[T]): IEnumerable[T] =
+  if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
+proc Count*[T](v: IList[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
+iterator items*[T](v: IList[T]): T =
+  let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
+  while e.MoveNext(): yield e.Current
+proc `$`*[T](v: IList[T]): string = $v.nsObj
+proc ToString*[T](v: IList[T]): string = $v.nsObj
+proc nsToIEnumerable*[T](v: IList[T]): IEnumerable[T] =
+  if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
+proc `[]`*[T](v: IReadOnlyList[T]; i: int32): T = v.nsVt.fGet(nsIfaceObj(v), i)
+proc IsReadOnly*[T](v: ICollection[T]): bool =
+  discard nsIfaceObj(v)
+  v.nsVt.fIsReadOnly
+proc Add*[T](v: ICollection[T]; x: T) = v.nsVt.fAdd(nsIfaceObj(v), x)
+proc Clear*[T](v: ICollection[T]) = v.nsVt.fClear(nsIfaceObj(v))
+proc Contains*[T](v: ICollection[T]; x: T): bool = v.nsVt.fContains(nsIfaceObj(v), x)
+proc CopyTo*[T](v: ICollection[T]; arr: NsArray[T]; arrayIndex: int32) =
+  v.nsVt.fCopyTo(nsIfaceObj(v), arr, arrayIndex)
+proc Remove*[T](v: ICollection[T]; x: T): bool = v.nsVt.fRemove(nsIfaceObj(v), x)
+proc IsReadOnly*[T](v: IList[T]): bool =
+  discard nsIfaceObj(v)
+  v.nsVt.fIsReadOnly
+proc Add*[T](v: IList[T]; x: T) = v.nsVt.fAdd(nsIfaceObj(v), x)
+proc Clear*[T](v: IList[T]) = v.nsVt.fClear(nsIfaceObj(v))
+proc Contains*[T](v: IList[T]; x: T): bool = v.nsVt.fContains(nsIfaceObj(v), x)
+proc CopyTo*[T](v: IList[T]; arr: NsArray[T]; arrayIndex: int32) =
+  v.nsVt.fCopyTo(nsIfaceObj(v), arr, arrayIndex)
+proc Remove*[T](v: IList[T]; x: T): bool = v.nsVt.fRemove(nsIfaceObj(v), x)
+proc `[]`*[T](v: IList[T]; i: int32): T = v.nsVt.fGet(nsIfaceObj(v), i)
+proc `[]=`*[T](v: IList[T]; i: int32; x: T) = v.nsVt.fSet(nsIfaceObj(v), i, x)
+proc IndexOf*[T](v: IList[T]; x: T): int32 = v.nsVt.fIndexOf(nsIfaceObj(v), x)
+proc Insert*[T](v: IList[T]; i: int32; x: T) = v.nsVt.fInsert(nsIfaceObj(v), i, x)
+proc RemoveAt*[T](v: IList[T]; i: int32) = v.nsVt.fRemoveAt(nsIfaceObj(v), i)
+
+proc Count*[T](v: ISet[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
+iterator items*[T](v: ISet[T]): T =
+  let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
+  while e.MoveNext(): yield e.Current
+proc `$`*[T](v: ISet[T]): string = $v.nsObj
+proc ToString*[T](v: ISet[T]): string = $v.nsObj
+proc nsToIEnumerable*[T](v: ISet[T]): IEnumerable[T] =
+  if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
+proc Contains*[T](v: ISet[T]; x: T): bool = v.nsVt.fContains(nsIfaceObj(v), x)
+proc IsSubsetOf*[T](v: ISet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fIsSubsetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc IsSupersetOf*[T](v: ISet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fIsSupersetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc IsProperSubsetOf*[T](v: ISet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fIsProperSubsetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc IsProperSupersetOf*[T](v: ISet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fIsProperSupersetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc Overlaps*[T](v: ISet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fOverlaps(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc SetEquals*[T](v: ISet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fSetEquals(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc Count*[T](v: IReadOnlySet[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
+iterator items*[T](v: IReadOnlySet[T]): T =
+  let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
+  while e.MoveNext(): yield e.Current
+proc `$`*[T](v: IReadOnlySet[T]): string = $v.nsObj
+proc ToString*[T](v: IReadOnlySet[T]): string = $v.nsObj
+proc nsToIEnumerable*[T](v: IReadOnlySet[T]): IEnumerable[T] =
+  if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
+proc Contains*[T](v: IReadOnlySet[T]; x: T): bool = v.nsVt.fContains(nsIfaceObj(v), x)
+proc IsSubsetOf*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fIsSubsetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc IsSupersetOf*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fIsSupersetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc IsProperSubsetOf*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fIsProperSubsetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc IsProperSupersetOf*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fIsProperSupersetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc Overlaps*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fOverlaps(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc SetEquals*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+  v.nsVt.fSetEquals(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc IsReadOnly*[T](v: ISet[T]): bool =
+  discard nsIfaceObj(v)
+  v.nsVt.fIsReadOnly
+proc Add*[T](v: ISet[T]; x: T): bool = v.nsVt.fAddNew(nsIfaceObj(v), x)
+proc Clear*[T](v: ISet[T]) = v.nsVt.fClear(nsIfaceObj(v))
+proc CopyTo*[T](v: ISet[T]; arr: NsArray[T]; arrayIndex: int32) =
+  v.nsVt.fCopyTo(nsIfaceObj(v), arr, arrayIndex)
+proc Remove*[T](v: ISet[T]; x: T): bool = v.nsVt.fRemove(nsIfaceObj(v), x)
+proc UnionWith*[T](v: ISet[T]; other: Enumerable[T]) =
+  v.nsVt.fUnionWith(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc IntersectWith*[T](v: ISet[T]; other: Enumerable[T]) =
+  v.nsVt.fIntersectWith(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc ExceptWith*[T](v: ISet[T]; other: Enumerable[T]) =
+  v.nsVt.fExceptWith(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc SymmetricExceptWith*[T](v: ISet[T]; other: Enumerable[T]) =
+  v.nsVt.fSymmetricExceptWith(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+proc Count*[K, V](v: IReadOnlyDictionary[K, V]): int32 = v.nsVt.fCount(nsIfaceObj(v))
+iterator items*[K, V](v: IReadOnlyDictionary[K, V]): KeyValuePair[K, V] =
+  let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
+  while e.MoveNext(): yield e.Current
+proc `$`*[K, V](v: IReadOnlyDictionary[K, V]): string = $v.nsObj
+proc ToString*[K, V](v: IReadOnlyDictionary[K, V]): string = $v.nsObj
+proc nsToIEnumerable*[K, V](v: IReadOnlyDictionary[K, V]): IEnumerable[KeyValuePair[K, V]] =
+  if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
+proc `[]`*[K, V](v: IReadOnlyDictionary[K, V]; k: K): V = v.nsVt.fGet(nsIfaceObj(v), k)
+proc ContainsKey*[K, V](v: IReadOnlyDictionary[K, V]; k: K): bool = v.nsVt.fContainsKey(nsIfaceObj(v), k)
+proc TryGetValue*[K, V](v: IReadOnlyDictionary[K, V]; k: K; value: var V): bool =
+  v.nsVt.fTryGetValue(nsIfaceObj(v), k, value)
+proc Count*[K, V](v: IDictionary[K, V]): int32 = v.nsVt.fCount(nsIfaceObj(v))
+iterator items*[K, V](v: IDictionary[K, V]): KeyValuePair[K, V] =
+  let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
+  while e.MoveNext(): yield e.Current
+proc `$`*[K, V](v: IDictionary[K, V]): string = $v.nsObj
+proc ToString*[K, V](v: IDictionary[K, V]): string = $v.nsObj
+proc nsToIEnumerable*[K, V](v: IDictionary[K, V]): IEnumerable[KeyValuePair[K, V]] =
+  if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
+proc `[]`*[K, V](v: IDictionary[K, V]; k: K): V = v.nsVt.fGet(nsIfaceObj(v), k)
+proc ContainsKey*[K, V](v: IDictionary[K, V]; k: K): bool = v.nsVt.fContainsKey(nsIfaceObj(v), k)
+proc TryGetValue*[K, V](v: IDictionary[K, V]; k: K; value: var V): bool =
+  v.nsVt.fTryGetValue(nsIfaceObj(v), k, value)
+proc Keys*[K, V](v: IReadOnlyDictionary[K, V]): IEnumerable[K] = v.nsVt.fKeys(nsIfaceObj(v))
+proc Values*[K, V](v: IReadOnlyDictionary[K, V]): IEnumerable[V] = v.nsVt.fValues(nsIfaceObj(v))
+proc Keys*[K, V](v: IDictionary[K, V]): ICollection[K] = v.nsVt.fKeys(nsIfaceObj(v))
+proc Values*[K, V](v: IDictionary[K, V]): ICollection[V] = v.nsVt.fValues(nsIfaceObj(v))
+proc `[]=`*[K, V](v: IDictionary[K, V]; k: K; x: V) = v.nsVt.fSet(nsIfaceObj(v), k, x)
+proc Add*[K, V](v: IDictionary[K, V]; k: K; x: V) = v.nsVt.fAdd(nsIfaceObj(v), k, x)
+proc Remove*[K, V](v: IDictionary[K, V]; k: K): bool = v.nsVt.fRemove(nsIfaceObj(v), k)
+proc Clear*[K, V](v: IDictionary[K, V]) = v.nsVt.fClear(nsIfaceObj(v))
+proc IsReadOnly*[K, V](v: IDictionary[K, V]): bool =
+  discard nsIfaceObj(v)
+  false
+
+# The conversions the compiler inserts: from a collection or an array, and from an
+# interface to one it extends (`IList<T>` is an `ICollection<T>`), which asks the
+# object for that interface's table.
+
+proc nsIfaceUp[I](o: RootRef): I =
+  if o != nil: result = I(nsObj: o, nsVt: cast[typeof(result.nsVt)](nsVtByKey(o, nsKeyOf(I))))
+
+proc nsToIReadOnlyCollection*[T](xs: List[T]): IReadOnlyCollection[T] =
+  if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[List[T], T]())
+proc nsToIReadOnlyCollection*[T](xs: NsArray[T]): IReadOnlyCollection[T] =
+  if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[NsArray[T], T]())
+proc nsToIReadOnlyCollection*[T](v: IReadOnlyList[T]): IReadOnlyCollection[T] =
+  nsIfaceUp[IReadOnlyCollection[T]](v.nsObj)
+proc nsToIReadOnlyList*[T](xs: List[T]): IReadOnlyList[T] =
+  if xs != nil: result = IReadOnlyList[T](nsObj: xs, nsVt: nsReadOnlyListVt[List[T], T]())
+proc nsToIReadOnlyList*[T](xs: NsArray[T]): IReadOnlyList[T] =
+  if xs != nil: result = IReadOnlyList[T](nsObj: xs, nsVt: nsReadOnlyListVt[NsArray[T], T]())
+proc nsToICollection*[T](xs: List[T]): ICollection[T] =
+  if xs != nil: result = ICollection[T](nsObj: xs, nsVt: nsCollectionVt[List[T], T]())
+proc nsToICollection*[T](xs: NsArray[T]): ICollection[T] =
+  if xs != nil: result = ICollection[T](nsObj: xs, nsVt: nsCollectionVt[NsArray[T], T]())
+proc nsToICollection*[T](v: IList[T]): ICollection[T] = nsIfaceUp[ICollection[T]](v.nsObj)
+proc nsToIList*[T](xs: List[T]): IList[T] =
+  if xs != nil: result = IList[T](nsObj: xs, nsVt: nsListVt[List[T], T]())
+proc nsToIList*[T](xs: NsArray[T]): IList[T] =
+  if xs != nil: result = IList[T](nsObj: xs, nsVt: nsListVt[NsArray[T], T]())
+
+proc nsToISet*[T](xs: HashSet[T]): ISet[T] =
+  if xs != nil: result = ISet[T](nsObj: xs, nsVt: nsSetVt[HashSet[T], T]())
+proc nsToIReadOnlySet*[T](xs: HashSet[T]): IReadOnlySet[T] =
+  if xs != nil: result = IReadOnlySet[T](nsObj: xs, nsVt: nsReadOnlySetVt[HashSet[T], T]())
+proc nsToICollection*[T](xs: HashSet[T]): ICollection[T] =
+  if xs != nil: result = ICollection[T](nsObj: xs, nsVt: nsCollectionVt[HashSet[T], T]())
+proc nsToIReadOnlyCollection*[T](xs: HashSet[T]): IReadOnlyCollection[T] =
+  if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[HashSet[T], T]())
+proc nsToIReadOnlyCollection*[T](xs: Queue[T]): IReadOnlyCollection[T] =
+  if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[Queue[T], T]())
+proc nsToIReadOnlyCollection*[T](xs: Stack[T]): IReadOnlyCollection[T] =
+  if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[Stack[T], T]())
+proc nsToIReadOnlyCollection*[T](xs: LinkedList[T]): IReadOnlyCollection[T] =
+  if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[LinkedList[T], T]())
+proc nsToICollection*[T](xs: LinkedList[T]): ICollection[T] =
+  if xs != nil: result = ICollection[T](nsObj: xs, nsVt: nsCollectionVt[LinkedList[T], T]())
+proc nsToIDictionary*[K, V](xs: Dictionary[K, V]): IDictionary[K, V] =
+  if xs != nil: result = IDictionary[K, V](nsObj: xs, nsVt: nsDictionaryVt[Dictionary[K, V], K, V]())
+proc nsToIReadOnlyDictionary*[K, V](xs: Dictionary[K, V]): IReadOnlyDictionary[K, V] =
+  if xs != nil:
+    result = IReadOnlyDictionary[K, V](nsObj: xs,
+                                       nsVt: nsReadOnlyDictionaryVt[Dictionary[K, V], K, V]())
+proc nsToIReadOnlyCollection*[K, V](xs: Dictionary[K, V]): IReadOnlyCollection[KeyValuePair[K, V]] =
+  if xs != nil:
+    result = IReadOnlyCollection[KeyValuePair[K, V]](nsObj: xs,
+      nsVt: nsReadOnlyCollectionVt[Dictionary[K, V], KeyValuePair[K, V]]())
+proc nsToICollection*[T](v: ISet[T]): ICollection[T] = nsIfaceUp[ICollection[T]](v.nsObj)
+proc nsToIReadOnlyCollection*[T](v: IReadOnlySet[T]): IReadOnlyCollection[T] =
+  nsIfaceUp[IReadOnlyCollection[T]](v.nsObj)
+proc nsToIReadOnlyCollection*[K, V](v: IReadOnlyDictionary[K, V]): IReadOnlyCollection[KeyValuePair[K, V]] =
+  nsIfaceUp[IReadOnlyCollection[KeyValuePair[K, V]]](v.nsObj)
+
+# `is`/`as`: the tables an object has, by the interface's key.
+
+# An array's tables: an array is no class of its own here (its type is the
+# runtime's), so a type test answers for it by the element type the interface names.
+proc nsLibAs*[T](o: RootRef; t: typedesc[IList[T]]): IList[T] =
+  if o of NsArray[T]: result = nsToIList(NsArray[T](o))
+proc nsLibAs*[T](o: RootRef; t: typedesc[ICollection[T]]): ICollection[T] =
+  if o of NsArray[T]: result = nsToICollection(NsArray[T](o))
+proc nsLibAs*[T](o: RootRef; t: typedesc[IReadOnlyList[T]]): IReadOnlyList[T] =
+  if o of NsArray[T]: result = nsToIReadOnlyList(NsArray[T](o))
+proc nsLibAs*[T](o: RootRef; t: typedesc[IReadOnlyCollection[T]]): IReadOnlyCollection[T] =
+  if o of NsArray[T]: result = nsToIReadOnlyCollection(NsArray[T](o))
+
+method nsVtByKey*[T](x: List[T]; key: string): pointer =
+  if key == nsKeyOf(IList[T]): return nsListVt[List[T], T]()
+  if key == nsKeyOf(ICollection[T]): return nsCollectionVt[List[T], T]()
+  if key == nsKeyOf(IReadOnlyList[T]): return nsReadOnlyListVt[List[T], T]()
+  if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[List[T], T]()
+  procCall nsVtByKey(RootRef(x), key)
+method nsVtByKey*[T](x: HashSet[T]; key: string): pointer =
+  if key == nsKeyOf(ISet[T]): return nsSetVt[HashSet[T], T]()
+  if key == nsKeyOf(IReadOnlySet[T]): return nsReadOnlySetVt[HashSet[T], T]()
+  if key == nsKeyOf(ICollection[T]): return nsCollectionVt[HashSet[T], T]()
+  if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[HashSet[T], T]()
+  procCall nsVtByKey(RootRef(x), key)
+method nsVtByKey*[K, V](x: Dictionary[K, V]; key: string): pointer =
+  if key == nsKeyOf(IDictionary[K, V]): return nsDictionaryVt[Dictionary[K, V], K, V]()
+  if key == nsKeyOf(IReadOnlyDictionary[K, V]):
+    return nsReadOnlyDictionaryVt[Dictionary[K, V], K, V]()
+  if key == nsKeyOf(IReadOnlyCollection[KeyValuePair[K, V]]):
+    return nsReadOnlyCollectionVt[Dictionary[K, V], KeyValuePair[K, V]]()
+  procCall nsVtByKey(RootRef(x), key)
+method nsVtByKey*[T](x: Queue[T]; key: string): pointer =
+  if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[Queue[T], T]()
+  procCall nsVtByKey(RootRef(x), key)
+method nsVtByKey*[T](x: Stack[T]; key: string): pointer =
+  if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[Stack[T], T]()
+  procCall nsVtByKey(RootRef(x), key)
+method nsVtByKey*[T](x: LinkedList[T]; key: string): pointer =
+  if key == nsKeyOf(ICollection[T]): return nsCollectionVt[LinkedList[T], T]()
+  if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[LinkedList[T], T]()
+  procCall nsVtByKey(RootRef(x), key)
+
+# --- a user's class implementing a library interface ------------------------------
+#
+# The conversion the compiler inserts names the interface (`t`), which gives its
+# type arguments; the table is built from the class's own members. The class's
+# `nsVtByKey` override asks `nsKeysOf<Interface>` for the interface and those it
+# extends.
+
+type NsUserClass = ref RootObj and not NsArrayBase and not ref NsCollectionBase
+
+proc nsToIList*[C: NsUserClass; T](c: C; t: typedesc[IList[T]]): IList[T] =
+  if c != nil: result = IList[T](nsObj: c, nsVt: nsListVt[C, T]())
+proc nsToICollection*[C: NsUserClass; T](c: C; t: typedesc[ICollection[T]]): ICollection[T] =
+  if c != nil: result = ICollection[T](nsObj: c, nsVt: nsCollectionVt[C, T]())
+proc nsToIReadOnlyList*[C: NsUserClass; T](c: C; t: typedesc[IReadOnlyList[T]]): IReadOnlyList[T] =
+  if c != nil: result = IReadOnlyList[T](nsObj: c, nsVt: nsReadOnlyListVt[C, T]())
+proc nsToIReadOnlyCollection*[C: NsUserClass; T](c: C; t: typedesc[IReadOnlyCollection[T]]):
+    IReadOnlyCollection[T] =
+  if c != nil: result = IReadOnlyCollection[T](nsObj: c, nsVt: nsReadOnlyCollectionVt[C, T]())
+proc nsToISet*[C: NsUserClass; T](c: C; t: typedesc[ISet[T]]): ISet[T] =
+  if c != nil: result = ISet[T](nsObj: c, nsVt: nsSetVt[C, T]())
+proc nsToIReadOnlySet*[C: NsUserClass; T](c: C; t: typedesc[IReadOnlySet[T]]): IReadOnlySet[T] =
+  if c != nil: result = IReadOnlySet[T](nsObj: c, nsVt: nsReadOnlySetVt[C, T]())
+proc nsToIDictionary*[C: NsUserClass; K, V](c: C; t: typedesc[IDictionary[K, V]]): IDictionary[K, V] =
+  if c != nil: result = IDictionary[K, V](nsObj: c, nsVt: nsDictionaryVt[C, K, V]())
+proc nsToIReadOnlyDictionary*[C: NsUserClass; K, V](c: C; t: typedesc[IReadOnlyDictionary[K, V]]):
+    IReadOnlyDictionary[K, V] =
+  if c != nil:
+    result = IReadOnlyDictionary[K, V](nsObj: c, nsVt: nsReadOnlyDictionaryVt[C, K, V]())
+
+proc nsKeysOfIList*[C, T](key: string): pointer =
+  if key == nsKeyOf(IList[T]): return nsListVt[C, T]()
+  if key == nsKeyOf(ICollection[T]): return nsCollectionVt[C, T]()
+proc nsKeysOfICollection*[C, T](key: string): pointer =
+  if key == nsKeyOf(ICollection[T]): return nsCollectionVt[C, T]()
+proc nsKeysOfIReadOnlyList*[C, T](key: string): pointer =
+  if key == nsKeyOf(IReadOnlyList[T]): return nsReadOnlyListVt[C, T]()
+  if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[C, T]()
+proc nsKeysOfIReadOnlyCollection*[C, T](key: string): pointer =
+  if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[C, T]()
+proc nsKeysOfISet*[C, T](key: string): pointer =
+  if key == nsKeyOf(ISet[T]): return nsSetVt[C, T]()
+  if key == nsKeyOf(ICollection[T]): return nsCollectionVt[C, T]()
+proc nsKeysOfIReadOnlySet*[C, T](key: string): pointer =
+  if key == nsKeyOf(IReadOnlySet[T]): return nsReadOnlySetVt[C, T]()
+  if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[C, T]()
+proc nsKeysOfIDictionary*[C, K, V](key: string): pointer =
+  if key == nsKeyOf(IDictionary[K, V]): return nsDictionaryVt[C, K, V]()
+proc nsKeysOfIReadOnlyDictionary*[C, K, V](key: string): pointer =
+  if key == nsKeyOf(IReadOnlyDictionary[K, V]): return nsReadOnlyDictionaryVt[C, K, V]()
+  if key == nsKeyOf(IReadOnlyCollection[KeyValuePair[K, V]]):
+    return nsReadOnlyCollectionVt[C, KeyValuePair[K, V]]()
+
+# --- comparers -------------------------------------------------------------------
+#
+# `IComparer<T>` and `IEqualityComparer<T>`, the default ones (a type's own
+# `CompareTo` / `Equals` and `GetHashCode` when it has them, else its natural
+# order and equality), `Comparer<T>.Create`, and the overloads taking them.
+
+proc nsDefaultCompare[T](a, b: T): int32 =
+  mixin CompareTo
+  when compiles(a.CompareTo(b)): int32(a.CompareTo(b))
+  else: int32(cmp(a, b))
+
+proc nsDefaultEquals[T](a, b: T): bool =
+  mixin Equals
+  when T is ref RootObj:
+    if a.isNil or b.isNil: a.isNil and b.isNil else: a.Equals(b)
+  else: a == b
+
+proc nsDefaultHash[T](x: T): int32 =
+  mixin GetHashCode
+  when T is ref RootObj:
+    if x.isNil: 0'i32 else: x.GetHashCode()
+  else: cast[int32](nsKeyHash(x))
+
+proc Compare*[T](v: IComparer[T]; a, b: T): int32 = v.nsVt.fCompare(nsIfaceObj(v), a, b)
+proc Equals*[T](v: IEqualityComparer[T]; a, b: T): bool = v.nsVt.fEquals(nsIfaceObj(v), a, b)
+proc GetHashCode*[T](v: IEqualityComparer[T]; x: T): int32 =
+  v.nsVt.fGetHashCode(nsIfaceObj(v), x)
+proc `$`*[T](v: IComparer[T]): string = $v.nsObj
+proc `$`*[T](v: IEqualityComparer[T]): string = $v.nsObj
+
+proc nsComparerVt[C, T](): ptr nsVT_IComparer[T] =
+  mixin Compare
+  var store {.global.}: nsVT_IComparer[T]
+  var ready {.global.} = false
+  if not ready:
+    ready = true
+    store.fCompare = proc (o: RootRef; a, b: T): int32 {.nimcall.} = Compare(cast[C](o), a, b)
+  addr store
+
+proc nsEqualityComparerVt[C, T](): ptr nsVT_IEqualityComparer[T] =
+  mixin Equals, GetHashCode
+  var store {.global.}: nsVT_IEqualityComparer[T]
+  var ready {.global.} = false
+  if not ready:
+    ready = true
+    store.fEquals = proc (o: RootRef; a, b: T): bool {.nimcall.} = Equals(cast[C](o), a, b)
+    store.fGetHashCode = proc (o: RootRef; x: T): int32 {.nimcall.} =
+      GetHashCode(cast[C](o), x)
+  addr store
+
+proc Default*[T](t: typedesc[Comparer[T]]): Comparer[T] =
+  ## A type's own order: its `CompareTo`, else the natural one.
+  var store {.global.}: Comparer[T]
+  if store.isNil: store = Comparer[T](compare: nsDefaultCompare[T])
+  store
+proc Create*[T](t: typedesc[Comparer[T]]; comparison: Comparison[T]): Comparer[T] =
+  Comparer[T](compare: proc (a, b: T): int32 = comparison(a, b))
+proc Compare*[T](c: Comparer[T]; a, b: T): int32 = c.compare(a, b)
+
+proc Default*[T](t: typedesc[EqualityComparer[T]]): EqualityComparer[T] =
+  ## A type's own equality: its `Equals` and `GetHashCode`, else `==` and the hash.
+  var store {.global.}: EqualityComparer[T]
+  if store.isNil: store = EqualityComparer[T]()
+  store
+proc Equals*[T](c: EqualityComparer[T]; a, b: T): bool = nsDefaultEquals(a, b)
+proc GetHashCode*[T](c: EqualityComparer[T]; x: T): int32 = nsDefaultHash(x)
+
+proc nsToIComparer*[T](c: Comparer[T]): IComparer[T] =
+  if c != nil: result = IComparer[T](nsObj: c, nsVt: nsComparerVt[Comparer[T], T]())
+proc nsToIEqualityComparer*[T](c: EqualityComparer[T]): IEqualityComparer[T] =
+  if c != nil:
+    result = IEqualityComparer[T](nsObj: c, nsVt: nsEqualityComparerVt[EqualityComparer[T], T]())
+proc nsToIComparer*[C: NsUserClass; T](c: C; t: typedesc[IComparer[T]]): IComparer[T] =
+  if c != nil: result = IComparer[T](nsObj: c, nsVt: nsComparerVt[C, T]())
+proc nsToIEqualityComparer*[C: NsUserClass; T](c: C; t: typedesc[IEqualityComparer[T]]):
+    IEqualityComparer[T] =
+  if c != nil: result = IEqualityComparer[T](nsObj: c, nsVt: nsEqualityComparerVt[C, T]())
+proc nsKeysOfIComparer*[C, T](key: string): pointer =
+  if key == nsKeyOf(IComparer[T]): return nsComparerVt[C, T]()
+proc nsKeysOfIEqualityComparer*[C, T](key: string): pointer =
+  if key == nsKeyOf(IEqualityComparer[T]): return nsEqualityComparerVt[C, T]()
+method nsVtByKey*[T](x: Comparer[T]; key: string): pointer =
+  if key == nsKeyOf(IComparer[T]): return nsComparerVt[Comparer[T], T]()
+  procCall nsVtByKey(RootRef(x), key)
+method nsVtByKey*[T](x: EqualityComparer[T]; key: string): pointer =
+  if key == nsKeyOf(IEqualityComparer[T]): return nsEqualityComparerVt[EqualityComparer[T], T]()
+  procCall nsVtByKey(RootRef(x), key)
+
+proc Sort*[T](l: List[T]; comparer: IComparer[T]) =
+  ## In the comparer's order; null is the default one.
+  if comparer.nsObj == nil: l.Sort()
+  else:
+    algorithm.sort(l.data, proc (a, b: T): int = int(comparer.Compare(a, b)))
+    touch l
+proc BinarySearch*[T](l: List[T]; x: T; comparer: IComparer[T]): int32 =
+  ## The index of `x` in a list sorted by the comparer, or the complement of where
+  ## it would go.
+  var lo = 0
+  var hi = l.data.len - 1
+  while lo <= hi:
+    let mid = lo + (hi - lo) div 2
+    let c = (if comparer.nsObj == nil: nsDefaultCompare(l.data[mid], x)
+             else: comparer.Compare(l.data[mid], x))
+    if c == 0: return int32(mid)
+    if c < 0: lo = mid + 1
+    else: hi = mid - 1
+  int32(not lo)
+
+proc nsToIComparer*(c: StringComparer): IComparer[string] =
+  if c != nil: result = IComparer[string](nsObj: c, nsVt: nsComparerVt[StringComparer, string]())
+proc nsToIEqualityComparer*(c: StringComparer): IEqualityComparer[string] =
+  if c != nil:
+    result = IEqualityComparer[string](nsObj: c,
+                                       nsVt: nsEqualityComparerVt[StringComparer, string]())
+proc nsLibAs*(o: RootRef; t: typedesc[IComparer[string]]): IComparer[string] =
+  if o of StringComparer: result = nsToIComparer(StringComparer(o))
+proc nsLibAs*(o: RootRef; t: typedesc[IEqualityComparer[string]]): IEqualityComparer[string] =
+  if o of StringComparer: result = nsToIEqualityComparer(StringComparer(o))
+

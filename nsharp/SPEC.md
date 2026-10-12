@@ -906,7 +906,7 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | `DateTime`, `TimeSpan` | 🔜 later | `std/times` |
 | `Random` | ✅ v1 | `std/random` |
 | `Convert.*` | ✅ v1 | `lib` |
-| `IEnumerable<T>` / `ICollection<T>` / `IList<T>` | ✅ v1 (static) | concepts |
+| `IEnumerable<T>` / `ICollection<T>` / `IList<T>` / `IReadOnlyCollection<T>` / `IReadOnlyList<T>` / `ISet<T>` / `IReadOnlySet<T>` / `IDictionary<K,V>` / `IReadOnlyDictionary<K,V>` | ✅ v1 | values (SS15.1): `List`, arrays, `Dictionary`, `HashSet`, `Queue`, `Stack`, `LinkedList` and a dictionary's `Keys`/`Values` implement the ones .NET's do |
 | LINQ (method syntax) | 🔜 later | iterator adapters |
 | `File` / `Directory` / streams | 🔜 later | `std/os`, `std/streams` |
 | `Regex` | 🔜 later | `std/re` |
@@ -969,14 +969,38 @@ Deliberately deferred, with the reason recorded:
   `Remove(value)`; it runs correctly.
 * **`LinkedListNode<T>.List`**: a Nim proc cannot share the name of the `List`
   type.
-* **`TryGetValue(k, out v)`**, `TryDequeue`, `TryPeek`, `TryPop`,
-  `Remove(k, out v)` need `out` parameters, which the parser does not parse yet.
-* **The interfaces** (`IEnumerable<T>`, `ICollection<T>`, `IList<T>`,
-  `IDictionary<K,V>`, `ISet<T>`, `IComparer<T>`, `IEqualityComparer<T>`) and
-  `Comparer<T>`/`EqualityComparer<T>`: N# classes cannot implement an interface
-  yet (`p3c/interface.unsupported`).
+* **`TryDequeue`, `TryPeek`, `TryPop`, `Remove(k, out v)`**: not yet written
+  (`Dictionary.TryGetValue` is).
+* **`IComparer<T>`, `IEqualityComparer<T>`** are values like the collection
+  interfaces below. `Comparer<T>.Default`/`Create`, `EqualityComparer<T>.Default`
+  and `StringComparer.Ordinal`/`OrdinalIgnoreCase` implement them, and so may a
+  user's class. They are taken by `List.Sort`, `List.BinarySearch`, `Array.Sort`
+  and the `Dictionary`/`HashSet` constructors. String ordering is ordinal: N# has no
+  culture, so `Comparer<string>.Default` compares as `string.CompareOrdinal` does.
+* **A user's class implementing a library interface** (`IReadOnlyList<int>`,
+  `IComparer<string>`) converts to it through the library's generic
+  `nsTo<Interface>`. That builder calls the class's own members by name, and the
+  class answers `is`/`as` for it through `nsKeysOf<Interface>`.
+* **Keys** are hashed and compared as .NET does: an integer is its own hash, a
+  class key uses its `GetHashCode`/`Equals` (the members' hash for a record), an
+  interface value uses the object behind it, and a comparer replaces both.
+* **The collection interfaces** (`IList<T>`, `ICollection<T>`, `IReadOnlyList<T>`,
+  `IReadOnlyCollection<T>`, `ISet<T>`, `IReadOnlySet<T>`, `IDictionary<K,V>`,
+  `IReadOnlyDictionary<K,V>`) are values, declared in the library the way a user
+  interface lowers: an object holding the instance (`nsObj`) and a table of its
+  members (`nsVt`), marked `{.nsInterface.}`. A table is built once per
+  implementing type by a generic builder calling that type's own members by name;
+  what the type cannot do throws what .NET throws (`Collection was of a fixed
+  size.` for an array, `Mutating a key collection derived from a dictionary is not
+  allowed.` for `Keys`). The compiler converts a collection to one through the
+  library's `nsTo<Interface>` (as to `IEnumerable<T>`), and from an interface to one
+  it extends (`IList<T>` to `ICollection<T>`); `is`/`as` ask the object through
+  `nsVtByKey`, and for an array, whose type is the runtime's, the library answers by
+  the element type the interface names (`nsLibAs`). A library interface declared
+  without those fields (`IComparable<T>`) stays a contract a class is checked
+  against by name.
 * **LINQ**, `Capacity`, `AsReadOnly`, collection initialisers, constructing a
-  collection from `Keys`/`Values`, `IComparer` overloads: see the deferred list in
+  collection from `Keys`/`Values`: see the deferred list in
   SS19.
 
 ---

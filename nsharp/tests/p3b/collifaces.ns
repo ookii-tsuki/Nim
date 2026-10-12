@@ -1,0 +1,115 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    // The collection interfaces as values: parameters and variables of IList<T>,
+    // ICollection<T>, IReadOnlyList<T>, IReadOnlyCollection<T>, ISet<T>,
+    // IReadOnlySet<T>, IDictionary<K,V> and IReadOnlyDictionary<K,V>, over the
+    // collections and arrays that implement them, with is/as and null.
+    class Program
+    {
+        static int Sum(IReadOnlyList<int> xs)
+        {
+            int s = 0;
+            for (int i = 0; i < xs.Count; i++) s += xs[i];
+            return s;
+        }
+
+        static int Total(IEnumerable<int> xs)
+        {
+            int s = 0;
+            foreach (var x in xs) s += x;
+            return s;
+        }
+
+        static void Grow(ICollection<string> c, string x)
+        {
+            c.Add(x);
+            Console.WriteLine($"now {c.Count}: {string.Join(",", c)}");
+        }
+
+        static void Describe(IReadOnlyCollection<int> c) => Console.WriteLine("count " + c.Count);
+
+        static string Lookup(IReadOnlyDictionary<string, int> d, string k) =>
+            d.TryGetValue(k, out var v) ? $"{k}={v}" : $"{k} missing";
+
+        static void Main()
+        {
+            var list = new List<int> { 1, 2, 3 };
+            int[] arr = { 4, 5, 6 };
+            Console.WriteLine(Sum(list) + " " + Sum(arr) + " " + Total(list) + " " + Total(arr));
+
+            IList<int> il = list;
+            il[0] = 10;
+            il.Insert(1, 15);
+            il.RemoveAt(3);
+            Console.WriteLine(string.Join(",", list) + " | " + il.IndexOf(15) + " " + il.Contains(2));
+            ICollection<int> ic = il;
+            ic.Add(99);
+            Console.WriteLine(ic.Count + " " + ic.Remove(99) + " " + ic.Remove(99) + " " + ic.IsReadOnly);
+            var copy = new int[5];
+            ic.CopyTo(copy, 1);
+            Console.WriteLine(string.Join(",", copy));
+
+            IList<int> ia = arr;
+            ia[2] = 60;
+            Console.WriteLine(string.Join(",", arr) + " " + ia.IsReadOnly + " " + ia.IndexOf(5));
+            try { ia.Add(7); } catch (NotSupportedException e) { Console.WriteLine(e.Message); }
+            try { ia.RemoveAt(0); } catch (NotSupportedException e) { Console.WriteLine(e.Message); }
+
+            var names = new List<string> { "a" };
+            Grow(names, "b");
+            var linked = new LinkedList<string>();
+            Grow(linked, "x");
+            Grow(new HashSet<string> { "p" }, "q");
+
+            Describe(list);
+            Describe(arr);
+            Describe(new Queue<int>(new[] { 1, 2 }));
+            Describe(new Stack<int>(new[] { 1, 2, 3 }));
+            Describe(new HashSet<int> { 1, 1, 2 });
+
+            ISet<int> set = new HashSet<int> { 1, 2, 3 };
+            Console.WriteLine(set.Add(3) + " " + set.Add(4) + " " + set.Count);
+            set.UnionWith(new[] { 5, 6 });
+            set.ExceptWith(new List<int> { 1, 6 });
+            Console.WriteLine(string.Join(",", set) + " " + set.IsSubsetOf(new[] { 2, 3, 4, 5, 9 }) +
+                              " " + set.Overlaps(new[] { 9, 5 }) + " " + set.SetEquals(new[] { 5, 4, 3, 2 }));
+            IReadOnlySet<int> ros = new HashSet<int> { 7, 8 };
+            Console.WriteLine(ros.Contains(7) + " " + ros.IsSupersetOf(new[] { 8 }) + " " + ros.Count);
+
+            var ages = new Dictionary<string, int> { ["ann"] = 31, ["bob"] = 27 };
+            IDictionary<string, int> id = ages;
+            id["cy"] = 40;
+            id.Add("dee", 22);
+            Console.WriteLine(id.Count + " " + id.ContainsKey("cy") + " " + id.Remove("bob") + " " + id["ann"]);
+            Console.WriteLine(string.Join(",", id.Keys) + " / " + string.Join(",", id.Values));
+            Console.WriteLine(id.Keys.Count + " " + id.Keys.Contains("cy") + " " + id.Keys.IsReadOnly);
+            try { id.Keys.Add("zed"); } catch (NotSupportedException e) { Console.WriteLine(e.Message); }
+            foreach (var kv in id) Console.Write(kv.Key + ":" + kv.Value + " ");
+            Console.WriteLine();
+            Console.WriteLine(Lookup(ages, "ann") + " " + Lookup(ages, "bob"));
+            IReadOnlyDictionary<string, int> rod = ages;
+            Console.WriteLine(rod.Count + " " + string.Join(",", rod.Keys) + " " + rod["dee"]);
+            Console.WriteLine(ages.TryGetValue("cy", out int cy) + " " + cy);
+
+            object o = list;
+            Console.WriteLine((o is IList<int>) + " " + (o is ICollection<int>) + " " + (o is IReadOnlyList<int>) +
+                              " " + (o is IList<string>) + " " + (o is ISet<int>));
+            object oa = arr;
+            Console.WriteLine((oa is IList<int>) + " " + (oa is IReadOnlyCollection<int>) + " " + (oa is IList<long>));
+            object od = ages;
+            if (od is IDictionary<string, int> dd) Console.WriteLine("dict " + dd.Count);
+            var asList = o as IReadOnlyList<int>;
+            Console.WriteLine(asList != null ? "list " + asList[0] : "no");
+            var notSet = o as ISet<int>;
+            Console.WriteLine(notSet == null);
+
+            IList<int> none = null;
+            Console.WriteLine(none == null);
+            try { Console.WriteLine(none.Count); }
+            catch (NullReferenceException) { Console.WriteLine("null interface"); }
+        }
+    }
+}

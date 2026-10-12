@@ -81,6 +81,8 @@ type
     libIfaces*: HashSet[string]
       ## The interfaces the library declares (`{.nsInterface.}`): a class may name
       ## one, which N# lowers as a duck-typed contract rather than a table.
+    libValueIfaces*: HashSet[string]
+      ## Those of them that are values (`IList<T>`), lowered as a user interface is.
     staticUsings*: seq[string]
       ## The types a `using static` names: their statics are reachable bare.
     extensions*: Table[string, seq[NsMemberSymbol]]
@@ -236,6 +238,12 @@ proc foreignQualified*(scope: NsModuleScope; written: string): bool =
 
 proc isInterface*(scope: NsModuleScope; name: string): bool =
   scope.classes.hasKey(name) and scope.classes[name].classKind == ckInterface
+
+proc isValueInterface*(scope: NsModuleScope; name: string): bool =
+  ## An interface whose values are the instance and its table: one this compilation
+  ## declares, or a library one declared the same way (`IList<T>`).
+  scope.isInterface(name) or
+    (name in scope.libValueIfaces and not scope.classes.hasKey(name))
 
 proc resolveBases*(scope: NsModuleScope) =
   ## Splits each base list into the base class and the interfaces, which needs every
@@ -476,7 +484,8 @@ proc collectSymbols*(module: NsNode; config: ConfigRef): NsModuleScope =
                          extensions: initTable[string, seq[NsMemberSymbol]](),
                          enums: initHashSet[string](),
                          namespaces: initHashSet[string](),
-                         libIfaces: bclSurface(config).libraryInterfaces())
+                         libIfaces: bclSurface(config).libraryInterfaces(),
+                         libValueIfaces: bclSurface(config).libraryValueInterfaces())
   for d in module.sons: collect(d, result)
   result.resolveBases()
 

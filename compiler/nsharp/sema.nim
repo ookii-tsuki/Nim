@@ -327,7 +327,7 @@ proc isRefTypeArg(ctx: NsCheckContext; t: NsNode): bool =
   ## interface's fat pointer: an interface, `string`, an array.
   if t == nil: return false
   if t.kind == nsnArrayType: return true
-  t.kind == nsnTypeName and (ctx.scope.isInterface(unqualified(t.name)) or
+  t.kind == nsnTypeName and (ctx.scope.isValueInterface(unqualified(t.name)) or
     unqualified(t.name) in ["string", "String"])
 
 proc variantConversion(ctx: NsCheckContext; src, dst: NsNode): NsVariantConv =
@@ -372,6 +372,8 @@ proc namesSequence(ctx: NsCheckContext; cls: string; enumerator: bool): bool =
       return true
   false
 
+proc convertsToLibIface(ctx: NsCheckContext; value: NsNode; iface: string): bool
+
 proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineInfo;
             targetType: NsNode = nil) =
   ## The implicit numeric conversion C# applies where a value of one numeric type is
@@ -414,6 +416,23 @@ proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineI
     of vcNone: discard
   let target = (if targetName.len == 0 and targetType != nil and
                    isObjectTarget(targetType): "object" else: targetName)
+  let tIface = canonicalTypeName(target).split('<')[0]
+  if value != nil and value.kind != nsnNull and tIface in ctx.scope.libValueIfaces and
+     not ctx.scope.classes.hasKey(tIface) and
+     canonicalTypeName(value.typeName).split('<')[0] != tIface:
+    ## A collection, an array, or another interface value used as a library
+    ## interface (`IList<T>`): the library's conversion for it, `nsTo<I>`.
+    let conv = "nsTo" & tIface
+    if ctx.scope.classes.hasKey(canonicalTypeName(value.typeName)) and
+       not ctx.scope.isValueInterface(canonicalTypeName(value.typeName)):
+      ## A class of this compilation: the library builds its table from the class's
+      ## members, and the interface's type arguments come from the target.
+      value.conv = conv
+      value.convType = targetType
+      return
+    if ctx.convertsToLibIface(value, tIface):
+      value.conv = conv
+      return
   if value != nil and canonicalTypeName(target).split('<')[0] == "IEnumerable" and
      (value.typeKind == tkSequence or
       ctx.surface.member(value.typeName, value.typeKind, "nsToIEnumerable").name.len > 0):
@@ -423,7 +442,13 @@ proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineI
     return
   if value != nil and canonicalTypeName(target) in ["object", "Object"] and
      value.kind != nsnNull and value.conv.len == 0 and
-     not ctx.scope.isInterface(value.typeName):
+     ctx.scope.isValueInterface(canonicalTypeName(value.typeName).split('<')[0]):
+    ## An interface value as an `object` is the instance it holds.
+    value.conv = "nsIfaceObject"
+    return
+  if value != nil and canonicalTypeName(target) in ["object", "Object"] and
+     value.kind != nsnNull and value.conv.len == 0 and
+     not ctx.scope.isValueInterface(value.typeName):
     ## A value used as an `object` is boxed; a reference passes through the same
     ## library call unchanged.
     value.conv = "nsBox"
@@ -528,10 +553,32 @@ type
     isNullOk: bool
     isOptionValue: bool
     elemName: string
+    typ: NsNode          ## the declared type, when the target is one
+
+proc convertsToLibIface(ctx: NsCheckContext; value: NsNode; iface: string): bool =
+  ## Whether a value converts to a library interface: a class of this compilation
+  ## does (the library builds its table), anything else when the library declares
+  ## `nsTo<I>` for its type -- an array's being `NsArray`.
+  if value == nil: return false
+  let vn = canonicalTypeName(value.typeName).split('<')[0]
+  if ctx.scope.classes.hasKey(vn) and not ctx.scope.isValueInterface(vn): return true
+  let head =
+    if value.typeName.endsWith("[]") or
+       (value.rtype != nil and value.rtype.kind == nsnArrayType): "NsArray"
+    else: ctx.surface.nimSpellingOf(vn)
+  if head.len == 0: return false
+  let conv = "nsTo" & iface
+  for key, ms in ctx.surface.members:
+    for m in ms:
+      if m.name == conv and m.paramTypes.len >= 1 and
+         headSpelling(m.paramTypes[0]) == head:
+        return true
+  false
 
 proc targetOfType(ctx: NsCheckContext; target: NsNode): NsTarget =
   ## The target of a declared type: a parameter, local, field or `return`.
-  result = NsTarget(kind: tkUnknown, isNullOk: true, spelling: typeSpelling(target))
+  result = NsTarget(kind: tkUnknown, isNullOk: true, spelling: typeSpelling(target),
+                    typ: target)
   if target == nil or isObjectTarget(target): return
   if target.kind == nsnNullableType:
     let inner = ctx.classifyType(target.typ)
@@ -602,8 +649,10 @@ proc incompatible(ctx: NsCheckContext; arg: NsNode; t: NsTarget): bool =
   of tkDelegate: result = t.kind != tkDelegate
   of tkSequence:
     ## An array or a collection is an `IEnumerable<T>` too.
+    let ti = canonicalTypeName(t.name).split('<')[0]
     result = t.kind != tkSequence and
-             not canonicalTypeName(t.name).startsWith("IEnumerable")
+             not canonicalTypeName(t.name).startsWith("IEnumerable") and
+             not (ti in ctx.scope.libValueIfaces and ctx.convertsToLibIface(arg, ti))
   of tkString: result = t.kind != tkString
   of tkBool: result = t.kind != tkBool
   of tkInt, tkFloat, tkChar: result = t.kind notin {tkInt, tkFloat, tkChar}
@@ -707,7 +756,8 @@ proc resolveOverload(ctx: NsCheckContext; cands: seq[seq[NsNode]];
     if fits and score < result.score:
       result = (ok: true, idx: i, score: score, map: m)
 
-proc markNull(ctx: NsCheckContext; value: NsNode; target: string) =
+proc markNull(ctx: NsCheckContext; value: NsNode; target: string;
+              targetType: NsNode = nil) =
   ## `null` for an interface is the empty interface value, which lowering spells
   ## `default(I)`, so the target is recorded on the literal; for a handle class it
   ## is the invalid handle.
@@ -715,8 +765,10 @@ proc markNull(ctx: NsCheckContext; value: NsNode; target: string) =
   if value != nil and value.kind == nsnNull and ctx.scope.classes.hasKey(tn) and
      ctx.scope.handleRoot(tn).len > 0:
     value.setType(tkClass, tn)
-  elif value != nil and value.kind == nsnNull and ctx.scope.isInterface(target):
+  elif value != nil and value.kind == nsnNull and ctx.scope.isValueInterface(target):
     value.setType(tkClass, target)
+    ## A generic interface's empty value names its type arguments too.
+    if targetType != nil and targetType.kind == nsnTypeName: value.rtype = targetType
   elif value != nil and value.kind == nsnNull and canonicalTypeName(target) == "string":
     ## A Nim string cannot be nil: a null string is the empty one (SPEC 7.3).
     value.setType(tkString, "string")
@@ -729,7 +781,7 @@ proc checkConvertible(ctx: NsCheckContext; value: NsNode; t: NsTarget;
   if value.kind == nsnNull:
     if not t.isNullOk:
       nsError(ctx.config, info, ndCannotConvertNull, t.spelling)
-    ctx.markNull(value, t.name)
+    ctx.markNull(value, t.name, t.typ)
     return
   if value.kind == nsnLambda and t.kind in {tkInt, tkFloat, tkBool, tkChar, tkString,
                                             tkSequence, tkClass}:
@@ -853,7 +905,7 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
           declTypeName(if pt.kind == nsnNullableType: pt.typ else: pt)
       elif pt != nil:
         ctx.coerce(v, declTypeName(pt), v.info, pt)
-        ctx.markNull(v, declTypeName(pt))
+        ctx.markNull(v, declTypeName(pt), pt)
         if ctx.isTypeParamRef(pt) and v.kind in {nsnIntLit, nsnFloatLit} and
            v.typeName.len == 0:
           ## A literal for a type parameter fixes the type argument, and C# types
@@ -997,7 +1049,38 @@ proc checkLibraryCall(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]) =
         fits = false
         if not bad.found: bad = (true, j, pt)
         break
-    if fits: return
+    if fits:
+      ## A value into a library interface parameter (`list.Sort(new ByLength())`)
+      ## is converted as into a user method's; open type arguments come from the
+      ## other arguments.
+      proc bindDollar(t: NsNode; bound: Table[string, NsNode]): NsNode =
+        if t == nil: return nil
+        if t.kind == nsnTypeName and t.name.startsWith("$"):
+          return (if bound.hasKey(t.name): bound[t.name] else: nil)
+        result = copyNsTree(t)
+        result.sons = @[]
+        for x in t.sons:
+          let b = bindDollar(x, bound)
+          if b == nil: return nil
+          result.sons.add b
+      proc bindFrom(pt, vt: NsNode; bound: var Table[string, NsNode]) =
+        if pt == nil or vt == nil: return
+        if pt.kind == nsnTypeName and pt.name.startsWith("$"):
+          if not bound.hasKey(pt.name): bound[pt.name] = vt
+        elif pt.kind == nsnArrayType and vt.kind == nsnArrayType:
+          bindFrom(pt.typ, vt.typ, bound)
+        elif pt.kind == nsnTypeName and vt.kind == nsnTypeName and
+             pt.sons.len == vt.sons.len:
+          for i in 0 ..< pt.sons.len: bindFrom(pt.sons[i], vt.sons[i], bound)
+      for j, a in args:
+        bindFrom((if j < fixed: ps[j] else: ps[^1]), valueType(a), bound)
+      for j, a in args:
+        let pt = (if j < fixed: ps[j] else: ps[^1])
+        if pt == nil or pt.kind != nsnTypeName: continue
+        if canonicalTypeName(pt.name) notin ctx.scope.libValueIfaces: continue
+        let full = bindDollar(pt, bound)
+        if full != nil: ctx.coerce(a, declTypeName(full), a.info, full)
+      return
   if bad.found:
     let a = args[bad.idx]
     nsError(ctx.config, a.info, ndArgumentCannotConvert, $(bad.idx + 1), valueSpelling(a),
@@ -1037,6 +1120,45 @@ proc libraryOutTypes(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]) =
     for j, a in args:
       if a.kind == nsnOutDecl and a.typ == nil: a.typ = ps[j]
     return
+
+proc libraryCtorConvert(ctx: NsCheckContext; n: NsNode) =
+  ## `new HashSet<int>(new Mod10())`: an argument for a library interface parameter
+  ## of one of the type's constructors (`new<Type>` in the library) is converted as a
+  ## method's is, the constructor's generic parameters being the type's arguments.
+  let tn = ctx.surface.nimSpellingOf(unqualified(n.typ.name))
+  if tn.len == 0 or n.sons.len == 0: return
+  let ctor = "new" & tn
+  for key, ms in ctx.surface.members:
+    for m in ms:
+      if m.name != ctor or m.paramTypes.len != n.sons.len: continue
+      var nb = newSeq[NsNode](m.genParams.len)
+      if n.typ.sons.len == m.genParams.len:
+        for i in 0 ..< nb.len: nb[i] = n.typ.sons[i]
+      var ps: seq[NsNode] = @[]
+      var fits = true
+      for j, a in n.sons:
+        let pt = nimToCs(m.paramTypes[j], m.genParams, nb, n)
+        ps.add pt
+        if pt == nil or a == nil or a.kind in {nsnNamedArg, nsnRefArg, nsnLambda} or
+           a.typeKind in {tkUnknown, tkDelegate}:
+          continue
+        if pt.kind == nsnTypeName and canonicalTypeName(pt.name) in ctx.scope.libValueIfaces:
+          if not ctx.convertsToLibIface(a, canonicalTypeName(pt.name)):
+            fits = false
+            break
+          continue
+        if ctx.incompatible(a, ctx.targetOfType(pt)):
+          fits = false
+          break
+      if not fits: continue
+      var converts = false
+      for j, a in n.sons:
+        let pt = ps[j]
+        if pt != nil and pt.kind == nsnTypeName and
+           canonicalTypeName(pt.name) in ctx.scope.libValueIfaces:
+          ctx.coerce(a, declTypeName(pt), a.info, pt)
+          converts = converts or a.conv.len > 0
+      if converts: return
 
 proc checkCondition(ctx: NsCheckContext; cond: NsNode) =
   ## C# requires a `bool` condition, and says CS0029 when it does not get one. A `T?`
@@ -1414,6 +1536,7 @@ proc checkLibraryInterfaceValue(ctx: NsCheckContext; t: NsNode) =
   ## no table, so it cannot be the type of a value.
   if t != nil and t.kind == nsnTypeName and
      canonicalTypeName(t.name) in ctx.scope.libIfaces and
+     canonicalTypeName(t.name) notin ctx.scope.libValueIfaces and
      not ctx.scope.classes.hasKey(canonicalTypeName(t.name)):
     nsError(ctx.config, t.info, ndUnsupported,
             "a value of the library interface '" & unqualified(t.name) & "'")
@@ -2274,6 +2397,8 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
           nsError(ctx.config, n.info, ndAbstractInstance, cn)
         ctx.checkCallArgs(ctx.scope.ctorOverloads(cn), n.sons, cn, cn, true, n.info)
         ctx.checkCtorAccess(cn, n)
+      else:
+        ctx.libraryCtorConvert(n)
     if n.typ != nil and n.typ.kind == nsnTypeName and n.strVal.len == 0 and
        ctx.scope.classes.hasKey(unqualified(n.typ.name)):
       ## A `required` member must be set by the object initialiser (CS9035).
@@ -2539,7 +2664,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     if isObjectTarget(n.typ):
       ctx.coerce(n.body, "object", n.info)
     elif canonicalTypeName(n.body.typeName) in ["object", "Object"] and
-         not ctx.scope.isInterface(declTypeName(n.typ)):
+         not ctx.scope.isValueInterface(declTypeName(n.typ)):
       n.strVal = "unbox"
     else:
       ctx.checkCast(n, target)
@@ -2561,7 +2686,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     if target in NsValueKinds:
       ## C# rejects `as` on a value type, which is what a cast is for.
       nsError(ctx.config, n.info, ndUnsupported, "'as' with a value type")
-    n.setType(target)
+    ## The result is of the named type, which a `var` declared from it takes.
+    n.setType(target, declTypeName(n.typ))
+    n.rtype = n.typ
     result = target
   of nsnDefault:
     if n.typ == nil:

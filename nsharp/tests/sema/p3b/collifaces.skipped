@@ -1,0 +1,5 @@
+IDictionary.Keys = type-parameter
+IDictionary.Values = type-parameter
+IReadOnlyDictionary.Keys = type-parameter
+KeyValuePair.Key = type-parameter
+KeyValuePair.Value = type-parameter

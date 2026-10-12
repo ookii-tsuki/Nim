@@ -10,6 +10,7 @@
 # of two do not pile up as they would under a power-of-two mask.
 
 import std/hashes
+from intrinsics import Equals, GetHashCode
 
 type
   NsEntry[K, V] = object
@@ -24,6 +25,9 @@ type
     freeList: int32
     freeCount: int32
     multiplier: uint64   ## `FastMod`'s for the bucket count
+    eq: proc (a, b: K): bool {.closure.}
+      ## A comparer's equality and hash (`IEqualityComparer<K>`); nil for the key's own.
+    hasher: proc (k: K): uint32 {.closure.}
 
 const
   StartOfFreeList = -3'i32
@@ -53,15 +57,54 @@ proc getPrime(atLeast: int): int32 =
   int32(atLeast)
 
 proc nsKeyHash*[K](k: K): uint32 {.inline.} =
-  ## An integer is its own hash, as in .NET; anything else is Nim's `hash`.
-  when K is SomeInteger or K is char or K is bool or K is enum:
+  ## An integer is its own hash, as in .NET; an object its `GetHashCode()`; anything
+  ## else is Nim's `hash`.
+  mixin GetHashCode, hash
+  when K is ref RootObj and compiles(hash(k)):
+    ## A record's members' hash.
+    cast[uint32](int32(hash(k) and 0x7FFF_FFFF))
+  elif K is ref RootObj:
+    if k.isNil: 0'u32 else: cast[uint32](int32(k.GetHashCode()) and 0x7FFF_FFFF'i32)
+  elif K is SomeInteger or K is char or K is bool or K is enum:
     when sizeof(K) == 8:
       let x = cast[uint64](k)
       uint32(x and 0xFFFF_FFFF'u64) xor uint32(x shr 32)
     else:
       uint32(cast[uint64](int64(ord(k))) and 0xFFFF_FFFF'u64)
+  elif K is ref or K is ptr:
+    ## A reference outside the class hierarchy: its address.
+    cast[uint32](int32((cast[int](k) xor (cast[int](k) shr 32)) and 0x7FFF_FFFF))
+  elif compiles(k.nsObj):
+    ## An interface value: the object behind it.
+    nsKeyHash(k.nsObj)
+  elif (K is object or K is tuple) and not compiles(hash(k)):
+    ## A struct with no hash of its own: its fields', as .NET's
+    ## `ValueType.GetHashCode` does.
+    var h: Hash = 0
+    for f in fields(k): h = h !& int(nsKeyHash(f))
+    cast[uint32](int32(!$h and 0x7FFF_FFFF))
   else:
     cast[uint32](int32(hash(k) and 0x7FFF_FFFF))
+
+template hashOf[K, V](m: NsHashMap[K, V]; k: K): uint32 =
+  (if m.hasher == nil: nsKeyHash(k) else: m.hasher(k))
+
+proc nsKeyEquals*[K](a, b: K): bool {.inline.} =
+  ## An object's `Equals`, as .NET compares keys; anything else is `==`.
+  mixin Equals
+  when K is ref RootObj:
+    if a.isNil or b.isNil: a.isNil and b.isNil else: a.Equals(b)
+  elif compiles(a.nsObj): nsKeyEquals(a.nsObj, b.nsObj)
+  else: a == b
+
+template same[K, V](m: NsHashMap[K, V]; a, b: K): bool =
+  (if m.eq == nil: nsKeyEquals(a, b) else: m.eq(a, b))
+
+proc withComparer*[K, V](m: var NsHashMap[K, V]; eq: proc (a, b: K): bool {.closure.};
+                         hasher: proc (k: K): int32 {.closure.}) =
+  ## Keys compared and hashed by a comparer; set before anything is added.
+  m.eq = eq
+  m.hasher = proc (k: K): uint32 = cast[uint32](hasher(k) and 0x7FFF_FFFF'i32)
 
 proc bucketOf(m: NsHashMap; h: uint32): int {.inline.} =
   ## .NET's `FastMod`: `h mod buckets.len` without a division.
@@ -79,16 +122,22 @@ proc initNsHashMap*[K, V](capacity = 0): NsHashMap[K, V] =
   if capacity > 0: result.initBuckets(capacity)
   result.freeList = -1
 
+proc initLike*[K, V, W](m: NsHashMap[K, V]; t: typedesc[W]): NsHashMap[K, W] =
+  ## An empty table comparing keys as `m` does.
+  result = initNsHashMap[K, W]()
+  result.eq = m.eq
+  result.hasher = m.hasher
+
 proc len*(m: NsHashMap): int {.inline.} = int(m.count - m.freeCount)
 
 proc find[K, V](m: NsHashMap[K, V]; k: K): int {.inline.} =
   ## The entry holding `k`, or -1.
   if m.buckets.len == 0: return -1
-  let h = nsKeyHash(k)
+  let h = m.hashOf(k)
   var i = int(m.buckets[m.bucketOf(h)]) - 1
   while i >= 0:
     let e = addr m.entries[i]
-    if e.hashCode == h and e.key == k: return i
+    if e.hashCode == h and m.same(e.key, k): return i
     i = int(e.next)
   -1
 
@@ -114,11 +163,11 @@ proc resize[K, V](m: var NsHashMap[K, V]) =
 proc put*[K, V](m: var NsHashMap[K, V]; k: K; v: sink V; overwrite: bool): bool =
   ## Adds `k`, or replaces its value when `overwrite`; whether it was new.
   if m.buckets.len == 0: m.initBuckets(0)
-  let h = nsKeyHash(k)
+  let h = m.hashOf(k)
   var b = m.bucketOf(h)
   var i = int(m.buckets[b]) - 1
   while i >= 0:
-    if m.entries[i].hashCode == h and m.entries[i].key == k:
+    if m.entries[i].hashCode == h and m.same(m.entries[i].key, k):
       if overwrite: m.entries[i].value = v
       return false
     i = int(m.entries[i].next)
@@ -139,12 +188,12 @@ proc put*[K, V](m: var NsHashMap[K, V]; k: K; v: sink V; overwrite: bool): bool 
 
 proc remove*[K, V](m: var NsHashMap[K, V]; k: K): bool =
   if m.buckets.len == 0: return false
-  let h = nsKeyHash(k)
+  let h = m.hashOf(k)
   let b = m.bucketOf(h)
   var last = -1
   var i = int(m.buckets[b]) - 1
   while i >= 0:
-    if m.entries[i].hashCode == h and m.entries[i].key == k:
+    if m.entries[i].hashCode == h and m.same(m.entries[i].key, k):
       if last < 0: m.buckets[b] = m.entries[i].next + 1
       else: m.entries[last].next = m.entries[i].next
       m.entries[i] = NsEntry[K, V](next: StartOfFreeList - m.freeList)
@@ -177,10 +226,11 @@ iterator values*[K, V](m: NsHashMap[K, V]): V =
   for _, v in m.pairs: yield v
 
 proc copyOfSet*[K, V](src: NsHashMap[K, V]): NsHashMap[K, V] =
-  ## .NET's `HashSet<T>(HashSet<T>)`: the source's exact layout, free places and
-  ## all, unless it is larger than its elements need (`ExpandPrime(Count + 1)` is
-  ## smaller than its buckets); then its elements in order, compacted.
+  ## .NET's `HashSet<T>(HashSet<T>)`, which takes the default comparer: the
+  ## source's exact layout, free places and all, when the source has the default
+  ## comparer too and is not larger than its elements need (`ExpandPrime(Count + 1)`
+  ## is smaller than its buckets); else its elements in order, added afresh.
   if src.len == 0: return initNsHashMap[K, V]()
-  if int(getPrime(2 * (src.len + 1))) >= src.buckets.len: return src
+  if src.eq == nil and int(getPrime(2 * (src.len + 1))) >= src.buckets.len: return src
   result = initNsHashMap[K, V](src.len)
   for k, v in src.pairs: discard result.put(k, v, false)

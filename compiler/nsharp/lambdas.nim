@@ -23,7 +23,7 @@ type
     params*: seq[NsNode]
     ret*: NsNode
 
-proc nimToCs(t: PNode; names: seq[string]; args: seq[NsNode];
+proc nimToCs*(t: PNode; names: seq[string]; args: seq[NsNode];
              info: NsNode): NsNode =
   ## A Nim type from the prelude as a C# type node, its generic parameters replaced.
   if t == nil or t.kind == nkEmpty: return nsnVoidType(info.info)
@@ -184,7 +184,41 @@ proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
       if b == nil: known = false
     if known: pt = substitute(pt, tps, binding)
     result[j] = delegateSig(scope, surface, pt)
-  if anyParam or recv == nil or recv.typeKind == tkType: return
+  if anyParam or recv == nil: return
+  if recv.typeKind == tkType:
+    ## A static library member (`Array.Sort(xs, (a, b) => ...)`): its parameters are
+    ## the arguments, the generic ones bound by those that are not lambdas.
+    let owner = unqualified(recv.typeName)
+    for m in surface.overloads(owner, surface.kindOfName(owner), callee.name):
+      if not m.isStatic: continue
+      ## A member over the type (`Comparer<int>.Create(f)`) takes the type first, and
+      ## the qualifier's type arguments bind its parameters.
+      var off = 0
+      var nb = newSeq[NsNode](m.genParams.len)
+      if m.paramTypes.len == call.sons.len + 1 and m.paramTypes[0].kind == nkBracketExpr and
+         m.paramTypes[0].len == 2 and m.paramTypes[0][0].kind == nkIdent and
+         m.paramTypes[0][0].ident.s == "typedesc":
+        off = 1
+        let q = nsnTypeName(recv.typeName, recv.info)
+        q.sons = recv.typeArgs
+        unifyNim(m.paramTypes[0][1], q, m.genParams, nb)
+      elif m.paramTypes.len != call.sons.len: continue
+      for j, a in call.sons:
+        if not isLambda(a):
+          unifyNim(m.paramTypes[j + off], valueType(argOf(a)), m.genParams, nb)
+      var ok = true
+      for b in nb:
+        if b == nil: ok = false
+      if not ok: continue
+      var typed = false
+      for j, a in call.sons:
+        if isLambda(a):
+          let pt = nimToCs(m.paramTypes[j + off], m.genParams, nb, a)
+          if pt != nil and pt.kind == nsnTypeName:
+            result[j] = libSig(surface, pt.name, pt.sons, a)
+            typed = typed or result[j].known
+      if typed: return
+    return
   # a library member: its declaration's parameter types, bound by the receiver's
   let rk = recv.typeKind
   var keys: seq[string] = @[]

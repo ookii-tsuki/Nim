@@ -3,8 +3,8 @@
 # Members are ordinary Nim procs: an instance member is reached by Nim's
 # dot-call, a static one through the qualifier the frontend drops.
 
-import std/[syncio, strutils, math]
-from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, NsArray, nsArrayOf, len,
+import std/[syncio, strutils, math, hashes, algorithm]
+from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, Equals, GetHashCode, NsArray, nsArrayOf, len,
   items, `[]`, `[]=`
 
 # `{.nsStatic: "T".}` marks a proc C# reaches through a type qualifier
@@ -78,6 +78,10 @@ type
     ## `bool Equals(T other)`.
   IDisposable* {.nsInterface.} = object
     ## `void Dispose()`, which the `using` statement calls.
+
+  StringComparer* = ref object of RootObj
+    ## C#'s `StringComparer`: `StringComparer.Ordinal` and `.OrdinalIgnoreCase`.
+    nsIgnoreCase: bool
 
   Attribute* = ref object of RootObj
     ## The base of every attribute class. N# has no reflection, so an attribute is
@@ -312,16 +316,39 @@ proc TryParse*(t: typedesc[char]; s: string; value: var char): bool =
   value = s[0]
   true
 
+# --- System.StringComparer ---------------------------------------------------
+#
+# Ordinal comparison is .NET's `CompareOrdinal`: the difference of the first
+# characters that differ, else of the lengths. Ignoring case compares the
+# upper-case forms.
+
+proc Ordinal*(t: typedesc[StringComparer]): StringComparer =
+  var store {.global.}: StringComparer
+  if store.isNil: store = StringComparer()
+  store
+proc OrdinalIgnoreCase*(t: typedesc[StringComparer]): StringComparer =
+  var store {.global.}: StringComparer
+  if store.isNil: store = StringComparer(nsIgnoreCase: true)
+  store
+proc nsCompareOrdinal(a, b: string; ignoreCase: bool): int32 =
+  for i in 0 ..< min(a.len, b.len):
+    let x = (if ignoreCase: toUpperAscii(a[i]) else: a[i])
+    let y = (if ignoreCase: toUpperAscii(b[i]) else: b[i])
+    if x != y: return int32(ord(x) - ord(y))
+  int32(a.len - b.len)
+proc Compare*(c: StringComparer; a, b: string): int32 = nsCompareOrdinal(a, b, c.nsIgnoreCase)
+proc CompareOrdinal*(a, b: string): int32 {.nsStatic: "String".} = nsCompareOrdinal(a, b, false)
+proc Equals*(c: StringComparer; a, b: string): bool =
+  if c.nsIgnoreCase: cmpIgnoreCase(a, b) == 0 else: a == b
+proc GetHashCode*(c: StringComparer; s: string): int32 =
+  let h = (if c.nsIgnoreCase: hash(toUpperAscii(s)) else: hash(s))
+  cast[int32](h and 0x7FFF_FFFF)
+
 # --- System.Object ----------------------------------------------------------
 #
-# `object` is `RootRef`. `ToString` is in the intrinsics; `GetHashCode` has no
-# RTTI, so it falls back to the bare-object answer.
+# `object` is `RootRef`. `ToString`, `Equals` and `GetHashCode` are in the
+# intrinsics, where a dictionary's keys reach them.
 
-method Equals*(a, b: RootRef): bool {.base.} = a == b
-method GetHashCode*(x: RootRef): int32 {.base.} = int32(cast[int](x))
-method Equals*(a: NsBoxed; b: RootRef): bool = a.nsBoxEquals(b)
-  ## A boxed value is equal to a box of an equal value (see `NsBox`).
-method GetHashCode*(x: NsBoxed): int32 = x.nsBoxHash()
 proc ReferenceEquals*(a, b: RootRef): bool {.nsStatic: "object".} = a == b
 proc HasFlag*[E](a, b: E): bool = (int64(a) and int64(b)) == int64(b)
   ## `System.Enum.HasFlag`: every bit of `b` is set in `a`. An enum is its
@@ -407,6 +434,29 @@ proc IndexOf*[T](a: openArray[T]; value: T): int32 {.nsStatic: "Array".} =
   result = -1
   for i in 0 ..< a.len:
     if a[i] == value: return int32(i)
+
+# `Array.Sort`: in the elements' own order (`CompareTo`, else the natural one), by a
+# `Comparison<T>`, or by a comparer. `IComparer<T>` is declared in
+# `System.Collections.Generic`, which builds on this module, so the comparer
+# overload takes whatever has a `Compare(x, y)` -- an `IComparer<T>`,
+# `Comparer<T>`, or a class implementing it -- and a null one means the default.
+
+proc nsArrayCompare[T](a, b: T): int =
+  mixin CompareTo
+  when compiles(a.CompareTo(b)): int(a.CompareTo(b))
+  else: cmp(a, b)
+
+proc Sort*[T](a: NsArray[T]) {.nsStatic: "Array".} =
+  algorithm.sort(a.nsData, proc (x, y: T): int = nsArrayCompare(x, y))
+proc Sort*[T](a: NsArray[T]; comparison: Comparison[T]) {.nsStatic: "Array".} =
+  algorithm.sort(a.nsData, proc (x, y: T): int = int(comparison(x, y)))
+proc Sort*[T; C: not proc](a: NsArray[T]; comparer: C) {.nsStatic: "Array".} =
+  mixin Compare
+  let none = (when compiles(comparer.nsObj): comparer.nsObj == nil
+              elif C is ref: comparer.isNil
+              else: false)
+  if none: Sort(a)
+  else: algorithm.sort(a.nsData, proc (x, y: T): int = int(comparer.Compare(x, y)))
 
 # --- System.Console ---------------------------------------------------------
 

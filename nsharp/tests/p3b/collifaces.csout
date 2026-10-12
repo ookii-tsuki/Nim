@@ -1,0 +1,33 @@
+6 15 6 15
+10,15,2 | 1 True
+4 True False False
+0,10,15,2,0
+4,5,60 True 1
+Collection was of a fixed size.
+Collection was of a fixed size.
+now 2: a,b
+now 1: x
+now 2: p,q
+count 3
+count 3
+count 2
+count 3
+count 2
+False True 4
+2,3,4,5 True True True
+True True 2
+4 True True 31
+ann,cy,dee / 31,40,22
+3 True True
+Mutating a key collection derived from a dictionary is not allowed.
+ann:31 cy:40 dee:22 
+ann=31 bob missing
+3 ann,cy,dee 22
+True 40
+True True True False False
+True True False
+dict 3
+list 10
+True
+True
+null interface

@@ -678,7 +678,12 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
       ## `int.Parse(s)`: the library declares it over the type (`typedesc[int32]`),
       ## so the type is its first argument, as for `int.MaxValue`.
       l.noteMemberImport(callee)
-      result = newTree(nkCall, n.info, l.id(callee.name, n.info), l.id(q, n.info))
+      var qt = l.id(q, n.info)
+      if callee.body.typeArgs.len > 0:
+        ## `Comparer<int>.Create(f)`: the generic type, instantiated.
+        qt = newTree(nkBracketExpr, n.info, qt)
+        for a in callee.body.typeArgs: qt.add l.typeToNim(a, n.info)
+      result = newTree(nkCall, n.info, l.id(callee.name, n.info), qt)
       for a in l.argsToNim(n): result.add a
       return
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
@@ -874,7 +879,13 @@ proc memberReceiver(l: Lowerer; n: NsNode): PNode =
       r = nil
   if dotted and name.len > 0 and not l.scope.classes.hasKey(name):
     let spelled = l.surface.nimSpellingOf(name)
-    if spelled.len > 0: return l.id(spelled, n.info)
+    if spelled.len > 0:
+      if n.body != nil and n.body.typeArgs.len > 0:
+        ## `Comparer<int>.Default`: the generic type, instantiated.
+        result = newTree(nkBracketExpr, n.info, l.id(spelled, n.info))
+        for a in n.body.typeArgs: result.add l.typeToNim(a, n.info)
+        return
+      return l.id(spelled, n.info)
   if n.body != nil and l.scope.classes.hasKey(n.body.typeName) and
      l.scope.onHandle(n.body.typeName, n.name):
     ## A member of the handle (`[OnHandle]`): the handle itself, unchecked.
@@ -1125,9 +1136,11 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       ## `null` for a handle class: the invalid handle.
       result = newTree(nkCall, n.info, l.id("nsNull", n.info),
                        l.typeToNim(nsnTypeName(n.typeName, n.info), n.info))
-    elif n.typeName.len > 0 and l.scope.isInterface(n.typeName):
-      ## The empty interface value.
-      result = newTree(nkCall, n.info, l.id("default", n.info), l.id(n.typeName, n.info))
+    elif n.typeName.len > 0 and l.scope.isValueInterface(n.typeName):
+      ## The empty interface value; a generic one's with its type arguments.
+      result = newTree(nkCall, n.info, l.id("default", n.info),
+                       (if n.rtype != nil: l.typeToNim(n.rtype, n.info)
+                        else: l.id(n.typeName, n.info)))
     elif n.typeKind == tkString:
       ## A null string is the empty one.
       result = newStrNode(nkStrLit, "")
@@ -1391,6 +1404,10 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     ## value is reinterpreted as the target instantiation.
     result = newTree(nkCall, n.info, l.id("nsVariant", n.info), result,
                      l.typeToNim(n.convType, n.info))
+  elif n.conv.len > 0 and n.convType != nil and n.conv.startsWith("nsTo"):
+    ## A class into a library interface: the interface names its type arguments.
+    result = newTree(nkCall, n.info, l.id(n.conv, n.info), result,
+                     l.typeToNim(n.convType, n.info))
   elif n.conv.len > 0:
     ## The implicit numeric conversion `sema.nim` recorded: C# promotes and widens
     ## where Nim wants the conversion spelled.
@@ -1570,10 +1587,10 @@ proc typeTest(l: Lowerer; subj: PNode; pat: NsNode; target: NsNode;
   ## a class is Nim's `of`, and a value type is decided by its static type.
   let info = pat.info
   let tname = canonicalTypeName(target.name)
-  let subjIface = l.scope.isInterface(pat.typeName)
+  let subjIface = l.scope.isValueInterface(pat.typeName)
   let obj = (if subjIface: newTree(nkDotExpr, info, subj, l.id("nsObj", info))
              else: subj)
-  if l.scope.isInterface(tname):
+  if l.scope.isValueInterface(tname):
     let a = l.fresh("nsAs")
     var test = newTree(nkInfix, info, l.id("!=", info),
                        newTree(nkDotExpr, info, l.id(a, info), l.id("nsObj", info)),
@@ -1629,7 +1646,7 @@ proc patTest(l: Lowerer; subj: PNode; pat: NsNode): PNode =
   of nsnPatType: result = l.typeTest(subj, pat, pat.typ, pat.name)
   of nsnPatConst:
     if pat.body != nil and pat.body.kind == nsnNull:
-      if l.scope.isInterface(pat.typeName):
+      if l.scope.isValueInterface(pat.typeName):
         result = newTree(nkInfix, info, l.id("==", info),
                          newTree(nkDotExpr, info, copyTree(subj), l.id("nsObj", info)),
                          newNodeI(nkNilLit, info))
@@ -1744,7 +1761,7 @@ proc patTest(l: Lowerer; subj: PNode; pat: NsNode): PNode =
     ## `T { P: pat } p`: not null, of `T`, and each member matching its pattern.
     var parts: seq[PNode] = @[]
     var owner = subj
-    let subjIface = l.scope.isInterface(pat.typeName)
+    let subjIface = l.scope.isValueInterface(pat.typeName)
     if subjIface:
       owner = newTree(nkDotExpr, info, copyTree(subj), l.id("nsObj", info))
     if pat.typ != nil:
@@ -2500,9 +2517,9 @@ proc exprMoves(l: Lowerer; n: NsNode): bool =
         if mi.name.len == 0 or not mi.isMethod: return true      ## a delegate
         if l.scope.isNative(mi.owner):
           if l.scope.nativeMoves(mi.owner, c.name): return true
-        elif l.scope.isDispatched(owner, c.name) or l.scope.isInterface(owner): return true
+        elif l.scope.isDispatched(owner, c.name) or l.scope.isValueInterface(owner): return true
         elif l.memberMoves(mi.owner, c.name): return true
-      elif c.body.typeKind == tkClass and l.scope.isInterface(c.body.typeName):
+      elif c.body.typeKind == tkClass and l.scope.isValueInterface(c.body.typeName):
         return true
     else:
       return true                                                ## a local function or delegate
@@ -3522,7 +3539,13 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
           mapper[key] = a
           inherited.add key
           ifaces.add it
-  if ifaces.len == 0: return
+  ## The library interfaces it names that are values (`IComparer<T>`): the library
+  ## builds their tables from the class's members; `is`/`as` reach them through it.
+  var libVals: seq[NsNode] = @[]
+  if l.scope.classes.hasKey(n.name):
+    for li in l.scope.classes[n.name].libInterfaces:
+      if l.scope.isValueInterface(canonicalTypeName(li.name)): libVals.add li
+  if ifaces.len == 0 and libVals.len == 0: return
   ## Every class deriving this one has tables of its own: an entry may call the
   ## implementation without dispatching again.
   var exact = plain
@@ -3719,6 +3742,15 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
     kbody.add newTree(nkIfStmt, info, newTree(nkElifBranch, info,
       newTree(nkInfix, info, l.id("==", info), l.id("key", info), key),
       newTree(nkStmtList, info, newTree(nkReturnStmt, info, table))))
+  for li in libVals:
+    ## `nsKeysOf<I>[C, args](key)`: the library's tables for `I` and what it extends.
+    let head = newTree(nkBracketExpr, info, l.id("nsKeysOf" & canonicalTypeName(li.name), info),
+                       copyTree(recvType))
+    for a in li.sons: head.add l.typeToNim(a, info)
+    let ask = newTree(nkCall, info, head, l.id("key", info))
+    kbody.add newTree(nkIfStmt, info, newTree(nkElifBranch, info,
+      newTree(nkInfix, info, l.id("!=", info), ask, newNodeI(nkNilLit, info)),
+      newTree(nkStmtList, info, newTree(nkReturnStmt, info, copyTree(ask)))))
   if kbody.len == 0: return
   let base = (if n.typ != nil and l.scope.classes.hasKey(canonicalTypeName(n.typ.name)):
                 l.typeToNim(n.typ, info)
@@ -3734,10 +3766,10 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
   into.add kl.mkProc(l.exportId("nsVtByKey", info), kfp, kbody, info, kind = nkMethodDef)
 
 proc isIfaceType(l: Lowerer; t: NsNode): bool =
-  t != nil and t.kind == nsnTypeName and l.scope.isInterface(canonicalTypeName(t.name))
+  t != nil and t.kind == nsnTypeName and l.scope.isValueInterface(canonicalTypeName(t.name))
 
 proc isIfaceValue(l: Lowerer; e: NsNode): bool =
-  e != nil and e.typeKind == tkClass and l.scope.isInterface(e.typeName)
+  e != nil and e.typeKind == tkClass and l.scope.isValueInterface(e.typeName)
 
 proc objOf(l: Lowerer; e: NsNode): PNode =
   ## The object behind a value: `x.nsObj` for an interface value, `x` otherwise.
