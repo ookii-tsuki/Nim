@@ -4,8 +4,6 @@
 # whose enumerator builds on the one type here. The non-generic collections and
 # interfaces (`ArrayList`, `IEnumerable`) are not declared yet.
 
-import ../System
-
 type
   NsEnumerator* = ref object of RootObj
     ## The non-generic half of every enumerator -- .NET's `System.Collections

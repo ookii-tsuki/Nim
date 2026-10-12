@@ -2008,11 +2008,13 @@ nkStmtList
       nkCall
         nkIdent 'Sort'
         nkIdent 'nums'
-        nkDotExpr
-          nkBracketExpr
-            nkIdent 'Comparer'
-            nkIdent 'int32'
-          nkIdent 'Default'
+        nkCall
+          nkIdent 'nsToIComparer'
+          nkDotExpr
+            nkBracketExpr
+              nkIdent 'Comparer'
+              nkIdent 'int32'
+            nkIdent 'Default'
       nkCall
         nkIdent 'WriteLine'
         nkCall

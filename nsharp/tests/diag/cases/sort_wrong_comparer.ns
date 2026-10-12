@@ -1,0 +1,12 @@
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var a = new[] { 3, 1 };
+            Array.Sort(a, "hello");
+        }
+    }
+}

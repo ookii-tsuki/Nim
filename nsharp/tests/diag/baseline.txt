@@ -100,7 +100,7 @@ missing_iface_member CS0535 match
 missing_paren CS1026 match
 missing_semicolon CS1002 match
 named_before_positional CS1501 match
-new_on_interface_gen CS0144 code:NS0246
+new_on_interface_gen CS0144 match
 no_member CS1061 match
 no_member_call CS1061 match
 no_member_list CS1061 match
@@ -122,6 +122,7 @@ return_missing_value CS0126 match
 return_value_void CS0127 match
 return_wrong_type CS0029 match
 sealed_derive CS0509 match
+sort_wrong_comparer CS1503 match
 static_class_instance CS0712 match
 static_via_instance CS0176 match
 string_char CS0029 match

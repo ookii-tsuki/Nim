@@ -60,7 +60,7 @@
 #     type parameters, which Nim cannot infer behind an explicit `newList[K]`.
 
 import std/[sets, deques, algorithm, sequtils]
-import ../../System
+import ../../System {.cyclic.}
 import ../Collections
 from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remove,
   copyOfSet, nsKeyHash, withComparer, initLike
@@ -70,10 +70,8 @@ from ../../../nsharp/intrinsics import Type, nsTypeNamed, nsTypeOf, FullName, ns
   NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
 export Collections
 
-# `{.nsStatic: "T".}`: a proc C# reaches through the type `T` (see `System`).
-template nsStatic(typ: string) {.pragma.}
-# `{.nsInterface.}`: a C# interface (see `System`).
-template nsInterface() {.pragma.}
+# `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
+from ../../../nsharp/pragmas import nsStatic, nsInterface
 
 type
   NsCollectionBase* = object of RootObj

@@ -4,20 +4,14 @@
 # dot-call, a static one through the qualifier the frontend drops.
 
 import std/[syncio, strutils, math, hashes, algorithm]
+# `System.Collections.Generic` builds on this namespace, and this one names its
+# interfaces (`Array.Sort` takes an `IComparer<T>`), as .NET's namespaces may.
+import System/Collections/Generic {.cyclic.}
 from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, Equals, GetHashCode, NsArray, nsArrayOf, len,
   items, `[]`, `[]=`
 
-# `{.nsStatic: "T".}` marks a proc C# reaches through a type qualifier
-# (`Console.WriteLine`, `String.Concat`) rather than a receiver; the frontend
-# re-files it as a member of that type, marked `static`. A name the library
-# cannot place is reported rather than skipped. Members over `typedesc` already
-# name their type, so they carry no pragma.
-template nsStatic(typ: string) {.pragma.}
-
-# `{.nsInterface.}` marks a C# interface the library declares. A class may name one
-# in its base list; N# checks the members exist (Nim's generics call them by name),
-# but builds no interface table for it, so it is a contract rather than a value type.
-template nsInterface() {.pragma.}
+# `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
+from ../nsharp/pragmas import nsStatic, nsInterface
 
 {.push discardable.}
 
@@ -436,10 +430,7 @@ proc IndexOf*[T](a: openArray[T]; value: T): int32 {.nsStatic: "Array".} =
     if a[i] == value: return int32(i)
 
 # `Array.Sort`: in the elements' own order (`CompareTo`, else the natural one), by a
-# `Comparison<T>`, or by a comparer. `IComparer<T>` is declared in
-# `System.Collections.Generic`, which builds on this module, so the comparer
-# overload takes whatever has a `Compare(x, y)` -- an `IComparer<T>`,
-# `Comparer<T>`, or a class implementing it -- and a null one means the default.
+# `Comparison<T>`, or by an `IComparer<T>`, where a null one means the default.
 
 proc nsArrayCompare[T](a, b: T): int =
   mixin CompareTo
@@ -450,12 +441,8 @@ proc Sort*[T](a: NsArray[T]) {.nsStatic: "Array".} =
   algorithm.sort(a.nsData, proc (x, y: T): int = nsArrayCompare(x, y))
 proc Sort*[T](a: NsArray[T]; comparison: Comparison[T]) {.nsStatic: "Array".} =
   algorithm.sort(a.nsData, proc (x, y: T): int = int(comparison(x, y)))
-proc Sort*[T; C: not proc](a: NsArray[T]; comparer: C) {.nsStatic: "Array".} =
-  mixin Compare
-  let none = (when compiles(comparer.nsObj): comparer.nsObj == nil
-              elif C is ref: comparer.isNil
-              else: false)
-  if none: Sort(a)
+proc Sort*[T](a: NsArray[T]; comparer: IComparer[T]) {.nsStatic: "Array".} =
+  if comparer.nsObj == nil: Sort(a)
   else: algorithm.sort(a.nsData, proc (x, y: T): int = int(comparer.Compare(x, y)))
 
 # --- System.Console ---------------------------------------------------------

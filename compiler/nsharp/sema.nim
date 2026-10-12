@@ -2397,6 +2397,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
           nsError(ctx.config, n.info, ndAbstractInstance, cn)
         ctx.checkCallArgs(ctx.scope.ctorOverloads(cn), n.sons, cn, cn, true, n.info)
         ctx.checkCtorAccess(cn, n)
+      elif ctx.scope.isValueInterface(cn):
+        ## A library interface (`IList<T>`) is no more constructible than a user's.
+        nsError(ctx.config, n.info, ndAbstractInstance, cn)
       else:
         ctx.libraryCtorConvert(n)
     if n.typ != nil and n.typ.kind == nsnTypeName and n.strVal.len == 0 and
