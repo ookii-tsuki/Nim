@@ -1,0 +1,88 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    enum Suit { Clubs, Diamonds, Hearts, Spades }
+
+    // The order a Dictionary enumerates in is .NET's: insertion order, except that a
+    // key added after a removal takes the removed key's place.
+    class Program
+    {
+        static void Show<K, V>(string label, Dictionary<K, V> d)
+        {
+            var parts = new List<string>();
+            foreach (var kv in d) parts.Add(kv.Key + "=" + kv.Value);
+            Console.WriteLine(label + " (" + d.Count + "): " + string.Join(", ", parts.ToArray()));
+        }
+
+        static void Main()
+        {
+            var d = new Dictionary<int, string>();
+            for (int i = 1; i <= 6; i++) d[i * 10] = "v" + i;
+            Show("start", d);
+            d.Remove(20);
+            d.Remove(50);
+            Show("removed 20, 50", d);
+            d[99] = "new";
+            d.Add(7, "seven");
+            d[123] = "third";
+            Show("added 99, 7, 123", d);
+            d[30] = "changed";
+            Show("set 30", d);
+            Console.WriteLine(d.ContainsKey(20) + " " + d.ContainsKey(99) + " " + d.ContainsValue("seven"));
+
+            var copy = new Dictionary<int, string>(d);
+            copy[1] = "one";
+            Show("copy", copy);
+            d.Clear();
+            d[5] = "after clear";
+            Show("cleared", d);
+
+            var strided = new Dictionary<int, int>();
+            for (int i = 0; i < 2000; i++) strided[i * 1024] = i;
+            long sum = 0;
+            for (int i = 0; i < 2000; i++) sum += strided[i * 1024];
+            Console.WriteLine("strided: " + strided.Count + " " + sum + " " + strided.ContainsKey(1024 * 1999) + " " + strided.ContainsKey(1023));
+            for (int i = 0; i < 2000; i += 2) strided.Remove(i * 1024);
+            Console.WriteLine("after removing half: " + strided.Count + " " + strided.ContainsKey(0) + " " + strided.ContainsKey(1024));
+
+            var neg = new Dictionary<long, int> { [-1] = 1, [long.MinValue] = 2, [long.MaxValue] = 3, [0] = 4 };
+            Show("longs", neg);
+            neg.Remove(-1);
+            neg[-2] = 5;
+            Show("longs again", neg);
+
+            var words = new Dictionary<string, int>();
+            foreach (var w in "the quick brown fox jumps over the lazy dog the end".Split(' '))
+                words[w] = words.GetValueOrDefault(w) + 1;
+            words.Remove("quick");
+            words.Remove("fox");
+            words["cat"] = 9;
+            Show("words", words);
+            Console.WriteLine(words.GetValueOrDefault("zebra", -1));
+            try { Console.WriteLine(words["zebra"]); }
+            catch (KeyNotFoundException e) { Console.WriteLine(e.Message); }
+            try { words.Add("the", 1); }
+            catch (ArgumentException e) { Console.WriteLine(e.Message); }
+            Console.WriteLine(words.TryAdd("the", 1) + " " + words.TryAdd("bird", 1));
+
+            var chars = new Dictionary<char, int>();
+            foreach (var c in "mississippi") chars[c] = chars.ContainsKey(c) ? chars[c] + 1 : 1;
+            Show("chars", chars);
+
+            var suits = new Dictionary<Suit, int> { [Suit.Spades] = 4, [Suit.Clubs] = 1, [Suit.Hearts] = 3 };
+            suits.Remove(Suit.Clubs);
+            suits[Suit.Diamonds] = 2;
+            Show("suits", suits);
+
+            var big = new Dictionary<int, int>();
+            for (int i = 0; i < 100; i++) big[i] = i;
+            for (int i = 0; i < 100; i += 3) big.Remove(i);
+            for (int i = 200; i < 240; i++) big[i] = i;
+            var firsts = new List<string>();
+            foreach (int k in big.Keys) { if (firsts.Count < 12) firsts.Add(k.ToString()); }
+            Console.WriteLine("reused: " + string.Join(" ", firsts.ToArray()) + " count " + big.Count);
+        }
+    }
+}

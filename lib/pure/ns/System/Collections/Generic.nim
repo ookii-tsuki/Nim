@@ -5,7 +5,7 @@
 # Every collection is a class, as it is in .NET: a `ref object` that owns its
 # storage, so `var b = a;` aliases the same list and `null` is a valid value. This
 # is the Nim a user's own `class List<T>` would lower to, written ahead of time; the
-# Nim containers (`seq`, `OrderedTable`, `OrderedSet`, `Deque`) are private fields,
+# containers (`seq`, `NsHashMap`, `OrderedSet`, `Deque`) are private fields,
 # never the type itself. `KeyValuePair<K,V>` is the one struct.
 #
 # C# names are kept at the source level (SPEC section 15, "Naming"): members are
@@ -60,9 +60,11 @@
 #   * a constructor from `Keys`/`Values` (`new List<K>(d.Keys)`): the view has two
 #     type parameters, which Nim cannot infer behind an explicit `newList[K]`.
 
-import std/[tables, sets, deques, algorithm, sequtils]
+import std/[sets, deques, algorithm, sequtils]
 import ../../System
 import ../Collections
+from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remove
+from ../../../nsharp/hashmap as nshash import nil
 from ../../../nsharp/intrinsics import Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName,
   NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
 export Collections
@@ -77,12 +79,12 @@ type
     Key*: K
     Value*: V
   Dictionary*[K, V] = ref object
-    ## C#'s `Dictionary<K,V>`. Insertion-ordered, which is the order .NET
-    ## enumerates in for a dictionary nothing was removed from.
-    data: OrderedTable[K, V]
+    ## C#'s `Dictionary<K,V>`, over .NET's own hash table (`nsharp/hashmap`): it
+    ## enumerates in .NET's order, a removed entry's place reused by the next added.
+    data: NsHashMap[K, V]
     version: int
   HashSet*[T] = ref object
-    ## C#'s `HashSet<T>`, insertion-ordered as `Dictionary` is.
+    ## C#'s `HashSet<T>`, insertion-ordered: .NET's order while nothing is removed.
     data: OrderedSet[T]
     version: int
   SortedSet*[T] = ref object
@@ -211,11 +213,13 @@ proc newKeyValuePair*[K, V](key: K; value: V): KeyValuePair[K, V] =
   KeyValuePair[K, V](Key: key, Value: value)
 
 proc newDictionary*[K, V](): Dictionary[K, V] =
-  Dictionary[K, V](data: initOrderedTable[K, V]())
+  Dictionary[K, V](data: initNsHashMap[K, V]())
 proc newDictionary*[K, V](capacity: int): Dictionary[K, V] =
-  Dictionary[K, V](data: initOrderedTable[K, V](max(capacity, 0)))
+  Dictionary[K, V](data: initNsHashMap[K, V](max(capacity, 0)))
 proc newDictionary*[K, V](dictionary: Dictionary[K, V]): Dictionary[K, V] =
-  Dictionary[K, V](data: dictionary.data)
+  ## The entries in the source's order, without its free places.
+  result = Dictionary[K, V](data: initNsHashMap[K, V](nshash.len(dictionary.data)))
+  for k, v in nshash.pairs(dictionary.data): discard result.data.put(k, v, false)
 
 proc newHashSet*[T](): HashSet[T] = HashSet[T](data: initOrderedSet[T]())
 proc newHashSet*[T](capacity: int): HashSet[T] =
@@ -276,7 +280,7 @@ proc newPriorityQueue*[E, P](capacity: int): PriorityQueue[E, P] =
 # --- Count ------------------------------------------------------------------
 
 proc Count*[T](l: List[T]): int32 {.inline.} = int32(l.data.len)
-proc Count*[K, V](t: Dictionary[K, V]): int32 {.inline.} = int32(t.data.len)
+proc Count*[K, V](t: Dictionary[K, V]): int32 {.inline.} = int32(nshash.len(t.data))
 proc Count*[T](s: HashSet[T]): int32 = int32(s.data.len)
 proc Count*[T](s: SortedSet[T]): int32 = int32(s.data.len)
 proc Count*[K, V](t: SortedDictionary[K, V]): int32 = int32(t.keys.len)
@@ -438,44 +442,43 @@ proc TrimExcess*[T](l: List[T]) = discard
 # --- Dictionary<K, V> -------------------------------------------------------
 
 proc `[]`*[K, V](t: Dictionary[K, V]; k: K): V =
-  ## One lookup; a missing key raises the table's `KeyError` (C#'s
-  ## `KeyNotFoundException`), given .NET's message.
-  try: result = t.data[k]
-  except KeyError: raise keyMissing(k)
+  ## One lookup; a missing key is `KeyNotFoundException`, with .NET's message.
+  let p = t.data.getPtr(k)
+  if p == nil: raise keyMissing(k)
+  p[]
 proc `[]=`*[K, V](t: Dictionary[K, V]; k: K; v: sink V) =
-  t.data[k] = v
+  discard t.data.put(k, v, true)
   touch t
 
 iterator items*[K, V](t: Dictionary[K, V]): KeyValuePair[K, V] =
   let v = t.version
-  for k, x in t.data.pairs:
+  for k, x in nshash.pairs(t.data):
     yield KeyValuePair[K, V](Key: k, Value: x)
     checkVersion(t, v)
 
 proc Add*[K, V](t: Dictionary[K, V]; k: K; v: V) =
-  if t.data.hasKeyOrPut(k, v): raise keyDuplicate(k)
+  if not t.data.put(k, v, false): raise keyDuplicate(k)
   touch t
 proc TryAdd*[K, V](t: Dictionary[K, V]; k: K; v: V): bool =
-  if t.data.hasKey(k): return false
-  t.data[k] = v
-  touch t
-  true
+  result = t.data.put(k, v, false)
+  if result: touch t
 proc Clear*[K, V](t: Dictionary[K, V]) =
-  t.data.clear()
+  nshash.clear(t.data)
   touch t
-proc ContainsKey*[K, V](t: Dictionary[K, V]; k: K): bool {.inline.} = t.data.hasKey(k)
+proc ContainsKey*[K, V](t: Dictionary[K, V]; k: K): bool {.inline.} =
+  nshash.contains(t.data, k)
 proc ContainsValue*[K, V](t: Dictionary[K, V]; v: V): bool =
-  for x in t.data.values:
+  for x in nshash.values(t.data):
     if x == v: return true
 proc GetValueOrDefault*[K, V](t: Dictionary[K, V]; k: K): V =
-  t.data.getOrDefault(k)
+  let p = t.data.getPtr(k)
+  if p != nil: result = p[]
 proc GetValueOrDefault*[K, V](t: Dictionary[K, V]; k: K; defaultValue: V): V =
-  t.data.getOrDefault(k, defaultValue)
+  let p = t.data.getPtr(k)
+  if p != nil: p[] else: defaultValue
 proc Remove*[K, V](t: Dictionary[K, V]; k: K): bool =
-  if t.data.hasKey(k):
-    t.data.del(k)
-    touch t
-    result = true
+  result = t.data.remove(k)
+  if result: touch t
 proc Keys*[K, V](t: Dictionary[K, V]): KeyCollection[K, V] =
   KeyCollection[K, V](dict: t)
 proc Values*[K, V](t: Dictionary[K, V]): ValueCollection[K, V] =

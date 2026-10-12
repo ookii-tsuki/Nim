@@ -1,0 +1,19 @@
+start (6): 10=v1, 20=v2, 30=v3, 40=v4, 50=v5, 60=v6
+removed 20, 50 (4): 10=v1, 30=v3, 40=v4, 60=v6
+added 99, 7, 123 (7): 10=v1, 7=seven, 30=v3, 40=v4, 99=new, 60=v6, 123=third
+set 30 (7): 10=v1, 7=seven, 30=changed, 40=v4, 99=new, 60=v6, 123=third
+False True True
+copy (8): 10=v1, 7=seven, 30=changed, 40=v4, 99=new, 60=v6, 123=third, 1=one
+cleared (1): 5=after clear
+strided: 2000 1999000 True False
+after removing half: 1000 False True
+longs (4): -1=1, -9223372036854775808=2, 9223372036854775807=3, 0=4
+longs again (4): -2=5, -9223372036854775808=2, 9223372036854775807=3, 0=4
+words (8): the=3, brown=1, cat=9, jumps=1, over=1, lazy=1, dog=1, end=1
+-1
+The given key 'zebra' was not present in the dictionary.
+An item with the same key has already been added. Key: the
+False True
+chars (4): m=1, i=4, s=4, p=2
+suits (3): Spades=4, Diamonds=2, Hearts=3
+reused: 233 1 2 232 4 5 231 7 8 230 10 11 count 106

@@ -157,6 +157,25 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
   walk(n.body, surface, scope, facts, usings)
   for s in n.sons: walk(s, surface, scope, facts, usings)
   for a in n.initArgs: walk(a, surface, scope, facts, usings)
+  ## An object or collection initialiser, which sema has rewritten as statements:
+  ## only what the C# source writes -- the values, and the keys of `[k] = v` -- not
+  ## the `Add` calls and member stores the rewriting adds, which Roslyn does not
+  ## see either.
+  for it in n.inits:
+    case it.kind
+    of nsnExprStmt:
+      if it.body != nil and it.body.kind == nsnCall:
+        for a in it.body.sons: walk(a, surface, scope, facts, usings)
+    of nsnAssign:
+      if it.sons.len == 2:
+        if it.sons[0].kind == nsnIndex:
+          for k in it.sons[0].sons: walk(k, surface, scope, facts, usings)
+        walk(it.sons[1], surface, scope, facts, usings)
+    of nsnInitMember: walk(it.body, surface, scope, facts, usings)
+    of nsnInitIndex, nsnInitAdd:
+      for k in it.sons: walk(k, surface, scope, facts, usings)
+      walk(it.body, surface, scope, facts, usings)
+    else: discard
 
 proc main() =
   var path = ""
