@@ -2515,6 +2515,25 @@ proc hoistNestedTypes(list: var seq[NsNode]; config: ConfigRef) =
         inc j
     inc i
 
+proc reverseDecls(list: var seq[NsNode]) =
+  ## `-d:nsReverseDecls`, for the test gate that proves declaration order does not
+  ## matter, as in C#: the types of a module or namespace, and the methods,
+  ## constructors and operators of a class, in reverse order. Fields, properties
+  ## and enum members keep theirs, which C# makes observable (initialisers run in
+  ## order, a record prints its members in order), and so do the statements of
+  ## a method.
+  const movable = {nsnClassDecl, nsnEnumDecl, nsnDelegateDecl, nsnNamespace,
+                   nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl}
+  var at: seq[int] = @[]
+  for i, d in list:
+    if d.kind in movable: at.add i
+  var moved: seq[NsNode] = @[]
+  for i in at: moved.add list[i]
+  for k, i in at: list[i] = moved[moved.high - k]
+  for d in list:
+    if d.kind == nsnNamespace and d.body != nil: reverseDecls(d.body.sons)
+    elif d.kind == nsnClassDecl: reverseDecls(d.sons)
+
 proc synthesizeEntryPoint(module: NsNode) =
   ## C# 9 top-level statements: the statements written outside any type are the
   ## body of a `static void Main(string[] args)` in a class `Program` of the global
@@ -2591,6 +2610,7 @@ proc parseNsModule*(source: string; fileIdx: FileIndex;
       discard p.advance
   hoistNestedTypes(result.sons, config)
   synthesizeEntryPoint(result)
+  if isDefined("nsReverseDecls"): reverseDecls(result.sons)
 
 
 

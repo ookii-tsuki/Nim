@@ -254,6 +254,16 @@ rejected by C# too. A sibling `.ns` with no `.out`/`.fail` (e.g. `p1b/Math.ns`)
 is a module and is compiled together with the program. The gate skips cleanly
 when `dotnet` is not on PATH.
 
+`nsharp/tests/run_reorder.sh` is the declaration-order gate, run by `run.sh`
+unless `NS_SKIP_REORDER=1`. C# lets types and members be declared in any order,
+so it compiles every test with an `.out` again with `-d:nsReverseDecls`, which
+makes the parser reverse the types of each module and namespace and the methods,
+constructors and operators of each class (fields, properties, enum members and
+statements keep their order, which C# makes observable), and requires the same
+output. The lowering is what makes order free: one type section, every routine
+forward declared (methods base class first), an enum's operators beside the
+types.
+
 `nsharp/tests/run_ast.sh` is the parser golden-AST check (Stage 0a of the parser
 cleanup, see PARSER-CLEANUP.md), run by `run.sh` unless `NS_SKIP_AST=1`. It
 builds `compiler/nsharp/tools/dumpast.nim`, a standalone tool that drives

@@ -286,6 +286,99 @@ nkStmtList
               nkIdent 'Level'
               nkIdent 'High'
           nkIntLit 1
+  nkCall
+    nkIdent 'nsEnum'
+    nkIdent 'Perm'
+    nkIdent 'uint8'
+    nkIdent 'true'
+    nkBracket
+      nkTupleConstr
+        nkStrLit "None"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'uint8'
+            nkDotExpr
+              nkIdent 'Perm'
+              nkIdent 'None'
+      nkTupleConstr
+        nkStrLit "Read"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'uint8'
+            nkDotExpr
+              nkIdent 'Perm'
+              nkIdent 'Read'
+      nkTupleConstr
+        nkStrLit "Write"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'uint8'
+            nkDotExpr
+              nkIdent 'Perm'
+              nkIdent 'Write'
+      nkTupleConstr
+        nkStrLit "Exec"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'uint8'
+            nkDotExpr
+              nkIdent 'Perm'
+              nkIdent 'Exec'
+      nkTupleConstr
+        nkStrLit "All"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'uint8'
+            nkDotExpr
+              nkIdent 'Perm'
+              nkIdent 'All'
+  nkCall
+    nkIdent 'nsEnum'
+    nkIdent 'Level'
+    nkIdent 'int32'
+    nkIdent 'false'
+    nkBracket
+      nkTupleConstr
+        nkStrLit "Low"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Level'
+              nkIdent 'Low'
+      nkTupleConstr
+        nkStrLit "Mid"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Level'
+              nkIdent 'Mid'
+      nkTupleConstr
+        nkStrLit "High"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Level'
+              nkIdent 'High'
+      nkTupleConstr
+        nkStrLit "Max"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Level'
+              nkIdent 'Max'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -886,57 +979,6 @@ nkStmtList
       nkCall
         nkIdent 'initThing'
         nkIdent 'result'
-  nkCall
-    nkIdent 'nsEnum'
-    nkIdent 'Perm'
-    nkIdent 'uint8'
-    nkIdent 'true'
-    nkBracket
-      nkTupleConstr
-        nkStrLit "None"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'uint8'
-            nkDotExpr
-              nkIdent 'Perm'
-              nkIdent 'None'
-      nkTupleConstr
-        nkStrLit "Read"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'uint8'
-            nkDotExpr
-              nkIdent 'Perm'
-              nkIdent 'Read'
-      nkTupleConstr
-        nkStrLit "Write"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'uint8'
-            nkDotExpr
-              nkIdent 'Perm'
-              nkIdent 'Write'
-      nkTupleConstr
-        nkStrLit "Exec"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'uint8'
-            nkDotExpr
-              nkIdent 'Perm'
-              nkIdent 'Exec'
-      nkTupleConstr
-        nkStrLit "All"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'uint8'
-            nkDotExpr
-              nkIdent 'Perm'
-              nkIdent 'All'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -957,48 +999,6 @@ nkStmtList
       nkCall
         nkIdent 'nsTypeNamed'
         nkStrLit "Demo.Perm"
-  nkCall
-    nkIdent 'nsEnum'
-    nkIdent 'Level'
-    nkIdent 'int32'
-    nkIdent 'false'
-    nkBracket
-      nkTupleConstr
-        nkStrLit "Low"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Level'
-              nkIdent 'Low'
-      nkTupleConstr
-        nkStrLit "Mid"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Level'
-              nkIdent 'Mid'
-      nkTupleConstr
-        nkStrLit "High"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Level'
-              nkIdent 'High'
-      nkTupleConstr
-        nkStrLit "Max"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Level'
-              nkIdent 'Max'
   nkProcDef
     nkPostfix
       nkIdent '*'

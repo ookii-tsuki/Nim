@@ -926,22 +926,23 @@ nkStmtList
       nkIdent 'RootRef'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Circle'
+        nkIdent 'Money'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'base'
     nkEmpty
     nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Circle'
+        nkIdent 'Money'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -966,16 +967,17 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Circle'
+        nkIdent 'Money'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1362,17 +1364,16 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsClone'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'RootRef'
+      nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Money'
+        nkIdent 'Program'
         nkEmpty
-    nkPragma
-      nkIdent 'base'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1402,7 +1403,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Money'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1478,17 +1479,16 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsClone'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'RootRef'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Money'
+        nkIdent 'Circle'
         nkEmpty
-    nkPragma
-      nkIdent 'discardable'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1545,7 +1545,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Circle'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1577,7 +1577,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Circle'
         nkEmpty
     nkEmpty
     nkEmpty

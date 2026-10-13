@@ -152,6 +152,39 @@ nkStmtList
               nkIdent 'Color'
               nkIdent 'Green'
           nkIntLit 1
+  nkCall
+    nkIdent 'nsEnum'
+    nkIdent 'Color'
+    nkIdent 'int32'
+    nkIdent 'false'
+    nkBracket
+      nkTupleConstr
+        nkStrLit "Red"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Red'
+      nkTupleConstr
+        nkStrLit "Green"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Green'
+      nkTupleConstr
+        nkStrLit "Blue"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Blue'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -253,7 +286,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Circle'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -285,7 +318,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Circle'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -332,22 +365,6 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Area'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'float64'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Circle'
-        nkEmpty
-    nkPragma
-      nkIdent 'discardable'
-    nkEmpty
-    nkEmpty
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
       nkIdent 'ToString'
     nkEmpty
     nkEmpty
@@ -355,7 +372,22 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Rect'
+        nkIdent 'Circle'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Circle'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -380,16 +412,17 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'Area'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'float64'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Rect'
+        nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -446,17 +479,16 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Area'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'float64'
+      nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
         nkIdent 'Rect'
         nkEmpty
-    nkPragma
-      nkIdent 'discardable'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -479,14 +511,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Rect'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -511,16 +543,17 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'Area'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'float64'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Rect'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1026,39 +1059,6 @@ nkStmtList
           nkDotExpr
             nkIdent 'self'
             nkIdent 'H'
-  nkCall
-    nkIdent 'nsEnum'
-    nkIdent 'Color'
-    nkIdent 'int32'
-    nkIdent 'false'
-    nkBracket
-      nkTupleConstr
-        nkStrLit "Red"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Red'
-      nkTupleConstr
-        nkStrLit "Green"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Green'
-      nkTupleConstr
-        nkStrLit "Blue"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Blue'
   nkProcDef
     nkPostfix
       nkIdent '*'

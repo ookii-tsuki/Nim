@@ -105,6 +105,30 @@ nkStmtList
         nkCall
           nkIdent 'int32'
           nkIntLit 2
+  nkCall
+    nkIdent 'nsEnum'
+    nkIdent 'Color'
+    nkIdent 'int32'
+    nkIdent 'false'
+    nkBracket
+      nkTupleConstr
+        nkStrLit "Red"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Red'
+      nkTupleConstr
+        nkStrLit "Blue"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Blue'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -206,7 +230,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Dog'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -238,7 +262,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Dog'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -314,7 +338,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Dog'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -346,7 +370,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Dog'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -615,30 +639,6 @@ nkStmtList
       nkCall
         nkIdent 'initDog'
         nkIdent 'result'
-  nkCall
-    nkIdent 'nsEnum'
-    nkIdent 'Color'
-    nkIdent 'int32'
-    nkIdent 'false'
-    nkBracket
-      nkTupleConstr
-        nkStrLit "Red"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Red'
-      nkTupleConstr
-        nkStrLit "Blue"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Blue'
   nkProcDef
     nkPostfix
       nkIdent '*'

@@ -950,7 +950,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'SubBox'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -982,7 +982,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'SubBox'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1004,16 +1004,13 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsVtOf_IBox_int'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkPtrTy
-        nkBracketExpr
-          nkIdent 'nsVT_IBox'
-          nkIdent 'int32'
+      nkIdent 'string'
       nkIdentDefs
-        nkIdent 'x'
+        nkIdent 'self'
         nkIdent 'SubBox'
         nkEmpty
     nkEmpty
@@ -1034,14 +1031,13 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsVtOf_INamed'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkPtrTy
-        nkIdent 'nsVT_INamed'
+      nkIdent 'string'
       nkIdentDefs
-        nkIdent 'x'
+        nkIdent 'self'
         nkIdent 'SubBox'
         nkEmpty
     nkEmpty
@@ -1050,18 +1046,17 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsVtByKey'
+      nkIdent 'nsVtOf_IBox_int'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'pointer'
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IBox'
+          nkIdent 'int32'
       nkIdentDefs
         nkIdent 'x'
         nkIdent 'SubBox'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'key'
-        nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1113,14 +1108,15 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsVtOf_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkPtrTy
+        nkIdent 'nsVT_INamed'
       nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'x'
+        nkIdent 'SubBox'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1145,14 +1141,18 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'nsVtByKey'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'pointer'
       nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'x'
+        nkIdent 'SubBox'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'key'
+        nkIdent 'string'
         nkEmpty
     nkEmpty
     nkEmpty

@@ -1,0 +1,56 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    // Everything is used before it is declared, as C# allows: a method below
+    // its caller, a derived class (with an override) above its base, a generic
+    // class above its base and its users, a generic static constructor, an
+    // enum and a record printed before their declarations.
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(Foo(2));
+            var d = new Dog("rex");
+            Console.WriteLine(d.Speak() + " " + Shelter.Count);
+            Console.WriteLine(Local(3));
+            int Local(int x) => x * Helper.Twice(x);
+            var bag = new Bag<Dog>();
+            bag.Add(d);
+            Console.WriteLine(bag.First.Name + " " + Registry<int>.Size);
+            Console.WriteLine(Color.Green + " " + new Pt(1, 2));
+            Console.WriteLine(new Box<string> { Value = "box" }.Value + " " + new Box<int>().Id);
+        }
+        static int Foo(int x) => Bar(x) + 1;
+        static int Bar(int x) => x * 10;
+    }
+    class Dog : Animal
+    {
+        public Dog(string n) : base(n) { Shelter.Count++; }
+        public override string Speak() => Name + " woofs";
+    }
+    class Box<T> : Thing { public T Value; }
+    class Bag<T> where T : Animal
+    {
+        List<T> items = new List<T>();
+        public void Add(T x) => items.Add(x);
+        public T First => items[0];
+    }
+    abstract class Animal
+    {
+        public string Name;
+        protected Animal(string n) { Name = n; }
+        public abstract string Speak();
+    }
+    class Thing { public int Id = 7; }
+    class Registry<T>
+    {
+        public static int Size;
+        static Registry() { Size = 10; }
+    }
+    static class Shelter { public static int Count; }
+    static class Helper { public static int Twice(int x) => x * 2; }
+    enum Color { Red, Green }
+    record Pt(int X, int Y);
+}

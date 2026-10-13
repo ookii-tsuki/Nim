@@ -137,6 +137,30 @@ nkStmtList
               nkIdent 'Color'
               nkIdent 'Red'
           nkIntLit 1
+  nkCall
+    nkIdent 'nsEnum'
+    nkIdent 'Color'
+    nkIdent 'int32'
+    nkIdent 'false'
+    nkBracket
+      nkTupleConstr
+        nkStrLit "Red"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Red'
+      nkTupleConstr
+        nkStrLit "Green"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Green'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -238,7 +262,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Dog'
+        nkIdent 'Outer'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -270,7 +294,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Dog'
+        nkIdent 'Outer'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -438,7 +462,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Outer'
+        nkIdent 'Inner'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -470,7 +494,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Outer'
+        nkIdent 'Inner'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -529,7 +553,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Inner'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -561,7 +585,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Inner'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -620,7 +644,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Dog'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -652,7 +676,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Dog'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1025,30 +1049,6 @@ nkStmtList
       nkCall
         nkIdent 'initPt'
         nkIdent 'result'
-  nkCall
-    nkIdent 'nsEnum'
-    nkIdent 'Color'
-    nkIdent 'int32'
-    nkIdent 'false'
-    nkBracket
-      nkTupleConstr
-        nkStrLit "Red"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Red'
-      nkTupleConstr
-        nkStrLit "Green"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Green'
   nkProcDef
     nkPostfix
       nkIdent '*'

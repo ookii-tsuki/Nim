@@ -101,6 +101,39 @@ nkStmtList
               nkIdent 'Color'
               nkIdent 'Green'
           nkIntLit 1
+  nkCall
+    nkIdent 'nsEnum'
+    nkIdent 'Color'
+    nkIdent 'int32'
+    nkIdent 'false'
+    nkBracket
+      nkTupleConstr
+        nkStrLit "Red"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Red'
+      nkTupleConstr
+        nkStrLit "Green"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Green'
+      nkTupleConstr
+        nkStrLit "Blue"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Color'
+              nkIdent 'Blue'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -278,39 +311,6 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkEmpty
-  nkCall
-    nkIdent 'nsEnum'
-    nkIdent 'Color'
-    nkIdent 'int32'
-    nkIdent 'false'
-    nkBracket
-      nkTupleConstr
-        nkStrLit "Red"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Red'
-      nkTupleConstr
-        nkStrLit "Green"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Green'
-      nkTupleConstr
-        nkStrLit "Blue"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Color'
-              nkIdent 'Blue'
   nkProcDef
     nkPostfix
       nkIdent '*'

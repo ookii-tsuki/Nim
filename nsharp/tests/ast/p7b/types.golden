@@ -203,6 +203,30 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkIdent 'nsProgram_counter'
+  nkCall
+    nkIdent 'nsEnum'
+    nkIdent 'Kind'
+    nkIdent 'int32'
+    nkIdent 'false'
+    nkBracket
+      nkTupleConstr
+        nkStrLit "Small"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Kind'
+              nkIdent 'Small'
+      nkTupleConstr
+        nkStrLit "Large"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Kind'
+              nkIdent 'Large'
   nkProcDef
     nkIdent 'nsStaticInitOuter'
     nkEmpty
@@ -1816,30 +1840,6 @@ nkStmtList
       nkCall
         nkIdent 'initLeaf'
         nkIdent 'result'
-  nkCall
-    nkIdent 'nsEnum'
-    nkIdent 'Kind'
-    nkIdent 'int32'
-    nkIdent 'false'
-    nkBracket
-      nkTupleConstr
-        nkStrLit "Small"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Kind'
-              nkIdent 'Small'
-      nkTupleConstr
-        nkStrLit "Large"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Kind'
-              nkIdent 'Large'
   nkProcDef
     nkPostfix
       nkIdent '*'

@@ -143,7 +143,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Square'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -175,7 +175,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Square'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -234,7 +234,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Square'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -266,7 +266,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Square'
         nkEmpty
     nkEmpty
     nkEmpty

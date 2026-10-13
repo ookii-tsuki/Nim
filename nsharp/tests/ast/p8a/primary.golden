@@ -315,14 +315,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Named'
+        nkIdent 'Counter'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -384,7 +384,7 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -416,16 +416,17 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'nsClone'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'RootRef'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Counter'
+        nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'base'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -691,23 +692,22 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsClone'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'RootRef'
+      nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkPragma
-      nkIdent 'base'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -739,14 +739,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Box'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -879,7 +879,7 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -918,7 +918,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Named'
         nkEmpty
     nkEmpty
     nkEmpty

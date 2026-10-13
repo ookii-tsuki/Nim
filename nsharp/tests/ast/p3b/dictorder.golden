@@ -130,6 +130,48 @@ nkStmtList
               nkIdent 'Suit'
               nkIdent 'Hearts'
           nkIntLit 1
+  nkCall
+    nkIdent 'nsEnum'
+    nkIdent 'Suit'
+    nkIdent 'int32'
+    nkIdent 'false'
+    nkBracket
+      nkTupleConstr
+        nkStrLit "Clubs"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Suit'
+              nkIdent 'Clubs'
+      nkTupleConstr
+        nkStrLit "Diamonds"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Suit'
+              nkIdent 'Diamonds'
+      nkTupleConstr
+        nkStrLit "Hearts"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Suit'
+              nkIdent 'Hearts'
+      nkTupleConstr
+        nkStrLit "Spades"
+        nkCall
+          nkIdent 'int64'
+          nkCall
+            nkIdent 'int32'
+            nkDotExpr
+              nkIdent 'Suit'
+              nkIdent 'Spades'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -278,48 +320,6 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkEmpty
-  nkCall
-    nkIdent 'nsEnum'
-    nkIdent 'Suit'
-    nkIdent 'int32'
-    nkIdent 'false'
-    nkBracket
-      nkTupleConstr
-        nkStrLit "Clubs"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Suit'
-              nkIdent 'Clubs'
-      nkTupleConstr
-        nkStrLit "Diamonds"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Suit'
-              nkIdent 'Diamonds'
-      nkTupleConstr
-        nkStrLit "Hearts"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Suit'
-              nkIdent 'Hearts'
-      nkTupleConstr
-        nkStrLit "Spades"
-        nkCall
-          nkIdent 'int64'
-          nkCall
-            nkIdent 'int32'
-            nkDotExpr
-              nkIdent 'Suit'
-              nkIdent 'Spades'
   nkProcDef
     nkPostfix
       nkIdent '*'

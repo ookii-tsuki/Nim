@@ -109,6 +109,14 @@ if [ -z "${NS_SKIP_SEMA:-}" ] && [ -x "$here/run_sema.sh" ]; then
   "$here/run_sema.sh" || fail=1
 fi
 
+# Declaration-order gate: every test again with its declarations reversed, since
+# C# lets types and members come in any order. Set NS_SKIP_REORDER=1 to skip.
+if [ -z "${NS_SKIP_REORDER:-}" ] && [ -x "$here/run_reorder.sh" ]; then
+  echo "--- declaration order ---"
+  NIM="$NIM" "$here/run_reorder.sh" > /tmp/ns_reorder.log 2>&1 || fail=1
+  grep -v '^ok' /tmp/ns_reorder.log
+fi
+
 # C++ interop gate: N# programs driven by C++, through native bindings. Set
 # NS_SKIP_NATIVE=1 to skip.
 if [ -z "${NS_SKIP_NATIVE:-}" ] && [ -x "$here/run_native.sh" ]; then

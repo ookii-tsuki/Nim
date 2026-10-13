@@ -660,7 +660,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'IntStack'
+        nkIdent 'Factory'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -692,7 +692,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'IntStack'
+        nkIdent 'Factory'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -767,7 +767,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Factory'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -799,7 +799,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Factory'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -932,7 +932,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'IntStack'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -964,7 +964,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'IntStack'
         nkEmpty
     nkEmpty
     nkEmpty

@@ -158,7 +158,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Derived'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -190,7 +190,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Derived'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -198,11 +198,11 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Run'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkEmpty
+      nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
         nkIdent 'Derived'
@@ -257,14 +257,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Derived'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -289,14 +289,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'Run'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkEmpty
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Derived'
         nkEmpty
     nkEmpty
     nkEmpty

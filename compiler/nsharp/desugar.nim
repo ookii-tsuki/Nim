@@ -5600,6 +5600,52 @@ proc elideNilChecks(n: PNode) =
   else:
     for i in 0 ..< n.safeLen: elideNilChecks(n[i])
 
+proc isEnumDecl(n: PNode): bool =
+  ## The `nsEnum(E, ...)` call an enum lowers to, which declares its operators.
+  n.kind == nkCall and n.len > 0 and n[0].kind == nkIdent and n[0].ident.s == "nsEnum"
+
+proc typeName(n: PNode): string =
+  ## The name a type is written with: `Dog`, `Bag[T]`, `Ns.Dog`, `Dog*`.
+  case n.kind
+  of nkIdent: n.ident.s
+  of nkSym: n.sym.name.s
+  of nkAccQuoted: (if n.len > 0: typeName(n[0]) else: "")
+  of nkPostfix: (if n.len > 1: typeName(n[1]) else: "")
+  of nkPragmaExpr: (if n.len > 0: typeName(n[0]) else: "")
+  of nkBracketExpr, nkPtrTy, nkRefTy, nkVarTy: (if n.len > 0: typeName(n[0]) else: "")
+  of nkDotExpr: (if n.len > 0: typeName(n[^1]) else: "")
+  else: ""
+
+proc classDepths(types: PNode): Table[string, int] =
+  ## How deep in its hierarchy each object type of the type section is: 0 for
+  ## one without a base the section declares.
+  var bases = initTable[string, string]()
+  for td in types:
+    if td.kind != nkTypeDef or td.len < 3: continue
+    var nameNode = td[0]
+    if nameNode.kind == nkPragmaExpr: nameNode = nameNode[0]
+    if nameNode.kind == nkPostfix: nameNode = nameNode[1]
+    var body = td[2]
+    while body.kind in {nkRefTy, nkPtrTy} and body.len > 0: body = body[0]
+    if body.kind == nkObjectTy and body.len > 1 and body[1].kind == nkOfInherit and
+       body[1].len > 0:
+      bases[typeName(nameNode)] = typeName(body[1][0])
+  result = initTable[string, int]()
+  for name in bases.keys:
+    var d = 0
+    var cur = name
+    while bases.hasKey(cur) and d <= bases.len:
+      cur = bases[cur]
+      inc d
+    result[name] = d
+
+proc receiverName(r: PNode): string =
+  ## The type of a routine's first parameter, which a method dispatches on.
+  let params = r[paramsPos]
+  if params.kind == nkFormalParams and params.len > 1 and params[1].kind == nkIdentDefs:
+    typeName(params[1][^2])
+  else: ""
+
 proc lowerModule*(module: NsNode; scope: NsModuleScope;
                   cache: IdentCache; config: ConfigRef): PNode =
   ## Lowers a whole `.ns` module to the Nim statements the rest of the compiler
@@ -5667,9 +5713,26 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   for s in stmts:
     if s.kind in declKinds and s.kind != nkTypeSection and not isImportStmt(s):
       result.add s
+  ## An enum's operators and printing (`nsEnum`) are declarations too: a routine
+  ## declared before the enum may print it.
+  for s in stmts:
+    if isEnumDecl(s): result.add s
   for p in l.staticInits: routines.add p
   for s in stmts:
     if s.kind in {nkProcDef, nkMethodDef, nkConverterDef}: routines.add s
+  ## Nim attaches a method to the base method declared before it, so the methods
+  ## are declared base class first, whatever order the classes are written in.
+  let depths = classDepths(types)
+  proc depthOf(r: PNode): int = depths.getOrDefault(receiverName(r), 0)
+  ## Only the methods move, among their own slots, so the rest keeps its order.
+  var slots: seq[int] = @[]
+  var methods: seq[PNode] = @[]
+  for i, r in routines:
+    if r.kind == nkMethodDef:
+      slots.add i
+      methods.add r
+  methods.sort(proc (a, b: PNode): int = cmp(depthOf(a), depthOf(b)))
+  for k, i in slots: routines[i] = methods[k]
   for r in routines:
     let fwd = copyTree(r)
     fwd[6] = newNodeI(nkEmpty, r.info)
@@ -5679,7 +5742,7 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   for p in l.staticInits:
     result.add newTree(nkCall, p.info, copyTree(p[0]))
   for s in stmts:
-    if s.kind notin declKinds:
+    if s.kind notin declKinds and not isEnumDecl(s):
       result.add s
   for p in l.staticInits: result.add p
   if l.entryPoint != nil:

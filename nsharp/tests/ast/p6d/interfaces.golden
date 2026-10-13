@@ -770,7 +770,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Circle'
+        nkIdent 'Label'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -802,7 +802,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Circle'
+        nkIdent 'Label'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -822,15 +822,15 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsVtOf_IScalable'
+      nkIdent 'nsVtOf_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkPtrTy
-        nkIdent 'nsVT_IScalable'
+        nkIdent 'nsVT_INamed'
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'Circle'
+        nkIdent 'Label'
         nkEmpty
     nkPragma
       nkIdent 'base'
@@ -854,14 +854,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsAsIScalable'
+      nkIdent 'nsAsINamed'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'IScalable'
+      nkIdent 'INamed'
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'Circle'
+        nkIdent 'Label'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -881,15 +881,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsVtOf_IShape'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkPtrTy
-        nkIdent 'nsVT_IShape'
+      nkIdent 'string'
       nkIdentDefs
-        nkIdent 'x'
-        nkIdent 'Circle'
+        nkIdent 'self'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -909,15 +908,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsVtOf_INamed'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkPtrTy
-        nkIdent 'nsVT_INamed'
+      nkIdent 'string'
       nkIdentDefs
-        nkIdent 'x'
-        nkIdent 'Circle'
+        nkIdent 'self'
+        nkIdent 'Program'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -964,23 +962,22 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Area'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'float64'
+      nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkPragma
-      nkIdent 'discardable'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'Name'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1014,16 +1011,18 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsVtOf_IScalable'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkPtrTy
+        nkIdent 'nsVT_IScalable'
       nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Square'
+        nkIdent 'x'
+        nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'base'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1046,14 +1045,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'nsAsIScalable'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'IScalable'
       nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Square'
+        nkIdent 'x'
+        nkIdent 'Circle'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1081,7 +1080,7 @@ nkStmtList
         nkIdent 'nsVT_IShape'
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'Square'
+        nkIdent 'Circle'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1109,7 +1108,7 @@ nkStmtList
         nkIdent 'nsVT_INamed'
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'Square'
+        nkIdent 'Circle'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1163,7 +1162,7 @@ nkStmtList
       nkIdent 'float64'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Square'
+        nkIdent 'Circle'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1172,14 +1171,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'Name'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Label'
+        nkIdent 'Circle'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1204,14 +1203,14 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Label'
+        nkIdent 'Square'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1231,18 +1230,16 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsVtOf_INamed'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkPtrTy
-        nkIdent 'nsVT_INamed'
+      nkIdent 'string'
       nkIdentDefs
-        nkIdent 'x'
-        nkIdent 'Label'
+        nkIdent 'self'
+        nkIdent 'Square'
         nkEmpty
-    nkPragma
-      nkIdent 'base'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkConverterDef
@@ -1263,14 +1260,15 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsAsINamed'
+      nkIdent 'nsVtOf_IShape'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'INamed'
+      nkPtrTy
+        nkIdent 'nsVT_IShape'
       nkIdentDefs
         nkIdent 'x'
-        nkIdent 'Label'
+        nkIdent 'Square'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1356,14 +1354,15 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsVtOf_INamed'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkPtrTy
+        nkIdent 'nsVT_INamed'
       nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'x'
+        nkIdent 'Square'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1388,16 +1387,17 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'Area'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'float64'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Program'
+        nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
