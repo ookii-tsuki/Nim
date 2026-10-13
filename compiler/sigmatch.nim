@@ -2382,6 +2382,17 @@ proc userConvMatch(c: PContext, m: var TCandidate, f, a: PType,
 
     let destIsGeneric = containsGenericType(dest)
     if destIsGeneric:
+      # an argument that binds none of the converter's generic parameters
+      # (`nil` into `Box[T]`) cannot say which instance it converts to:
+      let gp = c.converters[i].ast[genericParamsPos]
+      var unbound = false
+      if gp != nil and gp.kind == nkGenericParams:
+        for p in gp:
+          if p.kind == nkSym and p.sym.typ != nil and
+              p.sym.typ.kind == tyGenericParam and
+              lookup(convMatch.bindings, p.sym.typ) == nil:
+            unbound = true
+      if unbound: continue
       dest = generateTypeInstance(c, convMatch.bindings, arg, dest)
     let fdest = typeRel(m, f, dest)
     if fdest in {isEqual, isGeneric} and not (dest.kind == tyLent and f.kind in {tyVar}):
