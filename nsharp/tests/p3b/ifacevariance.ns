@@ -1,0 +1,16 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    // Valid C#: IReadOnlyList<T> is covariant, so a list of strings is a
+    // read-only list of objects. N# reports it rather than letting it reach Nim.
+    class Program
+    {
+        static void Main()
+        {
+            IReadOnlyList<object> r = new List<string> { "a" };
+            Console.WriteLine(r.Count);
+        }
+    }
+}

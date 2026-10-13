@@ -618,6 +618,88 @@ proc targetOfExpr(ctx: NsCheckContext; e: NsNode): NsTarget =
   result.name = e.typeName
   result.isNullOk = e.typeKind notin NsNullIntolerantKinds
 
+proc spelledTypeArgs(name: string): seq[string] =
+  ## The type arguments of a spelled type, at the top level: `int` for `int[]`,
+  ## `int` and `List<string>` for `Dictionary<int, List<string>>`.
+  result = @[]
+  if name.endsWith("[]"): return @[name[0 ..< name.len - 2]]
+  let open = name.find('<')
+  if open < 0 or not name.endsWith(">"): return
+  var depth = 0
+  var cur = ""
+  for c in name[open + 1 ..< name.len - 1]:
+    case c
+    of '<': inc depth; cur.add c
+    of '>': dec depth; cur.add c
+    of ',':
+      if depth == 0:
+        result.add cur.strip
+        cur = ""
+      else: cur.add c
+    else: cur.add c
+  if cur.strip.len > 0: result.add cur.strip
+
+proc isValueTypeName(ctx: NsCheckContext; name: string): bool =
+  ## A type no variance applies to: a built-in value type or an enum.
+  canonicalTypeName(name) in ["int", "uint", "long", "ulong", "short", "ushort",
+    "byte", "sbyte", "float", "double", "decimal", "bool", "char", "nint", "nuint"] or
+    ctx.scope.enums.contains(canonicalTypeName(name))
+
+type
+  NsLibConv = enum
+    ## How a value converts where a library interface is involved.
+    lcUndecided   ## no library interface on either side: the other rules decide
+    lcFits        ## an implicit conversion
+    lcCast        ## only an explicit one: an interface and a class that is not
+                  ## sealed, or two interfaces (CS0266)
+    lcNone        ## none at all: an array is sealed (CS0029)
+    lcVariance    ## a variant conversion (`List<string>` to `IReadOnlyList<object>`),
+                  ## valid C# that the library's tables do not do yet
+
+proc libIfaceConversion(ctx: NsCheckContext; arg: NsNode; t: NsTarget): NsLibConv =
+  ## A library interface (`IList<T>`, `IEnumerable<T>`) as the value's type or the
+  ## target. The library declares each implicit conversion as an `nsTo<I>`, an
+  ## interface into the ones it extends included; any other between an interface
+  ## and a collection takes a cast, as C# says.
+  result = lcUndecided
+  if arg == nil or arg.kind == nsnNull or t.name.len == 0: return
+  let src = canonicalTypeName(arg.typeName)
+  let si = src.split('<')[0]
+  let ti = canonicalTypeName(t.name).split('<')[0]
+  if si.len == 0 or ti.len == 0: return
+  let srcIface = si in ctx.scope.libValueIfaces or si == "IEnumerable"
+  let tgtIface = ti in ctx.scope.libValueIfaces
+  if not srcIface and not tgtIface: return
+  if si == ti: return lcUndecided                 ## the same type: other rules
+  if ti == "IEnumerable" or t.kind == tkUnknown: return lcUndecided
+  if tgtIface:
+    ## The element types must agree; only a reference type may vary (into the
+    ## covariant `IReadOnlyList<T>` and friends), so a value type that differs is
+    ## certain.
+    ## The spellings with their type arguments: what the value's type was
+    ## resolved to or constructed as, and what the target declares.
+    let srcFull =
+      if arg.rtype != nil: typeSpelling(arg.rtype)
+      elif arg.kind == nsnNew and arg.typ != nil: typeSpelling(arg.typ)
+      else: src
+    let sa = spelledTypeArgs(srcFull)
+    let ta = spelledTypeArgs(if t.typ != nil: typeSpelling(t.typ) else: t.spelling)
+    var argsDiffer, argsVary = false
+    if sa.len == ta.len:
+      for k in 0 ..< sa.len:
+        if canonicalTypeName(sa[k]) != canonicalTypeName(ta[k]):
+          if ctx.isValueTypeName(sa[k]) or ctx.isValueTypeName(ta[k]): argsDiffer = true
+          else: argsVary = true
+    if not argsDiffer and ctx.convertsToLibIface(arg, ti):
+      return (if argsVary: lcVariance else: lcFits)
+    if ctx.scope.classes.hasKey(si) and not ctx.scope.isValueInterface(si):
+      return lcUndecided                          ## a user class: its own rules
+    if arg.typeKind notin {tkSequence, tkClass}: return lcUndecided
+    return (if src.endsWith("[]"): lcNone else: lcCast)
+  ## An interface into something else: a library collection or an array.
+  result = (if t.name.endsWith("[]") or ctx.surface.nimSpellingOf(ti).len > 0: lcCast
+            else: lcUndecided)
+
 proc incompatible(ctx: NsCheckContext; arg: NsNode; t: NsTarget): bool =
   ## True only when C# would reject the value outright.
   result = false
@@ -632,6 +714,12 @@ proc incompatible(ctx: NsCheckContext; arg: NsNode; t: NsTarget): bool =
      ctx.scope.conversionOp(src, canonicalTypeName(t.name), true) != nil:
     ## A user-defined implicit conversion (`implicit operator double(Vec v)`).
     return
+  case ctx.libIfaceConversion(arg, t)
+  of lcFits: return
+  of lcCast, lcNone, lcVariance:
+    result = true
+    return
+  of lcUndecided: discard
   case ak
   of tkClass:
     if t.kind == tkException: return          ## an exception class is one of these
@@ -806,7 +894,16 @@ proc checkConvertible(ctx: NsCheckContext; value: NsNode; t: NsTarget;
   if ctx.incompatible(value, t):
     let src = (if value.typeName.len > 0: canonicalTypeName(value.typeName)
                else: numName(value))
-    if src.len > 0 and t.name.len > 0 and
+    let lib = ctx.libIfaceConversion(value, t)
+    if lib == lcVariance:
+      nsError(ctx.config, info, ndUnsupported,
+              "a variant conversion of a library interface ('" & valueSpelling(value) &
+              "' to '" & t.spelling & "')")
+    elif lib == lcCast:
+      ## An interface and a class that is not sealed, or two interfaces: a cast
+      ## would do (CS0266).
+      nsError(ctx.config, info, ndCannotConvertExplicit, valueSpelling(value), t.spelling)
+    elif src.len > 0 and t.name.len > 0 and
        ctx.scope.conversionOp(src, canonicalTypeName(t.name), false) != nil:
       ## Only an explicit conversion exists: C# says so (CS0266).
       nsError(ctx.config, info, ndCannotConvertExplicit, valueSpelling(value), t.spelling)

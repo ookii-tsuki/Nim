@@ -1,5 +1,6 @@
 abstract_instance CS0144 match
 array_index_type CS0029 match
+array_to_wrong_iface CS0029 match
 array_wrong_elem CS0029 match
 assign_getonly_prop CS0200 match
 assign_readonly CS0191 match
@@ -13,6 +14,7 @@ case_not_const CS9135 match
 cast_invalid CS0030 match
 cast_string_int CS0030 match
 char_string_cmp CS0019 match
+collection_to_wrong_iface CS0266 match
 compare_class_int CS0019 match
 console_wrong CS1503 code:NS1501
 continue_outside CS0139 match
@@ -24,6 +26,7 @@ dup_local CS0128 match
 dup_member CS0102 match
 dup_method CS0111 match
 enum_to_int CS0266 match
+enumerable_to_iface CS0266 match
 expr_statement CS0201 match
 float_literal CS0664 match
 foreach_non_enum CS1579 match
@@ -80,6 +83,8 @@ h_undeclared_static CS0117 match
 h_while_int CS0029 match
 h_wrong_args_ctor_named CS1739 match
 if_non_bool CS0029 match
+iface_to_collection CS0266 match
+iface_to_iface CS0266 match
 implconv_bool_int CS0029 match
 implconv_class CS0029 match
 implconv_double_int CS0266 match

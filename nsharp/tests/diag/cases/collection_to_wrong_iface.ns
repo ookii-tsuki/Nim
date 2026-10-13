@@ -1,0 +1,12 @@
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            IList<int> l = new Queue<int>();
+        }
+    }
+}
