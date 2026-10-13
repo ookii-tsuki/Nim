@@ -137,7 +137,8 @@ proc collectObjectTree(graph: ModuleGraph, n: PNode) =
         let (depthLevel, root) = getObjDepth(typ)
         if depthLevel != -3:
           if depthLevel == 1:
-            graph.objectTree[root] = @[]
+            # a subtype declared before its base already added itself:
+            if root notin graph.objectTree: graph.objectTree[root] = @[]
           else:
             if root notin graph.objectTree:
               graph.objectTree[root] = @[(depthLevel, typ)]
