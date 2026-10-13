@@ -1818,7 +1818,21 @@ proc typeSectionFinalPass(c: PContext, n: PNode) =
       # types that need to be updated due to containing forward types
       # and their corresponding type nodes
       # for example generic invocations of forward types end up here
+      # A generic type's body names its generic parameters, so they are put
+      # back in scope as `typeSectionRightSidePass` had them:
+      let generic = owner.kind == skType and owner.typ != nil and
+        owner.typ.kind == tyGenericBody and owner.typ.n != nil
+      if generic:
+        openScope(c)
+        pushOwner(c, owner)
+        for p in owner.typ.n:
+          if p.kind == nkSym: addDecl(c, p.sym)
+        inc c.inGenericContext
       var reified = semTypeNode(c, typeNode, nil)
+      if generic:
+        dec c.inGenericContext
+        popOwner(c)
+        closeScope(c)
       assert reified != nil
       assignType(typ, reified)
       typ.bindingId = reified.bindingId  # same id
