@@ -238,20 +238,6 @@ proc nsEnumName*(v: int64; names: openArray[(string, int64)]; flags: bool): stri
       return
   $v
 
-template nsEnum*(E, U: untyped; flags: static bool; names: untyped) =
-  ## The operators of the enum `E` over the integer `U`, and its printing from
-  ## `names` (member, value) in declaration order. `HasFlag` is `System.Enum`'s.
-  proc `==`*(a, b: E): bool {.borrow.}
-  proc `<`*(a, b: E): bool {.borrow.}
-  proc `<=`*(a, b: E): bool {.borrow.}
-  proc `or`*(a, b: E): E = E(U(a) or U(b))
-  proc `and`*(a, b: E): E = E(U(a) and U(b))
-  proc `xor`*(a, b: E): E = E(U(a) xor U(b))
-  proc `not`*(a: E): E = E(not U(a))
-  proc hash*(a: E): Hash = hash(U(a))
-  proc `$`*(a: E): string = nsEnumName(int64(U(a)), names, flags)
-  proc ToString*(a: E): string = $a
-
 import std/macros
 
 macro Invoke*(d: typed; args: varargs[typed]): untyped =

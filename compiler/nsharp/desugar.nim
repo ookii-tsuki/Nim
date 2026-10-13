@@ -2912,8 +2912,8 @@ proc qualifySiblings(n: NsNode; enumName: string; names: seq[string]) =
 
 proc lowerEnum(l: Lowerer; n: NsNode; into: var seq[PNode]) =
   ## `enum E : U { A, B = 4 }` is `type E = distinct U`, each member a template
-  ## over `typedesc[E]` (so `E.A` reads as in C#) yielding its value, and
-  ## `nsEnum(E, U, flags, names)` for the operators and the printing. A member
+  ## over `typedesc[E]` (so `E.A` reads as in C#) yielding its value, and procs
+  ## for the operators and the printing (`nsEnumName`). A member
   ## without a value is the previous one plus one, the first zero, as in C#.
   let info = n.info
   let u = (if n.typ != nil: l.typeToNim(n.typ, info) else: l.id("int32", info))
@@ -2951,8 +2951,38 @@ proc lowerEnum(l: Lowerer; n: NsNode; into: var seq[PNode]) =
         copyTree(u), newTree(nkDotExpr, f.info, l.id(n.name, f.info),
                              l.id(f.name, f.info)))))
     prev = f.name
-  into.add newTree(nkCall, info, l.id("nsEnum", info), l.id(n.name, info), copyTree(u),
-                   l.id(if n.hasAttribute("Flags"): "true" else: "false", info), table)
+  ## The operators and the printing are ordinary procs, declared with the rest of
+  ## the module's routines rather than by a template call: a module of an import
+  ## cycle shares its leading declarations only, which a statement would end.
+  let e = l.id(n.name, info)
+  proc under(x: string): PNode = newTree(nkCall, info, copyTree(u), l.id(x, info))
+  proc pair(t: PNode): PNode =
+    newTree(nkIdentDefs, info, l.id("a", info), l.id("b", info), t, empty(info))
+  proc single(t: PNode): PNode = newTree(nkIdentDefs, info, l.id("a", info), t, empty(info))
+  proc op(name: string; ret: PNode; params: seq[PNode]; body: PNode): PNode =
+    let fp = newTree(nkFormalParams, info, ret)
+    for p in params: fp.add p
+    ## Quoted, so the operator reads back when a namespace module is rendered.
+    l.mkProc(newTree(nkPostfix, info, l.id("*", info),
+                     newTree(nkAccQuoted, info, l.id(name, info))),
+             fp, newTree(nkStmtList, info, body), info)
+  for cmp in ["==", "<", "<="]:
+    into.add op(cmp, l.id("bool", info), @[pair(copyTree(e))],
+      newTree(nkInfix, info, l.id(cmp, info), under("a"), under("b")))
+  for bit in ["or", "and", "xor"]:
+    into.add op(bit, copyTree(e), @[pair(copyTree(e))],
+      newTree(nkCall, info, copyTree(e),
+        newTree(nkInfix, info, l.id(bit, info), under("a"), under("b"))))
+  into.add op("not", copyTree(e), @[single(copyTree(e))],
+    newTree(nkCall, info, copyTree(e), newTree(nkPrefix, info, l.id("not", info), under("a"))))
+  into.add op("hash", l.id("Hash", info), @[single(copyTree(e))],
+    newTree(nkCall, info, l.id("hash", info), under("a")))
+  into.add op("$", l.id("string", info), @[single(copyTree(e))],
+    newTree(nkCall, info, l.id("nsEnumName", info),
+      newTree(nkCall, info, l.id("int64", info), under("a")), table,
+      l.id(if n.hasAttribute("Flags"): "true" else: "false", info)))
+  into.add op("ToString", l.id("string", info), @[single(copyTree(e))],
+    newTree(nkPrefix, info, l.id("$", info), l.id("a", info)))
   let local = (if n.outer.len > 0: n.outer & "+" & n.name else: n.name)
   let full = (if l.curNamespace.len > 0: l.curNamespace & "." & local else: local)
   into.add l.mkProc(l.exportId("nsTypeOf", info),
@@ -5611,10 +5641,6 @@ proc elideNilChecks(n: PNode) =
   else:
     for i in 0 ..< n.safeLen: elideNilChecks(n[i])
 
-proc isEnumDecl(n: PNode): bool =
-  ## The `nsEnum(E, ...)` call an enum lowers to, which declares its operators.
-  n.kind == nkCall and n.len > 0 and n[0].kind == nkIdent and n[0].ident.s == "nsEnum"
-
 proc typeName(n: PNode): string =
   ## The name a type is written with: `Dog`, `Bag[T]`, `Ns.Dog`, `Dog*`.
   case n.kind
@@ -5724,10 +5750,6 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   for s in stmts:
     if s.kind in declKinds and s.kind != nkTypeSection and not isImportStmt(s):
       result.add s
-  ## An enum's operators and printing (`nsEnum`) are declarations too: a routine
-  ## declared before the enum may print it.
-  for s in stmts:
-    if isEnumDecl(s): result.add s
   for p in l.staticInits: routines.add p
   for s in stmts:
     if s.kind in {nkProcDef, nkMethodDef, nkConverterDef}: routines.add s
@@ -5753,7 +5775,7 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   for p in l.staticInits:
     result.add newTree(nkCall, p.info, copyTree(p[0]))
   for s in stmts:
-    if s.kind notin declKinds and not isEnumDecl(s):
+    if s.kind notin declKinds:
       result.add s
   for p in l.staticInits: result.add p
   if l.entryPoint != nil:
@@ -5761,18 +5783,3 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   if l.nilChecks: elideNilChecks(result)
   elideBounds(result, l.cache)
 
-proc splitModuleOutput*(stmts: PNode): tuple[decls, impls: PNode] =
-  ## Splits a lowered module into type declarations and implementations, which
-  ## `nsgen` emits as `<N>_decl` and `<N>_impl`.
-  var decls = newNodeI(nkStmtList, stmts.info)
-  var impls = newNodeI(nkStmtList, stmts.info)
-  for i in 0 ..< stmts.len:
-    let s = stmts[i]
-    if s.kind == nkTypeSection:
-      decls.add s
-    elif isImportStmt(s):
-      decls.add s
-      impls.add s
-    else:
-      impls.add s
-  result = (decls: decls, impls: impls)

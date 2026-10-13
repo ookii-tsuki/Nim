@@ -1,0 +1,33 @@
+using System;
+
+namespace Demo
+{
+    // C#'s "Color Color" rule: a field named as its own type stands
+    // for the type when a static member of it follows (an enum's members, a
+    // class's statics and consts), and for the value otherwise.
+    enum Color { Red, Green }
+
+    class Thing
+    {
+        public static int Max = 3;
+        public const string Kind = "thing";
+        public int Size = 1;
+    }
+
+    class Box
+    {
+        public Color Color = Color.Green;
+        public Thing Thing = new Thing();
+        public string Show() =>
+            Color + " " + Color.Red + " " + Thing.Max + " " + Thing.Kind + " " + Thing.Size +
+            " " + (Color == Color.Green);
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(new Box().Show());
+        }
+    }
+}

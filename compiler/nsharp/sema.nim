@@ -1862,6 +1862,7 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     if not ctx.isStaticCtx:
       n.kind = nsnMember
       n.body = nsn(nsnThis, n.info)
+      n.body.strVal = "implicit"   ## written as a bare name
       return ctx.walkExpr(n)
   if ctx.types.hasKey(n.name):
     let info = ctx.types[n.name]
@@ -1889,6 +1890,30 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## it yields. No member name is special-cased.
   ctx.receiver = n.body
   var rk = ctx.walkExpr(n.body)
+  ## C#'s "Color Color" rule (§12.8.7.2): a field, property, local or parameter
+  ## named as its own type stands for the type when what follows is one of the
+  ## type's static members -- an enum's members, a class's statics and consts.
+  let bare = n.body != nil and
+    (n.body.kind == nsnIdent or
+     (n.body.kind == nsnMember and n.body.body != nil and
+      n.body.body.kind == nsnThis and n.body.body.strVal == "implicit"))
+  if bare and rk != tkType and ctx.isTypeName(n.body.name):
+    let tn = canonicalTypeName(n.body.name)
+    let declared =
+      if n.body.kind == nsnMember: canonicalTypeName(ctx.memberTypeName(ctx.clsName, n.body.name))
+      elif ctx.types.hasKey(n.body.name): canonicalTypeName(ctx.types[n.body.name].name)
+      else: canonicalTypeName(n.body.typeName)
+    var isStaticUse = false
+    if declared == tn:
+      if ctx.scope.enums.contains(tn):
+        isStaticUse = n.name in ctx.scope.enumMembers.getOrDefault(tn)
+      elif ctx.scope.classes.hasKey(tn):
+        let m = ctx.scope.findMemberInfo(tn, n.name)
+        isStaticUse = m.name.len > 0 and (m.isStatic or m.isConst)
+    if isStaticUse:
+      n.body = nsnIdent(n.body.name, n.body.info)
+      n.body.setType(tkType, tn)
+      rk = tkType
   if rk == tkUnknown and n.body != nil:
     ## The receiver is a qualifier rather than a value: a type or an imported
     ## namespace at the root of a dotted name (`int.MaxValue`, `Console`, `P.Gadget`,

@@ -77,6 +77,8 @@ type
     enums*: HashSet[string]
       ## The enums in scope. `Color.Green` is a qualifier over one of these, and
       ## the qualifier is what tells it from a member access on a value.
+    enumMembers*: Table[string, seq[string]]
+      ## Each enum's member names, in declaration order.
     usings*: seq[string]
     libIfaces*: HashSet[string]
       ## The interfaces the library declares (`{.nsInterface.}`): a class may name
@@ -212,6 +214,9 @@ proc collect*(decl: NsNode; scope: NsModuleScope; ns = "") =
     scope.delegates[decl.name] = decl
   of nsnEnumDecl:
     scope.enums.incl decl.name
+    var names: seq[string] = @[]
+    for f in decl.sons: names.add f.name
+    scope.enumMembers[decl.name] = names
   of nsnUsing:
     if decl.name.len > 0:
       scope.usings.add decl.name
