@@ -1,0 +1,32 @@
+using System
+using System.Collections.Generic
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member HashSet.Contains = System.Collections.Generic | bool
+member HashSet.Count = System.Collections.Generic | int
+member List.Sort = System.Collections.Generic | void
+member List.Sort = System.Collections.Generic | void
+member StringComparer.Compare = System | int
+member StringComparer.Compare = System | int
+member StringComparer.Compare = System | int
+member StringComparer.Equals = System | bool
+member StringComparer.Equals = System | bool
+member string.Compare = System | int
+member string.Compare = System | int
+member string.Compare = System | int
+member string.CompareOrdinal = System | int
+member string.CompareOrdinal = System | int
+member string.CompareTo = System | int
+member string.Join = System | string
+member string.Join = System | string
+member string.ToLower = System | string
+member string.ToLower = System | string
+member string.ToUpper = System | string
+member string.ToUpper = System | string

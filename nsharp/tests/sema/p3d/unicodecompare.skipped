@@ -1,0 +1,2 @@
+StringComparer.Ordinal = result:other
+StringComparer.OrdinalIgnoreCase = result:other

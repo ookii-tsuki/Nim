@@ -1,0 +1,2 @@
+EqualityComparer.Default = type-parameter
+StringComparer.OrdinalIgnoreCase = result:other

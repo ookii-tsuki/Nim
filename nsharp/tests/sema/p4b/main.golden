@@ -1,0 +1,7 @@
+using Alpha
+using Beta
+using System
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void

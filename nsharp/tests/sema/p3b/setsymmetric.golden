@@ -1,0 +1,19 @@
+using System
+using System.Collections.Generic
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member HashSet.SymmetricExceptWith = System.Collections.Generic | void
+member HashSet.SymmetricExceptWith = System.Collections.Generic | void
+member HashSet.SymmetricExceptWith = System.Collections.Generic | void
+member HashSet.SymmetricExceptWith = System.Collections.Generic | void
+member HashSet.SymmetricExceptWith = System.Collections.Generic | void
+member ISet.SymmetricExceptWith = System.Collections.Generic | void
+member ISet.SymmetricExceptWith = System.Collections.Generic | void
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string

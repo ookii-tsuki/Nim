@@ -10,6 +10,8 @@ nkStmtList
     nkStrLit "System"
   nkImportStmt
     nkStrLit "Alpha"
+  nkImportStmt
+    nkStrLit "Beta"
   nkTypeSection
     nkTypeDef
       nkPostfix
@@ -191,11 +193,104 @@ nkStmtList
             nkIdent 'newA'
       nkCall
         nkIdent 'WriteLine'
-        nkDotExpr
+        nkInfix
+          nkIdent '=='
+          nkDotExpr
+            nkCall
+              nkIdent 'nsCheckNilVar'
+              nkIdent 'a'
+            nkIdent 'peer'
+          nkNilLit
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'b'
+          nkEmpty
+          nkCall
+            nkIdent 'newB'
+      nkStmtList
+        nkDiscardStmt
+          nkIdent 'a'
+        nkAsgn
+          nkDotExpr
+            nkIdent 'a'
+            nkIdent 'peer'
+          nkIdent 'b'
+      nkStmtList
+        nkDiscardStmt
           nkCall
             nkIdent 'nsCheckNilVar'
+            nkIdent 'b'
+        nkAsgn
+          nkDotExpr
+            nkIdent 'b'
+            nkIdent 'peer'
+          nkIdent 'a'
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
             nkIdent 'a'
-          nkIdent 'peer'
+            nkIdent 'Greet'
+          nkIdent 'b'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 's'
+          nkEmpty
+          nkCall
+            nkIdent 'newSpecial'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkCall
+              nkDotExpr
+                nkCall
+                  nkIdent 'nsCheckNilVar'
+                  nkIdent 's'
+                nkIdent 'Greet'
+              nkIdent 'b'
+            nkStrLit " / "
+          nkCall
+            nkDotExpr
+              nkCall
+                nkIdent 'nsCheckNil'
+                nkCall
+                  nkDotExpr
+                    nkIdent 's'
+                    nkIdent 'Wrap'
+              nkIdent 'Show'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkInfix
+                  nkIdent '+'
+                  nkCall
+                    nkDotExpr
+                      nkCall
+                        nkIdent 'nsCheckNilVar'
+                        nkIdent 'b'
+                      nkIdent 'Bump'
+                  nkCall
+                    nkDotExpr
+                      nkIdent 'b'
+                      nkIdent 'Bump'
+                nkStrLit " "
+              nkDotExpr
+                nkIdent 'A'
+                nkIdent 'Count'
+            nkStrLit " "
+          nkDotExpr
+            nkIdent 'a'
+            nkIdent 'mood'
   nkProcDef
     nkPostfix
       nkIdent '*'
