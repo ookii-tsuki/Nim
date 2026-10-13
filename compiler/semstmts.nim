@@ -2020,7 +2020,14 @@ proc addResult(c: PContext, n: PNode, t: PType, owner: TSymKind) =
     incl(s.flagsImpl, sfUsed)
 
   if owner == skMacro or t != nil:
-    if n.len > resultPos and n[resultPos] != nil:
+    if n.len > resultPos and n[resultPos] != nil and n[resultPos].kind == nkEmpty:
+      # the instance of a generic routine that was instantiated while only its
+      # forward declaration existed (a `method` is instantiated eagerly) has
+      # an empty slot; its body is checked now:
+      genResSym(s)
+      c.p.resultSym = s
+      n[resultPos] = newSymNode(s)
+    elif n.len > resultPos and n[resultPos] != nil:
       if n[resultPos].sym.kind != skResult:
         localError(c.config, n.info, "incorrect result proc symbol")
       if n[resultPos].sym.owner != getCurrOwner(c):

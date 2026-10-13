@@ -253,6 +253,15 @@ proc sortBucket*(a: var seq[PSym], relevantCols: IntSet) =
 proc genIfDispatcher*(g: ModuleGraph; methods: seq[PSym], relevantCols: IntSet; idgen: IdGenerator): PSym =
   var base = methods[0].ast[dispatcherPos].sym
   result = base
+  # a dispatcher created from the prototype of a generic method that was
+  # instantiated before its body existed has no result symbol yet; the
+  # instantiated methods have one by now (see `fixupDispatcher`):
+  if base.typ.returnType != nil and base.ast.len > resultPos and
+      base.ast[resultPos].kind == nkEmpty:
+    for m in methods:
+      if m.ast.len > resultPos and m.ast[resultPos].kind == nkSym:
+        fixupDispatcher(m, base, g.config)
+        break
   var paramLen = base.typ.signatureLen
   var nilchecks = newNodeI(nkStmtList, base.info)
   var disp = newNodeI(nkIfStmt, base.info)
