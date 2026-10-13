@@ -1,0 +1,47 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    // HashSet<T>.SymmetricExceptWith takes .NET's path for a HashSet<T> with an
+    // equal comparer (toggle each element in turn), and its general path for
+    // anything else (add the new ones, then remove the common ones). The two
+    // leave different orders, so each line pins which path ran -- through ISet<T>
+    // and through an object whose runtime type is a HashSet<T> too.
+    class Program
+    {
+        static string Show(IEnumerable<int> xs) => string.Join(",", xs);
+
+        static void Main()
+        {
+            var a = new HashSet<int> { 1, 2, 3 };
+            a.SymmetricExceptWith(new HashSet<int> { 4, 3, 5 });
+            Console.WriteLine(Show(a));
+
+            var b = new HashSet<int> { 1, 2, 3 };
+            b.SymmetricExceptWith(new List<int> { 4, 3, 5 });
+            Console.WriteLine(Show(b));
+
+            ISet<int> c = new HashSet<int> { 1, 2, 3 };
+            c.SymmetricExceptWith(new HashSet<int> { 4, 3, 5 });
+            Console.WriteLine(Show(c));
+
+            ISet<int> d = new HashSet<int> { 1, 2, 3 };
+            ISet<int> other = new HashSet<int> { 4, 3, 5 };
+            d.SymmetricExceptWith(other);
+            Console.WriteLine(Show(d));
+
+            var e = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "a", "b", "c" };
+            e.SymmetricExceptWith(new HashSet<string> { "d", "c", "e" });
+            Console.WriteLine(string.Join(",", e));
+
+            var f = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "a", "b", "c" };
+            f.SymmetricExceptWith(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "d", "C", "e" });
+            Console.WriteLine(string.Join(",", f));
+
+            var g = new HashSet<int>(EqualityComparer<int>.Default) { 1, 2, 3 };
+            g.SymmetricExceptWith(new HashSet<int> { 4, 3, 5 });
+            Console.WriteLine(Show(g));
+        }
+    }
+}

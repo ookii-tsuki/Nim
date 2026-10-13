@@ -94,6 +94,8 @@ type
     ## in .NET's order, a removed element's place reused by the next added.
     data: NsHashMap[T, bool]
     version: int
+    comparer: IEqualityComparer[T]
+      ## The comparer it was made with; an empty one is the default.
   SortedSet*[T] = ref object
     ## C#'s `SortedSet<T>`: a sorted array, searched by bisection.
     data: seq[T]
@@ -212,7 +214,9 @@ type
     fUnionWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
     fIntersectWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
     fExceptWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
-    fSymmetricExceptWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
+    fSymmetricExceptWith*: proc (o: RootRef; other: NsArray[T]; otherSet: HashSet[T]) {.nimcall.}
+      ## `otherSet` is the `HashSet<T>` behind `other` when there is one, which
+      ## .NET's `HashSet<T>` treats apart.
     fIsSubsetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
     fIsSupersetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
     fIsProperSubsetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
@@ -319,12 +323,10 @@ proc keyDuplicate[K](k: K): ref ArgumentException =
   newException(ArgumentException,
                "An item with the same key has already been added. Key: " & $k)
 
-proc snapshot[T](collection: Enumerable[T]): seq[T] =
+proc snapshot[T](collection: Enumerable[T]): seq[T]
   ## The elements of any collection (C#'s `IEnumerable<T>`), copied first, so a
-  ## member may be handed its own receiver. `items` is bound where the procs taking
-  ## a collection are instantiated, so it reaches the iterators declared below.
-  mixin items
-  for x in collection: result.add x
+  ## member may be handed its own receiver. Defined at the end of the module, where
+  ## every collection's `items` is declared: a call site's module may not see them.
 
 proc lowerBound[T](s: seq[T]; x: T): int =
   ## The first index whose element is not less than `x`.
@@ -362,9 +364,13 @@ proc newDictionary*[K, V](dictionary: Dictionary[K, V]): Dictionary[K, V] =
 
 proc newHashSet*[T](): HashSet[T] = HashSet[T](data: initNsHashMap[T, bool]())
 
+proc nsIsDefaultComparer[K](c: IEqualityComparer[K]): bool =
+  ## A null comparer, or `EqualityComparer<K>.Default`: the keys' own equality.
+  c.nsObj == nil or c.nsObj of EqualityComparer[K]
+
 proc nsUseComparer[K, V](m: var NsHashMap[K, V]; c: IEqualityComparer[K]) =
   ## Keys compared by `c`; a null comparer is the default one.
-  if c.nsObj != nil:
+  if not nsIsDefaultComparer(c):
     let cc = c
     m.withComparer(proc (a, b: K): bool = cc.Equals(a, b),
                    proc (k: K): int32 = cc.GetHashCode(k))
@@ -384,9 +390,11 @@ proc newDictionary*[K, V](dictionary: Dictionary[K, V]; comparer: IEqualityCompa
 proc newHashSet*[T](comparer: IEqualityComparer[T]): HashSet[T] =
   result = HashSet[T](data: initNsHashMap[T, bool]())
   result.data.nsUseComparer(comparer)
+  if not nsIsDefaultComparer(comparer): result.comparer = comparer
 proc newHashSet*[T](collection: Enumerable[T]; comparer: IEqualityComparer[T]): HashSet[T] =
   result = HashSet[T](data: initNsHashMap[T, bool]())
   result.data.nsUseComparer(comparer)
+  if not nsIsDefaultComparer(comparer): result.comparer = comparer
   for x in snapshot(collection): discard result.data.put(x, true, false)
 proc newHashSet*[T](capacity: int): HashSet[T] =
   HashSet[T](data: initNsHashMap[T, bool](max(capacity, 0)))
@@ -733,27 +741,45 @@ proc ExceptWith*[T](s: HashSet[T]; other: Enumerable[T]) =
   if nshash.len(s.data) == 0: return
   for x in snapshot(other): discard s.data.remove(x)
   touch s
-proc SymmetricExceptWith*[T](s: HashSet[T]; other: Enumerable[T]) =
-  when other is HashSet[T]:
-    ## .NET's path for a set: each element removed if present, else added.
-    if other == s:
-      nshash.clear(s.data)
-      touch s
-      return
+proc nsSameComparer[T](a, b: HashSet[T]): bool =
+  ## .NET's `EqualityComparersAreEqual`: both default, or equal comparers.
+  if a.comparer.nsObj == nil or b.comparer.nsObj == nil:
+    a.comparer.nsObj == nil and b.comparer.nsObj == nil
+  else: a.comparer.nsObj == b.comparer.nsObj or a.comparer.nsObj.Equals(b.comparer.nsObj)
+
+proc nsAsHashSet[T](other: Enumerable[T]): HashSet[T] =
+  ## The `HashSet<T>` behind `other`, as .NET's `other is HashSet<T>` finds it, or nil.
+  when other is HashSet[T]: other
+  elif compiles(other.nsObj):
+    if other.nsObj != nil and other.nsObj of HashSet[T]: HashSet[T](other.nsObj) else: nil
+  else: nil
+
+proc nsSymmetricExceptWithSet[T](s, other: HashSet[T]) =
+  ## .NET's path for a set with the same comparer: each element removed if
+  ## present, else added.
+  if other == s:
+    nshash.clear(s.data)
+  else:
     for x in snapshot(other):
       if not s.data.remove(x): discard s.data.put(x, true, false)
-  else:
-    ## .NET's path for any other collection: the new elements are added first,
-    ## then the ones both had are removed, in the set's order.
-    var seen = s.data.initLike(bool)
-    var common = s.data.initLike(bool)
-    for x in snapshot(other):
-      if not seen.put(x, true, false): continue
-      if not s.data.put(x, true, false): discard common.put(x, true, false)
-    var gone: seq[T] = @[]
-    for x in nshash.keys(s.data):
-      if nshash.contains(common, x): gone.add x
-    for x in gone: discard s.data.remove(x)
+  touch s
+
+proc SymmetricExceptWith*[T](s: HashSet[T]; other: Enumerable[T]) =
+  let os = nsAsHashSet(other)
+  if os != nil and nsSameComparer(s, os):
+    nsSymmetricExceptWithSet(s, os)
+    return
+  ## .NET's path for any other collection: the new elements are added first,
+  ## then the ones both had are removed, in the set's order.
+  var seen = s.data.initLike(bool)
+  var common = s.data.initLike(bool)
+  for x in snapshot(other):
+    if not seen.put(x, true, false): continue
+    if not s.data.put(x, true, false): discard common.put(x, true, false)
+  var gone: seq[T] = @[]
+  for x in nshash.keys(s.data):
+    if nshash.contains(common, x): gone.add x
+  for x in gone: discard s.data.remove(x)
   touch s
 
 proc plainSet[T](other: Enumerable[T]): NsHashMap[T, bool] =
@@ -1600,7 +1626,11 @@ proc nsSetVt[C, T](): ptr nsVT_ISet[T] =
     store.fUnionWith = proc (o: RootRef; other: NsArray[T]) {.nimcall.} = UnionWith(cast[C](o), other)
     store.fIntersectWith = proc (o: RootRef; other: NsArray[T]) {.nimcall.} = IntersectWith(cast[C](o), other)
     store.fExceptWith = proc (o: RootRef; other: NsArray[T]) {.nimcall.} = ExceptWith(cast[C](o), other)
-    store.fSymmetricExceptWith = proc (o: RootRef; other: NsArray[T]) {.nimcall.} = SymmetricExceptWith(cast[C](o), other)
+    store.fSymmetricExceptWith = proc (o: RootRef; other: NsArray[T]; otherSet: HashSet[T]) {.nimcall.} =
+      when C is HashSet[T]:
+        if otherSet != nil: SymmetricExceptWith(cast[C](o), otherSet)
+        else: SymmetricExceptWith(cast[C](o), other)
+      else: SymmetricExceptWith(cast[C](o), other)
     store.fIsSubsetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsSubsetOf(cast[C](o), other)
     store.fIsSupersetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsSupersetOf(cast[C](o), other)
     store.fIsProperSubsetOf = proc (o: RootRef; other: NsArray[T]): bool {.nimcall.} = IsProperSubsetOf(cast[C](o), other)
@@ -1785,7 +1815,7 @@ proc IntersectWith*[T](v: ISet[T]; other: Enumerable[T]) =
 proc ExceptWith*[T](v: ISet[T]; other: Enumerable[T]) =
   v.nsVt.fExceptWith(nsIfaceObj(v), nsArrayOf(snapshot(other)))
 proc SymmetricExceptWith*[T](v: ISet[T]; other: Enumerable[T]) =
-  v.nsVt.fSymmetricExceptWith(nsIfaceObj(v), nsArrayOf(snapshot(other)))
+  v.nsVt.fSymmetricExceptWith(nsIfaceObj(v), nsArrayOf(snapshot(other)), nsAsHashSet(other))
 proc Count*[K, V](v: IReadOnlyDictionary[K, V]): int32 = v.nsVt.fCount(nsIfaceObj(v))
 iterator items*[K, V](v: IReadOnlyDictionary[K, V]): KeyValuePair[K, V] =
   let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
@@ -2095,3 +2125,5 @@ proc nsLibAs*(o: RootRef; t: typedesc[IComparer[string]]): IComparer[string] =
 proc nsLibAs*(o: RootRef; t: typedesc[IEqualityComparer[string]]): IEqualityComparer[string] =
   if o of StringComparer: result = nsToIEqualityComparer(StringComparer(o))
 
+proc snapshot[T](collection: Enumerable[T]): seq[T] =
+  for x in items(collection): result.add x
