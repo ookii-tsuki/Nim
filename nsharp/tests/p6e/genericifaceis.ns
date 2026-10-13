@@ -1,0 +1,57 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    // `is`, `as` and casts from an interface value -- a library one and a user's --
+    // to a generic class that implements it, and through `object`.
+    interface IBox<T> { T Get(); }
+
+    class Box<T> : IBox<T>
+    {
+        T value;
+        public Box(T v) { value = v; }
+        public T Get() => value;
+    }
+
+    class Bag<T> : IReadOnlyCollection<T>
+    {
+        List<T> items = new List<T>();
+        public void Add(T x) => items.Add(x);
+        public int Count => items.Count;
+        public IEnumerator<T> GetEnumerator() { foreach (var x in items) yield return x; }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    class Plain : IReadOnlyCollection<int>
+    {
+        public int Count => 0;
+        public IEnumerator<int> GetEnumerator() { yield break; }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var b = new Bag<int>();
+            b.Add(4);
+            b.Add(5);
+            IReadOnlyCollection<int> rc = b;
+            object o = rc;
+            Console.WriteLine((rc is Bag<int>) + " " + (rc is Plain) + " " + (o is Bag<int>) + " " + (o is Bag<string>));
+            if (rc is Bag<int> bb) Console.WriteLine("pattern " + bb.Count);
+            var again = rc as Bag<int>;
+            Console.WriteLine((again != null) + " " + (rc as Plain == null));
+            Console.WriteLine(((Bag<int>)rc).Count);
+            IReadOnlyCollection<int> p = new Plain();
+            Console.WriteLine((p is Bag<int>) + " " + (p as Bag<int> == null));
+
+            IBox<string> ib = new Box<string>("hi");
+            Console.WriteLine((ib is Box<string>) + " " + (ib is Box<int>) + " " + ((Box<string>)ib).Get());
+            var asBox = ib as Box<string>;
+            Console.WriteLine(asBox.Get());
+        }
+    }
+}

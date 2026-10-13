@@ -3808,17 +3808,28 @@ proc ifaceTypeOp(l: Lowerer; n: NsNode): PNode =
     let obj = l.objOf(n.body)
     let target = canonicalTypeName(if n.typ != nil: n.typ.name else: "")
     let isStruct = l.boxedImpl(target)
+    ## The class as Nim names it, with its type arguments: `Bag[int32]`.
+    let cls = (if isStruct: l.id("nsBox_" & target, info) else: l.typeToNim(n.typ, info))
     case n.kind
     of nsnIs:
-      result = newTree(nkInfix, info, l.id("of", info), obj,
-                       l.id((if isStruct: "nsBox_" & target else: nimTypeName(target)),
-                            info))
+      result = newTree(nkInfix, info, l.id("of", info), obj, cls)
     of nsnCast:
       if isStruct:
-        result = newTree(nkDotExpr, info, newTree(nkCall, info,
-                         l.id("nsBox_" & target, info), obj), l.id("v", info))
+        result = newTree(nkDotExpr, info, newTree(nkCall, info, cls, obj), l.id("v", info))
       else:
-        result = newTree(nkCall, info, l.typeToNim(n.typ, info), obj)
+        result = newTree(nkCall, info, cls, obj)
+    of nsnAs:
+      if not isStruct:
+        ## The object if it is one, else null, reading the operand once.
+        let defs = l.identDefs("nsAs", empty(info), info)
+        defs[2] = obj
+        result = newTree(nkBlockExpr, info, empty(info), newTree(nkStmtList, info,
+          newTree(nkLetSection, info, defs),
+          newTree(nkIfExpr, info,
+            newTree(nkElifExpr, info,
+              newTree(nkInfix, info, l.id("of", info), l.id("nsAs", info), cls),
+              newTree(nkCall, info, copyTree(cls), l.id("nsAs", info))),
+            newTree(nkElseExpr, info, newNodeI(nkNilLit, info)))))
     else: discard
 
 # --- classes ----------------------------------------------------------------
