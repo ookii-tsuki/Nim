@@ -226,6 +226,21 @@ proc fixupInstantiatedSymbols(c: PContext, s: PSym) =
       pushOwner(c, oldPrc)
       pushInfoContext(c.config, oldPrc.info)
       openScope(c)
+      # the instance's generic parameters, as `generateInstance` bound them: a
+      # body may name them (`init[T]()`), and it is only checked now
+      let inst = c.generics[i].inst
+      let gp = s.ast[genericParamsPos]
+      if gp.kind == nkGenericParams:
+        for j in 0..<min(gp.len, inst.genericParamsCount):
+          if gp[j].kind != nkSym or inst.concreteTypes[j] == nil: continue
+          let q = gp[j].sym
+          let t = inst.concreteTypes[j]
+          let p = newSym(if t.kind == tyStatic: skConst else: skType, q.name,
+                         c.idgen, getCurrOwner(c), q.info)
+          p.flagsImpl.incl {sfUsed, sfFromGeneric}
+          p.typ = t
+          if t.kind == tyStatic: p.ast = t.n
+          addDecl(c, p)
       var n = oldPrc.ast
       n[bodyPos] = copyTree(getBody(c.graph, s))
       instantiateBody(c, n, oldPrc.typ.n, oldPrc, s)
