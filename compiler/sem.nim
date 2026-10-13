@@ -1046,6 +1046,13 @@ proc isCycleDecl(c: PContext; n: PNode): bool =
   of nkDiscardStmt:
     # a `discard """..."""` comment:
     result = n.len == 0 or n[0].kind in {nkEmpty, nkStrLit..nkTripleStrLit}
+  of nkVarSection:
+    # a variable without a value runs nothing: it is storage, zeroed at
+    # the module's start whatever the order:
+    result = true
+    for d in n:
+      if d.kind == nkIdentDefs and d[^1].kind != nkEmpty: result = false
+      elif d.kind notin {nkIdentDefs, nkCommentStmt}: result = false
   of nkConstSection:
     # a constant can call a routine and the VM needs its body, so it must
     # not see a deferred one:
