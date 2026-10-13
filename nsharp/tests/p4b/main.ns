@@ -1,5 +1,6 @@
 using System;
 using Alpha;
+using Beta;
 
 namespace App
 {
@@ -8,7 +9,14 @@ namespace App
         static void Main()
         {
             A a = new A();
-            Console.WriteLine(a.peer);
+            Console.WriteLine(a.peer == null);
+            var b = new B();
+            a.peer = b;
+            b.peer = a;
+            Console.WriteLine(a.Greet(b));
+            var s = new Special();
+            Console.WriteLine(s.Greet(b) + " / " + s.Wrap().Show());
+            Console.WriteLine(b.Bump() + b.Bump() + " " + A.Count + " " + a.mood);
         }
     }
 }

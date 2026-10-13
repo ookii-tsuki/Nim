@@ -28,7 +28,6 @@ type
     ndBaseConstructorRequired
     ndConstructorRequired
     ndParserStalled
-    ndNamespaceCycle
     ndCannotConvert
     ndCannotConvertNull
     ndArgumentNoOverload
@@ -191,8 +190,6 @@ const
     ndConstructorRequired: (code: "7036", msg: "'$1' must define a constructor: '$2' has no accessible" &
                         " parameterless constructor"),
     ndParserStalled: (code: "9001", msg: "the parser made no progress; skipping the token"),
-    ndNamespaceCycle: (code: "9002", msg: "'$1' and '$2' use each other; Nim cannot compile" &
-                        " mutually dependent namespaces"),
     ndCannotConvert: (code: "0029", msg: "Cannot implicitly convert type '$1' to '$2'"),
     ndCannotConvertNull: (code: "0037", msg: "Cannot convert null to '$1' because it is a" &
                         " non-nullable value type"),

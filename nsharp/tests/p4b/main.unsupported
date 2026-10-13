@@ -1,3 +1,0 @@
-N# rejects this: two namespaces whose types name each other form a module cycle.
-The marker makes run.sh require the rejection.
-code: NS9002

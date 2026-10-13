@@ -92,7 +92,7 @@ Status of the blocking decisions (full log in §18). ✅ = resolved, 🟡 = stil
 | D1 | **Case sensitivity** | ✅ **Case-sensitive**, C#-faithful (§3.1) | `front` + `idents` mode |
 | D2 | **Interface model** | ✅ **Static interfaces = concepts** (v1); dynamic interface values → v2 (§8) | `sem` |
 | D3 | **Method resolution** | ✅ member-first, then UFCS fallback | `sem` |
-| D4 | **Namespace ↔ module** | ✅ namespace = generated decl/impl/barrel (§5.1.1) | `front` |
+| D4 | **Namespace ↔ module** | ✅ namespace = one generated module; namespaces that use each other are a `{.cyclic.}` import cycle (§5.1.1) | `front` |
 | D5 | **Entry point** | ✅ both top-level statements and `Main` | `front` |
 | D6 | **Null model** | ✅ `nil`-able refs, `?` annotation; `Option[T]` for `T?` (§4.4/§7.3) | `lib` |
 | D7 | **Numeric model** | ✅ drop `decimal` from core (later via lib) | `lib` |
@@ -328,19 +328,18 @@ members. Nim has one module per file, so compiling each file as its own module
 cannot express that: a method in `Widget.ns` calling one in `Button.ns` makes the
 two modules import each other, which Nim rejects.
 
-The frontend therefore emits each *used* namespace as three generated Nim
-modules (`compiler/nsharp/nsgen.nim`). `<P>` is the namespace's path, so
-`namespace UI` gives `UI` and `namespace A.B` gives `A/B`:
+The frontend therefore emits each *used* namespace as one generated Nim module,
+`<P>.nim` (`compiler/nsharp/nsgen.nim`), which `using P;` imports. `<P>` is the
+namespace's path, so `namespace UI` gives `UI` and `namespace A.B` gives `A/B`. All
+of the namespace's files are lowered together: every type in **one** type section,
+so they may reference each other, and every routine forward declared, so a method
+in one file may call one in another, in any order.
 
-| Generated | Contents | Why |
-|---|---|---|
-| `<P>_decl.nim` | every type of the namespace, in **one** type section | Nim resolves mutually recursive types inside a single section |
-| `<P>_impl.nim` | every proc, forward declared then defined | all implementations in one module, so a method in one file can call one in another |
-| `<P>.nim` | barrel: `import`/`export` both | this is what `using P;` resolves to (`using A.B` -> `A/B`); a plain `.nim` consumer may import it too |
-
-The decl/impl split additionally breaks a common cross-namespace cycle: if A's
-methods use B's types and B's methods use A's types, `A_impl` imports only
-`B_decl` and `B_impl` imports only `A_decl` - acyclic.
+Namespaces may use each other, as in C#. Two namespaces that reach each other
+through `using`s are an import cycle, which the generated modules declare with
+Nim's `import "P" {.cyclic.}`: Nim checks the types, then the routine declarations
+of every module of the cycle, before any body, so types, inheritance, generics and
+calls go both ways (`p4b`).
 
 Resolution: a token-level scan (no parsing, so an unrelated malformed `.ns` in the
 tree cannot break a build) finds `namespace X` / `using X` under the main file's
@@ -355,11 +354,9 @@ resolved relative to the enclosing namespace, so `using Company.Shared;` inside
 `namespace Company` works and `using Shared;` does not. A namespace alias is an
 import of its target, so it also puts the target's names in unqualified scope,
 which C# does not: after `using P = Company.Products;`, `Gadget` resolves as well
-as `P.Gadget`. A sibling `<N>.ns` file takes precedence over the generated barrel.
-Mutual references across two namespaces still cycle, because Nim has no
-cross-module forward declaration for procs and resolves mutually recursive types
-only within one section; such a cycle is reported as a recursive module dependency
-and the namespaces must be merged or layered.
+as `P.Gadget`. A sibling `<N>.ns` file takes precedence over the generated module.
+Only a `using` joins a cycle: namespaces that name each other's types only
+qualified (`Beta.B`, no `using Beta;`) do not.
 
 ### 5.2 Type declarations
 
@@ -1182,7 +1179,6 @@ from the checks, so a regression from a matching code fails the gate.
 | `NS7036` | CS7036 | an argument list fell short of the one candidate's parameters, naming the first parameter it left out; also a constructor that must call a base constructor |
 | `NS8632` | CS8632 | a `?` was written on a type that is nullable already (a warning) |
 | `NS9001` | - | the parser made no progress |
-| `NS9002` | - | two namespaces use each other |
 | `NS9999` | - | a construct N# does not support yet |
 
 `NS7036` is one code for both conditions because Roslyn gives one code for both:
@@ -1231,7 +1227,7 @@ flag=True       # the .csout, which is what C# prints
 | **D1** | Case sensitivity | ✅ **Case-sensitive**; `IdentCache` mode + case-preserving hash (§3.1) | lexer, `idents` |
 | **D2** | Interface model | ✅ **Static interfaces = concepts** (v1); dynamic values → v2 (§8) | sem |
 | **D3** | Method resolution | ✅ member-first, then UFCS fallback | sem |
-| **D4** | Namespace ↔ module | ✅ namespace = generated decl/impl/barrel (§5.1.1) | front |
+| **D4** | Namespace ↔ module | ✅ namespace = one generated module, cycles via `{.cyclic.}` (§5.1.1) | front |
 | **D5** | Entry point | ✅ both top-level statements and `Main` | parser (top-level statements become `static void Main(string[] args)` of a synthesized `Program` in the global namespace, as C# defines them; their local functions are `Main`'s, declared forward so a call may precede them) |
 | **D6** | Null model | ✅ `nil`-able refs, `?` annotation; `Option[T]` for `T?`; `null` deref → `NullReferenceException` (§4.4) | lib |
 | **D7** | `decimal` | ✅ later (lib), not core | lib |

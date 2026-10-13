@@ -1,4 +1,5 @@
 // The mirror of alpha.ns; see the note there.
+using System;
 using Alpha;
 
 namespace Beta
@@ -6,5 +7,14 @@ namespace Beta
     class B
     {
         public A peer;
+        public Mood Mood = Mood.Loud;
+        public string Name() => "B";
+        public int Bump() => ++A.Count;
+    }
+
+    class Special : A
+    {
+        public override string Name() => "Special";
+        public Holder<Special> Wrap() => new Holder<Special>(this);
     }
 }

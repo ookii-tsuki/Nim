@@ -1,15 +1,15 @@
 # N# frontend - namespace modules
 #
-# Nim has one module per file and rejects mutual imports, so a C# namespace, which
-# spans files, is emitted as three generated modules:
+# Nim has one module per file, and a C# namespace spans files, so each namespace
+# this compilation uses is emitted as one generated module, `<N>.nim`, which
+# `using N;` imports: all of the namespace's files lowered together, its types in
+# one type section and every routine forward declared, so the files may name each
+# other's types and members in any order.
 #
-#   <N>_decl.nim   its types, in one type section
-#   <N>_impl.nim   its procs, forward declared first
-#   <N>.nim        barrel importing and re-exporting both, which `using N;` resolves
-#
-# One module per namespace lets a method in one file call one in another; one type
-# section lets the files' types reference each other. Written to <nimcache>/.nsgen,
-# which is added to the module search path.
+# C# namespaces may also use each other. Such namespaces form an import cycle,
+# which the generated modules declare with `import "N" {.cyclic.}`: Nim then
+# checks the types and routine declarations of the whole cycle before any body.
+# Written to <nimcache>/.nsgen, which is added to the module search path.
 
 import std/[os, syncio, algorithm, sets, tables, strutils]
 import ../ast, ../idents, ../lineinfos, ../msgs, ../options, ../pathutils,
@@ -177,9 +177,6 @@ proc scanFile(source: string; path: string; fileIdx: FileIndex;
     else: discard
     inc i
 
-proc baseName(nsPath: string): string =
-  splitFile(nsPath).name
-
 proc collectUsings(n: NsNode;
                    into: var seq[tuple[ns: string, info: TLineInfo]]) =
   ## Every `using` in a module or namespace body, with the directive's location.
@@ -189,42 +186,48 @@ proc collectUsings(n: NsNode;
     elif d.kind == nsnNamespace:
       collectUsings(d, into)
 
-proc reportNamespaceCycle(config: ConfigRef;
-                          modules: Table[string, seq[NsNode]]) =
-  ## Reports the first cycle among the namespaces being generated. A generated
-  ## declaration half imports the other namespace's barrel, so a cycle between two
-  ## of them cannot be compiled.
-  var uses = initTable[string, seq[tuple[ns: string, info: TLineInfo]]]()
+proc namespaceCycles(modules: Table[string, seq[NsNode]]): Table[string, HashSet[string]] =
+  ## For each namespace being generated, the others it shares an import cycle with:
+  ## those it reaches through `using`s and that reach it back.
+  var uses = initTable[string, seq[string]]()
   for ns in modules.keys:
     var u: seq[tuple[ns: string, info: TLineInfo]] = @[]
     for m in modules[ns]: collectUsings(m, u)
-    uses[ns] = u
-  var state = initTable[string, int]()
-  proc visit(ns: string): bool =
-    state[ns] = 1
-    for u in uses.getOrDefault(ns):
-      if not modules.hasKey(u.ns): continue
-      case state.getOrDefault(u.ns)
-      of 1:
-        nsError(config, u.info, ndNamespaceCycle, ns, u.ns)
-        return true
-      of 0:
-        if visit(u.ns): return true
-      else: discard
-    state[ns] = 2
-    false
+    var names: seq[string] = @[]
+    for x in u:
+      if modules.hasKey(x.ns) and x.ns != ns and x.ns notin names: names.add x.ns
+    uses[ns] = names
+  proc reach(start: string): HashSet[string] =
+    result = initHashSet[string]()
+    var stack = @[start]
+    while stack.len > 0:
+      let ns = stack.pop()
+      for u in uses.getOrDefault(ns):
+        if u notin result:
+          result.incl u
+          stack.add u
+  var reaches = initTable[string, HashSet[string]]()
+  for ns in modules.keys: reaches[ns] = reach(ns)
+  result = initTable[string, HashSet[string]]()
   for ns in modules.keys:
-    if state.getOrDefault(ns) == 0 and visit(ns): return
+    var peers = initHashSet[string]()
+    for other in reaches[ns]:
+      if other != ns and ns in reaches[other]: peers.incl other
+    result[ns] = peers
 
-proc writeBarrel(genDir, nsPath: string) =
-  ## Writes the namespace's public module. The two halves are named by their bare
-  ## file name, which the barrel resolves in its own directory.
-  let base = baseName(nsPath)
-  let content = "import " & base & "_decl\n" &
-                "export " & base & "_decl\n" &
-                "import " & base & "_impl\n" &
-                "export " & base & "_impl\n"
-  writeFile(AbsoluteFile(genDir / nsPath & ".nim"), content)
+proc markCyclicImports(n: PNode; peers: HashSet[string]; cache: IdentCache) =
+  ## `import "N"` of a namespace in this one's cycle becomes
+  ## `import "N" {.cyclic.}`.
+  if peers.len == 0: return
+  var paths = initHashSet[string]()
+  for p in peers: paths.incl namespaceModulePath(p)
+  for s in n:
+    if s.kind != nkImportStmt: continue
+    for k in 0 ..< s.len:
+      let x = s[k]
+      if x.kind in {nkStrLit, nkRStrLit, nkTripleStrLit} and x.strVal in paths:
+        s[k] = newTree(nkPragmaExpr, x.info, x,
+                       newTree(nkPragma, x.info, newIdentNode(getIdent(cache, "cyclic"), x.info)))
 
 proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Declaration collection for a module, extended with the declarations of the
@@ -245,6 +248,8 @@ proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
       for k, v in s.delegates:
         if not result.delegates.hasKey(k): result.delegates[k] = v
       for e in s.enums: result.enums.incl e
+      for k, v in s.enumMembers:
+        if not result.enumMembers.hasKey(k): result.enumMembers[k] = v
       for e in s.libIfaces: result.libIfaces.incl e
       for e in s.libValueIfaces: result.libValueIfaces.incl e
       for q in s.namespaces: result.namespaces.incl q
@@ -252,8 +257,9 @@ proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
   result.resolveBases()
 
 proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: string;
-                       files: seq[NsNode]) =
-  ## Lowers all of the namespace's files as one module, then splits the result.
+                       files: seq[NsNode]; peers: HashSet[string]) =
+  ## Lowers all of the namespace's files as one module. `peers` are the namespaces
+  ## it shares an import cycle with.
   let info = files[0].info
   ## Merging the files' declarations gives the namespace one scope.
   var merged = nsn(nsnModule, info)
@@ -262,59 +268,31 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: str
 
   let scope = collectWithNamespaces(merged, config)
   checkModule(merged, scope, config)
-  let parts = splitModuleOutput(lowerModule(merged, scope, cache, config))
-
-  ## All types in one type section: Nim resolves mutually recursive types only
-  ## within a single section, and the files' types may reference each other.
-  var decls = newNodeI(nkStmtList, info)
-  var typeSec = newNodeI(nkTypeSection, info)
-  for i in 0 ..< parts.decls.len:
-    let s = parts.decls[i]
-    if s.kind == nkTypeSection:
-      for j in 0 ..< s.len: typeSec.add s[j]
-    else:
-      decls.add s
-  if typeSec.len > 0: decls.add typeSec
-
-  ## The implementation half names the types, so it imports the declaration half.
-  var impls = newNodeI(nkStmtList, info)
-  let declImport = newNodeI(nkImportStmt, info)
-  declImport.add newAtom(nkStrLit, baseName(nsPath) & "_decl", info)
-  impls.add declImport
-
-  ## Imports precede the forward declarations, which may name imported types.
-  for i in 0 ..< parts.impls.len:
-    if isImportStmt(parts.impls[i]):
-      impls.add parts.impls[i]
+  ## `lowerModule` puts every type in one type section and forward declares every
+  ## routine, so a method in one file of the namespace may call one in another.
+  let module = lowerModule(merged, scope, cache, config)
+  markCyclicImports(module, peers, cache)
 
   ## Gives a member with no statements an explicit `discard`, since an empty body
   ## renders as invalid Nim.
-  for i in 0 ..< parts.impls.len:
-    let s = parts.impls[i]
+  for i in 0 ..< module.len:
+    let s = module[i]
     if s.kind == nkProcDef and s[6] != nil and s[6].kind == nkStmtList and
        s[6].len == 0:
       let sl = newNodeI(nkStmtList, s.info)
       sl.add newTree(nkDiscardStmt, s.info, newNodeI(nkEmpty, s.info))
       s[6] = sl
 
-  ## `lowerModule` already forward declares every routine, so a method in one file
-  ## of the namespace may call one defined in another.
-  for i in 0 ..< parts.impls.len:
-    if not isImportStmt(parts.impls[i]):
-      impls.add parts.impls[i]
-
   let fid = files[0].info.fileIndex
   ## A dotted namespace maps to subdirectories.
   let nsSub = splitFile(nsPath).dir
   if nsSub.len > 0: createDir(AbsoluteDir(genDir / nsSub))
-  renderModule(decls, genDir / (nsPath & "_decl.nim"), {}, fid, config)
-  renderModule(impls, genDir / (nsPath & "_impl.nim"), {}, fid, config)
-  writeBarrel(genDir, nsPath)
+  renderModule(module, genDir / (nsPath & ".nim"), {}, fid, config)
 
 proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
                        mainPath: AbsoluteFile) =
   ## Discovers the namespaces near the main module and, for each one that is
-  ## actually named by a `using`, generates its decl/impl/barrel modules and puts
+  ## actually named by a `using`, generates its module and puts
   ## the generated directory on the module search path. Idempotent.
   if namespacesGenerated: return
   namespacesGenerated = true
@@ -364,7 +342,7 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
 
   let genDir = getNimcacheDir(config).string / NsGenDirName
   createDir(AbsoluteDir(genDir))
-  ## Added ahead of the search path so a generated barrel is found.
+  ## Added ahead of the search path so a generated namespace module is found.
   config.searchPaths.insert(AbsoluteDir(genDir), 0)
 
   ## Only the namespaces this compilation pulls in are parsed and generated,
@@ -408,7 +386,8 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
     if findModule(config, namespaceModulePath(s.ns), mainPath.string).isEmpty:
       nsError(config, s.info, ndNamespaceNotFound, s.ns)
 
-  reportNamespaceCycle(config, namespaceModules)
+  ## Namespaces that use each other are one import cycle.
+  let cycles = namespaceCycles(namespaceModules)
 
   ## Every namespace is parsed before any is generated, so classifying one does not
   ## depend on generation order.
@@ -418,4 +397,4 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
   toGenerate.sort()
   for ns in toGenerate:
     generateNamespace(config, cache, namespaceModulePath(ns), genDir,
-                      namespaceModules[ns])
+                      namespaceModules[ns], cycles.getOrDefault(ns))
