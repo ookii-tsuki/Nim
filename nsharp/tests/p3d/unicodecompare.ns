@@ -1,0 +1,31 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    // Strings compare by Unicode code point and change case by Unicode's simple
+    // case mapping. .NET's ordinal comparison agrees on every line but the last
+    // two: its default comparison follows a culture, which N# does not have.
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("a".CompareTo("z") + " " + string.Compare("z", "a") + " " + string.Compare("a", "a"));
+            Console.WriteLine(string.CompareOrdinal("a", "z") + " " + string.CompareOrdinal("ab", "abc"));
+            Console.WriteLine(StringComparer.Ordinal.Compare("é", "z") + " " + StringComparer.Ordinal.Compare("ж", "я"));
+            Console.WriteLine("éclair".ToUpper() + " " + "ÉCLAIR".ToLower() + " " + "Straße".ToUpper() + " " + "ΣΟΦΙΑ".ToLower());
+            Console.WriteLine(StringComparer.OrdinalIgnoreCase.Equals("Éclair", "éCLAIR") + " " +
+                              StringComparer.OrdinalIgnoreCase.Compare("ЖУК", "жук") + " " +
+                              StringComparer.OrdinalIgnoreCase.Equals("a", "b"));
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Éclair", "éCLAIR", "Ölbaum" };
+            Console.WriteLine(seen.Count + " " + seen.Contains("ÖLBAUM"));
+            var byOrdinal = new List<string> { "zebra", "éclair", "Apple", "apple" };
+            byOrdinal.Sort(StringComparer.Ordinal);
+            Console.WriteLine(string.Join(",", byOrdinal));
+            var byDefault = new List<string> { "zebra", "éclair", "Apple", "apple" };
+            byDefault.Sort();
+            Console.WriteLine(string.Join(",", byDefault));
+            Console.WriteLine(string.Compare("apple", "Banana"));
+        }
+    }
+}

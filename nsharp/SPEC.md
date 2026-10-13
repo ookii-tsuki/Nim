@@ -975,8 +975,13 @@ Deliberately deferred, with the reason recorded:
   interfaces below. `Comparer<T>.Default`/`Create`, `EqualityComparer<T>.Default`
   and `StringComparer.Ordinal`/`OrdinalIgnoreCase` implement them, and so may a
   user's class. They are taken by `List.Sort`, `List.BinarySearch`, `Array.Sort`
-  and the `Dictionary`/`HashSet` constructors. String ordering is ordinal: N# has no
-  culture, so `Comparer<string>.Default` compares as `string.CompareOrdinal` does.
+  and the `Dictionary`/`HashSet` constructors. Strings compare by Unicode code point
+  and change case by Unicode's simple case mapping (`OrdinalIgnoreCase`, `ToUpper`,
+  `ToLower`): .NET's ordinal comparison, over code points rather than UTF-16 code
+  units. N# has no culture, so the default comparison (`string.Compare`,
+  `CompareTo`, `Comparer<string>.Default`, `List<string>.Sort()`) is that one too,
+  answering -1, 0 or 1; .NET's follows the current culture (`"apple"` before
+  `"Banana"`), which `p3d/unicodecompare.csout` records.
 * **A user's class implementing a library interface** (`IReadOnlyList<int>`,
   `IComparer<string>`) converts to it through the library's generic
   `nsTo<Interface>`. That builder calls the class's own members by name, and the

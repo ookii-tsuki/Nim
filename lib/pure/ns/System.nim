@@ -4,6 +4,7 @@
 # dot-call, a static one through the qualifier the frontend drops.
 
 import std/[syncio, strutils, math, hashes, algorithm]
+from std/unicode import nil
 # `System.Collections.Generic` builds on this namespace, and this one names its
 # interfaces (`Array.Sort` takes an `IComparer<T>`), as .NET's namespaces may.
 import System/Collections/Generic {.cyclic.}
@@ -324,18 +325,36 @@ proc OrdinalIgnoreCase*(t: typedesc[StringComparer]): StringComparer =
   var store {.global.}: StringComparer
   if store.isNil: store = StringComparer(nsIgnoreCase: true)
   store
+# Strings compare by Unicode code point, a character's case by Unicode's simple
+# case mapping: .NET's ordinal comparison, over code points rather than UTF-16
+# code units (the two orders differ only past U+FFFF). There is no culture, so
+# the default comparison (`string.Compare`, `CompareTo`, `Comparer<string>`) is
+# this one too, and answers -1, 0 or 1 as .NET's does.
+
 proc nsCompareOrdinal(a, b: string; ignoreCase: bool): int32 =
-  for i in 0 ..< min(a.len, b.len):
-    let x = (if ignoreCase: toUpperAscii(a[i]) else: a[i])
-    let y = (if ignoreCase: toUpperAscii(b[i]) else: b[i])
-    if x != y: return int32(ord(x) - ord(y))
-  int32(a.len - b.len)
+  ## The difference of the first two code points that differ, else of the lengths.
+  var i, j = 0
+  while i < a.len and j < b.len:
+    var x, y: unicode.Rune
+    unicode.fastRuneAt(a, i, x)
+    unicode.fastRuneAt(b, j, y)
+    if ignoreCase:
+      x = unicode.toUpper(x)
+      y = unicode.toUpper(y)
+    if int32(x) != int32(y): return int32(x) - int32(y)
+  if i < a.len: 1'i32 elif j < b.len: -1'i32 else: 0'i32
+
+proc nsCompareText(a, b: string): int32 =
+  ## The default comparison: by code point, as -1, 0 or 1.
+  let d = nsCompareOrdinal(a, b, false)
+  if d < 0: -1 elif d > 0: 1 else: 0
+
 proc Compare*(c: StringComparer; a, b: string): int32 = nsCompareOrdinal(a, b, c.nsIgnoreCase)
 proc CompareOrdinal*(a, b: string): int32 {.nsStatic: "String".} = nsCompareOrdinal(a, b, false)
 proc Equals*(c: StringComparer; a, b: string): bool =
-  if c.nsIgnoreCase: cmpIgnoreCase(a, b) == 0 else: a == b
+  if c.nsIgnoreCase: nsCompareOrdinal(a, b, true) == 0 else: a == b
 proc GetHashCode*(c: StringComparer; s: string): int32 =
-  let h = (if c.nsIgnoreCase: hash(toUpperAscii(s)) else: hash(s))
+  let h = (if c.nsIgnoreCase: hash(unicode.toUpper(s)) else: hash(s))
   cast[int32](h and 0x7FFF_FFFF)
 
 # --- System.Object ----------------------------------------------------------
@@ -364,8 +383,8 @@ proc newstring*(c: char; count: int32): string = repeat(c, count)
   ## `new string(c, n)`: `c` repeated `n` times. Spelled as the lowering spells
   ## `new` + `string`; to Nim it is an overload of `newString`, told apart by arity.
 proc ToString*(s: string): string = s
-proc ToUpper*(s: string): string = s.toUpperAscii
-proc ToLower*(s: string): string = s.toLowerAscii
+proc ToUpper*(s: string): string = unicode.toUpper(s)
+proc ToLower*(s: string): string = unicode.toLower(s)
 proc Substring*(s: string; start: int32): string = s[int(start) .. ^1]
 proc Substring*(s: string; start, length: int32): string =
   s[int(start) ..< int(start) + int(length)]
@@ -380,7 +399,7 @@ proc Replace*(s, oldValue, newValue: string): string =
 proc Split*(s: string; separator: char): NsArray[string] = nsArrayOf(s.split(separator))
 proc PadLeft*(s: string; totalWidth: int32): string = s.align(int(totalWidth))
 proc PadRight*(s: string; totalWidth: int32): string = s.alignLeft(int(totalWidth))
-proc CompareTo*(s, other: string): int32 = int32(cmp(s, other))
+proc CompareTo*(s, other: string): int32 = nsCompareText(s, other)
 proc ToCharArray*(s: string): NsArray[char] =
   var cs = newSeq[char](s.len)
   for i, c in s: cs[i] = c
@@ -400,7 +419,7 @@ proc Join*(separator: string; values: openArray[string]): string {.nsStatic: "St
   values.join(separator)
 proc Join*(separator: string; values: NsArray[string]): string {.nsStatic: "String".} =
   values.nsData.join(separator)
-proc Compare*(a, b: string): int32 {.nsStatic: "String".} = int32(cmp(a, b))
+proc Compare*(a, b: string): int32 {.nsStatic: "String".} = nsCompareText(a, b)
 
 # --- System.Array -----------------------------------------------------------
 #
