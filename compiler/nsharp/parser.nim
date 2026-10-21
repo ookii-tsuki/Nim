@@ -279,6 +279,13 @@ proc compoundOpOf(k: NsTokenKind): string =
   of nsShrEq: "shr"
   else: ""
 
+proc atUnsignedShift(p: NsParser; next: NsTokenKind): bool =
+  ## `>>>` (C# 11) is a `>>` with a `>` right after it, and `>>>=` one with a `>=`:
+  ## the lexer keeps `>>` whole so that closing nested type argument lists stays
+  ## its business alone, and the parser joins the adjacent tokens here.
+  p.at(nsShr) and p.peekAhead(1).kind == next and
+    p.peekAhead(1).line == p.peek.line and p.peekAhead(1).col == p.peek.col + 2
+
 proc parseStatement(p: var NsParser): NsNode
 proc parseSimpleStmt(p: var NsParser): NsNode
 proc parseNew(p: var NsParser, kw: NsToken): NsNode
@@ -641,10 +648,13 @@ proc parsePrimary(p: var NsParser): NsNode =
       discard p.expect(nsRParen)
       return
     result = first
-    if p.at(nsAssign) or compoundOpOf(p.peek.kind).len > 0:
+    if p.at(nsAssign) or compoundOpOf(p.peek.kind).len > 0 or p.atUnsignedShift(nsGe):
       ## `(x = e)`: an assignment whose value is the assigned one, as in
       ## `while ((line = Next()) != null)`.
-      let op = (if p.at(nsAssign): "" else: compoundOpOf(p.peek.kind))
+      let op = (if p.at(nsAssign): ""
+                elif p.atUnsignedShift(nsGe): "ushr"
+                else: compoundOpOf(p.peek.kind))
+      if op == "ushr": discard p.advance
       discard p.advance
       result = nsn(nsnAssign, first.info)
       result.name = op
@@ -863,7 +873,10 @@ proc parseBinary(p: var NsParser; minPrec: int): NsNode =
       ## `??` sits above the conditional operator and below `||`.
       prec = 2
     if prec < minPrec or prec == 0: break
+    let unsignedShift = p.atUnsignedShift(nsGt)
+    if p.atUnsignedShift(nsGe): break   ## `x >>>= y`, an assignment
     let opTok = p.advance
+    if unsignedShift: discard p.advance
     if coalesce:
       let rhs = p.parseBinary(prec + 1)
       let n = nsn(nsnNullCoalesce, p.infoOf(opTok))
@@ -891,7 +904,8 @@ proc parseBinary(p: var NsParser; minPrec: int): NsNode =
       result = n
     else:
       let rhs = p.parseBinary(prec + 1)
-      result = nsnBinary(opName(opTok.kind), result, rhs, p.infoOf(opTok))
+      result = nsnBinary((if unsignedShift: "ushr" else: opName(opTok.kind)), result,
+                         rhs, p.infoOf(opTok))
       if opTok.kind in {nsAmpAmp, nsPipePipe}:
         result.strVal = "logical"   ## `&&`/`||`, which only take bools
 
@@ -1481,8 +1495,9 @@ proc parseSimpleStmt(p: var NsParser): NsNode =
     result = nsn(nsnAssign, lhs.info)
     result.sons = @[lhs, p.parseExpr()]
     return
-  let compound = compoundOpOf(p.peek.kind)
+  let compound = (if p.atUnsignedShift(nsGe): "ushr" else: compoundOpOf(p.peek.kind))
   if compound.len > 0:
+    if compound == "ushr": discard p.advance
     discard p.advance
     result = nsn(nsnAssign, lhs.info)
     result.name = compound

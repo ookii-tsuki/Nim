@@ -17,6 +17,9 @@ nkStmtList
     nkExprColonExpr
       nkIdent 'overflowChecks'
       nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
   nkTypeSection
     nkTypeDef
       nkPostfix

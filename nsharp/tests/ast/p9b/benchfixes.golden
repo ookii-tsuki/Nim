@@ -6,6 +6,9 @@ nkStmtList
     nkExprColonExpr
       nkIdent 'overflowChecks'
       nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
   nkImportStmt
     nkStrLit "System"
   nkImportStmt
@@ -1235,8 +1238,8 @@ nkStmtList
         nkIdentDefs
           nkIdent 'n'
           nkIdent 'int32'
-          nkInfix
-            nkIdent 'shl'
+          nkCall
+            nkIdent 'nsShl'
             nkCall
               nkIdent 'int32'
               nkIntLit 1

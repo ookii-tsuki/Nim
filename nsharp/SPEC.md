@@ -493,8 +493,8 @@ v2.
 
 | Group | C# | Disposition | Mechanism |
 |---|---|---|---|
-| Arithmetic `+ - * / %` | ✅ | ✅ v1 | front |
-| Integer `& | ^ << >> ~` | ✅ | ✅ v1 | front |
+| Arithmetic `+ - * / %` | ✅ | ✅ v1 | front; `%` on `float`/`double` is the truncated remainder (`fmod`), the intrinsics' `nsFmod`. An integer constant beside a `uint`/`ulong` operand takes that type when it fits (ECMA 10.2.11), so `u - 6` is a `uint` and wraps |
+| Integer `& | ^ << >> >>> ~` | ✅ (`>>>` C# 11) | ✅ v1 | front; a shift count is masked to the operand's width (`1 << 33 == 2`) by the intrinsics' `nsShl`/`nsShr` unless it is a constant below 32, and `>>>` (`nsUShr`) shifts zeros in. The lexer keeps `>>` whole; the parser reads `>>>` as a `>>` with an adjacent `>`, and `>>>=` as one with an adjacent `>=` |
 | Logical `&& || !` | ✅ | ✅ v1 | front |
 | Comparison `== != < > <= >=` | ✅ | ✅ v1 | front |
 | String `+` | concatenation | ✅ v1 (Nim spelling) | `nsharp/intrinsics`, imported into every module |
@@ -521,7 +521,7 @@ type; a struct likewise through a generated `$`. String `+` accepts
 any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 `"obj=" + obj` both work.
 | Null-forgiving `x!` | suppress NRT | ✅ v1 | front (a postfix with no effect: it only silences nullable warnings, which N# does not issue) |
-| `checked`/`unchecked` expr | ovf | ✅ v1 | desugar (a block expression: `push overflowChecks`, the operand into a temporary, `pop`) |
+| `checked`/`unchecked` expr | ovf | ✅ v1 | desugar (a block expression: `push overflowChecks, rangeChecks`, the operand into a temporary, `pop`) |
 | Throw expression `x ?? throw e` | raise as a value | ✅ v1 | desugar (`raise` is `noreturn`, so it stands where a value is expected); `=> throw e` as a member body is the statement, whatever the member returns) |
 | `stackalloc` | stack mem | 🚫 out | front |
 | Precedence | C# table | ✅ v1 | front |
@@ -567,10 +567,11 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Integer `/` | `7/2 == 3` (int div) | `7/2 == 3.5` (float!) | integer `/` goes to the intrinsics' `nsDiv`; `/` stays floating point | front/lib |
 | `%` | sign of dividend | `mod`: sign of dividend (matches) | map `%` → `nsMod` | front/lib |
 | Division by zero | always `DivideByZeroException` | `overflowChecks` also governs Nim's zero check for `div`/`mod` | checked in `nsDiv`/`nsMod`, so it throws whether or not `checked` is in force | lib |
-| Overflow default | unchecked (wraps) | checked (raises) | **unchecked by default**: every generated module opens with `{.push overflowChecks: off.}` | desugar |
+| Overflow default | unchecked (wraps) | checked (raises) | **unchecked by default**: every generated module opens with `{.push overflowChecks: off, rangeChecks: off.}`, so arithmetic wraps and an explicit narrowing conversion keeps the low bits (`(short)70000` is 4464, `short s = 32767; s += 1;` is -32768) | desugar |
 | Unhandled exception | `Unhandled exception. T: msg`, exit 134 | `Error: unhandled exception: msg [T]`, exit 1 | N#'s crash output is Nim's, including the Nim type name for a runtime error | front |
 | `checked`/`unchecked` | ovf on/off | `{.push overflowChecks.}` | same mechanism, `push`/`pop`, emitted around the block's statements | desugar |
-| `checked` and conversions | covers overflow **and** conversions | only `overflowChecks` is switched | a conversion that is out of range still raises `RangeDefect` (aliased `ArgumentOutOfRangeException`) where C# raises `OverflowException` | desugar |
+| `checked` and conversions | covers overflow **and** conversions | `overflowChecks` and `rangeChecks` are separate switches | both are switched together; inside `checked` a conversion that is out of range raises `RangeDefect` (aliased `ArgumentOutOfRangeException`) where C# raises `OverflowException` | desugar |
+| `MinValue / -1`, `MinValue % -1` | `OverflowException` (.NET, checked or not) | `%` traps (SIGFPE) | `nsDiv`/`nsMod` raise `OverflowDefect` (aliased `OverflowException`) | lib |
 | `==` / `Equals` | class = reference, struct = value | whatever is overloaded | class → reference `==`; struct/record → value `==`; `Equals`→`==` | desugar/sem |
 | `ToString()` | virtual method | `$` proc | satisfied by a `ToString` proc in the intrinsics (`$x[]`), which Nim's dot-call reaches; no member name is mapped by the compiler | lib |
 | Numeric conversions | implicit widening, explicit narrowing; binary numeric promotion (`byte + byte` is `int`, `int * double` is `double`) | stricter: no implicit `int`→`float`, no `char` arithmetic, `uint8 + uint8` stays `uint8` | `compiler/nsharp/numeric.nim` holds C#'s promotion and implicit-conversion tables; `sema.nim` records the conversion an operand or a value needs (`conv`) wherever both types are known exactly, and `desugar.nim` spells it `T(x)`. A compound `x op= y` promotes and casts back, as C# does. Implicit narrowing of a non-constant is NS0266. Elsewhere implicit widening; explicit narrowing. The refusals the frontend can *see* are diagnosed with C#'s own code (CS0029, CS0037, CS1503) before anything is lowered; what it cannot see -- an unresolved name, an enum, a type from a module it does not cover -- counts as compatible, so Nim keeps the last word | front/sem |

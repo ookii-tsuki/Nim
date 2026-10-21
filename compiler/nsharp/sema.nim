@@ -262,8 +262,15 @@ proc csOperatorOf*(nimOp: string): string =
   of "xor": "^"
   of "shl": "<<"
   of "shr": ">>"
+  of "ushr": ">>>"
+  of "nsFmod": "%"
   of "not": "!"
   else: nimOp
+
+proc constantFitsUnsigned(e: NsNode; own, other: string): bool =
+  ## An `int`/`long` constant the other operand's unsigned type can hold.
+  e != nil and e.kind == nsnIntLit and own in ["int", "long"] and
+    other in ["uint", "ulong", "nuint"] and fitsLiteral(e.intVal, other)
 
 proc numName(n: NsNode): string =
   ## The C# numeric type of an expression, or "" when it is not known exactly.
@@ -272,6 +279,12 @@ proc numName(n: NsNode): string =
   of nsnIntLit: return (if n.typeName.len > 0: n.typeName else: "int")
   of nsnCharLit: return "char"
   of nsnFloatLit: return (if n.typeName.len > 0: n.typeName else: "double")
+  of nsnUnary:
+    ## A negated integer literal is a constant of the literal's type, `long` when
+    ## the negation leaves `int`'s range.
+    if n.name == "-" and n.body != nil and n.body.kind == nsnIntLit and
+       n.body.typeName.len == 0:
+      return (if -n.body.intVal >= low(int32): "int" else: "long")
   else: discard
   case n.typeKind
   of tkInt, tkFloat: numericOfSpelling(n.typeName)
@@ -1364,14 +1377,14 @@ proc checkOperands(ctx: NsCheckContext; n: NsNode; lk, rk: NsTypeKind) =
   let ok =
     case n.name
     of "+": lk == tkString or rk == tkString or (num(lk) and num(rk))
-    of "-", "*", "/", "nsDiv", "mod", "nsMod": num(lk) and num(rk)
+    of "-", "*", "/", "nsDiv", "mod", "nsMod", "nsFmod": num(lk) and num(rk)
     of "<", ">", "<=", ">=": num(lk) and num(rk)
     of "==", "!=":
       (num(lk) and num(rk)) or (lk == rk and lk in {tkBool, tkString, tkClass})
     of "and", "or", "xor":
       (lk == tkBool and rk == tkBool) or
         (n.strVal != "logical" and integral(lk) and integral(rk))
-    of "shl", "shr": integral(lk) and integral(rk)
+    of "shl", "shr", "ushr": integral(lk) and integral(rk)
     else: true
   if not ok:
     let shown = (if n.strVal == "logical": (if n.name == "and": "&&" else: "||")
@@ -2881,7 +2894,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     let rn = numName(n.sons[1])
     var numResult = ""
     if ln.len > 0 and rn.len > 0:
-      if n.name in ["shl", "shr"]:
+      if n.name in ["shl", "shr", "ushr"]:
         ## The count is an `int`; the result is the promoted left operand.
         numResult = unaryPromoted(ln)
         if isConstantLit(n.sons[0]) and n.sons[0].typeName.len == 0:
@@ -2892,7 +2905,12 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       elif n.name in ["==", "!=", "<", ">", "<=", ">="] and ln == "char" and rn == "char":
         discard
       else:
-        let p = promoted(ln, rn)
+        ## An integer constant beside a `uint` or `ulong` takes that type when it
+        ## fits (ECMA-334 10.2.11), so overload resolution picks the unsigned
+        ## operator: `u - 6` is a `uint` and wraps, it is not a `long`.
+        let ln1 = (if constantFitsUnsigned(n.sons[0], ln, rn): rn else: ln)
+        let rn1 = (if constantFitsUnsigned(n.sons[1], rn, ln): ln else: rn)
+        let p = promoted(ln1, rn1)
         if p.len > 0:
           needConv(n.sons[0], p)
           needConv(n.sons[1], p)
@@ -2928,6 +2946,11 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         result = tkInt
       elif lk == tkNullable or rk == tkNullable:
         result = tkNullable
+      elif lk in {tkInt, tkFloat, tkChar} and rk in {tkInt, tkFloat, tkChar}:
+        ## The floating-point remainder (12.10.4): truncated, with the dividend's
+        ## sign, which is C's `fmod` and not Nim's integer `mod`.
+        n.name = "nsFmod"
+        result = tkFloat
     of "+":
       ## C# concatenates when either operand is a string.
       if lk == tkString or rk == tkString: result = tkString
@@ -3712,7 +3735,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       if n.sons[0].typeKind != tkNullable:
         ctx.coerce(n.sons[1], numName(n.sons[0]), n.info, n.sons[0].rtype)
     elif n.sons.len == 2 and n.name in ["+", "-", "*", "/", "mod", "and", "or", "xor",
-                                        "shl", "shr"]:
+                                        "shl", "shr", "ushr"]:
       ## `x op= y` is `x = (T)(x op y)`: the operands are promoted as for `x op y`,
       ## and the result is cast back to `x`'s type, which C# does implicitly here.
       let ln = numName(n.sons[0])
@@ -3721,9 +3744,10 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
         ## `n += "s"` concatenates to a string, which does not narrow back.
         nsError(ctx.config, n.sons[1].info, ndCannotConvert, "string", ln)
       if ln.len > 0 and rn.len > 0 and n.sons[0].typeKind != tkNullable:
-        let p = (if n.name in ["shl", "shr"]: unaryPromoted(ln) else: promoted(ln, rn))
+        let p = (if n.name in ["shl", "shr", "ushr"]: unaryPromoted(ln)
+                 else: promoted(ln, rn))
         if p.len > 0:
-          if n.name notin ["shl", "shr"]: needConv(n.sons[1], p)
+          if n.name notin ["shl", "shr", "ushr"]: needConv(n.sons[1], p)
           n.strVal = (if p != ln: p else: "")
           n.typeName = ln
           n.typeKind = kindOfNumeric(p)

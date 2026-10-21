@@ -1,0 +1,58 @@
+// An explicit narrowing conversion in an unchecked context (the default) keeps the
+// low bits (ECMA-334 10.3.2), and so does the cast back a compound assignment makes;
+// inside `checked` it throws.
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        int big = 70000;
+        Console.WriteLine((short)big);
+        long l = 5000000000;
+        Console.WriteLine((int)l);
+        int i = 200;
+        Console.WriteLine((sbyte)i);
+        uint u = 3000000000;
+        Console.WriteLine((int)u);
+        ulong ul = ulong.MaxValue;
+        Console.WriteLine((long)ul);
+        int neg = -1;
+        Console.WriteLine((uint)neg);
+        Console.WriteLine((ushort)neg);
+        short s = 32767;
+        s += 1;
+        Console.WriteLine(s);
+        short t = 1;
+        t <<= 15;
+        Console.WriteLine(t);
+        sbyte sb = -128;
+        sb--;
+        Console.WriteLine(sb);
+        byte b = 255;
+        b *= 2;
+        Console.WriteLine(b);
+        Console.WriteLine(unchecked((short)big));
+        try
+        {
+            short c = checked((short)big);
+            Console.WriteLine(c);
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("checked conversion throws");
+        }
+        checked
+        {
+            try
+            {
+                int n = (int)l;
+                Console.WriteLine(n);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("checked block throws");
+            }
+        }
+    }
+}

@@ -6,6 +6,9 @@ nkStmtList
     nkExprColonExpr
       nkIdent 'overflowChecks'
       nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
   nkImportStmt
     nkStrLit "System"
   nkTypeSection
@@ -273,6 +276,9 @@ nkStmtList
           nkExprColonExpr
             nkIdent 'overflowChecks'
             nkIdent 'on'
+          nkExprColonExpr
+            nkIdent 'rangeChecks'
+            nkIdent 'on'
         nkCall
           nkIdent 'WriteLine'
           nkStrLit "checked block"
@@ -283,6 +289,9 @@ nkStmtList
           nkIdent 'push'
           nkExprColonExpr
             nkIdent 'overflowChecks'
+            nkIdent 'off'
+          nkExprColonExpr
+            nkIdent 'rangeChecks'
             nkIdent 'off'
         nkCall
           nkIdent 'WriteLine'

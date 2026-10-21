@@ -176,6 +176,25 @@ proc asMethod(l: Lowerer; cls, m: NsNode; def: PNode): PNode =
     raiseCall.add newAtom(nkStrLit, "abstract member called: " & m.name, def.info)
     result[6] = newTree(nkStmtList, def.info, newTree(nkRaiseStmt, def.info, raiseCall))
 
+proc isMaskedShift(n: NsNode): bool =
+  ## C# masks a shift count to the left operand's width (`1 << 33` is `2`), which a
+  ## C shift by that much leaves undefined, so any count but a constant below 32
+  ## goes through the library's masking procs. `>>>` always does.
+  ## A user-defined `operator <<` is an ordinary call.
+  if n.sons.len < 2 or n.sons[0] == nil or n.sons[0].typeKind notin {tkInt, tkChar}:
+    return false
+  let count = n.sons[1]
+  if n.name == "ushr": return true
+  n.name in ["shl", "shr"] and not (count != nil and count.kind == nsnIntLit and
+                                    count.intVal >= 0 and count.intVal < 32)
+
+proc shiftProc(op: string): string =
+  case op
+  of "shl": "nsShl"
+  of "shr": "nsShr"
+  of "ushr": "nsUShr"
+  else: op
+
 proc baseConv(l: Lowerer; info: TLineInfo): PNode =
   ## `this` seen as its base class: `Base(self)`, or `(ref Base)(self)` for an
   ## exception class, whose `self` is a `ref`.
@@ -1382,11 +1401,12 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     elif isCheckedOp(n):
       result = newTree(nkCall, n.info, l.id(checkedOperatorName(n.argParam), n.info),
                        l.ordered(n.sons[0], n.sons[1 .. 1]), l.expr(n.sons[1]))
-    elif n.name in ["nsDiv", "nsMod"]:
-      ## Integer `/` and `%` go through library procs, which are called rather
+    elif n.name in ["nsDiv", "nsMod", "nsFmod"] or isMaskedShift(n):
+      ## Integer `/` and `%`, the floating-point `%`, and a shift whose count is not
+      ## a constant in range go through library procs, which are called rather
       ## than used as an infix operator.
       result = newNodeI(nkCall, n.info)
-      result.add l.id(n.name, n.info)
+      result.add l.id(shiftProc(n.name), n.info)
       result.add l.ordered(n.sons[0], n.sons[1 .. 1])
       result.add l.expr(n.sons[1])
     else:
@@ -2337,6 +2357,10 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
       value = newTree(nkCall, n.info,
                       l.id((if n.name == "/": "nsDiv" else: "nsMod"), n.info),
                       operand, rhs)
+    elif n.typeKind == tkFloat and n.name == "mod":
+      value = newTree(nkCall, n.info, l.id("nsFmod", n.info), operand, rhs)
+    elif isMaskedShift(n):
+      value = newTree(nkCall, n.info, l.id(shiftProc(n.name), n.info), operand, rhs)
     else:
       value = newTree(nkInfix, n.info, l.id(n.name, n.info), operand, rhs)
     if n.strVal.len > 0 and n.typeName.len > 0:
@@ -2389,15 +2413,21 @@ proc doWhileToNim(l: Lowerer; n: NsNode): PNode =
   scope.add loop
   result.add scope
 
+proc checkPush(l: Lowerer; checked: bool; info: TLineInfo): PNode =
+  ## `{.push overflowChecks: on|off, rangeChecks: on|off.}`: C#'s `checked` state
+  ## covers arithmetic and integral conversions alike, and an unchecked narrowing
+  ## conversion keeps the low bits (`(short)70000` is 4464) where Nim's checked
+  ## one would raise.
+  let state = if checked: "on" else: "off"
+  result = newTree(nkPragma, info, l.id("push", info),
+    newTree(nkExprColonExpr, info, l.id("overflowChecks", info), l.id(state, info)),
+    newTree(nkExprColonExpr, info, l.id("rangeChecks", info), l.id(state, info)))
+
 proc checkedToNim(l: Lowerer; n: NsNode): PNode =
   ## C# turns overflow checking on inside `checked` and off inside `unchecked`,
   ## which is Nim's `overflowChecks` switch.
   result = newNodeI(nkStmtList, n.info)
-  let push = newNodeI(nkPragma, n.info)
-  push.add l.id("push", n.info)
-  push.add newTree(nkExprColonExpr, n.info, l.id("overflowChecks", n.info),
-                   l.id(if n.kind == nsnChecked: "on" else: "off", n.info))
-  result.add push
+  result.add l.checkPush(n.kind == nsnChecked, n.info)
   l.addStmts(result, n.sons, n.info)
   let pop = newNodeI(nkPragma, n.info)
   pop.add l.id("pop", n.info)
@@ -2408,8 +2438,7 @@ proc checkedExprToNim(l: Lowerer; n: NsNode): PNode =
   let info = n.info
   let t = l.fresh("nsChecked")
   let sl = newNodeI(nkStmtList, info)
-  sl.add newTree(nkPragma, info, l.id("push", info), newTree(nkExprColonExpr, info,
-    l.id("overflowChecks", info), l.id(if n.name == "checked": "on" else: "off", info)))
+  sl.add l.checkPush(n.name == "checked", info)
   sl.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(t, info),
                                             empty(info), l.expr(n.body)))
   sl.add newTree(nkPragma, info, l.id("pop", info))
@@ -5748,11 +5777,7 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
     result.add f
   ## C# arithmetic is unchecked unless it is written inside `checked`, so the module
   ## turns the check off and `checked { }` pushes it back on (§7.3).
-  let push = newNodeI(nkPragma, module.info)
-  push.add l.id("push", module.info)
-  push.add newTree(nkExprColonExpr, module.info,
-                   l.id("overflowChecks", module.info), l.id("off", module.info))
-  result.add push
+  result.add l.checkPush(false, module.info)
   ## Declarations first, then every routine forward declared, then the rest in
   ## source order. C# members may name each other in any order, and Nim resolves a
   ## name against what precedes it, so this is what lets a member call one declared

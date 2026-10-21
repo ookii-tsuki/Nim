@@ -9,6 +9,9 @@ nkStmtList
     nkExprColonExpr
       nkIdent 'overflowChecks'
       nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
   nkImportStmt
     nkStrLit "System/Collections/Generic"
   nkImportStmt

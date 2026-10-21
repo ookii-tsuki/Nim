@@ -49,13 +49,43 @@ proc `+`*[T](a: T, b: string): string = $a & b
 # state, while Nim's check rides on `overflowChecks`, which N# turns off so that
 # arithmetic wraps the way C#'s does. The check is therefore made here, and sema
 # routes integer `/` and `%` to these.
+#
+# The smallest value over `-1` overflows, and .NET throws `OverflowException` for
+# both `/` and `%` then, checked or not; the processor would trap on `%`.
+proc nsDivOverflow() {.noinline, noreturn.} =
+  raise newException(OverflowDefect, "Arithmetic operation resulted in an overflow.")
+
 proc nsDiv*[T: SomeInteger](a, b: T): T {.inline.} =
   if b == 0: raise newException(DivByZeroDefect, "Attempted to divide by zero.")
+  when T is SomeSignedInt:
+    if b == T(-1) and a == low(T): nsDivOverflow()
   system.`div`(a, b)
 
 proc nsMod*[T: SomeInteger](a, b: T): T {.inline.} =
   if b == 0: raise newException(DivByZeroDefect, "Attempted to divide by zero.")
+  when T is SomeSignedInt:
+    if b == T(-1) and a == low(T): nsDivOverflow()
   system.`mod`(a, b)
+
+# C#'s floating-point `%` truncates toward zero and keeps the dividend's sign, C's
+# `fmod`; Nim's integer `mod` does not apply to floats.
+from std/math import nil
+
+proc nsFmod*(a, b: float64): float64 {.inline.} = math.`mod`(a, b)
+proc nsFmod*(a, b: float32): float32 {.inline.} = math.`mod`(a, b)
+
+# A shift count is masked to the operand's width, as C# does (`1 << 33 == 2`); in
+# C a count that large is undefined. `>>>` shifts zeros in whatever the sign.
+template nsShiftMask[T](n: SomeInteger): int = int(n) and (sizeof(T) * 8 - 1)
+
+proc nsShl*[T: SomeInteger](a: T; n: SomeInteger): T {.inline.} = a shl nsShiftMask[T](n)
+proc nsShr*[T: SomeInteger](a: T; n: SomeInteger): T {.inline.} = a shr nsShiftMask[T](n)
+proc nsUShr*[T: SomeInteger](a: T; n: SomeInteger): T {.inline.} =
+  when T is SomeUnsignedInt: a shr nsShiftMask[T](n)
+  elif sizeof(T) == 8: cast[T](cast[uint64](a) shr nsShiftMask[T](n))
+  elif sizeof(T) == 4: cast[T](cast[uint32](a) shr nsShiftMask[T](n))
+  elif sizeof(T) == 2: cast[T](cast[uint16](a) shr nsShiftMask[T](n))
+  else: cast[T](cast[uint8](a) shr nsShiftMask[T](n))
 
 import std/options
 

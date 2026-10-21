@@ -483,7 +483,12 @@ proc ReadLine*(): string = stdin.readLine
 
 # `int` and `double` overloads, as .NET declares them, so an untyped literal picks
 # `int`; a generic one covers the other numeric types.
-proc Abs*(x: int32): int32 {.nsStatic: "Math".} = abs(x)
+proc nsAbsInt[T: SomeSignedInt](x: T): T =
+  if x == low(T):
+    raise newException(OverflowException,
+      "Negating the minimum value of a twos complement number is invalid.")
+  abs(x)
+proc Abs*(x: int32): int32 {.nsStatic: "Math".} = nsAbsInt(x)
 proc Abs*(x: float): float {.nsStatic: "Math".} = abs(x)
 proc Max*(a, b: int32): int32 {.nsStatic: "Math".} = max(a, b)
 proc Max*(a, b: float): float {.nsStatic: "Math".} = max(a, b)
@@ -491,7 +496,7 @@ proc Min*(a, b: int32): int32 {.nsStatic: "Math".} = min(a, b)
 proc Min*(a, b: float): float {.nsStatic: "Math".} = min(a, b)
 proc Sign*(x: int32): int32 {.nsStatic: "Math".} = int32(cmp(x, int32(0)))
 proc Sign*(x: float): int32 {.nsStatic: "Math".} = int32(cmp(x, float(0)))
-proc Abs*[T: SomeSignedInt](x: T): T {.nsStatic: "Math".} = abs(x)
+proc Abs*[T: SomeSignedInt](x: T): T {.nsStatic: "Math".} = nsAbsInt(x)
 proc Max*[T: SomeNumber](a, b: T): T {.nsStatic: "Math".} = max(a, b)
 proc Min*[T: SomeNumber](a, b: T): T {.nsStatic: "Math".} = min(a, b)
 proc Sqrt*(x: float): float {.nsStatic: "Math".} = sqrt(x)

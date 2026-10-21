@@ -6,6 +6,9 @@ nkStmtList
     nkExprColonExpr
       nkIdent 'overflowChecks'
       nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
   nkImportStmt
     nkStrLit "System"
   nkTypeSection
@@ -610,6 +613,9 @@ nkStmtList
           nkIdent 'push'
           nkExprColonExpr
             nkIdent 'overflowChecks'
+            nkIdent 'on'
+          nkExprColonExpr
+            nkIdent 'rangeChecks'
             nkIdent 'on'
         nkVarSection
           nkIdentDefs

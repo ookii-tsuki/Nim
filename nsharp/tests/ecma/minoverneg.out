@@ -1,0 +1,8 @@
+int / overflows
+int % overflows
+long % overflows
+Abs overflows
+5
+0
+0
+-3

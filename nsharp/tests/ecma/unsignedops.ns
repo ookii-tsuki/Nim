@@ -1,0 +1,43 @@
+// Operators with constants, shifts and remainders as C# types them: an integer
+// constant beside a `uint` is a `uint` (10.2.11), a shift count is masked to the
+// operand's width (12.11), `>>>` shifts zeros in, and `%` on floating-point values
+// is the truncated remainder (12.10.4).
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        uint u = 5;
+        Console.WriteLine(u - 6);
+        Console.WriteLine(u + 4294967295);
+        int i = -1;
+        Console.WriteLine(u + i);
+        ulong ul = 5;
+        Console.WriteLine(ul - 6);
+        Console.WriteLine(u > -1 ? "u > -1" : "u <= -1");
+
+        int count = 33;
+        Console.WriteLine(1 << count);
+        Console.WriteLine(1L << 65);
+        long lc = 70;
+        Console.WriteLine(1L << (int)lc);
+        Console.WriteLine(-16 >> count);
+        Console.WriteLine(-16 >>> 2);
+        Console.WriteLine(-1L >>> 60);
+        Console.WriteLine(16u >>> 2);
+        int x = -16;
+        x >>>= 28;
+        Console.WriteLine(x);
+        int y = 1;
+        y <<= count;
+        Console.WriteLine(y);
+
+        Console.WriteLine((int)(-7.5 % 2 * 10));
+        Console.WriteLine((int)(7.5 % -2 * 10));
+        double d = 10.25;
+        d %= 3;
+        Console.WriteLine((int)(d * 100));
+        Console.WriteLine((int)(5 % 2.5f));
+    }
+}

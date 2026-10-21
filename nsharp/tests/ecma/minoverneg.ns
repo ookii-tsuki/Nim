@@ -1,0 +1,26 @@
+// The smallest value over -1 overflows: .NET throws OverflowException for `/` and
+// `%` alike (the processor would trap on `%`), and Math.Abs cannot negate it.
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        int m = int.MinValue;
+        int d = -1;
+        try { Console.WriteLine(m / d); }
+        catch (OverflowException) { Console.WriteLine("int / overflows"); }
+        try { Console.WriteLine(m % d); }
+        catch (OverflowException) { Console.WriteLine("int % overflows"); }
+        long lm = long.MinValue;
+        long ld = -1;
+        try { Console.WriteLine(lm % ld); }
+        catch (OverflowException) { Console.WriteLine("long % overflows"); }
+        try { Console.WriteLine(Math.Abs(m)); }
+        catch (OverflowException) { Console.WriteLine("Abs overflows"); }
+        Console.WriteLine(Math.Abs(-5));
+        Console.WriteLine((m + 1) % d);
+        Console.WriteLine(7 % d);
+        Console.WriteLine(-7 / 2);
+    }
+}
