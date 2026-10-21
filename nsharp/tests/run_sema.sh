@@ -33,6 +33,96 @@ fail=0
 count=0
 update=0
 [ "${1:-}" = "--update" ] && update=1
+. "$here/par.sh"
+
+run_one() {
+  ## One test: its facts against the golden (and Roslyn's against both), or the
+  ## golden written, on --update. Returns 1 when it failed. $NS_SEMA_UPDATE and
+  ## $NS_SEMA_DOTNET are the parent's `--update` and whether the oracle is usable.
+  ns="$1"
+  update="${NS_SEMA_UPDATE:-0}"
+  have_dotnet="${NS_SEMA_DOTNET:-0}"
+  rel="${ns#$here/}"
+  golden="$goldenDir/${rel%.ns}.golden"
+  ledger="$goldenDir/${rel%.ns}.skipped"
+  rc=0
+  tmp="$(mktemp -d "${TMPDIR:-/tmp}/ns_sema_one.XXXXXX")"
+  trap 'rm -rf "$tmp"' EXIT
+
+  # The main file plus every sibling `.ns` with no marker of its own: a module
+  # the main file is compiled with.
+  files="$ns"
+  dir="$(dirname "$ns")"
+  for sib in "$dir"/*.ns; do
+    [ -f "$sib" ] || continue
+    [ "$sib" = "$ns" ] && continue
+    [ -f "${sib%.ns}.out" ] && continue
+    [ -f "${sib%.ns}.fail" ] && continue
+    [ -f "${sib%.ns}.unsupported" ] && continue
+    files="$files $sib"
+  done
+
+  if [ "$update" = "1" ]; then
+    want="$(dotnet "$oracleDll" $files)"
+    mkdir -p "$(dirname "$golden")"
+    printf '%s\n' "$want" > "$golden"
+    printf '%s\n' "$(dotnet "$oracleDll" --ledger $files)" > "$ledger"
+    echo "wrote: nsharp/tests/sema/${rel%.ns}.golden"
+    echo "wrote: nsharp/tests/sema/${rel%.ns}.skipped"
+    return 0
+  fi
+
+  if [ ! -f "$golden" ]; then
+    echo "MISSING golden: nsharp/tests/sema/${rel%.ns}.golden (run with --update)"
+    return 1
+  fi
+  want="$(cat "$golden")"
+
+  # The oracle must still reproduce the golden; if it does not, Roslyn or its BCL
+  # moved and the golden is stale.
+  if [ "$have_dotnet" = "1" ]; then
+    fresh="$(dotnet "$oracleDll" $files)"
+    if [ "$fresh" != "$want" ]; then
+      echo "ORACLE DRIFT (Roslyn no longer reproduces the golden): nsharp/tests/$rel"
+      printf '%s\n' "$want" > "$tmp/want.txt"
+      printf '%s\n' "$fresh" > "$tmp/fresh.txt"
+      diff "$tmp/want.txt" "$tmp/fresh.txt"
+      return 1
+    fi
+
+    # The out-of-scope ledger is ratcheted the same way.
+    if [ ! -f "$ledger" ]; then
+      echo "MISSING ledger: nsharp/tests/sema/${rel%.ns}.skipped (run with --update)"
+      rc=1
+    else
+      freshled="$(dotnet "$oracleDll" --ledger $files)"
+      if [ "$freshled" != "$(cat "$ledger")" ]; then
+        echo "OUT-OF-SCOPE CHANGED: nsharp/tests/$rel"
+        printf '%s\n' "$(cat "$ledger")" > "$tmp/lwant.txt"
+        printf '%s\n' "$freshled" > "$tmp/lfresh.txt"
+        diff "$tmp/lwant.txt" "$tmp/lfresh.txt"
+        rc=1
+      fi
+    fi
+  fi
+
+  got="$("$tool" "$ns" 2>/dev/null)"
+  if [ "$got" = "$want" ]; then
+    echo "ok: nsharp/tests/$rel"
+  else
+    echo "SEMA DIVERGES (N# vs C#): nsharp/tests/$rel"
+    printf '%s\n' "$want" > "$tmp/want.txt"
+    printf '%s\n' "$got" > "$tmp/got.txt"
+    diff "$tmp/want.txt" "$tmp/got.txt"
+    rc=1
+  fi
+  return $rc
+}
+
+if [ "${1:-}" = "--one" ]; then
+  run_one "$2"
+  exit $?
+fi
 
 mkdir -p "$work"
 
@@ -73,85 +163,17 @@ if [ "$update" = "1" ] && [ "$have_dotnet" = "0" ]; then
   exit 0
 fi
 
+tests=""
 for ns in "$here"/*.ns "$here"/*/*.ns; do
   case "$ns" in "$here"/native/*) continue ;; esac   # C++-driven: run_native.sh
   [ -f "$ns" ] || continue
   [ -f "${ns%.ns}.out" ] || continue
+  tests="$tests $ns"
   count=$((count + 1))
-  rel="${ns#$here/}"
-  golden="$goldenDir/${rel%.ns}.golden"
-  ledger="$goldenDir/${rel%.ns}.skipped"
-
-  # The main file plus every sibling `.ns` with no marker of its own: a module
-  # the main file is compiled with.
-  files="$ns"
-  dir="$(dirname "$ns")"
-  for sib in "$dir"/*.ns; do
-    [ -f "$sib" ] || continue
-    [ "$sib" = "$ns" ] && continue
-    [ -f "${sib%.ns}.out" ] && continue
-    [ -f "${sib%.ns}.fail" ] && continue
-    [ -f "${sib%.ns}.unsupported" ] && continue
-    files="$files $sib"
-  done
-
-  if [ "$update" = "1" ]; then
-    want="$(dotnet "$oracleDll" $files)"
-    mkdir -p "$(dirname "$golden")"
-    printf '%s\n' "$want" > "$golden"
-    printf '%s\n' "$(dotnet "$oracleDll" --ledger $files)" > "$ledger"
-    echo "wrote: nsharp/tests/sema/${rel%.ns}.golden"
-    echo "wrote: nsharp/tests/sema/${rel%.ns}.skipped"
-    continue
-  fi
-
-  if [ ! -f "$golden" ]; then
-    echo "MISSING golden: nsharp/tests/sema/${rel%.ns}.golden (run with --update)"
-    fail=1
-    continue
-  fi
-  want="$(cat "$golden")"
-
-  # The oracle must still reproduce the golden; if it does not, Roslyn or its BCL
-  # moved and the golden is stale.
-  if [ "$have_dotnet" = "1" ]; then
-    fresh="$(dotnet "$oracleDll" $files)"
-    if [ "$fresh" != "$want" ]; then
-      echo "ORACLE DRIFT (Roslyn no longer reproduces the golden): nsharp/tests/$rel"
-      printf '%s\n' "$want" > "$work/want.txt"
-      printf '%s\n' "$fresh" > "$work/fresh.txt"
-      diff "$work/want.txt" "$work/fresh.txt"
-      fail=1
-      continue
-    fi
-
-    # The out-of-scope ledger is ratcheted the same way.
-    if [ ! -f "$ledger" ]; then
-      echo "MISSING ledger: nsharp/tests/sema/${rel%.ns}.skipped (run with --update)"
-      fail=1
-    else
-      freshled="$(dotnet "$oracleDll" --ledger $files)"
-      if [ "$freshled" != "$(cat "$ledger")" ]; then
-        echo "OUT-OF-SCOPE CHANGED: nsharp/tests/$rel"
-        printf '%s\n' "$(cat "$ledger")" > "$work/lwant.txt"
-        printf '%s\n' "$freshled" > "$work/lfresh.txt"
-        diff "$work/lwant.txt" "$work/lfresh.txt"
-        fail=1
-      fi
-    fi
-  fi
-
-  got="$("$tool" "$ns" 2>/dev/null)"
-  if [ "$got" = "$want" ]; then
-    echo "ok: nsharp/tests/$rel"
-  else
-    echo "SEMA DIVERGES (N# vs C#): nsharp/tests/$rel"
-    printf '%s\n' "$want" > "$work/want.txt"
-    printf '%s\n' "$got" > "$work/got.txt"
-    diff "$work/want.txt" "$work/got.txt"
-    fail=1
-  fi
 done
+export NS_SEMA_UPDATE="$update" NS_SEMA_DOTNET="$have_dotnet"
+# shellcheck disable=SC2086
+ns_par_each "$work/results" $tests || fail=1
 
 echo "checked $count semantic projection(s)"
 exit $fail
