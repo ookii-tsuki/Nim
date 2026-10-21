@@ -25,6 +25,10 @@ type
     ## imported by name, and nothing else: `from X import Count` leaves the module's
     ## *types* out of scope, which is what C# does with a namespace it does not have.
     byModule: Table[string, seq[string]]
+    instances: seq[PNode]
+      ## every concrete instance of a generic class the module names (`Box[int32]`),
+      ## whose overrides the module instantiates (`forceOverrides`)
+    instanceKeys: HashSet[string]
 
 type
   Lowerer = object
@@ -248,6 +252,33 @@ proc qualifiedName(l: Lowerer; written: string; info: TLineInfo; arity = 0): PNo
   if not l.imports.byModule.hasKey(path): l.imports.byModule[path] = @[]
   newTree(nkDotExpr, info, l.id(path.split('/')[^1], info), l.id(last, info))
 
+proc typeKey(n: PNode): string =
+  ## A type expression spelled out, to tell instances apart.
+  case n.kind
+  of nkIdent: n.ident.s
+  of nkBracketExpr, nkRefTy, nkPtrTy, nkTupleTy, nkIdentDefs, nkProcTy, nkFormalParams:
+    var r = $n.kind & "("
+    for x in n: r.add typeKey(x) & ","
+    r & ")"
+  else: $n.kind
+
+proc isConcreteType(l: Lowerer; n: PNode): bool =
+  ## Every name in `n` is a type the program or the library declares, or Nim's
+  ## own: no type parameter, whichever routine or class it belongs to.
+  case n.kind
+  of nkIdent:
+    let s = n.ident.s
+    s notin l.procTypeParams and s notin l.clsTypeParams and
+      (l.scope.classes.hasKey(s) or l.scope.enums.contains(s) or
+       l.scope.delegates.hasKey(s) or l.surface.types.hasKey(s) or
+       s in ["int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64",
+             "int", "uint", "float32", "float64", "float", "bool", "char", "string",
+             "RootRef", "Option", "NsArray", "NsMdArray"])
+  else:
+    for i in 0 ..< n.safeLen:
+      if not l.isConcreteType(n[i]): return false
+    true
+
 proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   ## C# type reference to Nim type expression. `nsnEmpty`/`nsnVoidType` become
   ## `nkEmpty`, which is how "no type" is spelled in a Nim parameter list.
@@ -304,6 +335,12 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
       be.add result
       for a in t.sons: be.add l.typeToNim(a, info)
       result = be
+      if l.imports != nil and l.scope.classes.hasKey(name) and
+         l.scope.classes[name].classKind == ckClass and l.isConcreteType(be):
+        let key = typeKey(be)
+        if key notin l.imports.instanceKeys:
+          l.imports.instanceKeys.incl key
+          l.imports.instances.add copyTree(be)
   else:
     result = empty(info)
 
@@ -658,6 +695,8 @@ proc newToNim(l: Lowerer; n: NsNode): PNode =
         ## The constructor lives beside the type, so it is imported with it.
         l.imports.note(l.surface.types[q.ident.s].path, "new" & q.ident.s)
   if n.typ != nil and n.typ.kind == nsnTypeName and n.typ.sons.len > 0:
+    ## Spelled through `typeToNim` too, which notes the instance it names.
+    discard l.typeToNim(n.typ, n.info)
     let be = newNodeI(nkBracketExpr, n.info)
     be.add callee
     for a in n.typ.sons: be.add l.typeToNim(a, n.info)
@@ -5959,6 +5998,84 @@ proc classDepths(types: PNode): Table[string, int] =
       inc d
     result[name] = d
 
+proc substTypes(n: PNode; names: seq[string]; args: seq[PNode]): PNode =
+  ## `n` with each type parameter named in `names` replaced by its argument.
+  if n.kind == nkIdent:
+    let k = names.find(n.ident.s)
+    return (if k >= 0 and k < args.len: copyTree(args[k]) else: copyTree(n))
+  result = copyNode(n)
+  for i in 0 ..< n.safeLen: result.add substTypes(n[i], names, args)
+
+proc genericParamNames(gp: PNode): seq[string] =
+  ## `[T, U]` of a type or routine: its parameters' names, in order.
+  result = @[]
+  if gp.kind != nkGenericParams: return
+  for d in gp:
+    if d.kind == nkIdentDefs:
+      for i in 0 ..< d.len - 2: result.add typeName(d[i])
+    else: result.add typeName(d)
+
+proc genericBases(types: PNode): Table[string, PNode] =
+  ## For each class of the section that is not generic itself, the nearest base up
+  ## its chain that is an instance of a generic class (`Repo[int32]`).
+  var direct = initTable[string, PNode]()
+  var generic = initHashSet[string]()
+  for td in types:
+    if td.kind != nkTypeDef or td.len < 3: continue
+    var nameNode = td[0]
+    if nameNode.kind == nkPragmaExpr: nameNode = nameNode[0]
+    if nameNode.kind == nkPostfix: nameNode = nameNode[1]
+    if td[1].kind == nkGenericParams and td[1].len > 0: generic.incl typeName(nameNode)
+    var body = td[2]
+    while body.kind in {nkRefTy, nkPtrTy} and body.len > 0: body = body[0]
+    if body.kind == nkObjectTy and body.len > 1 and body[1].kind == nkOfInherit and
+       body[1].len > 0:
+      direct[typeName(nameNode)] = body[1][0]
+  result = initTable[string, PNode]()
+  for name in direct.keys:
+    if name in generic: continue
+    var cur = name
+    var hops = 0
+    while direct.hasKey(cur) and hops <= direct.len:
+      let b = direct[cur]
+      if b.kind == nkBracketExpr:
+        result[name] = b
+        break
+      cur = typeName(b)
+      inc hops
+
+proc hasPragma(r: PNode; name: string): bool =
+  let pr = r[pragmasPos]
+  if pr.kind != nkPragma: return false
+  for x in pr:
+    if x.kind == nkIdent and x.ident.s == name: return true
+  false
+
+proc instantiateBase(l: Lowerer; r: PNode; base: PNode;
+                     names: seq[string] = @[]; args: seq[PNode] = @[]): PNode =
+  ## Nim attaches an override to a generic base method only once that method is
+  ## instantiated for the base's type arguments, which nothing has done when the
+  ## override is declared: `static: discard compiles(M(Repo[int32](nil), ...))`
+  ## does it first, so `Repo<int> r = new IntRepo(); r.M()` dispatches.
+  var name = r[namePos]
+  if name.kind == nkPostfix: name = name[1]
+  let info = r.info
+  let call = newTree(nkCall, info, copyTree(name),
+                     newTree(nkCall, info, copyTree(base), newNodeI(nkNilLit, info)))
+  let params = r[paramsPos]
+  for i in 2 ..< params.len:
+    let defs = params[i]
+    if defs.kind != nkIdentDefs: return nil
+    var t = substTypes(defs[^2], names, args)
+    if t.kind == nkVarTy and t.len > 0: t = t[0]
+    if t.kind == nkEmpty: return nil
+    for _ in 0 ..< defs.len - 2:
+      call.add newTree(nkCall, info, l.id("default", info),
+                       copyTree(t))
+  result = newTree(nkStaticStmt, info, newTree(nkStmtList, info,
+    newTree(nkDiscardStmt, info, newTree(nkCall, info,
+      l.id("compiles", info), call))))
+
 proc receiverName(r: PNode): string =
   ## The type of a routine's first parameter, which a method dispatches on.
   let params = r[paramsPos]
@@ -6045,16 +6162,76 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
       methods.add r
   methods.sort(proc (a, b: PNode): int = cmp(depthOf(a), depthOf(b)))
   for k, i in slots: routines[i] = methods[k]
+  ## An override of a generic class's method (`IntRepo : Repo<int>`) links to the
+  ## base method's instance, so that instance must exist when the override is
+  ## declared, and both before any routine calls through the base is checked.
+  ## Making an instance needs the bodies of every generic routine it may reach. So:
+  ## the declarations; every generic routine's definition (which instantiates
+  ## nothing); the instances (`instantiateBase`); such an override's declaration;
+  ## then the rest of the definitions in source order.
+  let genBases = genericBases(types)
+  var late: seq[PNode] = @[]       ## overrides of a generic base's methods
+  proc isGenericMethod(r: PNode): bool =
+    r.kind == nkMethodDef and r[genericParamsPos].kind == nkGenericParams
+  ## A generic class's override reaches its instance's dispatch only once Nim has
+  ## made that instance, after the base method's: for every instance the program
+  ## names (`Wrapper<string>`), each generic method of the class and of its
+  ## generic bases is instantiated, base first.
+  var instanceForces: seq[PNode] = @[]
+  var typeDefs = initTable[string, PNode]()
+  for td in types:
+    if td.kind == nkTypeDef: typeDefs[typeName(td[0])] = td
+  proc baseOfDef(td: PNode): PNode =
+    var body = td[2]
+    while body.kind in {nkRefTy, nkPtrTy} and body.len > 0: body = body[0]
+    if body.kind == nkObjectTy and body.len > 1 and body[1].kind == nkOfInherit and
+       body[1].len > 0: body[1][0] else: nil
+  for inst in l.imports.instances:
+    var chain: seq[PNode] = @[]
+    var cur = inst
+    var hops = 0
+    while cur != nil and cur.kind == nkBracketExpr and typeDefs.hasKey(typeName(cur)) and
+          hops < 32:
+      chain.insert(cur, 0)
+      let td = typeDefs[typeName(cur)]
+      let b = baseOfDef(td)
+      cur = (if b == nil: nil
+             else: substTypes(b, genericParamNames(td[1]), cur.sons[1 .. ^1]))
+      inc hops
+    for c in chain:
+      for r in routines:
+        if r.isGenericMethod and receiverName(r) == typeName(c):
+          let force = l.instantiateBase(r, c, genericParamNames(r[genericParamsPos]),
+                                        c.sons[1 .. ^1])
+          if force != nil: instanceForces.add force
   for r in routines:
+    if r.kind == nkMethodDef and not r.hasPragma("base") and
+       not r.isGenericMethod and genBases.hasKey(receiverName(r)):
+      late.add r
+      continue
     let fwd = copyTree(r)
     fwd[6] = newNodeI(nkEmpty, r.info)
     result.add fwd
+  ## Identity, not structure: a routine defined early is skipped where it would be.
+  var early = initHashSet[int]()
+  if late.len > 0 or instanceForces.len > 0:
+    for r in routines:
+      if r[genericParamsPos].kind == nkGenericParams:
+        result.add r
+        early.incl cast[int](r)
+    for f in instanceForces: result.add f
+    for r in late:
+      let force = l.instantiateBase(r, genBases[receiverName(r)])
+      if force != nil: result.add force
+      let fwd = copyTree(r)
+      fwd[6] = newNodeI(nkEmpty, r.info)
+      result.add fwd
   ## Static initialisers run before any statement of the program, top-level ones
   ## included; their bodies may name anything, since everything is declared above.
   for p in l.staticInits:
     result.add newTree(nkCall, p.info, copyTree(p[0]))
   for s in stmts:
-    if s.kind notin declKinds:
+    if s.kind notin declKinds and cast[int](s) notin early:
       result.add s
   for p in l.staticInits: result.add p
   if l.entryPoint != nil:

@@ -1775,6 +1775,563 @@ nkStmtList
       nkIdent '*'
       nkIdent 'ToString'
     nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Repo'
+          nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Repo"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Repo'
+            nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkCall
+          nkIdent 'nsGenericName'
+          nkStrLit "Demo.Repo"
+          nkCall
+            nkIdent 'FullName'
+            nkCall
+              nkIdent 'nsTypeOf'
+              nkIdent 'T'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Repo'
+          nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Repo"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtGet_Repo_IRepo_T'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkPtrTy
+        nkBracketExpr
+          nkIdent 'nsVT_IRepo'
+          nkIdent 'T'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsStore'
+            nkPragma
+              nkIdent 'global'
+          nkBracketExpr
+            nkIdent 'nsVT_IRepo'
+            nkIdent 'T'
+          nkEmpty
+      nkIfStmt
+        nkElifBranch
+          nkPrefix
+            nkIdent 'not'
+            nkDotExpr
+              nkIdent 'nsStore'
+              nkIdent 'nsReady'
+          nkStmtList
+            nkAsgn
+              nkIdent 'nsStore'
+              nkObjConstr
+                nkBracketExpr
+                  nkIdent 'nsVT_IRepo'
+                  nkIdent 'T'
+                nkExprColonExpr
+                  nkIdent 'nsReady'
+                  nkIdent 'true'
+                nkExprColonExpr
+                  nkIdent 'f0'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkEmpty
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                      nkIdentDefs
+                        nkIdent 'item'
+                        nkIdent 'T'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Add'
+                        nkCast
+                          nkBracketExpr
+                            nkIdent 'Repo'
+                            nkIdent 'T'
+                          nkIdent 'self'
+                        nkIdent 'item'
+                nkExprColonExpr
+                  nkIdent 'f1'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkIdent 'T'
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                      nkIdentDefs
+                        nkIdent 'i'
+                        nkIdent 'int32'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Get'
+                        nkCast
+                          nkBracketExpr
+                            nkIdent 'Repo'
+                            nkIdent 'T'
+                          nkIdent 'self'
+                        nkIdent 'i'
+                nkExprColonExpr
+                  nkIdent 'f2'
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkIdent 'int32'
+                      nkIdentDefs
+                        nkIdent 'self'
+                        nkIdent 'RootRef'
+                        nkEmpty
+                    nkPragma
+                      nkIdent 'nimcall'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'Count'
+                        nkCast
+                          nkBracketExpr
+                            nkIdent 'Repo'
+                            nkIdent 'T'
+                          nkIdent 'self'
+      nkCall
+        nkIdent 'addr'
+        nkIdent 'nsStore'
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTo_IRepo_T'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'IRepo'
+        nkIdent 'T'
+      nkIdentDefs
+        nkIdent 'x'
+        nkBracketExpr
+          nkIdent 'Repo'
+          nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfExpr
+        nkElifExpr
+          nkCall
+            nkIdent 'isNil'
+            nkIdent 'x'
+          nkCall
+            nkIdent 'default'
+            nkBracketExpr
+              nkIdent 'IRepo'
+              nkIdent 'T'
+        nkElseExpr
+          nkObjConstr
+            nkBracketExpr
+              nkIdent 'IRepo'
+              nkIdent 'T'
+            nkExprColonExpr
+              nkIdent 'nsObj'
+              nkIdent 'x'
+            nkExprColonExpr
+              nkIdent 'nsVt'
+              nkCall
+                nkBracketExpr
+                  nkIdent 'nsVtGet_Repo_IRepo_T'
+                  nkIdent 'T'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsVtByKey'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'pointer'
+      nkIdentDefs
+        nkIdent 'x'
+        nkBracketExpr
+          nkIdent 'Repo'
+          nkIdent 'T'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'key'
+        nkIdent 'string'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIfStmt
+        nkElifBranch
+          nkInfix
+            nkIdent '=='
+            nkIdent 'key'
+            nkCall
+              nkIdent 'nsKeyOf'
+              nkBracketExpr
+                nkIdent 'IRepo'
+                nkIdent 'T'
+          nkStmtList
+            nkReturnStmt
+              nkCast
+                nkIdent 'pointer'
+                nkCall
+                  nkBracketExpr
+                    nkIdent 'nsVtGet_Repo_IRepo_T'
+                    nkIdent 'T'
+      nkCall
+        nkIdent 'procCall'
+        nkCall
+          nkIdent 'nsVtByKey'
+          nkCall
+            nkIdent 'RootRef'
+            nkIdent 'x'
+          nkIdent 'key'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Add'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Repo'
+          nkIdent 'T'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'item'
+        nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkDotExpr
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'items'
+          nkIdent 'Add'
+        nkIdent 'item'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Get'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'T'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Repo'
+          nkIdent 'T'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'i'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkBracketExpr
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'items'
+          nkIdent 'i'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Count'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Repo'
+          nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkDotExpr
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'items'
+          nkIdent 'Count'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'Repo'
+        nkIdent 'T'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Repo'
+            nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkBracketExpr
+          nkIdent 'newRepo'
+          nkIdent 'T'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initRepo'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Repo'
+          nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'items'
+        nkCall
+          nkBracketExpr
+            nkIdent 'newList'
+            nkIdent 'T'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newRepo'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'Repo'
+        nkIdent 'T'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initRepo'
+        nkIdent 'result'
+  nkProcDef
+    nkIdent 'Fill'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'r'
+        nkBracketExpr
+          nkIdent 'IRepo'
+          nkIdent 'T'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'a'
+        nkIdent 'T'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'b'
+        nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkDotExpr
+          nkIdent 'r'
+          nkIdent 'Add'
+        nkIdent 'a'
+      nkCall
+        nkDotExpr
+          nkIdent 'r'
+          nkIdent 'Add'
+        nkIdent 'b'
+  nkStaticStmt
+    nkStmtList
+      nkDiscardStmt
+        nkCall
+          nkIdent 'compiles'
+          nkCall
+            nkIdent 'ToString'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Repo'
+                nkIdent 'string'
+              nkNilLit
+  nkStaticStmt
+    nkStmtList
+      nkDiscardStmt
+        nkCall
+          nkIdent 'compiles'
+          nkCall
+            nkIdent 'nsTypeName'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Repo'
+                nkIdent 'string'
+              nkNilLit
+  nkStaticStmt
+    nkStmtList
+      nkDiscardStmt
+        nkCall
+          nkIdent 'compiles'
+          nkCall
+            nkIdent 'nsVtByKey'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Repo'
+                nkIdent 'string'
+              nkNilLit
+            nkCall
+              nkIdent 'default'
+              nkIdent 'string'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
@@ -2432,481 +2989,6 @@ nkStmtList
       nkIdent '*'
       nkIdent 'ToString'
     nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkBracketExpr
-          nkIdent 'Repo'
-          nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkStrLit "Demo.Repo"
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsTypeOf'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkIdent 'Type'
-      nkIdentDefs
-        nkIdent 't'
-        nkBracketExpr
-          nkIdent 'typedesc'
-          nkBracketExpr
-            nkIdent 'Repo'
-            nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkIdent 'nsTypeNamed'
-        nkCall
-          nkIdent 'nsGenericName'
-          nkStrLit "Demo.Repo"
-          nkCall
-            nkIdent 'FullName'
-            nkCall
-              nkIdent 'nsTypeOf'
-              nkIdent 'T'
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsTypeName'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkBracketExpr
-          nkIdent 'Repo'
-          nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkStrLit "Demo.Repo"
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsVtGet_Repo_IRepo_T'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkPtrTy
-        nkBracketExpr
-          nkIdent 'nsVT_IRepo'
-          nkIdent 'T'
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkVarSection
-        nkIdentDefs
-          nkPragmaExpr
-            nkIdent 'nsStore'
-            nkPragma
-              nkIdent 'global'
-          nkBracketExpr
-            nkIdent 'nsVT_IRepo'
-            nkIdent 'T'
-          nkEmpty
-      nkIfStmt
-        nkElifBranch
-          nkPrefix
-            nkIdent 'not'
-            nkDotExpr
-              nkIdent 'nsStore'
-              nkIdent 'nsReady'
-          nkStmtList
-            nkAsgn
-              nkIdent 'nsStore'
-              nkObjConstr
-                nkBracketExpr
-                  nkIdent 'nsVT_IRepo'
-                  nkIdent 'T'
-                nkExprColonExpr
-                  nkIdent 'nsReady'
-                  nkIdent 'true'
-                nkExprColonExpr
-                  nkIdent 'f0'
-                  nkLambda
-                    nkEmpty
-                    nkEmpty
-                    nkEmpty
-                    nkFormalParams
-                      nkEmpty
-                      nkIdentDefs
-                        nkIdent 'self'
-                        nkIdent 'RootRef'
-                        nkEmpty
-                      nkIdentDefs
-                        nkIdent 'item'
-                        nkIdent 'T'
-                        nkEmpty
-                    nkPragma
-                      nkIdent 'nimcall'
-                    nkEmpty
-                    nkStmtList
-                      nkCall
-                        nkIdent 'Add'
-                        nkCast
-                          nkBracketExpr
-                            nkIdent 'Repo'
-                            nkIdent 'T'
-                          nkIdent 'self'
-                        nkIdent 'item'
-                nkExprColonExpr
-                  nkIdent 'f1'
-                  nkLambda
-                    nkEmpty
-                    nkEmpty
-                    nkEmpty
-                    nkFormalParams
-                      nkIdent 'T'
-                      nkIdentDefs
-                        nkIdent 'self'
-                        nkIdent 'RootRef'
-                        nkEmpty
-                      nkIdentDefs
-                        nkIdent 'i'
-                        nkIdent 'int32'
-                        nkEmpty
-                    nkPragma
-                      nkIdent 'nimcall'
-                    nkEmpty
-                    nkStmtList
-                      nkCall
-                        nkIdent 'Get'
-                        nkCast
-                          nkBracketExpr
-                            nkIdent 'Repo'
-                            nkIdent 'T'
-                          nkIdent 'self'
-                        nkIdent 'i'
-                nkExprColonExpr
-                  nkIdent 'f2'
-                  nkLambda
-                    nkEmpty
-                    nkEmpty
-                    nkEmpty
-                    nkFormalParams
-                      nkIdent 'int32'
-                      nkIdentDefs
-                        nkIdent 'self'
-                        nkIdent 'RootRef'
-                        nkEmpty
-                    nkPragma
-                      nkIdent 'nimcall'
-                    nkEmpty
-                    nkStmtList
-                      nkCall
-                        nkIdent 'Count'
-                        nkCast
-                          nkBracketExpr
-                            nkIdent 'Repo'
-                            nkIdent 'T'
-                          nkIdent 'self'
-      nkCall
-        nkIdent 'addr'
-        nkIdent 'nsStore'
-  nkConverterDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsTo_IRepo_T'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkBracketExpr
-        nkIdent 'IRepo'
-        nkIdent 'T'
-      nkIdentDefs
-        nkIdent 'x'
-        nkBracketExpr
-          nkIdent 'Repo'
-          nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkIfExpr
-        nkElifExpr
-          nkCall
-            nkIdent 'isNil'
-            nkIdent 'x'
-          nkCall
-            nkIdent 'default'
-            nkBracketExpr
-              nkIdent 'IRepo'
-              nkIdent 'T'
-        nkElseExpr
-          nkObjConstr
-            nkBracketExpr
-              nkIdent 'IRepo'
-              nkIdent 'T'
-            nkExprColonExpr
-              nkIdent 'nsObj'
-              nkIdent 'x'
-            nkExprColonExpr
-              nkIdent 'nsVt'
-              nkCall
-                nkBracketExpr
-                  nkIdent 'nsVtGet_Repo_IRepo_T'
-                  nkIdent 'T'
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsVtByKey'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkIdent 'pointer'
-      nkIdentDefs
-        nkIdent 'x'
-        nkBracketExpr
-          nkIdent 'Repo'
-          nkIdent 'T'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'key'
-        nkIdent 'string'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkIfStmt
-        nkElifBranch
-          nkInfix
-            nkIdent '=='
-            nkIdent 'key'
-            nkCall
-              nkIdent 'nsKeyOf'
-              nkBracketExpr
-                nkIdent 'IRepo'
-                nkIdent 'T'
-          nkStmtList
-            nkReturnStmt
-              nkCast
-                nkIdent 'pointer'
-                nkCall
-                  nkBracketExpr
-                    nkIdent 'nsVtGet_Repo_IRepo_T'
-                    nkIdent 'T'
-      nkCall
-        nkIdent 'procCall'
-        nkCall
-          nkIdent 'nsVtByKey'
-          nkCall
-            nkIdent 'RootRef'
-            nkIdent 'x'
-          nkIdent 'key'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'Add'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkEmpty
-      nkIdentDefs
-        nkIdent 'self'
-        nkBracketExpr
-          nkIdent 'Repo'
-          nkIdent 'T'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'item'
-        nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkDotExpr
-          nkDotExpr
-            nkIdent 'self'
-            nkIdent 'items'
-          nkIdent 'Add'
-        nkIdent 'item'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'Get'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkIdent 'T'
-      nkIdentDefs
-        nkIdent 'self'
-        nkBracketExpr
-          nkIdent 'Repo'
-          nkIdent 'T'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'i'
-        nkIdent 'int32'
-        nkEmpty
-    nkPragma
-      nkIdent 'discardable'
-    nkEmpty
-    nkStmtList
-      nkReturnStmt
-        nkBracketExpr
-          nkDotExpr
-            nkIdent 'self'
-            nkIdent 'items'
-          nkIdent 'i'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'Count'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkIdent 'int32'
-      nkIdentDefs
-        nkIdent 'self'
-        nkBracketExpr
-          nkIdent 'Repo'
-          nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkReturnStmt
-        nkDotExpr
-          nkDotExpr
-            nkIdent 'self'
-            nkIdent 'items'
-          nkIdent 'Count'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsCreate'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkBracketExpr
-        nkIdent 'Repo'
-        nkIdent 'T'
-      nkIdentDefs
-        nkIdent 't'
-        nkBracketExpr
-          nkIdent 'typedesc'
-          nkBracketExpr
-            nkIdent 'Repo'
-            nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkBracketExpr
-          nkIdent 'newRepo'
-          nkIdent 'T'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'initRepo'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkEmpty
-      nkIdentDefs
-        nkIdent 'self'
-        nkBracketExpr
-          nkIdent 'Repo'
-          nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkAsgn
-        nkDotExpr
-          nkIdent 'self'
-          nkIdent 'items'
-        nkCall
-          nkBracketExpr
-            nkIdent 'newList'
-            nkIdent 'T'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'newRepo'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkBracketExpr
-        nkIdent 'Repo'
-        nkIdent 'T'
-    nkPragma
-      nkIdent 'discardable'
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkIdent 'new'
-        nkIdent 'result'
-      nkCall
-        nkIdent 'initRepo'
-        nkIdent 'result'
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'ToString'
-    nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
@@ -3089,49 +3171,6 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"
-  nkProcDef
-    nkIdent 'Fill'
-    nkEmpty
-    nkGenericParams
-      nkIdentDefs
-        nkIdent 'T'
-        nkEmpty
-        nkEmpty
-    nkFormalParams
-      nkEmpty
-      nkIdentDefs
-        nkIdent 't'
-        nkBracketExpr
-          nkIdent 'typedesc'
-          nkIdent 'Program'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'r'
-        nkBracketExpr
-          nkIdent 'IRepo'
-          nkIdent 'T'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'a'
-        nkIdent 'T'
-        nkEmpty
-      nkIdentDefs
-        nkIdent 'b'
-        nkIdent 'T'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkDotExpr
-          nkIdent 'r'
-          nkIdent 'Add'
-        nkIdent 'a'
-      nkCall
-        nkDotExpr
-          nkIdent 'r'
-          nkIdent 'Add'
-        nkIdent 'b'
   nkProcDef
     nkIdent 'Main'
     nkEmpty

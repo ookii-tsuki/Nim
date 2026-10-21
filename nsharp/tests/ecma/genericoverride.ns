@@ -1,0 +1,67 @@
+// Overrides of a generic class's virtual and abstract members dispatch through a
+// reference of the base type, for every instantiation, down a deeper chain, and
+// from a generic class deriving a generic class.
+using System;
+using System.Collections.Generic;
+
+abstract class Repo<T>
+{
+    protected List<T> items = new List<T>();
+    public virtual void Add(T x) { items.Add(x); }
+    public int Count => items.Count;
+    public abstract T Pick();
+    public virtual string Name() { return "repo"; }
+    public string Describe() { return Name() + ":" + Count; }
+}
+
+class IntRepo : Repo<int>
+{
+    public override void Add(int x) { base.Add(x * 2); }
+    public override int Pick() { return items[0]; }
+    public override string Name() { return "ints>" + base.Name(); }
+}
+
+class TopRepo : IntRepo
+{
+    public override int Pick() { return base.Pick() + 1000; }
+    public override string Name() { return "top>" + base.Name(); }
+}
+
+class StrRepo : Repo<string>
+{
+    public override string Pick() { return items.Count > 0 ? items[0] : "none"; }
+}
+
+class Wrapper<T> : Repo<T>
+{
+    public override T Pick() { return items[items.Count - 1]; }
+    public override string Name() { return "wrapper"; }
+}
+
+class Program
+{
+    static void Show<T>(Repo<T> r)
+    {
+        Console.WriteLine(r.Describe() + " picks " + r.Pick());
+    }
+
+    static void Main()
+    {
+        Repo<int> r = new IntRepo();
+        r.Add(5);
+        Show(r);
+        Repo<int> t = new TopRepo();
+        t.Add(1);
+        Show(t);
+        Repo<string> s = new StrRepo();
+        s.Add("a");
+        Show(s);
+        Repo<double> w = new Wrapper<double>();
+        w.Add(1.5);
+        w.Add(2.5);
+        Console.WriteLine(w.Describe() + " " + (w.Pick() == 2.5));
+        Repo<string> ws = new Wrapper<string>();
+        ws.Add("x");
+        Show(ws);
+    }
+}

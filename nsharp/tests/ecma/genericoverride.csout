@@ -1,0 +1,5 @@
+ints>repo:1 picks 10
+top>ints>repo:1 picks 1002
+repo:1 picks a
+wrapper:2 True
+wrapper:1 picks x

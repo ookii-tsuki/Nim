@@ -722,6 +722,30 @@ nkStmtList
       nkCall
         nkIdent 'initRegistry'
         nkIdent 'result'
+  nkStaticStmt
+    nkStmtList
+      nkDiscardStmt
+        nkCall
+          nkIdent 'compiles'
+          nkCall
+            nkIdent 'ToString'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Registry'
+                nkIdent 'float64'
+              nkNilLit
+  nkStaticStmt
+    nkStmtList
+      nkDiscardStmt
+        nkCall
+          nkIdent 'compiles'
+          nkCall
+            nkIdent 'nsTypeName'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Registry'
+                nkIdent 'float64'
+              nkNilLit
   nkMethodDef
     nkPostfix
       nkIdent '*'
