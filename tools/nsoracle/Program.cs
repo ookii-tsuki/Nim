@@ -30,6 +30,11 @@ static class Program
 {
     static int Main(string[] args)
     {
+        // `--mutate` rewrites a test in ways that keep its meaning (Mutate.cs).
+        if (args.Length >= 1 && args[0] == "--mutate")
+        {
+            return Mutate.Run(args.Skip(1).ToArray());
+        }
         // `--ledger` prints the skipped accesses instead of the projected facts.
         var ledgerMode = args.Length >= 1 && args[0] == "--ledger";
         // `--diag` prints the errors Roslyn reports instead: the diagnostics gate
