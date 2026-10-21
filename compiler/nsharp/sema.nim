@@ -2735,6 +2735,15 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ctx.checkLibraryCall(probe, n.sons)
   of nsnUnary:
     result = ctx.walkExpr(n.body)
+    if n.name == "-" and n.body != nil and n.body.kind == nsnIntLit and
+       n.body.strVal.len == 0 and n.body.intVal == 2147483648'i64:
+      ## `-2147483648` is the `int` `int.MinValue`: C# reads the literal 2147483648
+      ## under a minus as an `int` (§12.9.3), though alone it is a `uint`.
+      n.body.setType(tkInt, "")
+    elif n.name == "-" and n.body != nil and n.body.kind == nsnIntLit and
+         n.body.typeName == "uint" and n.body.strVal.len == 0:
+      ## A negated `uint` is a `long` (§12.9.3): `-2147483649` is a `long` literal.
+      n.body.setType(tkInt, "long")
     block unaryCheck:
       ## `!` takes a bool, `-`/`+` a number, `~` an integer (CS0023).
       let k = result
@@ -3255,6 +3264,32 @@ proc checkLocalDecl(ctx: NsCheckContext; n: NsNode) =
     elif n.body.kind == nsnNull:
       nsError(ctx.config, n.info, ndVarBadInit, "<null>")
 
+proc inferredNumeric(n: NsNode): string =
+  ## The C# type of `var x = <n>` when `n` is a number whose type is known: an
+  ## unsuffixed literal is the first of `int`, `uint`, `long` that holds it
+  ## (§6.4.5.4), and `-5` or `1 + 2` of literals alone are `int`. "" when it is not
+  ## known exactly, which leaves the lowering to infer it.
+  if n == nil: return ""
+  case n.kind
+  of nsnIntLit:
+    if n.typeName.len > 0: return n.typeName
+    if n.intVal >= 0 and n.intVal <= 2147483647: return "int"
+    if n.intVal > 0 and n.intVal <= 4294967295'i64: return "uint"
+    return "long"
+  of nsnUnary:
+    if n.name in ["-", "+", "~"] and n.body != nil and n.body.kind == nsnIntLit and
+       n.body.typeName.len == 0:
+      if n.body.intVal <= 2147483648'i64: return "int"
+      return "long"
+  of nsnBinary:
+    if n.name in ["+", "-", "*", "/", "%", "&", "|", "^", "<<", ">>"] and n.sons.len == 2 and
+       inferredNumeric(n.sons[0]) == "int" and inferredNumeric(n.sons[1]) == "int" and
+       n.sons[0].kind in {nsnIntLit, nsnUnary, nsnBinary} and
+       n.sons[1].kind in {nsnIntLit, nsnUnary, nsnBinary}:
+      return "int"
+  else: discard
+  numName(n)
+
 proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   ## Resolves a declaration's initialiser, then introduces the local (or the
   ## parameter) in the current scope so later statements see its type. A declared
@@ -3283,6 +3318,16 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
       kind = initKind
       if n.body.kind == nsnTernary and n.body.sons.len == 3:
         ctx.checkTernaryTypes(n.body)
+      if n.kind == nsnLocalDecl and n.declKind != dkConst:
+        ## `var x = 5;` is an `int`, not the Nim integer the literal would make: the
+        ## variable is declared as if the type had been written.
+        let inferred = inferredNumeric(n.body)
+        if inferred.len > 0 and n.body.typeKind in {tkInt, tkFloat, tkChar}:
+          n.typ = nsnTypeName(inferred, n.info)
+        elif n.body.typeKind == tkString and n.body.kind != nsnNull:
+          n.typ = nsnTypeName("string", n.info)
+        elif n.body.typeKind == tkBool:
+          n.typ = nsnTypeName("bool", n.info)
     elif n.typ.kind == nsnTupleType and n.body.kind == nsnTupleLit and
          n.typ.sons.len == n.body.sons.len:
       ## `(int, string) t = (1, 2);`: each element converts on its own.
@@ -3300,7 +3345,8 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   ## exactly as a `foreach` variable takes it from the collection it walks.
   if n.kind == nsnLocalDecl and n.declKind == dkConst and ctx.notConstant(n.body):
     nsError(ctx.config, n.body.info, ndNotConstant, n.name)
-  ctx.declare(n.name, kind, (if n.typ != nil: declTypeName(n.typ) else: n.body.typeName),
+  ctx.declare(n.name, kind,
+              (if n.typ != nil: declTypeName(n.typ) else: canonicalTypeName(n.body.typeName)),
               (if n.typ != nil: n.typ elif n.body != nil: n.body.rtype else: nil))
   if n.kind == nsnLocalDecl and n.declKind == dkConst: ctx.types[n.name].isConst = true
 

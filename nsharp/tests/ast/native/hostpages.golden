@@ -555,7 +555,7 @@ nkStmtList
               nkVarSection
                 nkIdentDefs
                   nkIdent 'text'
-                  nkEmpty
+                  nkIdent 'string'
                   nkStrLit ""
               nkBlockStmt
                 nkEmpty

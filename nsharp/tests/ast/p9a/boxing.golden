@@ -776,7 +776,7 @@ nkStmtList
           nkVarSection
             nkIdentDefs
               nkIdent 's'
-              nkEmpty
+              nkIdent 'string'
               nkCall
                 nkIdent 'nsUnbox'
                 nkIdent 'a'
@@ -796,7 +796,7 @@ nkStmtList
       nkVarSection
         nkIdentDefs
           nkIdent 'r'
-          nkEmpty
+          nkIdent 'string'
           nkBlockExpr
             nkEmpty
             nkStmtList

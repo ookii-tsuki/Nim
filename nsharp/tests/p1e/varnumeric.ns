@@ -1,0 +1,65 @@
+using System;
+
+namespace Demo
+{
+    // `var x = <number>` has the number's C# type, not Nim's default integer: an
+    // unsuffixed literal is the first of int, uint, long that holds it, so
+    // arithmetic on it wraps at 32 bits, and it passes where an `int` is wanted.
+    // -2147483648 is an int; a negated uint is a long.
+    class Program
+    {
+        static int Twice(int x) => x * 2;
+
+        static void Main()
+        {
+            var a = 2147483647;
+            a++;
+            Console.WriteLine(a);
+
+            var d = 100000;
+            var e = d * d;
+            Console.WriteLine(e);
+
+            var h = 7;
+            int viaInt = h;
+            Console.WriteLine(Twice(h) + " " + viaInt + " " + h / 2 + " " + h / 2.0);
+
+            var u = 4000000000;
+            var l = 5000000000;
+            var n = -5;
+            var s = 1 + 2;
+            Console.WriteLine(u + " " + l + " " + n + " " + s);
+
+            var min = -2147483648;
+            min--;
+            Console.WriteLine(min);
+            long below = -2147483649;
+            var wide = -3000000000;
+            Console.WriteLine(below + " " + wide);
+
+            for (var i = 2147483646; i > 0; i++) Console.WriteLine(i);
+
+            var c = (char)65;
+            var f = 1.5f;
+            var q = 2.5;
+            var z = 7L;
+            Console.WriteLine(c + " " + f + " " + q + " " + z);
+
+            var text = "hello";
+            if (text is ['h', .. var rest]) Console.WriteLine(rest);
+            var flag = text.Length > 3;
+            Console.WriteLine(flag ? "long" : "short");
+
+            try
+            {
+                var big = int.MaxValue;
+                var sum = checked(big + 1);
+                Console.WriteLine(sum);
+            }
+            catch (OverflowException)
+            {
+                Console.WriteLine("overflow");
+            }
+        }
+    }
+}

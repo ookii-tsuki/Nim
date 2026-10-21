@@ -860,7 +860,9 @@ nkStmtList
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
-          nkIdent 'q'
+          nkCall
+            nkIdent 'nsCheckNilVar'
+            nkIdent 'q'
           nkIdent 'X'
   nkProcDef
     nkPostfix

@@ -2337,7 +2337,7 @@ nkStmtList
       nkVarSection
         nkIdentDefs
           nkIdent 'label'
-          nkEmpty
+          nkIdent 'string'
           nkBlockExpr
             nkEmpty
             nkStmtList

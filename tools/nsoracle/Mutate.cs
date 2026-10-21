@@ -588,6 +588,8 @@ static class Mutate
         SyntaxNode Qualify(SimpleNameSyntax original, SimpleNameSyntax rewritten)
         {
             if (original is IdentifierNameSyntax { IsVar: true }) return rewritten;
+            // `nint` and `nuint` are keywords for System.IntPtr and UIntPtr, not names.
+            if (original.Identifier.ValueText is "nint" or "nuint") return rewritten;
             var p = original.Parent;
             if (p is MemberAccessExpressionSyntax ma && ma.Name == original) return rewritten;
             if (p is QualifiedNameSyntax q && q.Right == original) return rewritten;
