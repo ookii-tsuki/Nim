@@ -659,9 +659,7 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
-            nkCall
-              nkIdent 'newDerived'
+            nkIdent 'newDerived'
           nkIdent 'Run'
       nkCall
         nkIdent 'WriteLine'

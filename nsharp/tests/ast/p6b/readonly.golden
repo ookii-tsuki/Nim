@@ -436,9 +436,7 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
-            nkCall
-              nkIdent 'newBox'
+            nkIdent 'newBox'
           nkIdent 'Grow'
       nkCall
         nkIdent 'WriteLine'

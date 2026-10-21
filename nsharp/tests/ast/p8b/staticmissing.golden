@@ -755,9 +755,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
-            nkCall
-              nkIdent 'newN'
+            nkIdent 'newN'
           nkIdent 'V'
   nkProcDef
     nkPostfix

@@ -2235,10 +2235,8 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
-              nkCall
-                nkIdent 'newCounter'
-                nkIntLit 5
+              nkIdent 'newCounter'
+              nkIntLit 5
             nkIdent 'Next'
       nkCall
         nkIdent 'WriteLine'
@@ -2252,10 +2250,8 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
-            nkCall
-              nkIdent 'newBox'
-              nkIntLit 21
+            nkIdent 'newBox'
+            nkIntLit 21
           nkIdent 'Twice'
   nkProcDef
     nkPostfix

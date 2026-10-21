@@ -1998,39 +1998,35 @@ nkStmtList
           nkInfix
             nkIdent '+'
             nkDotExpr
-              nkCall
-                nkIdent 'nsCheckNil'
-                nkBlockExpr
-                  nkEmpty
+              nkBlockExpr
+                nkEmpty
+                nkStmtList
+                  nkVarSection
+                    nkIdentDefs
+                      nkIdent 'nsInit1'
+                      nkEmpty
+                      nkCall
+                        nkBracketExpr
+                          nkIdent 'newBox'
+                          nkIdent 'string'
                   nkStmtList
-                    nkVarSection
-                      nkIdentDefs
+                    nkDiscardStmt
+                      nkCall
+                        nkIdent 'nsCheckNilVar'
                         nkIdent 'nsInit1'
-                        nkEmpty
-                        nkCall
-                          nkBracketExpr
-                            nkIdent 'newBox'
-                            nkIdent 'string'
-                    nkStmtList
-                      nkDiscardStmt
-                        nkCall
-                          nkIdent 'nsCheckNilVar'
-                          nkIdent 'nsInit1'
-                      nkAsgn
-                        nkDotExpr
-                          nkIdent 'nsInit1'
-                          nkIdent 'Value'
-                        nkStrLit "box"
-                    nkIdent 'nsInit1'
+                    nkAsgn
+                      nkDotExpr
+                        nkIdent 'nsInit1'
+                        nkIdent 'Value'
+                      nkStrLit "box"
+                  nkIdent 'nsInit1'
               nkIdent 'Value'
             nkStrLit " "
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
-              nkCall
-                nkBracketExpr
-                  nkIdent 'newBox'
-                  nkIdent 'int32'
+              nkBracketExpr
+                nkIdent 'newBox'
+                nkIdent 'int32'
             nkIdent 'Id'
   nkProcDef
     nkIdent 'Foo'

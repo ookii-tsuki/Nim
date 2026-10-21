@@ -2150,6 +2150,12 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
 
   var nameTok = p.advance
   var explicitIface = ""
+  ## `string Demo.IGreeter.Greet()`, `int Demo.IBox<int>.Get()`: the namespace says
+  ## where the interface is and nothing more, so it is dropped.
+  while p.at(nsDot) and p.peekAhead(1).kind == nsIdent and
+        p.peekAhead(2).kind in {nsDot, nsLt}:
+    discard p.advance
+    nameTok = p.advance
   if p.at(nsLt):
     let close = skipBalancedGt(p, 0)
     if close > 0 and p.peekAhead(close).kind == nsDot and

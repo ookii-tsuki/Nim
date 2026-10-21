@@ -174,7 +174,7 @@ proc collectClass(scope: NsModuleScope; cls: NsNode) =
       sym.written.add b.name
       sym.writtenTypes.add b
   if cls.typ != nil and cls.typ.kind == nsnTypeName:
-    sym.base = cls.typ.name
+    sym.base = canonicalTypeName(cls.typ.name)
   for m in cls.sons:
     case m.kind
     of nsnFieldDecl, nsnMethodDecl, nsnPropertyDecl:
@@ -269,14 +269,14 @@ proc resolveBases*(scope: NsModuleScope) =
     elif scope.isInterface(first) or first in scope.libIfaces:
       c.base = ""
     else:
-      c.base = c.written[0]
+      c.base = first
       start = 1
     for i in start ..< c.written.len:
       let nm = canonicalTypeName(c.written[i])
       if nm in scope.libIfaces and not scope.classes.hasKey(nm):
         c.libInterfaces.add c.writtenTypes[i]
       else:
-        c.interfaces.add c.written[i]
+        c.interfaces.add nm
         c.ifaceTypes.add c.writtenTypes[i]
     if c.decl != nil and c.base.len == 0: c.decl.typ = nil
     scope.classes[k] = c

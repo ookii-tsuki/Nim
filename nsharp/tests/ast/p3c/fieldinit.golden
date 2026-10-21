@@ -440,9 +440,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
-              nkCall
-                nkIdent 'newCounter'
+              nkIdent 'newCounter'
             nkIdent 'Count'
   nkProcDef
     nkPostfix

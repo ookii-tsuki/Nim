@@ -17,6 +17,7 @@ type
   NsBclType* = object
     ## A type the prelude declares.
     name*: string         ## as declared, which is its Nim spelling
+    path*: string         ## declaring module, as an import path
     alias*: string        ## equal to this type
     base*: string         ## declared base type
     kind*: NsTypeKind     ## own kind, when neither of the above
@@ -361,7 +362,7 @@ proc isDefinition(n: PNode): bool =
   n.kind in {nkProcDef, nkFuncDef, nkMethodDef, nkIteratorDef, nkConverterDef,
              nkTemplateDef, nkMacroDef}
 
-proc loadTypes(s: var NsBclSurface; n: PNode) =
+proc loadTypes(s: var NsBclSurface; n: PNode; module = "") =
   ## The alias, base and kind a `type` section declares.
   for i in 0 ..< n.len:
     let d = n[i]
@@ -372,7 +373,7 @@ proc loadTypes(s: var NsBclSurface; n: PNode) =
       for j in 0 ..< nameNode[1].len:
         if declaredName(nameNode[1][j]) == "nsInterface": isIface = true
       nameNode = nameNode[0]
-    var t = NsBclType(name: declaredName(nameNode), isInterface: isIface)
+    var t = NsBclType(name: declaredName(nameNode), path: module, isInterface: isIface)
     if t.name.len == 0: continue
     if d[1] != nil and d[1].kind == nkGenericParams:
       for gp in d[1]:
@@ -530,7 +531,7 @@ proc applyStatics(s: var NsBclSurface; config: ConfigRef) =
 proc loadDecl(s: var NsBclSurface; n: PNode; module: string) =
   if n == nil: return
   case n.kind
-  of nkTypeSection: s.loadTypes(n)
+  of nkTypeSection: s.loadTypes(n, module)
   of nkStmtList:
     for i in 0 ..< n.len: s.loadDecl(n[i], module)
   else:

@@ -187,15 +187,11 @@ nkStmtList
         nkIdentDefs
           nkIdent 'nums'
           nkBracketExpr
-            nkDotExpr
-              nkIdent 'Generic'
-              nkIdent 'List'
+            nkIdent 'List'
             nkIdent 'int32'
           nkCall
             nkBracketExpr
-              nkDotExpr
-                nkIdent 'Generic'
-                nkIdent 'newList'
+              nkIdent 'newList'
               nkIdent 'int32'
       nkCall
         nkDotExpr

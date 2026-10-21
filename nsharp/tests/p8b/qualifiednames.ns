@@ -1,0 +1,48 @@
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    enum Color { Red, Green }
+
+    class Thing
+    {
+        public const int Max = 7;
+        public static int Count = 3;
+    }
+
+    interface IShape { double Area(); }
+
+    class Base { public virtual string Name() { return "base"; } }
+
+    class Square : Demo.Base, Demo.IShape
+    {
+        public override string Name() { return "square"; }
+        double Demo.IShape.Area() { return 4.5; }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(Demo.Thing.Max + " " + Demo.Thing.Count);
+            Console.WriteLine(Demo.Color.Green);
+            System.Func<int, int> f = x => x + 1;
+            System.Action<string> a = s => System.Console.WriteLine(s);
+            a("f=" + f(1));
+            try { throw new System.Exception("boom"); }
+            catch (System.Exception e) { Console.WriteLine(e.Message); }
+            var d = new System.Collections.Generic.Dictionary<string, int>();
+            d["k"] = 1;
+            try { var v = d["z"]; }
+            catch (System.Collections.Generic.KeyNotFoundException) { Console.WriteLine("missing"); }
+            Demo.Base b = new Demo.Square();
+            Console.WriteLine(b.Name() + " " + ((Demo.IShape)b).Area());
+            foreach (var t in new Demo.Thing[] { new Demo.Thing() }) Console.WriteLine(t != null);
+            var nums = new[] { 3, 1, 2 };
+            System.Array.Sort(nums, (p, q) => q - p);
+            Console.WriteLine(string.Join(",", nums));
+            Console.WriteLine(System.StringComparer.OrdinalIgnoreCase.Equals("a", "A"));
+        }
+    }
+}

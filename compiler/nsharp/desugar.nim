@@ -214,17 +214,32 @@ proc writtenName(n: NsNode): string =
     if head.len == 0: "" else: head & "." & n.name
   else: ""
 
-proc qualifiedName(l: Lowerer; written: string; info: TLineInfo): PNode =
+proc qualifiedName(l: Lowerer; written: string; info: TLineInfo; arity = 0): PNode =
   ## `Ns.T` written with its namespace: `Module.T`, the namespace's module naming
   ## it, so two namespaces' `T`s stay apart. The module is imported for qualified
   ## access only (`from "Ns" import nil`), so it brings nothing else into scope.
   ## nil for anything else: no qualifier, a class's nested type, a namespace this
   ## module declares, or a C# keyword type (`System.Int32`).
+  ##
+  ## A type the *library* declares (`System.Func<int, int>`, `System.Exception`) is
+  ## the type itself: it is named as it is without the qualifier -- `Func2`, with
+  ## the arity the library gives a generic delegate -- and imported by name from the
+  ## module that declares it, since the program may say no `using` for it.
   let dot = written.rfind('.')
   if dot <= 0 or l.imports == nil: return nil
   let prefix = written[0 ..< dot]
   let last = written[dot + 1 .. ^1]
   if prefix in l.ownNamespaces or l.scope.classes.hasKey(unqualified(prefix)): return nil
+  if l.surface.isLibraryNamespace(prefix) and not l.scope.classes.hasKey(last):
+    let tn = nimTypeName(last)
+    let withArity = tn & $arity
+    let declared = (if l.surface.types.hasKey(withArity): withArity else: tn)
+    if l.surface.types.hasKey(declared):
+      l.imports.note(l.surface.types[declared].path, declared)
+      return l.id(declared, info)
+    if l.surface.isKnownTypeName(last):
+      ## One Nim's own `system` declares (`Exception`): in scope everywhere.
+      return l.id(tn, info)
   if not (isDeclaredNamespace(prefix) or l.surface.isLibraryNamespace(prefix)): return nil
   if nimTypeName(last) != last: return nil
   let path = namespaceModulePath(prefix)
@@ -264,7 +279,7 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
       ## A native class held through a handle keeps its own spelling (`NsH_...`).
       let last = unqualified(t.name)
       if not l.scope.classes.hasKey(last) or l.scope.handleRoot(last).len == 0:
-        let q = l.qualifiedName(t.name, info)
+        let q = l.qualifiedName(t.name, info, t.sons.len)
         if q != nil:
           if t.sons.len == 0: return q
           result = newTree(nkBracketExpr, info, q)
@@ -519,9 +534,16 @@ proc newToNim(l: Lowerer; n: NsNode): PNode =
       l.id("new", n.info)
   if n.typ != nil and n.typ.kind == nsnTypeName and '.' in n.typ.name:
     ## `new Ns.T(...)`: `Module.newT`, as the type is named.
-    let q = l.qualifiedName(n.typ.name, n.info)
-    if q != nil:
+    let q = l.qualifiedName(n.typ.name, n.info, n.typ.sons.len)
+    if q != nil and q.kind == nkDotExpr:
       callee = newTree(nkDotExpr, n.info, q[0], l.id("new" & nimTypeName(n.typ.name), n.info))
+    elif q != nil and q.kind == nkIdent:
+      ## A library type, named without its namespace.
+      callee = l.id("new" & q.ident.s, n.info)
+      if l.imports != nil and l.surface.types.hasKey(q.ident.s) and
+         not l.surface.isExceptionType(q.ident.s):
+        ## The constructor lives beside the type, so it is imported with it.
+        l.imports.note(l.surface.types[q.ident.s].path, "new" & q.ident.s)
   if n.typ != nil and n.typ.kind == nsnTypeName and n.typ.sons.len > 0:
     let be = newNodeI(nkBracketExpr, n.info)
     be.add callee
@@ -896,7 +918,7 @@ proc nilableReceiver(l: Lowerer; n: NsNode): bool =
   ## True for a receiver the nil check may test: a declared *class*. A struct is a
   ## value, so it can never be nil, and `this` is a parameter a method body cannot
   ## see as nil without the call-site check having fired first.
-  if n == nil or n.kind in {nsnThis, nsnBase}: return false
+  if n == nil or n.kind in {nsnThis, nsnBase, nsnNew}: return false
   if n.typeKind != tkClass: return false
   let name = n.typeName
   if name.len > 0 and l.scope.classes.hasKey(name) and l.scope.nativeBased(name):
@@ -1510,7 +1532,7 @@ proc throwToNim(l: Lowerer; n: NsNode): PNode =
       else: newAtom(nkStrLit, "", n.info)
     let ne = newNodeI(nkCall, n.info)
     ne.add l.id("newException", n.info)
-    let q = l.qualifiedName(n.body.typ.name, n.info)
+    let q = l.qualifiedName(n.body.typ.name, n.info, n.body.typ.sons.len)
     ne.add (if q != nil: q else: l.id(nimTypeName(n.body.typ.name), n.info))
     ne.add msg
     e = ne

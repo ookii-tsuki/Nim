@@ -706,9 +706,7 @@ nkStmtList
         nkCall
           nkDotExpr
             nkCall
-              nkIdent 'nsCheckNil'
-              nkCall
-                nkIdent 'newWidget'
+              nkIdent 'newWidget'
             nkIdent 'Size'
   nkProcDef
     nkPostfix

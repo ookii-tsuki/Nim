@@ -1914,6 +1914,36 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       n.body = nsnIdent(n.body.name, n.body.info)
       n.body.setType(tkType, tn)
       rk = tkType
+  if rk == tkType and n.body != nil and n.body.kind == nsnMember and
+     n.body.typeName.len > 0 and n.body.body != nil and
+     (ctx.scope.classes.hasKey(n.body.typeName) or ctx.scope.enums.contains(n.body.typeName)) and
+     qualifierRoot(n.body).len > 0 and
+     not ctx.scope.classes.hasKey(qualifierRoot(n.body)) and
+     not ctx.scope.enums.contains(qualifierRoot(n.body)) and
+     not ctx.types.hasKey(qualifierRoot(n.body)) and
+     qualifierRoot(n.body) notin ctx.members:
+    ## `Demo.Thing.Max`, `Demo.Color.Green`: the namespace says where the type is
+    ## and nothing more, so the member is a member of the type by its own name.
+    let plain = nsnIdent(n.body.typeName, n.body.info)
+    plain.setType(tkType, n.body.typeName)
+    plain.typeArgs = n.body.typeArgs
+    plain.rtype = n.body.rtype
+    n.body = plain
+  if rk == tkType and n.body != nil and n.body.kind == nsnMember and
+     n.body.body != nil and n.body.typeKind == tkType and
+     not ctx.scope.classes.hasKey(n.body.name) and
+     ctx.surface.isLibraryNamespace(qualifierRoot(n.body)) and
+     qualifierRoot(n.body) notin ctx.members and
+     not ctx.types.hasKey(qualifierRoot(n.body)) and
+     ctx.surface.isKnownTypeName(n.body.name) and
+     not ctx.surface.isLibraryNamespace(n.body.name):
+    ## `System.StringComparer.OrdinalIgnoreCase`: the namespace says where the type
+    ## is, so the member is a member of the type by its own name.
+    let plain = nsnIdent(n.body.name, n.body.info)
+    plain.setType(tkType, n.body.typeName)
+    plain.typeArgs = n.body.typeArgs
+    plain.rtype = n.body.rtype
+    n.body = plain
   if rk == tkUnknown and n.body != nil:
     ## The receiver is a qualifier rather than a value: a type or an imported
     ## namespace at the root of a dotted name (`int.MaxValue`, `Console`, `P.Gadget`,
@@ -2000,8 +2030,15 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         kind = ctx.memberKindOfSurface(ctx.surface.kindOfName(recv), recv, n.name,
                                        tname)
     if kind == tkUnknown: kind = tkType
-    if kind == tkType and tname.len == 0 and ctx.scope.classes.hasKey(n.name):
+    if kind == tkType and tname.len == 0 and
+       (ctx.scope.classes.hasKey(n.name) or ctx.scope.enums.contains(n.name)):
       ## `Demo.Gadget`: the qualified name of a type this compilation declares.
+      tname = n.name
+    elif kind == tkType and tname.len == 0 and n.body != nil and
+         ctx.surface.isLibraryNamespace(qualifierRoot(n.body)) and
+         ctx.surface.isKnownTypeName(n.name) and
+         not ctx.surface.isLibraryNamespace(n.name):
+      ## `System.StringComparer`: the qualified name of a library type.
       tname = n.name
   else: discard
   n.setType(kind, tname)
@@ -2500,7 +2537,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     for a in n.sons: discard ctx.walkExpr(a)
     n.rtype = n.typ
     let k = ctx.classifyType(n.typ)
-    n.setType(k, (if n.typ != nil: n.typ.name else: ""))
+    n.setType(k, (if n.typ != nil: canonicalTypeName(n.typ.name) else: ""))
     if n.typ != nil and n.typ.kind == nsnTypeName:
       ## `new C(...)`: the constructors of a class the scope knows are checked the
       ## same way a method call's parameter lists are. A BCL type has none here.

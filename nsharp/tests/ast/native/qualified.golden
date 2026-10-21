@@ -231,9 +231,7 @@ nkStmtList
           nkEmpty
           nkCall
             nkBracketExpr
-              nkDotExpr
-                nkIdent 'Generic'
-                nkIdent 'newList'
+              nkIdent 'newList'
               nkIdent 'string'
       nkCall
         nkDotExpr
@@ -245,16 +243,12 @@ nkStmtList
           nkRaiseStmt
             nkCall
               nkIdent 'newException'
-              nkDotExpr
-                nkIdent 'System'
-                nkIdent 'InvalidOperationException'
+              nkIdent 'InvalidOperationException'
               nkStrLit "qualified throw"
         nkExceptBranch
           nkInfix
             nkIdent 'as'
-            nkDotExpr
-              nkIdent 'System'
-              nkIdent 'InvalidOperationException'
+            nkIdent 'InvalidOperationException'
             nkIdent 'e'
           nkStmtList
             nkCall

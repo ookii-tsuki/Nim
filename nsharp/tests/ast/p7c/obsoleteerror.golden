@@ -420,9 +420,7 @@ nkStmtList
       nkCall
         nkDotExpr
           nkCall
-            nkIdent 'nsCheckNil'
-            nkCall
-              nkIdent 'newThing'
+            nkIdent 'newThing'
           nkIdent 'Old'
   nkProcDef
     nkPostfix
