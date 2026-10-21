@@ -1034,12 +1034,14 @@ nkStmtList
           nkIdent 'n'
         nkInfix
           nkIdent '+'
-          nkDotExpr
-            nkCall
-              nkIdent 'nsDerefCached'
-              nkIdent 'a'
-              nkIdent 'nsP_a'
-            nkIdent 'n'
+          nkCall
+            nkIdent 'nsVal'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsDerefCached'
+                nkIdent 'a'
+                nkIdent 'nsP_a'
+              nkIdent 'n'
           nkCall
             nkDotExpr
               nkCall

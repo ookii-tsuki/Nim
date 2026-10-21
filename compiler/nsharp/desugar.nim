@@ -329,6 +329,9 @@ proc fresh(l: Lowerer; base: string): string
 proc throwToNim(l: Lowerer; n: NsNode): PNode
 proc checkedExprToNim(l: Lowerer; n: NsNode): PNode
 proc assignToNim(l: Lowerer; n: NsNode): PNode
+proc assignCore(l: Lowerer; n: NsNode): PNode
+proc stabilize(l: Lowerer; target, later: NsNode; pre: var seq[PNode]): NsNode
+proc withStableTarget(l: Lowerer; n: NsNode; pre: var seq[PNode]): NsNode
 proc nativeParamType(l: Lowerer; t: NsNode; info: TLineInfo): PNode
 
 proc paramDef(l: Lowerer; p: NsNode; sink = false): PNode =
@@ -1322,7 +1325,15 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     ## carry both. As a statement it is Nim's own `inc`/`dec` (see `stmtInner`).
     let tmpl = (if n.strVal == "prefix": "nsPre" else: "nsPost") &
                (if n.name == "inc": "Inc" else: "Dec")
-    result = newTree(nkCall, n.info, l.id(tmpl, n.info), l.expr(n.body))
+    var pre: seq[PNode] = @[]
+    let target = l.stabilize(n.body, nil, pre)
+    result = newTree(nkCall, n.info, l.id(tmpl, n.info), l.expr(target))
+    if pre.len > 0:
+      ## The intrinsics name their operand twice, to read it and to write it back.
+      let sl = newNodeI(nkStmtList, n.info)
+      for x in pre: sl.add x
+      sl.add result
+      result = newTree(nkBlockExpr, n.info, empty(n.info), sl)
   of nsnCast, nsnIs, nsnAs:
     result = l.ifaceTypeOp(n)
     if result != nil: discard
@@ -1366,11 +1377,18 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     sl.add l.id(n.strVal, info)
     result = newTree(nkBlockExpr, info, empty(info), sl)
   of nsnAssign:
-    ## `(x = e)` as a value: the assignment, then the variable read back.
+    ## `(x = e)` as a value: the assignment, then the variable read back, its
+    ## receiver and indices evaluated once for both.
     var bare = l
     bare.nilChecks = false
-    result = newTree(nkBlockExpr, n.info, empty(n.info), newTree(nkStmtList, n.info,
-      l.assignToNim(n), bare.expr(n.sons[0])))
+    var pre: seq[PNode] = @[]
+    let m = (if n.sons.len == 2 and n.strVal notin ["discard", "refAssign"]:
+               l.withStableTarget(n, pre) else: n)
+    let sl = newNodeI(nkStmtList, n.info)
+    for x in pre: sl.add x
+    sl.add l.assignCore(m)
+    sl.add bare.expr(m.sons[0])
+    result = newTree(nkBlockExpr, n.info, empty(n.info), sl)
   of nsnBinary:
     if n.name in ["==", "!="] and
        ((l.isHandleValue(n.sons[0]) and n.sons[1].kind == nsnNull) or
@@ -2298,7 +2316,84 @@ proc localDeclToNim(l: Lowerer; n: NsNode): PNode =
   result = newNodeI(kind, n.info)
   result.add defs
 
-proc assignToNim(l: Lowerer; n: NsNode): PNode =
+proc isRefValue(l: Lowerer; e: NsNode): bool =
+  ## Whether `e`'s value is a reference, so a temporary holding it reaches the very
+  ## object `e` does: a class instance, an array or collection, a delegate. A struct
+  ## is copied by a temporary, so it is never one.
+  case e.typeKind
+  of tkSequence, tkDelegate, tkException: true
+  of tkClass:
+    let cn = canonicalTypeName(e.typeName)
+    cn.len > 0 and not l.boxedImpl(cn) and
+      not (l.scope.classes.hasKey(cn) and l.scope.classes[cn].classKind == ckStruct)
+  else: false
+
+proc isPropertyRead(l: Lowerer; e: NsNode): bool =
+  ## `x.P` where `P` is a property of an N# class: reading it runs the getter.
+  if e == nil or e.kind != nsnMember or e.body == nil: return false
+  let owner = (if e.body.kind == nsnThis and l.curClass != nil: l.curClass.name
+               else: canonicalTypeName(e.body.typeName))
+  l.scope.classes.hasKey(owner) and l.scope.findMemberInfo(owner, e.name).isProperty
+
+proc copyNsNode(n: NsNode): NsNode =
+  ## A shallow copy: the same children, so a rewrite can replace some of them.
+  result = NsNode()
+  result[] = n[]
+
+proc stabilize(l: Lowerer; target, later: NsNode; pre: var seq[PNode]): NsNode =
+  ## The target of a compound assignment or an increment with every part C#
+  ## evaluates once (ECMA-334 12.21.4) bound to a temporary first: a receiver that
+  ## calls or steps something, or is a property's value, and an index that does or
+  ## that `later` (the right side) may change. Lowering then reads and writes the
+  ## target through the temporaries, so `arr[k++] += 1` steps `k` once and
+  ## `Obj().P += 1` calls `Obj` once. A struct receiver is not copied: its own parts
+  ## are stabilised instead, since writing through a copy would be lost. What needs
+  ## nothing is returned as it is.
+  if target == nil: return target
+  let laterMutates = later != nil and mayMutate(later)
+  proc bindTemp(l: Lowerer; e: NsNode; pre: var seq[PNode]): NsNode =
+    let name = l.fresh("nsTgt")
+    pre.add newTree(nkLetSection, e.info, newTree(nkIdentDefs, e.info,
+      l.id(name, e.info), empty(e.info), l.expr(e)))
+    result = nsn(nsnIdent, e.info)
+    result.name = name
+    result.typeKind = e.typeKind
+    result.typeName = e.typeName
+    result.rtype = e.rtype
+  proc receiver(l: Lowerer; r: NsNode; pre: var seq[PNode]): NsNode =
+    if r == nil or r.typeKind == tkType or r.kind in {nsnIdent, nsnThis, nsnBase}:
+      return r
+    if l.isRefValue(r) and (mayMutate(r) or l.isPropertyRead(r)):
+      return l.bindTemp(r, pre)
+    if r.kind in {nsnMember, nsnIndex}:
+      ## A struct, or a field chain `a.b.c`: its own parts may still need binding.
+      return l.stabilize(r, later, pre)
+    r
+  case target.kind
+  of nsnMember:
+    let r = l.receiver(target.body, pre)
+    if r == target.body: return target
+    result = copyNsNode(target)
+    result.body = r
+  of nsnIndex:
+    let r = l.receiver(target.body, pre)
+    var idx: seq[NsNode] = @[]
+    var changed = r != target.body
+    for x in target.sons:
+      let v = (if x.kind == nsnRefArg: x.body else: x)
+      if v.kind in {nsnIntLit, nsnCharLit, nsnStrLit, nsnFloatLit} or
+         v.typeKind == tkType or not (mayMutate(v) or (laterMutates and isLocation(v))):
+        idx.add x
+      else:
+        idx.add l.bindTemp(x, pre)
+        changed = true
+    if not changed: return target
+    result = copyNsNode(target)
+    result.body = r
+    result.sons = idx
+  else: result = target
+
+proc assignCore(l: Lowerer; n: NsNode): PNode =
   ## The left side is lowered without the nil check, because `nsCheckNil(x).f` is
   ## not an lvalue; the check becomes a statement of its own instead, and only for a
   ## receiver that is a plain name, so no receiver is evaluated twice.
@@ -2347,6 +2442,10 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
     ## `sema.nim` recorded the promoted type (`strVal`) and `x`'s own (`typeName`):
     ## `x` is promoted for the operator and the result cast back, as C# does.
     var operand = copyTree(lhs)
+    if isLocation(n.sons[0]) and mayMutate(n.sons[1]):
+      ## `x op= e` reads `x` before `e` runs (12.21.4): `g += Bump()` adds to the
+      ## old `g` even when `Bump` assigns it.
+      operand = newTree(nkCall, n.info, l.id("nsVal", n.info), operand)
     if n.strVal.len > 0:
       operand = newTree(nkCall, n.info, l.id(nimTypeName(n.strVal), n.info), operand)
     let rhs = l.expr(n.sons[1])
@@ -2384,6 +2483,28 @@ proc assignToNim(l: Lowerer; n: NsNode): PNode =
     let check = l.checkNil(target.body, bare.expr(target.body), n.info)
     result = newTree(nkStmtList, n.info,
                      newTree(nkDiscardStmt, n.info, check), result)
+
+
+proc withStableTarget(l: Lowerer; n: NsNode; pre: var seq[PNode]): NsNode =
+  ## `n` (an assignment) with its target's once-evaluated parts bound in `pre`.
+  let t = l.stabilize(n.sons[0], n.sons[1], pre)
+  if t == n.sons[0]: return n
+  result = copyNsNode(n)
+  result.sons = @[t, n.sons[1]]
+
+proc assignToNim(l: Lowerer; n: NsNode): PNode =
+  ## A compound assignment evaluates its target's receiver and indices once; a
+  ## plain one names its target once already.
+  if n.name.len > 0 and n.sons.len == 2 and
+     n.strVal notin ["discard", "refAssign", "eventAccessor", "event"]:
+    var pre: seq[PNode] = @[]
+    let m = l.withStableTarget(n, pre)
+    if pre.len > 0:
+      result = newNodeI(nkStmtList, n.info)
+      for x in pre: result.add x
+      result.add l.assignCore(m)
+      return
+  l.assignCore(n)
 
 proc doWhileToNim(l: Lowerer; n: NsNode): PNode =
   ## C#'s `do { B } while (c)` runs B once and then reads c, and a `continue` in B
@@ -2851,9 +2972,17 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
       let target = n.body.body
       if l.isPlainVariable(target):
         return newTree(nkCommand, n.info, l.id(n.body.name, n.info), l.expr(target))
-      ## A property, an indexer or a float: the stepped value is assigned.
-      return newTree(nkCall, n.info, l.id(if n.body.name == "inc": "nsInc" else: "nsDec",
-                                          n.info), l.expr(target))
+      ## A property, an indexer or a float: the stepped value is assigned, the
+      ## target's receiver and indices evaluated once for the read and the write.
+      var pre: seq[PNode] = @[]
+      let stable = l.stabilize(target, nil, pre)
+      let step = newTree(nkCall, n.info, l.id(if n.body.name == "inc": "nsInc" else: "nsDec",
+                                              n.info), l.expr(stable))
+      if pre.len == 0: return step
+      result = newNodeI(nkStmtList, n.info)
+      for x in pre: result.add x
+      result.add step
+      return
     result = l.expr(n.body)
     if n.body != nil and n.body.kind == nsnCall and n.body.body != nil and
        n.body.body.kind != nsnMember and n.body.body.typeKind == tkDelegate:

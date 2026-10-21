@@ -3593,7 +3593,9 @@ nkStmtList
             nkIdent 't'
             nkInfix
               nkIdent '+'
-              nkIdent 't'
+              nkCall
+                nkIdent 'nsVal'
+                nkIdent 't'
               nkCall
                 nkDotExpr
                   nkIdent 's'

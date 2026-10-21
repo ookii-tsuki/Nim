@@ -1,0 +1,88 @@
+// `x op= y` evaluates x's receiver and indices once, reads x before y runs, and
+// writes the result back to the same place (ECMA-334 12.21.4); `x++` likewise.
+using System;
+using System.Collections.Generic;
+
+class Counter
+{
+    int v;
+    public int Gets;
+    public int Sets;
+    public int P { get { Gets++; return v; } set { Sets++; v = value; } }
+    int[] d = new int[3];
+    public int this[int i] { get { return d[i]; } set { d[i] = value; } }
+}
+
+struct Cell
+{
+    public int X;
+}
+
+class Program
+{
+    static int g = 1;
+    static int calls;
+    static int[] arr = { 10, 20, 30 };
+    static Counter shared = new Counter();
+
+    static int Bump() { g = 100; return 1; }
+    static int Set0() { arr[0] = 1000; return 1; }
+    static Counter Obj(Counter c) { calls++; return c; }
+    static int Ix() { calls++; return 1; }
+
+    static void Main()
+    {
+        g += Bump();
+        Console.WriteLine(g);
+        arr[0] += Set0();
+        Console.WriteLine(arr[0]);
+        int x = 5;
+        x += x++ * ++x;
+        Console.WriteLine(x);
+        int u = 3;
+        u *= (u = 10);
+        Console.WriteLine(u);
+        string s = "x";
+        s += (s = "y");
+        Console.WriteLine(s);
+
+        int[] a = { 1, 2, 3 };
+        int k = 0;
+        a[k++] += 10;
+        Console.WriteLine(a[0] + " " + a[1] + " k=" + k);
+        a[k++]++;
+        Console.WriteLine(a[1] + " k=" + k);
+        int got = (a[k++] += 100);
+        Console.WriteLine(got + " " + a[2] + " k=" + k);
+
+        var c = new Counter();
+        Obj(c).P += 1;
+        Obj(c).P++;
+        Console.WriteLine(c.P + " calls=" + calls + " gets=" + c.Gets + " sets=" + c.Sets);
+        calls = 0;
+        c[Ix()] += 2;
+        c[Ix()]++;
+        Obj(c)[Ix()] *= 3;
+        int post = Obj(c)[Ix()]++;
+        Console.WriteLine(c[1] + " post=" + post + " calls=" + calls);
+
+        Cell[] cells = new Cell[2];
+        int j = 0;
+        cells[j++].X += 5;
+        cells[0].X++;
+        Console.WriteLine(cells[0].X + " " + cells[1].X + " j=" + j);
+
+        var lists = new List<List<int>> { new List<int> { 1 } };
+        calls = 0;
+        lists[Ix() - 1][0] += 4;
+        Console.WriteLine(lists[0][0] + " calls=" + calls);
+
+        string[] names = { null, "set" };
+        int n = 0;
+        names[n++] ??= "filled";
+        Console.WriteLine(names[0] + " n=" + n);
+
+        shared.P += 2;
+        Console.WriteLine(shared.P);
+    }
+}

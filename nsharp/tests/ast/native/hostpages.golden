@@ -578,7 +578,9 @@ nkStmtList
                         nkIdent 'text'
                         nkInfix
                           nkIdent '+'
-                          nkIdent 'text'
+                          nkCall
+                            nkIdent 'nsVal'
+                            nkIdent 'text'
                           nkCall
                             nkDotExpr
                               nkIdent 'i'

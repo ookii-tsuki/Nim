@@ -1610,7 +1610,9 @@ nkStmtList
                   nkIdent 'odd'
                   nkInfix
                     nkIdent '+'
-                    nkIdent 'odd'
+                    nkCall
+                      nkIdent 'nsVal'
+                      nkIdent 'odd'
                     nkCall
                       nkDotExpr
                         nkIdent 'v'
