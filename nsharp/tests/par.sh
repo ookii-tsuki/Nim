@@ -34,10 +34,13 @@ ns_par_each() {
   ## of them failed.
   _dir="$1"; shift
   rm -rf "$_dir"; mkdir -p "$_dir"
-  _n=0
+  ## Counted here: a counter bumped inside the pipeline below would live in its
+  ## subshell, and the results would never be read back.
+  _n=$#
+  _i=0
   for _f in "$@"; do
-    _n=$((_n + 1))
-    printf '%s|%s\n' "$_n" "$_f"
+    _i=$((_i + 1))
+    printf '%s|%s\n' "$_i" "$_f"
   done | tr '\n' '\000' | xargs -0 -P "$(ns_jobs)" -I{} sh -c '
     idx="${3%%|*}"; f="${3#*|}"
     sh "$1" --one "$f" > "$2/$idx.out" 2>&1 < /dev/null
