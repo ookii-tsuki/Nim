@@ -1,0 +1,48 @@
+// A value parameter is a local the method may assign, step, pass by `ref`, or (for
+// a struct) change through its fields and methods; the caller's argument is not
+// affected (ECMA-334 15.6.2.2).
+using System;
+using System.Collections.Generic;
+
+struct Pt
+{
+    public int X;
+    public void Bump() { X++; }
+}
+
+class Program
+{
+    static void Mod(Pt p) { p.X = 100; p.Bump(); Console.WriteLine("in " + p.X); }
+    static void Rebind(int[] a) { a[0] = 100; a = new int[] { 7 }; Console.WriteLine("in " + a[0]); }
+    static void Twice(ref int x) { x *= 2; }
+    static int Loop(int n) { int s = 0; while (n > 0) { s += n; n--; } return s; }
+    static int ByRef(int n) { Twice(ref n); return n; }
+    static IEnumerable<int> Count(int from, int to) { while (from < to) yield return from++; }
+    static int Captured(int n) { Func<int> f = () => n * 10; n = 5; return f(); }
+    static void Swap(int a, int b) { (a, b) = (b, a); Console.WriteLine(a + "," + b); }
+    static T Pick<T>(T a, T b) { a = b; return a; }
+    static string Shout(string s) { s += "!"; return s; }
+
+    int total;
+    Program(int start) { start *= 2; total = start; }
+
+    static void Main()
+    {
+        Pt p = new Pt();
+        Mod(p);
+        Console.WriteLine(p.X);
+        int[] a = { 1 };
+        Rebind(a);
+        Console.WriteLine(a[0]);
+        int n = 4;
+        Console.WriteLine(Loop(n) + " " + n);
+        Console.WriteLine(ByRef(3) + " " + Captured(1));
+        foreach (var i in Count(2, 5)) Console.Write(i);
+        Console.WriteLine();
+        Swap(1, 2);
+        Console.WriteLine(Pick("a", "b") + Shout("hi"));
+        Console.WriteLine(new Program(21).total);
+        Func<int, int> f = x => { x += 1; return x * 2; };
+        Console.WriteLine(f(3));
+    }
+}

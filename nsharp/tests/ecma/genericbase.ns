@@ -1,0 +1,23 @@
+// `base.M()` from a class deriving a generic class names the base with its type
+// arguments.
+using System;
+
+class Repo<T>
+{
+    protected T last;
+    public void Put(T x) { last = x; }
+    public string Describe() { return "repo of " + last; }
+}
+
+class IntRepo : Repo<int>
+{
+    public string Twice(int x) { base.Put(x * 2); return "derived>" + base.Describe(); }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine(new IntRepo().Twice(5));
+    }
+}

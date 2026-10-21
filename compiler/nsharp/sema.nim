@@ -808,10 +808,17 @@ proc mapArgs(params, args: seq[NsNode]): NsArgMap =
     elif pos < params.len and params[pos] != nil and params[pos].paramMod == "params":
       result.slot[j] = pos
       filled[pos] = true
-      ## One array argument is the array itself; anything else is an element.
+      ## One array argument is the array itself (the normal form, 12.6.4.2): an
+      ## array, `new[] { .. }` before its element type is known, or `null`;
+      ## anything else is an element. An array whose elements are arrays only
+      ## stands for itself when it is one, so `null` and `new[]` are elements then.
       let v = argValue(a)
-      result.element[j] = not (j == args.len - 1 and j == pos and
-                               v.typeKind == tkSequence)
+      let pt = params[pos].typ
+      let nested = pt != nil and pt.kind == nsnArrayType and pt.typ != nil and
+                   pt.typ.kind == nsnArrayType
+      let whole = v.typeKind == tkSequence or
+                  (not nested and v.kind in {nsnNull, nsnArrayLit, nsnNewArray})
+      result.element[j] = not (j == args.len - 1 and j == pos and whole)
     elif pos < params.len:
       result.slot[j] = pos
       filled[pos] = true
@@ -1099,7 +1106,15 @@ proc checkExplicitTypeArgs(ctx: NsCheckContext; owner: string; callee: NsNode;
         q.typ = substitute(p.typ, m.typeParams, callee.typeArgs)
         ps.add q
       subs.add ps
-  if subs.len == 0 or ctx.resolveOverload(subs, args).ok: return
+  if subs.len == 0: return
+  let r = ctx.resolveOverload(subs, args)
+  if r.ok:
+    ## `null` for a parameter the type arguments make a `string` is the empty
+    ## string N# spells a null one with (SPEC 7.3).
+    for j in 0 ..< args.len:
+      let pt = slotType(subs[r.idx], r.map, j)
+      if pt != nil: ctx.markNull(argValue(args[j]), declTypeName(pt), pt)
+    return
   for c in subs:
     let m = mapArgs(c, args)
     if not m.fits: continue
@@ -1130,6 +1145,19 @@ proc checkLibraryCall(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]) =
     if recvKind notin {tkSequence, tkString, tkInt, tkFloat, tkChar, tkBool, tkClass}: return
     if recvKind == tkClass and ctx.scope.classes.hasKey(canonicalTypeName(recvName)): return
   if ctx.scope.extensions.hasKey(callee.name): return
+  ## `null` where every overload of this arity takes a `string` is the empty string
+  ## N# spells a null one with (SPEC 7.3): `string.IsNullOrEmpty(null)`.
+  for j, a in args:
+    if a == nil or a.kind != nsnNull: continue
+    var strings = 0
+    var others = 0
+    for m in ctx.surface.overloads(recvName, recvKind, callee.name):
+      if m.isStatic != staticCall and not staticCall: continue
+      let (ps, variadic) = libParams(m, recv, staticCall, callee)
+      if variadic or ps.len != args.len: continue
+      if ps[j] != nil and canonicalTypeName(declTypeName(ps[j])) == "string": inc strings
+      else: inc others
+    if strings > 0 and others == 0: ctx.markNull(a, "string")
   for a in args:
     if a == nil or a.kind in {nsnNamedArg, nsnRefArg, nsnOutDecl, nsnLambda} or
        a.typeKind in {tkUnknown, tkDelegate}:
@@ -1187,6 +1215,10 @@ proc checkLibraryCall(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]) =
       for j, a in args:
         let pt = (if j < fixed: ps[j] else: ps[^1])
         if pt == nil or pt.kind != nsnTypeName: continue
+        if canonicalTypeName(pt.name) == "object":
+          ## A value into an `object` parameter (`List<object>.Add(1)`) is boxed.
+          ctx.coerce(a, "object", a.info, pt)
+          continue
         if canonicalTypeName(pt.name) notin ctx.scope.libValueIfaces: continue
         let full = bindDollar(pt, bound)
         if full != nil: ctx.coerce(a, declTypeName(full), a.info, full)
@@ -2592,8 +2624,8 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       n.strVal = "nsInit" & $ctx.tmpCounter
       let stmts = initStatements(n.strVal, n.inits, n.info)
       ctx.pushScope()
-      ctx.declare(n.strVal, k, (if n.typ != nil: canonicalTypeName(n.typ.name) else: ""),
-                  n.typ)
+      ## Declared with its type arguments, so `Add` on a `List<object>` boxes.
+      ctx.declare(n.strVal, k, (if n.typ != nil: declTypeName(n.typ) else: ""), n.typ)
       for st in stmts: ctx.walkStmt(st)
       ctx.popScope()
       n.inits = stmts

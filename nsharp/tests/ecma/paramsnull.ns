@@ -1,0 +1,41 @@
+// `params`: a lone array argument, `new[] { .. }` included, and `null` are the
+// array itself (the normal form, ECMA-334 12.6.4.2); `null` for a parameter that is
+// a `string` (a type argument, a library one) and boxing into `object` parameters.
+using System;
+using System.Collections.Generic;
+
+class Thing { }
+
+class Program
+{
+    static int Sum(params int[] xs)
+    {
+        if (xs == null) return -1;
+        int s = 0;
+        foreach (int x in xs) s += x;
+        return s;
+    }
+
+    static int Count(params object[] xs) { return xs == null ? -1 : xs.Length; }
+
+    static void Show<T>(T x) where T : class
+    {
+        Console.WriteLine(x == null ? "null" : "obj");
+    }
+
+    static void Main()
+    {
+        Console.WriteLine(Sum(new[] { 4, 5 }) + " " + Sum(null) + " " + Sum() + " " + Sum(1, 2));
+        Console.WriteLine(Count(null) + " " + Count(1, "a") + " " + Count(new object[] { 1, 2, 3 }));
+        Show<string>(null);
+        Show(new Thing());
+        Show<Thing>(null);
+        Console.WriteLine(string.IsNullOrEmpty(null) ? "empty" : "not");
+        var l = new List<object>();
+        l.Add(1);
+        l.Add("two");
+        Console.WriteLine(l.Count + " " + l[1]);
+        var m = new List<object> { 1, "two", 3.5 };
+        Console.WriteLine(m.Count + " " + m[0] + " " + m[1]);
+    }
+}

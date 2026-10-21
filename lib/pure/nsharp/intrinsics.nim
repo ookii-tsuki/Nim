@@ -193,6 +193,15 @@ proc nsCreate*[T: not ref](t: typedesc[T]): T =
   ## which calls its parameterless constructor.
   default(T)
 
+proc nsIsNull*[T](x: T): bool {.inline.} =
+  ## `x == null` for a value of a type parameter: never for a value type, as C#
+  ## has it, the empty string for a `string` (N#'s null one), and `nil` otherwise.
+  when T is string: x.len == 0
+  elif T is Option: x.isNone
+  elif compiles(x.nsObj): x.nsObj == nil
+  elif compiles(x == nil): x == nil
+  else: false
+
 template nsStmt*(x: untyped) =
   ## A delegate call used as a statement: C# drops its result, and a Nim proc value
   ## cannot be `{.discardable.}`, so a result is discarded here.

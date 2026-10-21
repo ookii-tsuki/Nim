@@ -45,6 +45,7 @@ type
     nilChecks: bool         ## whether the compilation has the nil check on
     curClass: NsNode        ## the class whose members are being lowered
     curBase: string         ## its base class, for `base.M()`
+    curBaseType: NsNode     ## the base as written, with its type arguments
     curIsException: bool    ## whether it is lowered as a value object raised by `ref`
     curNamespace: string    ## the enclosing namespace, for `object.ToString()`
     ownNamespaces: HashSet[string]
@@ -195,24 +196,6 @@ proc shiftProc(op: string): string =
   of "ushr": "nsUShr"
   else: op
 
-proc baseConv(l: Lowerer; info: TLineInfo): PNode =
-  ## `this` seen as its base class: `Base(self)`, or `(ref Base)(self)` for an
-  ## exception class, whose `self` is a `ref`.
-  let target =
-    if l.curIsException: newTree(nkRefTy, info, l.id(nimTypeName(l.curBase), info))
-    else: l.id(nimTypeName(l.curBase), info)
-  result = newTree(nkCall, info, (if l.curIsException: newTree(nkPar, info, target)
-                                  else: target), l.id("self", info))
-
-proc baseCall(l: Lowerer; name: string; args: seq[PNode]; info: TLineInfo): PNode =
-  ## `base.M(args)`: `procCall M(Base(self), args)`, which calls the base's own
-  ## implementation instead of dispatching again.
-  let call = newNodeI(nkCall, info)
-  call.add l.id(name, info)
-  call.add l.baseConv(info)
-  for a in args: call.add a
-  result = newTree(nkCommand, info, l.id("procCall", info), call)
-
 # (interfaces: see below)
 # --- types ------------------------------------------------------------------
 
@@ -324,6 +307,28 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   else:
     result = empty(info)
 
+proc baseConv(l: Lowerer; info: TLineInfo): PNode =
+  ## `this` seen as its base class: `Base(self)`, or `(ref Base)(self)` for an
+  ## exception class, whose `self` is a `ref`.
+  ## A generic base is named with its arguments, `Repo[int32](self)`.
+  let base =
+    if l.curBaseType != nil and l.curBaseType.sons.len > 0: l.typeToNim(l.curBaseType, info)
+    else: l.id(nimTypeName(l.curBase), info)
+  let target =
+    if l.curIsException: newTree(nkRefTy, info, base)
+    else: base
+  result = newTree(nkCall, info, (if l.curIsException: newTree(nkPar, info, target)
+                                  else: target), l.id("self", info))
+
+proc baseCall(l: Lowerer; name: string; args: seq[PNode]; info: TLineInfo): PNode =
+  ## `base.M(args)`: `procCall M(Base(self), args)`, which calls the base's own
+  ## implementation instead of dispatching again.
+  let call = newNodeI(nkCall, info)
+  call.add l.id(name, info)
+  call.add l.baseConv(info)
+  for a in args: call.add a
+  result = newTree(nkCommand, info, l.id("procCall", info), call)
+
 proc expr(l: Lowerer; n: NsNode): PNode
 proc fresh(l: Lowerer; base: string): string
 proc throwToNim(l: Lowerer; n: NsNode): PNode
@@ -406,6 +411,91 @@ proc someNamed(l: Lowerer; v: PNode; name: string; info: TLineInfo): PNode
 proc presentOf(l: Lowerer; v: NsNode; info: TLineInfo): PNode
 proc wrappedArg(l: Lowerer; a: NsNode): PNode
 
+proc isTypeParamValue(l: Lowerer; e: NsNode): bool =
+  ## A value whose static type is one of the enclosing type parameters.
+  e != nil and e.kind != nsnNull and e.typeName.len > 0 and
+    (e.typeName in l.procTypeParams or e.typeName in l.clsTypeParams)
+
+proc rootName(t: NsNode): NsNode =
+  ## The variable a target is reached from: `p` in `p`, `p.X.Y`, `p[i].X`.
+  var t = t
+  while t != nil and t.kind in {nsnMember, nsnIndex} and t.body != nil: t = t.body
+  t
+
+proc isValueParam(l: Lowerer; p: NsNode): bool =
+  ## A parameter whose type is a value type, so writing a field of it writes the
+  ## parameter itself: a struct, a tuple, a `T?`.
+  if p.typ == nil: return false
+  case p.typ.kind
+  of nsnNullableType, nsnTupleType: true
+  of nsnTypeName:
+    let cn = canonicalTypeName(p.typ.name)
+    l.scope.classes.hasKey(cn) and l.scope.classes[cn].classKind == ckStruct
+  else: false
+
+proc writtenParams(l: Lowerer; params: seq[NsNode]; body: NsNode): seq[NsNode] =
+  ## The by-value parameters a body changes: assigns, steps, passes by `ref`/`out`,
+  ## or, for a value type, writes a field of or calls a method on (a struct method
+  ## may change `this`). C# lets a value parameter be assigned like any local
+  ## (ECMA-334 15.6.2.2); a Nim parameter cannot be, so these get a local copy.
+  result = @[]
+  var byName = initTable[string, NsNode]()
+  for p in params:
+    if p != nil and p.name.len > 0 and p.paramMod notin ["ref", "out"]:
+      byName[p.name] = p
+  if byName.len == 0 or body == nil: return
+  var hit = initHashSet[string]()
+  proc note(l: Lowerer; t: NsNode; direct: bool) =
+    let r = rootName(t)
+    if r == nil or r.kind != nsnIdent or not byName.hasKey(r.name): return
+    if direct or r != t and l.isValueParam(byName[r.name]): hit.incl r.name
+  proc walk(l: Lowerer; n: NsNode) =
+    if n == nil: return
+    case n.kind
+    of nsnAssign:
+      if n.sons.len > 0 and n.sons[0] != nil:
+        let t = n.sons[0]
+        if t.kind == nsnTupleLit:
+          for x in t.sons: l.note((if x.kind == nsnNamedArg: x.body else: x), x.kind == nsnIdent)
+        else: l.note(t, t.kind == nsnIdent)
+    of nsnIncDec: l.note(n.body, n.body != nil and n.body.kind == nsnIdent)
+    of nsnRefArg: l.note(n.body, n.body != nil and n.body.kind == nsnIdent)
+    of nsnDeconstruct:
+      ## `(a, b) = (b, a)`: every target that is not a new declaration.
+      for x in n.sons:
+        if x != nil and x.kind != nsnLocalDecl: l.note(x, x.kind == nsnIdent)
+    of nsnCall:
+      if n.body != nil and n.body.kind == nsnMember and n.body.body != nil:
+        l.note(n.body.body, false)
+        let r = rootName(n.body.body)
+        if r != nil and r == n.body.body and r.kind == nsnIdent and
+           byName.hasKey(r.name) and l.isValueParam(byName[r.name]):
+          hit.incl r.name
+    else: discard
+    l.walk(n.body)
+    for x in n.sons: l.walk(x)
+    for x in n.inits: l.walk(x)
+  l.walk(body)
+  for p in params:
+    if p != nil and p.name in hit: result.add p
+
+proc shadowParams(l: Lowerer; params: seq[NsNode]; body: NsNode;
+                  info: TLineInfo): seq[PNode] =
+  ## `var p = p` for every parameter the body changes.
+  result = @[]
+  for p in l.writtenParams(params, body):
+    result.add newTree(nkVarSection, info, newTree(nkIdentDefs, info,
+      l.id(p.name, info), empty(info), l.id(p.name, info)))
+
+proc prependAll(into: PNode; pre: seq[PNode]): PNode =
+  ## `into` (a statement list) with `pre` in front.
+  if pre.len == 0: return into
+  result = newNodeI(nkStmtList, into.info)
+  for x in pre: result.add x
+  if into.kind == nkStmtList:
+    for x in into: result.add x
+  else: result.add into
+
 proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
   ## A lambda as a Nim closure. `sema.nim` wrote the types of the delegate it
   ## converts to; one it could not place keeps `auto`, which Nim infers when the
@@ -426,7 +516,8 @@ proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
   result = newNodeI(nkLambda, n.info, 7)
   for i in 0 .. 6: result[i] = empty(n.info)
   result[3] = fp
-  result[6] = if n.body != nil: l.stmtSeq(n.body) else: emptyList(n.info)
+  result[6] = if n.body != nil: prependAll(l.stmtSeq(n.body), l.shadowParams(n.params, n.body, n.info))
+              else: emptyList(n.info)
 
 proc mayMutate(n: NsNode): bool =
   ## Whether evaluating `n` may change a variable: it calls something, assigns, or
@@ -1416,6 +1507,14 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       result.add l.id(n.name, n.info)
       result.add l.expr(probe)
       result.add l.noneFromName(probe.typeName, n.info)
+    elif n.name in ["==", "!="] and n.sons.len == 2 and
+         ((n.sons[1].kind == nsnNull and l.isTypeParamValue(n.sons[0])) or
+          (n.sons[0].kind == nsnNull and l.isTypeParamValue(n.sons[1]))):
+      ## `x == null` where `x`'s type is a type parameter, which Nim cannot compare
+      ## with `nil` for every argument.
+      let v = (if n.sons[0].kind == nsnNull: n.sons[1] else: n.sons[0])
+      result = newTree(nkCall, n.info, l.id("nsIsNull", n.info), l.expr(v))
+      if n.name == "!=": result = newTree(nkPrefix, n.info, l.id("not", n.info), result)
     elif isCheckedOp(n):
       result = newTree(nkCall, n.info, l.id(checkedOperatorName(n.argParam), n.info),
                        l.ordered(n.sons[0], n.sons[1 .. 1]), l.expr(n.sons[1]))
@@ -2891,11 +2990,13 @@ proc hasYield(n: NsNode): bool =
     if hasYield(x): return true
   false
 
-proc memberBody(l: Lowerer; ret, body: NsNode): PNode =
+proc memberBody(l: Lowerer; ret, body: NsNode; params: seq[NsNode] = @[]): PNode =
   ## A member's body. An iterator block becomes a closure iterator inside the
   ## `IEnumerable<T>` (or `IEnumerator<T>`) it returns, so each enumeration runs
-  ## the body afresh, lazily, as C#'s does.
-  result = l.stmtSeq(body)
+  ## the body afresh, lazily, as C#'s does. A parameter the body assigns is a local
+  ## copy (`var p = p`), inside the iterator for one.
+  result = prependAll(l.stmtSeq(body), l.shadowParams(params, body,
+                                                      (if body != nil: body.info else: unknownLineInfo)))
   if body == nil or not hasYield(body): return
   let el = iteratorElement(ret)
   if el == nil: return
@@ -2914,7 +3015,7 @@ proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   if n.paramMod == "ref": fp[0] = newTree(nkVarTy, n.info, fp[0])
   inner.procTypeParams = @[]
   for t in n.typeParams: inner.procTypeParams.add t.name
-  result = inner.mkProc(l.id(n.name, n.info), fp, inner.memberBody(n.typ, n.body),
+  result = inner.mkProc(l.id(n.name, n.info), fp, inner.memberBody(n.typ, n.body, n.params),
                         n.info, withPragmas = true)
 
 proc enumeratorLoop(l: Lowerer; n: NsNode): PNode =
@@ -3384,7 +3485,7 @@ proc lowerOperator(l: Lowerer; cls, m: NsNode): seq[PNode] =
   result = @[]
   let info = m.info
   let fp = l.formalParams(m.typ, m.params, info)
-  let body = l.stmtSeq(m.body)
+  let body = prependAll(l.stmtSeq(m.body), l.shadowParams(m.params, m.body, info))
   case m.name
   of "implicit", "explicit":
     result.add l.mkProc(l.exportId(conversionProcName(m), info), fp, body, info,
@@ -3417,7 +3518,7 @@ proc lowerIndexer(l: Lowerer; cls, m: NsNode; isException: bool): seq[PNode] =
     fp.add l.typeToNim(m.typ, info)
     fp.add l.selfDefs(cls.name, isException, info)
     for p in m.params: fp.add l.paramDef(p)
-    result.add l.mkProc(l.exportedName(m.attrs, "[]", info), fp, l.memberBody(m.typ, getter),
+    result.add l.mkProc(l.exportedName(m.attrs, "[]", info), fp, l.memberBody(m.typ, getter, m.params),
                         info)
   if setter != nil:
     let fp = newNodeI(nkFormalParams, info)
@@ -3467,6 +3568,7 @@ proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
     for a in m.initArgs: icall.add l.expr(a)
     ibody.add icall
   if m.body != nil:
+    for v in l.shadowParams(m.params, m.body, m.info): ibody.add v
     l.addStmts(ibody, m.body.sons, m.info)
   result = l.mkProc(l.exportedName(m.attrs, "init" & cls.name, m.info), ip, ibody,
                     m.info, withPragmas = true)
@@ -3670,7 +3772,7 @@ proc lowerInterface(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     fp.add copyTree(selfDefs)
     for p in m.params: fp.add l.paramDef(p)
     into.add l.mkProc(l.exportId("nsDefault_" & n.name & "_" & m.name, m.info), fp,
-                      inner.memberBody(m.typ, m.body), m.info, withPragmas = true)
+                      inner.memberBody(m.typ, m.body, m.params), m.info, withPragmas = true)
   # printing
   for nm in ["$", "ToString"]:
     let fp = newNodeI(nkFormalParams, info)
@@ -5159,7 +5261,7 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         inner.thisName = "self"
         ## The closing `discard` keeps the body's last call from being the value of
         ## the `try`, which ends the proc.
-        let user = newTree(nkStmtList, c.info, inner.memberBody(nil, c.body),
+        let user = newTree(nkStmtList, c.info, inner.memberBody(nil, c.body, c.params),
                            newTree(nkDiscardStmt, c.info, empty(c.info)))
         body.add newTree(nkTryStmt, c.info, user,
                          newTree(nkExceptBranch, c.info, l.anyException(c.info),
@@ -5255,7 +5357,7 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         np.add l.identDefs("self", newTree(nkPtrTy, m.info, l.id(n.name, m.info)), m.info)
       for i in 1 ..< fp.len: np.add fp[i]
       let pd = inner.mkProc(l.exportId(m.name, m.info), np,
-                            inner.memberBody(m.typ, m.body), m.info)
+                            inner.memberBody(m.typ, m.body, m.params), m.info)
       if not m.attrs.isStatic:
         ## The N# body is a member function too (`nsM_M`, which C++ does not
         ## know), so it reaches the base's protected members.
@@ -5303,6 +5405,7 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     l.surface.isExceptionType(mappedBase, l.scope.baseChain(mappedBase))
   l.curClass = n
   l.curBase = mappedBase
+  l.curBaseType = (if n.typ != nil and n.typ.kind == nsnTypeName: n.typ else: nil)
   l.curIsException = isException
   if l.scope.isNative(n.name):
     l.lowerNativeType(n, into)
@@ -5433,7 +5536,7 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         else: l.exportedName(m.attrs, m.name, m.info)
       ## C# lets a call statement drop a method's result.
       let pd = l.asMethod(n, m, inner.mkProc(nameNode, params,
-                                             inner.memberBody(m.typ, m.body),
+                                             inner.memberBody(m.typ, m.body, m.params),
                                              m.info, withPragmas = true))
       let sc = l.staticCtorCall(m.info)
       if sc != nil and m.attrs.isStatic and pd[6].kind == nkStmtList:
