@@ -1,0 +1,21 @@
+// A user-defined implicit conversion applies to a literal, in an initialiser, an
+// assignment, an argument, an array element and a `return`, also after a standard
+// widening (`int` to the `double` an operator takes, ECMA-334 10.5.4).
+using System;
+struct V2 {
+    public int X;
+    public static implicit operator V2(int k) { V2 v = new V2(); v.X = k; return v; }
+}
+struct Meters {
+    public double M;
+    public static implicit operator Meters(double d) { Meters m = new Meters(); m.M = d; return m; }
+}
+class Program {
+    static V2 Take(V2 v) => v;
+    static Meters Back() { return 3; }
+    static void Main() {
+        V2 a = 5; V2 b; b = 6; V2 c = Take(7); V2[] arr = { 8, 9 };
+        Meters m = 2; Meters n = 2.5;
+        Console.WriteLine(a.X + " " + b.X + " " + c.X + " " + arr[1].X + " " + (int)(m.M * 10) + " " + (int)(n.M * 10) + " " + (int)Back().M);
+    }
+}

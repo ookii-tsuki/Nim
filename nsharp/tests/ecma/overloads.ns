@@ -1,0 +1,35 @@
+// Overload resolution picks C#'s better function member (ECMA-334 12.6.4): an exact
+// match beats a conversion, a more specific target a less specific one (signed over
+// unsigned, a derived class over its base, `int?` over `object`), the normal form
+// over the expanded `params` one, and no omitted default over one.
+using System;
+class Animal { } class Dog : Animal { }
+class Program {
+    static string F(int x) => "int"; static string F(long x) => "long"; static string F(double x) => "double"; static string F(object x) => "object";
+    static string G(long x) => "long"; static string G(double x) => "double";
+    static string H(Animal a) => "animal"; static string H(Dog d) => "dog";
+    static string K(object o) => "object"; static string K(string s) => "string";
+    static string P(params int[] a) => "params"; static string P(int a) => "single";
+    static string Q(int a, int b = 0) => "opt"; static string Q(int a) => "exact";
+    static string R<T>(T x) => "generic"; static string R(int x) => "int";
+    static string U(uint x) => "uint"; static string U(int x) => "int";
+    static string Ch(char c) => "char"; static string Ch(int i) => "int";
+    static string By(byte b) => "byte"; static string By(short s) => "short";
+    static string Nu(int? x) => "int?"; static string Nu(object x) => "object";
+    static string S(string s) => "string"; static string S(object o) => "object";
+    static void Main() {
+        Console.WriteLine(F(1) + F(1L) + F(1.0) + F(1f) + F("s") + F('c') + F((short)1) + F(1u));
+        Console.WriteLine(G(1) + G(1f));
+        Console.WriteLine(H(new Dog()) + H(new Animal()) + H((Animal)new Dog()));
+        Console.WriteLine(K("s") + K(null) + K(1));
+        Console.WriteLine(P(1) + P(1, 2) + P());
+        Console.WriteLine(Q(1) + Q(1, 2));
+        Console.WriteLine(R(1) + R("s") + R(1L));
+        Console.WriteLine(U(1) + U(1u));
+        Console.WriteLine(Ch('a') + Ch(97));
+        byte b = 1; Console.WriteLine(By(b) + By(1));
+        Console.WriteLine(Nu(1) + Nu(null) + Nu("s"));
+        string str = "x"; object obj = "y"; Console.WriteLine(S(str) + S(obj) + S(null));
+        int i = 5; long l = 6; Console.WriteLine(F(i) + F(l) + G(i) + U(i));
+    }
+}

@@ -387,11 +387,33 @@ proc namesSequence(ctx: NsCheckContext; cls: string; enumerator: bool): bool =
 
 proc convertsToLibIface(ctx: NsCheckContext; value: NsNode; iface: string): bool
 
+proc userConversionFrom(ctx: NsCheckContext; src, dst: string): string =
+  ## The operand type of the user-defined implicit conversion C# uses from `src`
+  ## to `dst`: one from `src` itself, or after a standard numeric widening (ECMA-334
+  ## 10.5.4), so `Meters m = 3;` reaches an `implicit operator Meters(double)`.
+  if src.len == 0 or dst.len == 0: return ""
+  if ctx.scope.conversionOp(src, dst, true) != nil: return src
+  if isNumericName(src):
+    for w in ["short", "int", "long", "float", "double"]:
+      if implicitlyConvertible(src, w) and ctx.scope.conversionOp(w, dst, true) != nil:
+        return w
+  ""
+
 proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineInfo;
             targetType: NsNode = nil) =
   ## The implicit numeric conversion C# applies where a value of one numeric type is
   ## used as another: recorded when C# allows it, CS0266 when only a cast would.
   ## A variant interface or delegate conversion is recorded too.
+  if value != nil and value.conv.len == 0 and value.typeName.len == 0 and
+     (isConstantLit(value) or value.kind == nsnFloatLit) and
+     ctx.scope.classes.hasKey(canonicalTypeName(targetName)):
+    ## A literal for a user type with an implicit conversion from a number takes
+    ## the operator's operand type first (`V2 c = 5;`), since Nim types it `int`
+    ## and does not chain a converter after a widening.
+    let s = ctx.userConversionFrom(numName(value), canonicalTypeName(targetName))
+    if s.len > 0:
+      value.conv = s
+      return
   if value != nil and value.typeKind == tkClass and value.conv.len == 0 and
      value.kind != nsnNull:
     ## A handle as one of another class of its family: `Node n = ball;`.
@@ -724,7 +746,7 @@ proc incompatible(ctx: NsCheckContext; arg: NsNode; t: NsTarget): bool =
   if ak == tkUnknown or t.kind == tkUnknown: return
   let src = (if arg.typeName.len > 0: canonicalTypeName(arg.typeName) else: numName(arg))
   if src.len > 0 and t.name.len > 0 and
-     ctx.scope.conversionOp(src, canonicalTypeName(t.name), true) != nil:
+     ctx.userConversionFrom(src, canonicalTypeName(t.name)) != "":
     ## A user-defined implicit conversion (`implicit operator double(Vec v)`).
     return
   case ctx.libIfaceConversion(arg, t)
@@ -840,12 +862,101 @@ proc slotType(params: seq[NsNode]; m: NsArgMap; j: int): NsNode =
   if m.element[j] and p.typ != nil and p.typ.kind == nsnArrayType: p.typ.typ
   else: p.typ
 
+type
+  NsTyDesc = object
+    ## A type as overload resolution compares it: its C# name, and whether it is
+    ## the `T?` of a value type. `known` is false where sema has no exact type.
+    name: string
+    nullable: bool
+    known: bool
+
+proc descOfType(ctx: NsCheckContext; t: NsNode): NsTyDesc =
+  if t == nil: return
+  if t.kind == nsnNullableType:
+    if ctx.classifyType(t.typ) in NsValueTargetKinds + {tkClass}:
+      let n = declTypeName(t.typ)
+      let struct = n in ["int", "uint", "long", "ulong", "short", "ushort", "byte",
+                         "sbyte", "float", "double", "bool", "char", "nint", "nuint"] or
+                   ctx.scope.enums.contains(n) or
+                   (ctx.scope.classes.hasKey(n) and ctx.scope.classes[n].classKind == ckStruct)
+      return NsTyDesc(name: n, nullable: struct, known: true)
+  let n = declTypeName(t)
+  NsTyDesc(name: n, known: n.len > 0)
+
+proc descOfArg(v: NsNode): NsTyDesc =
+  if v == nil: return
+  if v.kind == nsnNull: return NsTyDesc(name: "<null>", known: true)
+  let num = numName(v)
+  if num.len > 0: return NsTyDesc(name: num, known: true)
+  case v.typeKind
+  of tkString: NsTyDesc(name: "string", known: true)
+  of tkBool: NsTyDesc(name: "bool", known: true)
+  of tkChar: NsTyDesc(name: "char", known: true)
+  of tkNullable:
+    NsTyDesc(name: canonicalTypeName(v.typeName), nullable: true, known: v.typeName.len > 0)
+  of tkClass, tkSequence:
+    NsTyDesc(name: canonicalTypeName(v.typeName), known: v.typeName.len > 0)
+  else: NsTyDesc()
+
+proc same(a, b: NsTyDesc): bool = a.known and b.known and a.name == b.name and
+                                  a.nullable == b.nullable
+
+proc implicitTo(ctx: NsCheckContext; a, b: NsTyDesc): bool =
+  ## Whether C# converts a value of type `a` to `b` implicitly (ECMA-334 10.2):
+  ## identity, numeric widening (lifted for `T?`), boxing to `object`, a base class
+  ## or interface, a user-defined implicit conversion.
+  if not (a.known and b.known): return false
+  if same(a, b): return true
+  if b.name == "object" and not b.nullable: return true
+  if isNumericName(a.name) and isNumericName(b.name):
+    if a.nullable and not b.nullable: return false
+    return implicitlyConvertible(a.name, b.name)
+  if b.nullable and not a.nullable and a.name == b.name: return true
+  if a.nullable or b.nullable: return false
+  if ctx.scope.classes.hasKey(a.name) and ctx.scope.implements(a.name, b.name): return true
+  ctx.scope.conversionOp(a.name, b.name, true) != nil
+
+proc betterTarget(ctx: NsCheckContext; t1, t2: NsTyDesc): bool =
+  ## C#'s better conversion target (12.6.4.7): `t1` converts to `t2` and not back,
+  ## or `t1` is the signed one of a signed/unsigned pair.
+  if ctx.implicitTo(t1, t2) and not ctx.implicitTo(t2, t1): return true
+  if t1.nullable != t2.nullable: return false
+  case t1.name
+  of "sbyte": t2.name in ["byte", "ushort", "uint", "ulong"]
+  of "short": t2.name in ["ushort", "uint", "ulong"]
+  of "int": t2.name in ["uint", "ulong"]
+  of "long": t2.name == "ulong"
+  else: false
+
+proc betterConversion(ctx: NsCheckContext; arg: NsNode; t1, t2: NsTyDesc): bool =
+  ## Whether converting `arg` to `t1` is better than to `t2` (12.6.4.5): an exact
+  ## match beats one that is not, otherwise the better conversion target.
+  if same(t1, t2) or not (t1.known and t2.known): return false
+  let s = descOfArg(arg)
+  if same(s, t1): return true
+  if same(s, t2): return false
+  ctx.betterTarget(t1, t2)
+
+proc numericApplicable(v: NsNode; pt: NsTyDesc): bool =
+  ## A numeric argument fits a numeric parameter only by an implicit conversion,
+  ## or as a constant in the parameter's range (10.2.11).
+  let s = descOfArg(v)
+  if not (s.known and pt.known and isNumericName(s.name) and isNumericName(pt.name)):
+    return true
+  if s.nullable and not pt.nullable: return false
+  if implicitlyConvertible(s.name, pt.name): return true
+  isConstantLit(v) and v.typeName.len == 0 and fitsLiteral(constValue(v), pt.name)
+
 proc resolveOverload(ctx: NsCheckContext; cands: seq[seq[NsNode]];
                      args: seq[NsNode]): tuple[ok: bool, idx, score: int, map: NsArgMap] =
-  ## Picks the overload every argument fits, preferring the one that needs the fewest
-  ## conversions, so an exact match beats the `T?` one C# would also have reached,
-  ## and one that needs no `params` expansion or default beats one that does.
+  ## Picks the overload C# does (12.6.4): of those every argument converts to, the
+  ## one better than every other -- each argument's conversion at least as good and
+  ## one better, an exact match beating any other conversion and a more specific
+  ## target a less specific one; a tie goes to the one that needs no `params`
+  ## expansion, then to the one that leaves no default to fill. With no single best
+  ## one, the one needing the fewest conversions is taken and Nim has the last word.
   result = (ok: false, idx: -1, score: high(int), map: NsArgMap())
+  var fitting: seq[tuple[idx, score: int, map: NsArgMap]] = @[]
   for i in 0 ..< cands.len:
     let m = mapArgs(cands[i], args)
     if not m.fits: continue
@@ -858,11 +969,46 @@ proc resolveOverload(ctx: NsCheckContext; cands: seq[seq[NsNode]];
       if ctx.incompatible(v, ctx.targetOfType(pt)):
         fits = false
         break
+      if cands.len > 1 and not numericApplicable(v, ctx.descOfType(pt)):
+        fits = false
+        break
       if ctx.argConv(v, pt) != acNone: inc score
       if m.element[j]: inc score
     if cands[i].len > args.len: inc score
-    if fits and score < result.score:
-      result = (ok: true, idx: i, score: score, map: m)
+    if fits:
+      fitting.add (idx: i, score: score, map: m)
+      if score < result.score:
+        result = (ok: true, idx: i, score: score, map: m)
+  if fitting.len < 2: return
+  proc expanded(m: NsArgMap): bool =
+    for e in m.element:
+      if e: return true
+    false
+  proc better(a, b: tuple[idx, score: int, map: NsArgMap]): bool =
+    var anyBetter = false
+    for j in 0 ..< args.len:
+      let v = argValue(args[j])
+      if v.kind in {nsnOutDecl, nsnLambda} or args[j].kind == nsnRefArg: continue
+      let ta = ctx.descOfType(slotType(cands[a.idx], a.map, j))
+      let tb = ctx.descOfType(slotType(cands[b.idx], b.map, j))
+      if ctx.betterConversion(v, tb, ta): return false
+      if ctx.betterConversion(v, ta, tb): anyBetter = true
+    if anyBetter: return true
+    let ea = expanded(a.map)
+    let eb = expanded(b.map)
+    if ea != eb: return eb
+    let da = cands[a.idx].len > args.len
+    let db = cands[b.idx].len > args.len
+    if da != db: return db
+    false
+  for a in fitting:
+    var best = true
+    for b in fitting:
+      if a.idx != b.idx and not better(a, b):
+        best = false
+        break
+    if best:
+      return (ok: true, idx: a.idx, score: a.score, map: a.map)
 
 proc markNull(ctx: NsCheckContext; value: NsNode; target: string;
               targetType: NsNode = nil) =
@@ -963,9 +1109,11 @@ proc isTypeParamRef(ctx: NsCheckContext; t: NsNode): bool =
   t != nil and t.kind == nsnTypeName and t.sons.len == 0 and '.' notin t.name and
     not ctx.isTypeName(t.name)
 
+proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind
+
 proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
                    args: seq[NsNode]; displayName, recvName: string;
-                   isCtor: bool; info: TLineInfo) =
+                   isCtor: bool; info: TLineInfo; call: NsNode = nil) =
   ## CS1501 / CS1729 when no overload takes this many arguments, CS7036 when one
   ## takes more, CS1503 when one takes exactly this many but an argument cannot be
   ## converted. A call the scope cannot resolve -- a library method, a name from a
@@ -983,6 +1131,18 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
       a.body = nil
       a.typ = nil
   let (ok, idx, _, map) = ctx.resolveOverload(cands, args)
+  if ok and call != nil:
+    ## A default the declaration leaves out (`noDefault`) is passed by name.
+    var filled = newSeq[bool](cands[idx].len)
+    for j in 0 ..< args.len: filled[map.slot[j]] = true
+    for k, p in cands[idx]:
+      if p != nil and p.noDefault and not filled[k] and p.body != nil:
+        let a = nsn(nsnNamedArg, call.info)
+        a.name = p.name
+        a.body = copyNsTree(p.body)
+        discard ctx.walkExpr(a.body)
+        ctx.coerce(a.body, declTypeName(p.typ), a.info, p.typ)
+        call.sons.add a
   if ok:
     for j in 0 ..< args.len:
       let a = args[j]
@@ -1023,6 +1183,14 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
       elif pt != nil:
         ctx.coerce(v, declTypeName(pt), v.info, pt)
         ctx.markNull(v, declTypeName(pt), pt)
+        if cands.len > 1 and pt.kind != nsnNullableType and v.conv.len == 0 and
+           isNumericName(declTypeName(pt)) and
+           ((isConstantLit(v) and v.typeName.len == 0) or
+            (numName(v).len > 0 and numName(v) != declTypeName(pt))):
+          ## A number is converted to what the overload C# chose takes, so Nim does
+          ## not find `U(uint)` and `U(int)` equally good for `U(1)`, or `F(int)`
+          ## and `F(long)` for a `short`.
+          v.conv = declTypeName(pt)
         if ctx.isTypeParamRef(pt) and v.kind in {nsnIntLit, nsnFloatLit} and
            v.typeName.len == 0:
           ## A literal for a type parameter fixes the type argument, and C# types
@@ -1387,7 +1555,6 @@ proc noteMutation(ctx: NsCheckContext; target: NsNode) =
   while t != nil and t.kind in {nsnMember, nsnIndex}: t = t.body
   if t != nil and t.kind == nsnThis: ctx.curMember.strVal = "mutating"
 
-proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind
 proc checkTypeArgs(ctx: NsCheckContext; t: NsNode)
 proc firstUnknownType(ctx: NsCheckContext; t: NsNode): NsNode
 
@@ -2295,7 +2462,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       n.sons[j].argForward = true
       n.sons[j].argNative = target.len > 0 and ctx.scope.isNative(target)
   elif callee != nil and (callee.kind == nsnMember or cands.len > 0):
-    ctx.checkCallArgs(cands, n.sons, callee.name, owner, false, n.info)
+    ctx.checkCallArgs(cands, n.sons, callee.name, owner, false, n.info, n)
   let sigs = callLambdaSigs(ctx.scope, ctx.surface, n)
   for j, a in n.sons:
     if isLambdaArg(a):
@@ -2599,7 +2766,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         elif ctx.scope.classes[cn].isAbstract or
            ctx.scope.classes[cn].classKind == ckInterface:
           nsError(ctx.config, n.info, ndAbstractInstance, cn)
-        ctx.checkCallArgs(ctx.scope.ctorOverloads(cn), n.sons, cn, cn, true, n.info)
+        ctx.checkCallArgs(ctx.scope.ctorOverloads(cn), n.sons, cn, cn, true, n.info, n)
         ctx.checkCtorAccess(cn, n)
       elif ctx.scope.isValueInterface(cn):
         ## A library interface (`IList<T>`) is no more constructible than a user's.
@@ -2884,7 +3051,12 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       n.strVal = "unbox"
     else:
       ctx.checkCast(n, target)
-    n.setType(target)
+    ## A numeric cast's result has the exact type written, which promotion and
+    ## overload resolution read (`F((short)1)`).
+    if target in {tkInt, tkFloat, tkChar} and isNumericName(declTypeName(n.typ)):
+      n.setType(target, declTypeName(n.typ))
+    else:
+      n.setType(target)
     result = target
   of nsnIs:
     ctx.checkTypeTest(n)
@@ -3765,7 +3937,12 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     if n.name.len == 0 and n.sons.len == 2:
       ctx.checkConvertible(n.sons[1], targetOfExpr(ctx, n.sons[0]), n.info)
       if n.sons[0].typeKind != tkNullable:
-        ctx.coerce(n.sons[1], numName(n.sons[0]), n.info, n.sons[0].rtype)
+        ## A literal into a user type names the type, which may convert from it.
+        let target = (if numName(n.sons[0]).len == 0 and n.sons[0].typeKind == tkClass and
+                         (isConstantLit(n.sons[1]) or n.sons[1].kind == nsnFloatLit):
+                        canonicalTypeName(n.sons[0].typeName)
+                      else: numName(n.sons[0]))
+        ctx.coerce(n.sons[1], target, n.info, n.sons[0].rtype)
     elif n.sons.len == 2 and n.name in ["+", "-", "*", "/", "mod", "and", "or", "xor",
                                         "shl", "shr", "ushr"]:
       ## `x op= y` is `x = (T)(x op y)`: the operands are promoted as for `x op y`,
@@ -4600,6 +4777,37 @@ proc checkFileTypeUses(n: NsNode; config: ConfigRef;
             n.inits, n.primary]:
     for c in s: checkFileTypeUses(c, config, owners)
 
+proc markOverlappingDefaults(scope: NsModuleScope) =
+  ## Nim cannot tell `Q(int a, int b = 0)` from `Q(int a)` for `Q(1)`, where C#
+  ## takes the one without defaults (12.6.4.3). Where an overload's defaults let it
+  ## take an argument count another overload of the same name takes, its defaulted
+  ## parameters are declared without them and each call passes them (`noDefault`).
+  proc arity(ps: seq[NsNode]): tuple[req, total: int, open: bool] =
+    for p in ps:
+      if p == nil: continue
+      if p.paramMod == "params": result.open = true
+      elif p.body == nil: inc result.req
+      inc result.total
+  proc mark(group: seq[seq[NsNode]]) =
+    for a in group:
+      let ra = arity(a)
+      if ra.req == ra.total or ra.open: continue
+      for b in group:
+        if b == a: continue
+        let rb = arity(b)
+        let hi = (if rb.open: high(int) else: rb.total)
+        if max(ra.req, rb.req) <= min(ra.total - 1, hi):
+          for p in a:
+            if p != nil and p.body != nil: p.noDefault = true
+          break
+  for cls in scope.classes.values:
+    var byName = initTable[string, seq[seq[NsNode]]]()
+    for m in cls.members:
+      if m.isMethod: byName.mgetOrPut(m.name, @[]).add m.params
+    for g in byName.values:
+      if g.len > 1: mark(g)
+    if cls.ctorParams.len > 1: mark(cls.ctorParams)
+
 proc checkModule*(module: NsNode; scope: NsModuleScope; config: ConfigRef) =
   ## Resolves names, enforces access control, checks the conversions and applies the
   ## base-constructor rule. Diagnostics go through `config`.
@@ -4611,6 +4819,7 @@ proc checkModule*(module: NsNode; scope: NsModuleScope; config: ConfigRef) =
   if fileTypes.len > 0:
     for d in module.sons: checkFileTypeUses(d, config, fileTypes)
   checkDuplicateTypes(module.sons, config, "<global namespace>")
+  markOverlappingDefaults(scope)
   for d in module.sons: ctx.walkTop(d)
   ## The anonymous types the walk synthesized, checked as the declarations they
   ## now are; checking one cannot synthesize another.

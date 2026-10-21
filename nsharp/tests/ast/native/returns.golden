@@ -675,7 +675,9 @@ nkStmtList
               nkIdent 'nsFwd'
               nkCall
                 nkIdent 'int32'
-                nkIntLit 5
+                nkCall
+                  nkIdent 'int32'
+                  nkIntLit 5
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'

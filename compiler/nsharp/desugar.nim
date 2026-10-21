@@ -399,7 +399,8 @@ proc paramDef(l: Lowerer; p: NsNode; sink = false): PNode =
     if sink: t = newTree(nkBracketExpr, p.info, l.id("sink", p.info), t)
   else: discard
   result.add t
-  result.add (if p.body != nil: l.expr(p.body) else: empty(p.info))
+  ## A default an overload could be confused by is passed at each call instead.
+  result.add (if p.body != nil and not p.noDefault: l.expr(p.body) else: empty(p.info))
 
 proc exportedName(l: Lowerer; attrs: NsAttrs; name: string; info: TLineInfo): PNode =
   ## A C# member is exported to Nim unless it is private.

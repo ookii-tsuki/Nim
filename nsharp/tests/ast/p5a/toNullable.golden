@@ -829,7 +829,9 @@ nkStmtList
         nkDotExpr
           nkIdent 'a'
           nkIdent 'Show'
-        nkIntLit 3
+        nkCall
+          nkIdent 'int32'
+          nkIntLit 3
       nkCall
         nkDotExpr
           nkIdent 'a'

@@ -528,7 +528,9 @@ nkStmtList
         nkDotExpr
           nkCall
             nkIdent 'newC'
-            nkIntLit 1
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 1
           nkIdent 'X'
   nkProcDef
     nkPostfix

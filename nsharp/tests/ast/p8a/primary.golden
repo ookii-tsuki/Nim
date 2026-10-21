@@ -2239,7 +2239,9 @@ nkStmtList
           nkDotExpr
             nkCall
               nkIdent 'newCounter'
-              nkIntLit 5
+              nkCall
+                nkIdent 'int32'
+                nkIntLit 5
             nkIdent 'Next'
       nkCall
         nkIdent 'WriteLine'

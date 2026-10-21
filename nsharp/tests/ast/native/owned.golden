@@ -675,7 +675,9 @@ nkStmtList
         nkCall
           nkIdent 'newPalette'
           nkStrLit "field"
-          nkIntLit 7
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 7
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -986,7 +988,9 @@ nkStmtList
           nkCall
             nkIdent 'newPalette'
             nkStrLit "t"
-            nkIntLit 1
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 1
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'
@@ -1037,7 +1041,9 @@ nkStmtList
           nkCall
             nkIdent 'newPalette'
             nkStrLit "a"
-            nkIntLit 3
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 3
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'

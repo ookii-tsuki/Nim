@@ -247,6 +247,8 @@ type
     argElement*: bool         ## ... as one element of a `params` array
     argForward*: bool         ## ... passed on as it is, by a `[Forward]` parameter
     argNative*: bool          ## ... to a native class's constructor (C++ types)
+    noDefault*: bool          ## nsnParam: its default is filled in at each call
+                              ## instead (an overload of the same arity exists)
     typeKind*: NsTypeKind     ## set by `sema.nim` on expressions
     typeName*: string         ## the resolved type name behind `typeKind`
     argConv*: NsArgConv       ## `nsnCall`/`nsnNew` argument: C#'s implicit conversion

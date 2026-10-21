@@ -1004,7 +1004,9 @@ nkStmtList
           nkIdent 'nsFwd'
           nkCall
             nkIdent 'int32'
-            nkIntLit 3
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 3
       nkCall
         nkIdent 'Spawn'
         nkIdent 'self'
@@ -1023,7 +1025,9 @@ nkStmtList
           nkIdent 'nsFwd'
           nkCall
             nkIdent 'int32'
-            nkIntLit 2
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 2
         nkCall
           nkIdent 'nsFwd'
           nkCall
@@ -1044,7 +1048,9 @@ nkStmtList
           nkIdent 'nsFwd'
           nkCall
             nkIdent 'int32'
-            nkIntLit 1
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 1
       nkForStmt
         nkIdent 'n'
         nkDotExpr

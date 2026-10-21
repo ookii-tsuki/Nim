@@ -1051,7 +1051,9 @@ nkStmtList
           nkCall
             nkIdent 'newPalette'
             nkStrLit "p"
-            nkIntLit 4
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 4
       nkCall
         nkIdent 'Print'
         nkIdent 'Console'
