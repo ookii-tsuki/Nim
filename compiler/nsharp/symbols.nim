@@ -568,8 +568,10 @@ proc userOperator*(scope: NsModuleScope; cls, op: string; arity: int;
                    checked = false): NsNode =
   ## The `operator op` with `arity` operands that class `cls` declares, or nil;
   ## `checked` asks for its `operator checked op` instead.
-  if not scope.classes.hasKey(cls): return nil
-  for o in scope.classes[cls].operators:
+  ## The class may be named as written (`Demo.Small`); its entry is by simple name.
+  let key = (if scope.classes.hasKey(cls): cls else: canonicalTypeName(cls))
+  if not scope.classes.hasKey(key): return nil
+  for o in scope.classes[key].operators:
     if o.name == op and o.params.len == arity and o.attrs.isChecked == checked:
       return o
   nil

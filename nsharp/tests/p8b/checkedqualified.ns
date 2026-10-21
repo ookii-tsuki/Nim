@@ -1,0 +1,41 @@
+using System;
+
+namespace Demo
+{
+    // A type written with its namespace (`Demo.Small`) finds the same operators as
+    // the simple name: `+`, `-` and their `checked` forms.
+    struct Small
+    {
+        public int V;
+        public Small(int v) { V = v; }
+        public static Small operator +(Small a, Small b) => new Small((a.V + b.V) % 100);
+        public static Small operator checked +(Small a, Small b)
+        {
+            int r = a.V + b.V;
+            if (r >= 100) throw new OverflowException("Small overflow");
+            return new Small(r);
+        }
+        public static Small operator -(Small a) => new Small(0);
+        public static Small operator checked -(Small a) => throw new OverflowException("neg");
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var plain = new Demo.Small(60) + new Demo.Small(70);
+            Console.WriteLine(plain.V);
+            Demo.Small a = new Demo.Small(10);
+            Console.WriteLine((-a).V);
+            checked
+            {
+                var c = new Demo.Small(10) + new Demo.Small(20);
+                Console.WriteLine(c.V);
+                try { var d = -c; Console.WriteLine(d.V); }
+                catch (OverflowException e) { Console.WriteLine("caught " + e.Message); }
+                try { var s = new Demo.Small(60) + new Demo.Small(70); Console.WriteLine(s.V); }
+                catch (OverflowException e) { Console.WriteLine("caught " + e.Message); }
+            }
+        }
+    }
+}
