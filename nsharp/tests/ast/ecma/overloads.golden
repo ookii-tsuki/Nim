@@ -1761,7 +1761,7 @@ nkStmtList
                   nkIdent 'F'
                   nkIdent 'Program'
                   nkCall
-                    nkIdent 'nsBox'
+                    nkIdent 'nsBoxLit'
                     nkStrLit "s"
               nkCall
                 nkIdent 'F'
@@ -1985,7 +1985,7 @@ nkStmtList
             nkIdent 'Nu'
             nkIdent 'Program'
             nkCall
-              nkIdent 'nsBox'
+              nkIdent 'nsBoxLit'
               nkStrLit "s"
       nkVarSection
         nkIdentDefs
@@ -1997,7 +1997,7 @@ nkStmtList
           nkIdent 'obj'
           nkIdent 'RootRef'
           nkCall
-            nkIdent 'nsBox'
+            nkIdent 'nsBoxLit'
             nkStrLit "y"
       nkCall
         nkIdent 'WriteLine'

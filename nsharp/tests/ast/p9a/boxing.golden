@@ -628,7 +628,7 @@ nkStmtList
           nkIdent 'c'
           nkIdent 'RootRef'
           nkCall
-            nkIdent 'nsBox'
+            nkIdent 'nsBoxLit'
             nkStrLit "hi"
       nkVarSection
         nkIdentDefs
@@ -755,7 +755,7 @@ nkStmtList
               nkCall
                 nkIdent 'RootRef'
                 nkCall
-                  nkIdent 'nsBox'
+                  nkIdent 'nsBoxLit'
                   nkStrLit "two"
               nkCall
                 nkIdent 'RootRef'

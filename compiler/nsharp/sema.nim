@@ -189,7 +189,11 @@ proc classifyType(ctx: NsCheckContext; t: NsNode): NsTypeKind =
     let inner = ctx.classifyType(t.typ)
     ## Only a value type needs `Option`: a reference is nullable already, so `Node?`
     ## is just `Node`, as C# reads it.
-    result = if inner in {tkInt, tkFloat, tkBool, tkChar}: tkNullable else: inner
+    ## A struct is a value type too: `Pt?` is a `Nullable<Pt>`.
+    let struct = inner == tkClass and t.typ != nil and t.typ.kind == nsnTypeName and
+      ctx.scope.classes.hasKey(canonicalTypeName(t.typ.name)) and
+      ctx.scope.classes[canonicalTypeName(t.typ.name)].classKind == ckStruct
+    result = if inner in {tkInt, tkFloat, tkBool, tkChar} or struct: tkNullable else: inner
     t.setType(result, declTypeName(t.typ))
   of nsnTypeName:
     result = ctx.classifyName(t.name)
@@ -485,8 +489,9 @@ proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineI
      value.kind != nsnNull and value.conv.len == 0 and
      not ctx.scope.isValueInterface(value.typeName):
     ## A value used as an `object` is boxed; a reference passes through the same
-    ## library call unchanged.
-    value.conv = "nsBox"
+    ## library call unchanged. A string literal is one instance however often it is
+    ## written (6.4.5.6), so its box is shared.
+    value.conv = (if value.kind == nsnStrLit: "nsBoxLit" else: "nsBox")
     return
   let dst = numericOfSpelling(target)
   if value == nil or dst.len == 0: return
@@ -1027,11 +1032,23 @@ proc markNull(ctx: NsCheckContext; value: NsNode; target: string;
     ## A Nim string cannot be nil: a null string is the empty one (SPEC 7.3).
     value.setType(tkString, "string")
 
+proc liftConversion(value, target: NsNode) =
+  ## `long? l = i;` for an `int? i`: the lifted numeric conversion (10.6.1).
+  if value == nil or target == nil or value.typeKind != tkNullable or
+     target.kind != nsnNullableType or value.conv.len > 0: return
+  let src = value.typeName
+  let dst = declTypeName(target.typ)
+  if src != dst and isNumericName(src) and isNumericName(dst) and
+     implicitlyConvertible(src, dst):
+    value.conv = "nsOptAs"
+    value.convType = target.typ
+
 proc checkConvertible(ctx: NsCheckContext; value: NsNode; t: NsTarget;
                       info: TLineInfo) =
   ## The one rule the initialiser, the assignment and `return` share: CS0029 for a
   ## value of an unrelated type, CS0037 for `null` into a value type.
   if value == nil: return
+  liftConversion(value, t.typ)
   if value.kind == nsnNull:
     if not t.isNullOk:
       nsError(ctx.config, info, ndCannotConvertNull, t.spelling)
@@ -1173,6 +1190,7 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
         ## The callee writes the argument, which the call must say (CS1620).
         nsError(ctx.config, a.info, ndRefArgMissing, $(j + 1), pm)
       if a.kind == nsnRefArg: continue
+      liftConversion(v, pt)
       let conv = ctx.argConv(v, pt)
       if conv != acNone:
         ## Lowering applies it, so the argument reaches `some`/`none` spelled with
@@ -3070,6 +3088,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## overload resolution read (`F((short)1)`).
     if target in {tkInt, tkFloat, tkChar} and isNumericName(declTypeName(n.typ)):
       n.setType(target, declTypeName(n.typ))
+    elif isObjectTarget(n.typ):
+      ## `(object)v` is an `object`, which a cast of it unboxes: `(int)(object)5`.
+      n.setType(target, "object")
     else:
       n.setType(target)
     result = target
@@ -3139,6 +3160,21 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
             ## division rule below asks about.
             lk = kindOfNumeric(p)
             rk = lk
+    ## A lifted operator's other operand converts to the nullable's element type
+    ## (`a + 1`, `3 == a`), so the library's lifted operator sees one `T`.
+    var liftedInner = ""
+    if lk == tkNullable and rk != tkNullable: liftedInner = n.sons[0].typeName
+    elif rk == tkNullable and lk != tkNullable: liftedInner = n.sons[1].typeName
+    elif lk == tkNullable: liftedInner = n.sons[0].typeName
+    if liftedInner.len > 0 and (lk == tkNullable) != (rk == tkNullable):
+      let other = (if lk == tkNullable: n.sons[1] else: n.sons[0])
+      let on = numName(other)
+      ## A bare literal too, which Nim would type `int` and so bind `T` to that.
+      if on.len > 0 and isNumericName(liftedInner) and
+         (on != liftedInner or (isConstantLit(other) and other.typeName.len == 0)) and
+         (implicitlyConvertible(on, liftedInner) or
+          (isConstantLit(other) and fitsLiteral(constValue(other), liftedInner))):
+        other.conv = liftedInner
     if n.name in ["+", "-"] and lk == tkDelegate and rk == tkDelegate:
       ## Delegate combination and removal: a delegate of the left operand's type.
       n.setType(tkDelegate, n.sons[0].typeName)
@@ -3148,8 +3184,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     of "==", "!=", "<", ">", "<=", ">=":
       result = tkBool
     of "and", "or", "xor":
-      ## Bitwise on integers, logical otherwise.
-      result = (if lk == tkInt and rk == tkInt: tkInt else: tkBool)
+      ## Bitwise on integers, logical otherwise; three-valued on a `bool?`.
+      result = (if lk == tkNullable or rk == tkNullable: tkNullable
+                elif lk == tkInt and rk == tkInt: tkInt else: tkBool)
     of "/":
       if lk == tkInt and rk == tkInt:
         ## C# integer division truncates and throws on a zero divisor; the
@@ -3187,6 +3224,9 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       elif lk == tkInt: result = tkInt
     if numResult.len > 0 and result in {tkInt, tkFloat}:
       n.setType(kindOfNumeric(numResult), numResult)
+    elif result == tkNullable:
+      ## The lifted result has the element type, which `== null` spells `none(T)`.
+      n.setType(result, liftedInner)
     else:
       n.setType(result)
     for side in [n.sons[0], n.sons[1]]:
@@ -3215,10 +3255,17 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       result = ctx.walkExpr(n.sons[0])
     else:
       result = tkUnknown
-    if result in {tkInt, tkFloat, tkBool, tkChar} and n.intVal == 0:
-      nsError(ctx.config, n.info, ndUnsupported,
-              "a null-conditional value without '??'")
-    n.setType(result)
+    if result in {tkInt, tkFloat, tkBool, tkChar} and n.intVal == 0 and
+       n.sons.len > 0 and n.sons[0] != nil:
+      ## Without `??` a value-typed result is a `T?` (12.8.8): absent when the
+      ## receiver is null.
+      let tail = n.sons[0]
+      let inner = (if numName(tail).len > 0: numName(tail)
+                   elif result == tkBool: "bool" elif result == tkChar: "char"
+                   else: tail.typeName)
+      n.setType(tkNullable, inner)
+      return tkNullable
+    n.setType(result, (if result == tkString: "string" else: ""))
   of nsnAssign:
     ## `(x = e)` as a value: the assignment, then `x`'s type.
     ctx.walkStmt(n)

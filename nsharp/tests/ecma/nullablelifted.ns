@@ -1,0 +1,36 @@
+// Nullable value types: lifted operators with a bare operand on either side and
+// against null, lifted conversions and casts, ++ and compound assignment, bool?'s
+// three-valued & | ^, type patterns, a struct's T?, boxing (null for an absent
+// value), unboxing, a value-typed ?. result, and string literals as one instance.
+using System;
+struct Pt { public int X; public Pt(int x) { X = x; } }
+class Node { public string Name = "n"; public int Len() => Name.Length; }
+class Program {
+    static Node Mk() => new Node();
+    static Node None() => null;
+    static string Show(int? v) => v.HasValue ? v.Value.ToString() : "null";
+    static string Show(bool? v) => v.HasValue ? (v.Value ? "T" : "F") : "null";
+    static void Main() {
+        int? a = 3; int? b = null;
+        Console.WriteLine((a + b == null) + " " + ((a + 1) == 4) + " " + (a * 2 != null) + " " + (null == a - 1));
+        Console.WriteLine((a == 3) + " " + (b != 3) + " " + (3 == a) + " " + (b == null));
+        Console.WriteLine(Show(1 + a) + " " + Show(10 - a) + " " + Show(2 * b) + " " + (5 > a));
+        long? l = a; Console.WriteLine(Show((int?)(l * 2)));
+        double? d = a; Console.WriteLine(d.HasValue);
+        int? c = null; c++; Console.WriteLine(c.HasValue);
+        int? e = 5; e += 2; e++; e *= 2; Console.WriteLine(Show(e));
+        bool? t = true, f = false, u = null;
+        Console.WriteLine(Show(t & u) + Show(f & u) + Show(t | u) + Show(f | u) + Show(t ^ f) + Show(t ^ u) + Show(!u) + Show(!f));
+        Console.WriteLine(Show(false & u) + Show(true | u));
+        Console.WriteLine((a is int x ? x : -1) + " " + (b is int y ? y : -1));
+        Pt? np = new Pt(3); Pt? nn = null; Console.WriteLine(np.Value.X + " " + nn.HasValue + " " + (nn == null));
+        object o = a; Console.WriteLine((o is int) + " " + (int)o);
+        object ob = b; Console.WriteLine(ob == null);
+        int? back = (int?)o; int? back2 = (int?)ob; Console.WriteLine(Show(back) + " " + Show(back2));
+        Console.WriteLine((int)(object)5);
+        object s1 = "x", s2 = "x"; Console.WriteLine(s1 == s2);
+        var nm = Mk()?.Name; var nn2 = None()?.Name; Console.WriteLine(nm + "|" + (nn2 == null));
+        int? ln = Mk()?.Len(); int? ln2 = None()?.Len(); Console.WriteLine(Show(ln) + " " + Show(ln2));
+        var lv = None()?.Len(); Console.WriteLine(lv.HasValue);
+    }
+}

@@ -9,7 +9,7 @@ from std/unicode import nil
 # interfaces (`Array.Sort` takes an `IComparer<T>`), as .NET's namespaces may.
 import System/Collections/Generic {.cyclic.}
 from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, Equals, GetHashCode, NsArray, nsArrayOf, len,
-  items, `[]`, `[]=`
+  items, `[]`, `[]=`, nsNoValue
 
 # `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
 from ../nsharp/pragmas import nsStatic, nsInterface
@@ -103,6 +103,7 @@ type
 # `e.Message` reaches a proc on the exception root, and is generic because an N#
 # exception is a value object but is raised as a `ref`, which does not convert to
 # its base in an argument position.
+
 
 proc Message*[T: ref Exception](e: T): string = e.msg
 
@@ -510,4 +511,8 @@ proc Round*(x: float): float {.nsStatic: "Math".} =
 
 {.pop.}
 
-
+# An absent `T?` read with `.Value` or a cast throws .NET's exception (see the
+# intrinsics' `nsNoValue`). A statement, so it comes after every declaration: a
+# module of an import cycle shares only the declarations before its first one.
+nsNoValue = proc () {.nimcall.} =
+  raise newException(InvalidOperationException, "Nullable object must have a value.")

@@ -632,49 +632,65 @@ nkStmtList
         nkInfix
           nkIdent '+'
           nkIdent 'a'
-          nkIntLit 1
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 1
       nkCall
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '+'
           nkIdent 'b'
-          nkIntLit 1
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 1
       nkCall
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '*'
           nkIdent 'a'
-          nkIntLit 2
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 2
       nkCall
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '/'
           nkIdent 'a'
-          nkIntLit 2
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 2
       nkCall
         nkIdent 'WriteLine'
         nkInfix
           nkIdent 'mod'
           nkIdent 'a'
-          nkIntLit 2
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 2
       nkCall
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '>'
           nkIdent 'a'
-          nkIntLit 3
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 3
       nkCall
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '>'
           nkIdent 'b'
-          nkIntLit 3
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 3
       nkCall
         nkIdent 'WriteLine'
         nkInfix
           nkIdent '<='
           nkIdent 'b'
-          nkIntLit 3
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 3
       nkCall
         nkIdent 'WriteLine'
         nkInfix
@@ -843,7 +859,9 @@ nkStmtList
                 nkInfix
                   nkIdent '+'
                   nkIdent 'd'
-                  nkIntLit 1
+                  nkCall
+                    nkIdent 'int32'
+                    nkIntLit 1
             nkIfExpr
               nkElifExpr
                 nkCall

@@ -358,6 +358,7 @@ proc looksLikeCast(p: NsParser): bool =
   if p.peekAhead(i).kind == nsLt:
     i = skipBalancedGt(p, i)
     if i < 0: return false
+  if p.peekAhead(i).kind == nsQuestion: inc i   ## `(int?)x`
   while p.peekAhead(i).kind == nsLBracket and p.peekAhead(i + 1).kind == nsRBracket:
     i += 2
   if p.peekAhead(i).kind != nsRParen: return false

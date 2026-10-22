@@ -1,0 +1,10 @@
+// Reading an absent T? with .Value or a cast throws InvalidOperationException.
+using System;
+class Program {
+    static void Main() {
+        int? a = null;
+        try { Console.WriteLine(a.Value); } catch (InvalidOperationException e) { Console.WriteLine("ioe: " + e.Message); }
+        try { int b = (int)a; Console.WriteLine(b); } catch (InvalidOperationException) { Console.WriteLine("ioe cast"); }
+        int? c = 4; Console.WriteLine(c.Value + (int)c);
+    }
+}

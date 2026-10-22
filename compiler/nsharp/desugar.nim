@@ -446,6 +446,8 @@ proc stmtSeq(l: Lowerer; blk: NsNode): PNode
 proc nilableReceiver(l: Lowerer; n: NsNode): bool
 proc noneFromName(l: Lowerer; name: string; info: TLineInfo): PNode
 proc someNamed(l: Lowerer; v: PNode; name: string; info: TLineInfo): PNode
+proc noneCall(l: Lowerer; t: NsNode; info: TLineInfo): PNode
+proc someCall(l: Lowerer; v: PNode; inner: NsNode; info: TLineInfo): PNode
 proc presentOf(l: Lowerer; v: NsNode; info: TLineInfo): PNode
 proc wrappedArg(l: Lowerer; a: NsNode): PNode
 
@@ -1014,6 +1016,16 @@ proc castToNim(l: Lowerer; n: NsNode): PNode =
     ## `(T)o` on an `object`: the boxed value, or the reference downcast.
     return newTree(nkCall, n.info, l.id("nsUnbox", n.info), l.expr(n.body),
                    l.typeToNim(n.typ, n.info))
+  if n.typ != nil and n.typ.kind == nsnNullableType and n.typ.typeKind == tkNullable:
+    ## `(int?)x`: to a `T?`. From another `T?` the conversion is lifted (absent
+    ## stays absent); from a value, the value converted and wrapped.
+    if n.body != nil and n.body.typeKind == tkNullable:
+      return newTree(nkCall, n.info, l.id("nsOptAs", n.info), l.expr(n.body),
+                     l.typeToNim(n.typ.typ, n.info))
+    if n.body != nil and n.body.kind == nsnNull:
+      return l.noneCall(n.typ, n.info)
+    return l.someCall(newTree(nkCall, n.info, l.typeToNim(n.typ.typ, n.info), l.expr(n.body)),
+                      n.typ.typ, n.info)
   result = newNodeI(nkCall, n.info)
   result.add l.typeToNim(n.typ, n.info)
   if n.body != nil and n.body.typeKind == tkNullable:
@@ -1210,9 +1222,28 @@ proc condStmt(l: Lowerer; nd: NsNode): PNode =
   result = newTree(nkBlockStmt, info, empty(info), inner)
 
 proc nullDotToNim(l: Lowerer; n: NsNode): PNode =
-  ## `a?.B` on its own yields nil when the receiver is nil; a value-typed one is
-  ## rejected by `sema.nim` unless a `??` supplies the absent value.
-  result = l.condTail(n, newNodeI(nkNilLit, n.info))
+  ## `a?.B` on its own yields null when the receiver is null: nil for a reference,
+  ## the empty string for a `string` (N#'s null one), and for a value type the
+  ## absent `T?`, the present value wrapped (`int? n = s?.Length`-like).
+  if n.typeKind == tkNullable:
+    result = l.condTail(n, l.noneFromName(n.typeName, n.info))
+    ## The innermost present branch is the value: wrapped into the `T?`.
+    var e = result
+    while e != nil and e.kind == nkBlockExpr and e.len == 2 and e[1].kind == nkStmtList and
+          e[1].len > 0 and e[1][^1].kind == nkIfExpr and e[1][^1].len == 2 and
+          e[1][^1][1].kind == nkElseExpr:
+      let branch = e[1][^1][1]
+      if branch[0].kind == nkBlockExpr and branch[0].len == 2 and
+         branch[0][1].kind == nkStmtList and branch[0][1].len > 0 and
+         branch[0][1][^1].kind == nkIfExpr:
+        e = branch[0]
+      else:
+        branch[0] = l.someNamed(branch[0], n.typeName, n.info)
+        break
+  elif n.typeKind == tkString:
+    result = l.condTail(n, newStrNode(nkStrLit, ""))
+  else:
+    result = l.condTail(n, newNodeI(nkNilLit, n.info))
 
 proc nullCoalesceToNim(l: Lowerer; n: NsNode): PNode =
   ## `a ?? b` is `b` when `a` is absent. With a `?.` on the left, `b` is that
@@ -1637,6 +1668,10 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     ## A handle as one of another class of its family (`Node n = ball;`).
     result = newTree(nkCall, n.info, l.id("nsAs", n.info), result,
                      l.typeToNim(n.convType, n.info))
+  elif n.conv == "nsOptAs":
+    ## A lifted numeric conversion between nullables: `int?` to `long?`.
+    result = newTree(nkCall, n.info, l.id("nsOptAs", n.info), result,
+                     l.typeToNim(n.convType, n.info))
   elif n.conv == "nsVariant":
     ## A variant conversion: the type arguments are references either way, so the
     ## value is reinterpreted as the target instantiation.
@@ -1825,6 +1860,14 @@ proc typeTest(l: Lowerer; subj: PNode; pat: NsNode; target: NsNode;
   ## a class is Nim's `of`, and a value type is decided by its static type.
   let info = pat.info
   let tname = canonicalTypeName(target.name)
+  if pat.typeKind == tkNullable:
+    ## A `T?` is a `T` exactly when it has a value (`a is int x`).
+    if canonicalTypeName(pat.typeName) != tname: return l.id("false", info)
+    result = newTree(nkCall, info, l.id("isSome", info), copyTree(subj))
+    if bindName.len > 0:
+      result = newTree(nkInfix, info, l.id("and", info), result, l.assignTrue(bindName,
+        newTree(nkCall, info, l.id("get", info), copyTree(subj)), info))
+    return
   let subjIface = l.scope.isValueInterface(pat.typeName)
   let obj = (if subjIface: newTree(nkDotExpr, info, subj, l.id("nsObj", info))
              else: subj)
@@ -2648,8 +2691,9 @@ proc assignCore(l: Lowerer; n: NsNode): PNode =
     if n.strVal.len > 0 and n.typeName.len > 0:
       value = newTree(nkCall, n.info, l.id(nimTypeName(n.typeName), n.info), value)
   let nullableTarget = n.sons[0] != nil and n.sons[0].typeKind == tkNullable
+  ## A compound operator's result is lifted already (`a += 2` is `a + 2`, a `T?`).
   let wrapTarget = nullableTarget and (n.name == "??" or
-                                        n.sons[1].typeKind != tkNullable)
+                                        (n.name.len == 0 and n.sons[1].typeKind != tkNullable))
   if wrapTarget:
     ## The result goes back into a `T?` target, so C#'s implicit conversion applies to
     ## `x = 5` and `x ??= 5` alike. `a ?? b` yields the unwrapped `T`, so `??=` always

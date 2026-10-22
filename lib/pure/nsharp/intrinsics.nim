@@ -95,10 +95,18 @@ export options
 # procs over `Option` reached by Nim's own dot-call, the way `int.high` reaches
 # `high(int32)`. The compiler knows none of these names.
 
+var nsNoValue*: proc () {.nimcall.} = nil
+  ## What reading an absent `T?` throws: `System` sets it to throw .NET's
+  ## `InvalidOperationException`, whose type the intrinsics cannot name; without
+  ## it, Nim's `UnpackDefect`.
+
+proc nsAbsentValue() {.noinline.} =
+  if nsNoValue != nil: nsNoValue()
+  raise newException(UnpackDefect, "Nullable object must have a value.")
+
 proc Value*[T](x: Option[T]): T =
-  ## `x.Value`. C# throws `InvalidOperationException` when there is no value; Nim's
-  ## `get` returns a `lent` view and raises `UnpackDefect`, which is the divergence
-  ## to record.
+  ## `x.Value`: C# throws `InvalidOperationException` when there is no value.
+  if x.isNone: nsAbsentValue()
   result = x.get
 
 proc HasValue*[T](x: Option[T]): bool = x.isSome
@@ -113,7 +121,9 @@ proc nsAbsent*[T](x: Option[T]): bool =
   x.isNone
 
 proc nsPresent*[T](x: Option[T]): T =
-  ## The unwrapped value, for the present side of the same lowering.
+  ## The unwrapped value, for the present side of the same lowering, and for
+  ## `(int)x`, which throws as `x.Value` does when there is none.
+  if x.isNone: nsAbsentValue()
   result = x.get
 
 # C# lifts the arithmetic and comparison operators onto `T?`. Arithmetic yields the
@@ -161,6 +171,53 @@ proc `>`*[T: SomeNumber](a: Option[T], b: T): bool = a.isSome and a.get > b
 
 proc `>=`*[T: SomeNumber](a, b: Option[T]): bool = a.isSome and b.isSome and a.get >= b.get
 proc `>=`*[T: SomeNumber](a: Option[T], b: T): bool = a.isSome and a.get >= b
+
+# A bare value on the left (`1 + a`, `3 == a`) is lifted the same way; `sema.nim`
+# gives a literal there the nullable's element type, so `T` is the same on both sides.
+proc `+`*[T: SomeNumber](a: T, b: Option[T]): Option[T] =
+  if b.isSome: some(a + b.get) else: none(T)
+proc `-`*[T: SomeNumber](a: T, b: Option[T]): Option[T] =
+  if b.isSome: some(a - b.get) else: none(T)
+proc `*`*[T: SomeNumber](a: T, b: Option[T]): Option[T] =
+  if b.isSome: some(a * b.get) else: none(T)
+proc `/`*[T: SomeInteger](a: T, b: Option[T]): Option[T] =
+  if b.isSome: some(nsDiv(a, b.get)) else: none(T)
+proc `mod`*[T: SomeInteger](a: T, b: Option[T]): Option[T] =
+  if b.isSome: some(nsMod(a, b.get)) else: none(T)
+proc `<`*[T: SomeNumber](a: T, b: Option[T]): bool = b.isSome and a < b.get
+proc `<=`*[T: SomeNumber](a: T, b: Option[T]): bool = b.isSome and a <= b.get
+proc `>`*[T: SomeNumber](a: T, b: Option[T]): bool = b.isSome and a > b.get
+proc `>=`*[T: SomeNumber](a: T, b: Option[T]): bool = b.isSome and a >= b.get
+
+# Lifted `==` against a bare value: equal only when present and equal (12.4.8).
+proc `==`*[T](a: Option[T], b: T): bool = a.isSome and a.get == b
+proc `==`*[T](a: T, b: Option[T]): bool = b.isSome and a == b.get
+
+# `bool?`'s `&` and `|` are three-valued (12.13.5): `false & null` is `false`,
+# `true | null` is `true`, and the rest with an absent operand is absent. `^` is
+# absent when either is.
+proc `and`*(a, b: Option[bool]): Option[bool] =
+  if (a.isSome and not a.get) or (b.isSome and not b.get): some(false)
+  elif a.isSome and b.isSome: some(true)
+  else: none(bool)
+proc `or`*(a, b: Option[bool]): Option[bool] =
+  if (a.isSome and a.get) or (b.isSome and b.get): some(true)
+  elif a.isSome and b.isSome: some(false)
+  else: none(bool)
+proc `xor`*(a, b: Option[bool]): Option[bool] =
+  if a.isSome and b.isSome: some(a.get xor b.get) else: none(bool)
+proc `and`*(a: Option[bool], b: bool): Option[bool] = a and some(b)
+proc `and`*(a: bool, b: Option[bool]): Option[bool] = some(a) and b
+proc `or`*(a: Option[bool], b: bool): Option[bool] = a or some(b)
+proc `or`*(a: bool, b: Option[bool]): Option[bool] = some(a) or b
+proc `xor`*(a: Option[bool], b: bool): Option[bool] = a xor some(b)
+proc `xor`*(a: bool, b: Option[bool]): Option[bool] = some(a) xor b
+proc `not`*(a: Option[bool]): Option[bool] =
+  if a.isSome: some(not a.get) else: none(bool)
+
+proc nsOptAs*[T, U](a: Option[T]; t: typedesc[U]): Option[U] =
+  ## A lifted conversion, `long? l = i;` for an `int? i`: absent stays absent.
+  if a.isSome: some(U(a.get)) else: none(U)
 
 proc nsNilFail*() {.noinline, noreturn.} =
   raise newException(NilAccessDefect, "attempt to access a nil address")
@@ -219,7 +276,12 @@ template nsStmt*(x: untyped) =
 # assigned, so a property's setter runs. A plain integer statement increment is
 # Nim's own `inc`/`dec`.
 template nsStepped(v: typed; up: static bool): untyped =
-  when typeof(v) is SomeFloat: (when up: v + 1 else: v - 1)
+  when typeof(v) is Option:
+    ## `x++` on a `T?` steps a present value and leaves an absent one.
+    (if v.isSome: some(when typeof(v.get) is SomeFloat: (when up: v.get + 1 else: v.get - 1)
+                       else: (when up: succ(v.get) else: pred(v.get)))
+     else: v)
+  elif typeof(v) is SomeFloat: (when up: v + 1 else: v - 1)
   else: (when up: succ(v) else: pred(v))
 template nsPostInc*(x: untyped): untyped =
   (let nsOld = x; x = nsStepped(nsOld, true); nsOld)
@@ -518,6 +580,19 @@ proc nsBox*(x: RootRef): RootRef {.inline.} = x
 proc nsBox*(x: int): RootRef = nsBoxOf(int32(x))
   ## An untyped integer literal is a C# `int`.
 proc nsBox*[T: not RootRef and not int](x: T): RootRef = nsBoxOf(x)
+proc nsBox*[T](x: Option[T]): RootRef =
+  ## Boxing a `T?` boxes its value, or is null when it has none (ECMA-334 8.3.12).
+  if x.isSome: nsBoxOf(x.get) else: nil
+
+from std/tables import Table, getOrDefault, `[]=`
+var nsLiteralBoxes {.threadvar.}: Table[string, RootRef]
+proc nsBoxLit*(s: string): RootRef =
+  ## A string literal as an `object`: identical literals are one instance (6.4.5.6),
+  ## so `(object)"x" == (object)"x"`.
+  result = nsLiteralBoxes.getOrDefault(s)
+  if result == nil:
+    result = nsBoxOf(s)
+    nsLiteralBoxes[s] = result
 
 method ToString*(b: NsBoxed): string = b.nsStr(b)
 method nsTypeName*(b: NsBoxed): string = b.nsType
@@ -535,7 +610,11 @@ method GetHashCode*(x: NsBoxed): int32 = x.nsHash(x)
 
 proc nsUnbox*[T](o: RootRef; t: typedesc[T]): T =
   ## `(T)o`: the boxed value, which must be exactly a `T`.
-  when T is RootRef:
+  when T is Option:
+    ## `(int?)o`: null is the absent value, a box of an `int` a present one.
+    type E = typeof(default(T).get)
+    if o == nil: none(E) else: some(nsUnbox(o, E))
+  elif T is RootRef:
     if o != nil and not (o of T):
       raise newException(ObjectConversionDefect, "Specified cast is not valid.")
     T(o)
