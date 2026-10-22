@@ -9,20 +9,20 @@ Roslyn), reorder, native and diagnostics.
 
 | findings | commit |
 |---|---|
-| A1 narrowing, B1 `MinValue % -1`, A7 `uint` constants, C25 float `%`, C29 `>>>` (and shift-count masking, `Math.Abs(MinValue)`) | `6e54b32` |
-| A2, A3 compound assignment order and single evaluation | `8de958c` |
-| C1 value parameters, C2 generic `base.`, C6/C7 `params`, C22/C23 null strings, C24 boxing into `object` | `25cf31a` |
-| A5 overrides of generic base members | `255d728` |
-| A6 overload resolution, C8 user conversions from literals | `0c8455b` |
-| A4 loop closures, C4, C5, C21, C27 lambdas and delegates | `4694523` |
-| A9, A10, C11-C17, C19, C20 nullable values, boxing, `?.` values; `(int?)x` casts | `af198c1` |
-| A8 iterator `finally`, C3 qualified library types, C9 enum `0`, C10 `new S()`, C18 `is int ?`, C28 `$"""`, D `newList` diagnostic; `as` with `string`/array/`T?` | `a361a31` |
-| E static constructors on first use | `92e69aa` |
-| D strict-defs build | `12aafd3` |
-| C26 members named like types; types named like library members (`e.Message`) | `4f31745` |
-| (found while fixing) exception-typed variables, fields and properties | `ba68d06` |
+| A1 narrowing, B1 `MinValue % -1`, A7 `uint` constants, C25 float `%`, C29 `>>>` (and shift-count masking, `Math.Abs(MinValue)`) | `9fa31f9` |
+| A2, A3 compound assignment order and single evaluation | `339a1c0` |
+| C1 value parameters, C2 generic `base.`, C6/C7 `params`, C22/C23 null strings, C24 boxing into `object` | `3866035` |
+| A5 overrides of generic base members | `c20e577` |
+| A6 overload resolution, C8 user conversions from literals | `206bbfd` |
+| A4 loop closures, C4, C5, C21, C27 lambdas and delegates | `9cffd3d` |
+| A9, A10, C11-C17, C19, C20 nullable values, boxing, `?.` values; `(int?)x` casts | `5e0dde2` |
+| A8 iterator `finally`, C3 qualified library types, C9 enum `0`, C10 `new S()`, C18 `is int ?`, C28 `$"""`, D `newList` diagnostic; `as` with `string`/array/`T?` | `10d1b0f` |
+| E static constructors on first use | `e94a016` |
+| D strict-defs build | `d719a1c` |
+| C26 members named like types; types named like library members (`e.Message`) | `7c6f658` |
+| (found while fixing) exception-typed variables, fields and properties | `f1695ce` |
 
-### Follow-up: .NET exception messages, and what turned up on the way
+### Follow-up: .NET exception messages, and what turned up on the way (`c7a8b58`, `9dd1172`)
 
 Asked whether exceptions could carry C#'s messages, and at what cost: they now do,
 with nothing added where no exception is thrown (the checks are unchanged; the work
