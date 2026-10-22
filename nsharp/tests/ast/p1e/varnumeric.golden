@@ -571,8 +571,8 @@ nkStmtList
                     nkIdentDefs
                       nkIdent 'nsChecked6'
                       nkEmpty
-                      nkInfix
-                        nkIdent '+'
+                      nkCall
+                        nkIdent 'nsCkAdd'
                         nkIdent 'big'
                         nkIntLit 1
                   nkPragma
@@ -588,8 +588,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "overflow"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "overflow"
   nkProcDef
     nkPostfix
       nkIdent '*'

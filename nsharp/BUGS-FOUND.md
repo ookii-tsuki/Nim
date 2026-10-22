@@ -43,6 +43,14 @@ item has a test under `nsharp/tests/ecma/`, checked against Roslyn.
 | a local function in a loop body shared one copy of the body's variables across iterations | `localfunccells` |
 | a cast to a class, `((MyEx)e).Message`, lost its type name in sema | sema projection of `exceptionvalues` |
 | a record's positional member named like a class (`record R(int A)` beside `class A`) broke its `==` and `hash` | `discardcalls` |
+| `checked((byte)400)` wrapped (Nim never range-checks a conversion to an unsigned type), and a signed one threw `ArgumentOutOfRangeException`; both are `OverflowException` | `ownchecks` |
+
+The messages were first translated when `Message` was read, by matching Nim's text
+(55 ns a read). Now N# makes the common checks itself in place of Nim's (array
+bounds, `checked` arithmetic and conversions), so they throw .NET's message
+directly, and what Nim's runtime still raises is renamed once where a `catch` takes
+it: `Message` reads the field. A thrown, caught and read index error went from
+about 200 ns to about 100 ns; the checked access itself costs what it did.
 
 Still open, recorded rather than fixed:
 

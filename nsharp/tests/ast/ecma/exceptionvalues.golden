@@ -795,14 +795,18 @@ nkStmtList
             nkIdent 'Exception'
             nkIdent 'c'
           nkStmtList
-            nkAsgn
-              nkIdent 'e'
+            nkCall
+              nkIdent 'nsAdoptException'
               nkIdent 'c'
-            nkAsgn
-              nkDotExpr
-                nkIdent 'Program'
-                nkIdent 'last'
-              nkIdent 'c'
+            nkStmtList
+              nkAsgn
+                nkIdent 'e'
+                nkIdent 'c'
+              nkAsgn
+                nkDotExpr
+                  nkIdent 'Program'
+                  nkIdent 'last'
+                nkIdent 'c'
       nkCall
         nkIdent 'WriteLine'
         nkInfix
@@ -998,15 +1002,19 @@ nkStmtList
             nkIdent 'w'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '+'
-                nkDotExpr
-                  nkIdent 'w'
-                  nkIdent 'Message'
-                nkDotExpr
-                  nkIdent 'w'
-                  nkIdent 'Code'
+              nkIdent 'nsAdoptException'
+              nkIdent 'w'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkDotExpr
+                    nkIdent 'w'
+                    nkIdent 'Message'
+                  nkDotExpr
+                    nkIdent 'w'
+                    nkIdent 'Code'
       nkVarSection
         nkIdentDefs
           nkIdent 'saved'
@@ -1027,11 +1035,15 @@ nkStmtList
             nkIdent 'z'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '=='
-                nkIdent 'z'
-                nkIdent 'saved'
+              nkIdent 'nsAdoptException'
+              nkIdent 'z'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '=='
+                  nkIdent 'z'
+                  nkIdent 'saved'
   nkProcDef
     nkPostfix
       nkIdent '*'

@@ -251,12 +251,16 @@ nkStmtList
             nkIdent 'Exception'
             nkIdent 'e'
           nkStmtList
-            nkRaiseStmt
-              nkCall
-                nkIdent 'nsNewException'
-                nkIdent 'InvalidOperationException'
-                nkStrLit "outer"
-                nkIdent 'e'
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkRaiseStmt
+                nkCall
+                  nkIdent 'nsNewException'
+                  nkIdent 'InvalidOperationException'
+                  nkStrLit "outer"
+                  nkIdent 'e'
       nkCall
         nkIdent 'WriteLine'
         nkStrLit "not reached"

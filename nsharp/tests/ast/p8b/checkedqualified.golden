@@ -671,13 +671,17 @@ nkStmtList
               nkIdent 'e'
             nkStmtList
               nkCall
-                nkIdent 'WriteLine'
-                nkInfix
-                  nkIdent '+'
-                  nkStrLit "caught "
-                  nkDotExpr
-                    nkIdent 'e'
-                    nkIdent 'Message'
+                nkIdent 'nsAdoptException'
+                nkIdent 'e'
+              nkStmtList
+                nkCall
+                  nkIdent 'WriteLine'
+                  nkInfix
+                    nkIdent '+'
+                    nkStrLit "caught "
+                    nkDotExpr
+                      nkIdent 'e'
+                      nkIdent 'Message'
         nkTryStmt
           nkStmtList
             nkVarSection
@@ -708,13 +712,17 @@ nkStmtList
               nkIdent 'e'
             nkStmtList
               nkCall
-                nkIdent 'WriteLine'
-                nkInfix
-                  nkIdent '+'
-                  nkStrLit "caught "
-                  nkDotExpr
-                    nkIdent 'e'
-                    nkIdent 'Message'
+                nkIdent 'nsAdoptException'
+                nkIdent 'e'
+              nkStmtList
+                nkCall
+                  nkIdent 'WriteLine'
+                  nkInfix
+                    nkIdent '+'
+                    nkStrLit "caught "
+                    nkDotExpr
+                      nkIdent 'e'
+                      nkIdent 'Message'
         nkPragma
           nkIdent 'pop'
   nkProcDef

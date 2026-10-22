@@ -1,0 +1,2 @@
+# Build output of compiling a test in place (a compiler run with -o: next to it).
+build/

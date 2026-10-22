@@ -65,7 +65,7 @@ import ../Collections
 from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remove,
   copyOfSet, nsKeyHash, withComparer, initLike
 from ../../../nsharp/hashmap as nshash import nil
-from ../../../nsharp/intrinsics import NsDisposeStack, nsDisposeRun, Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName,
+from ../../../nsharp/intrinsics import nsNilFail, NsDisposeStack, nsDisposeRun, Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName,
   nsVtByKey, nsKeyOf, Equals, GetHashCode,
   NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
 export Collections
@@ -1514,8 +1514,7 @@ proc nsFixedSize() {.noinline, noreturn.} =
 
 template nsIfaceObj(v: untyped): RootRef =
   ## The instance behind an interface value; null throws, as a call on it does.
-  (if v.nsObj == nil: raise newException(NullReferenceException,
-                                         "Object reference not set to an instance of an object.");
+  (if v.nsObj == nil: nsNilFail();
    v.nsObj)
 
 # The tables. `C` is the implementing type; an array is fixed in size and takes no

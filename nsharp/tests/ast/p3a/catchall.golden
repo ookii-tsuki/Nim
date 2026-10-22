@@ -450,6 +450,9 @@ nkStmtList
                 nkEmpty
                 nkCall
                   nkIdent 'getCurrentException'
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'nsExc1'
             nkVarSection
               nkIdentDefs
                 nkIdent 'nsPick2'

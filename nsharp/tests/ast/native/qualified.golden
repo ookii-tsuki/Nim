@@ -257,30 +257,34 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'Print'
-              nkDotExpr
-                nkIdent 'Toybox'
-                nkIdent 'Console'
-              nkInfix
-                nkIdent '&'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'Print'
+                nkDotExpr
+                  nkIdent 'Toybox'
+                  nkIdent 'Console'
                 nkInfix
                   nkIdent '&'
                   nkInfix
                     nkIdent '&'
-                    nkStrLit "caught: "
-                    nkCall
-                      nkIdent 'nsFmt'
-                      nkDotExpr
-                        nkIdent 'e'
-                        nkIdent 'Message'
-                      nkStrLit ""
-                  nkStrLit ", "
-                nkCall
-                  nkIdent 'nsFmt'
-                  nkDotExpr
-                    nkIdent 'names'
-                    nkIdent 'Count'
-                  nkStrLit ""
+                    nkInfix
+                      nkIdent '&'
+                      nkStrLit "caught: "
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkDotExpr
+                          nkIdent 'e'
+                          nkIdent 'Message'
+                        nkStrLit ""
+                    nkStrLit ", "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkDotExpr
+                      nkIdent 'names'
+                      nkIdent 'Count'
+                    nkStrLit ""
   nkProcDef
     nkIdent 'nsStart'
     nkEmpty

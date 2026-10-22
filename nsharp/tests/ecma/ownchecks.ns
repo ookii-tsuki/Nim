@@ -1,0 +1,49 @@
+// Array bounds, `checked` arithmetic and `checked` conversions are checked by N#
+// itself, in place of Nim's check, so they throw .NET's exception with its message;
+// what Nim's runtime still checks (a string's index) gets .NET's message where a
+// `catch` first sees it, a filter's included.
+using System;
+using System.Collections.Generic;
+class Program
+{
+    static void Try(string what, Action a)
+    {
+        try { a(); }
+        catch (Exception e) { Console.WriteLine(what + ": " + e.GetType().Name + ": " + e.Message); }
+    }
+    static void Main()
+    {
+        int[] arr = new int[2];
+        int i = 5, neg = -1, big = int.MaxValue, small = int.MinValue;
+        long lbig = long.MaxValue; uint u = 0; byte b = 200; short sh = short.MaxValue;
+        string s = "ab";
+        Try("get", () => Console.WriteLine(arr[i]));
+        Try("set", () => arr[i] = 1);
+        Try("neg", () => Console.WriteLine(arr[neg]));
+        Try("end", () => Console.WriteLine(arr[^3]));
+        Try("str", () => Console.WriteLine(s[i]));
+        Try("add", () => Console.WriteLine(checked(big + 1)));
+        Try("lit", () => Console.WriteLine(checked(1 + big)));
+        Try("sub", () => Console.WriteLine(checked(small - 1)));
+        Try("mul", () => Console.WriteLine(checked(big * 2)));
+        Try("lng", () => Console.WriteLine(checked(lbig + 1)));
+        Try("uns", () => Console.WriteLine(checked(u - 1)));
+        Try("neg", () => Console.WriteLine(checked(-small)));
+        Try("byt", () => { checked { byte c = (byte)(b + b); Console.WriteLine(c); } });
+        Try("sho", () => { checked { sh++; } });
+        Try("cmp", () => { checked { big += 1; } });
+        Try("lam", () => { checked { Func<int, int> f = x => x + 1; Console.WriteLine(f(big)); } });
+        int k = 200, m1 = -1, ok = 100; ulong ubig = ulong.MaxValue; int seventy = 70000;
+        Try("c1", () => Console.WriteLine(checked((sbyte)k)));
+        Try("c2", () => Console.WriteLine(checked((uint)m1)));
+        Try("c3", () => Console.WriteLine(checked((int)lbig)));
+        Try("c4", () => Console.WriteLine(checked((long)ubig)));
+        Try("c5", () => Console.WriteLine(checked((ushort)seventy)));
+        Try("c6", () => Console.WriteLine(checked((byte)ok) + " " + unchecked((byte)k) + " " + (short)seventy + " " + checked((ulong)ok)));
+        Try("ok", () => Console.WriteLine(checked(big - 1) + " " + arr[1] + " " + unchecked(big + 1)));
+        try { Console.WriteLine(arr[i]); }
+        catch (IndexOutOfRangeException e) when (e.Message.StartsWith("Index")) { Console.WriteLine("filter: " + e.Message); }
+        try { try { Console.WriteLine(s[i]); } catch { throw; } }
+        catch (Exception e) { Console.WriteLine("rethrown: " + e.Message); }
+    }
+}

@@ -283,8 +283,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "no match"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "no match"
       nkBlockStmt
         nkEmpty
         nkStmtList

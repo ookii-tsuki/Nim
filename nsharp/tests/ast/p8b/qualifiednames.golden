@@ -1972,10 +1972,14 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkDotExpr
-                nkIdent 'e'
-                nkIdent 'Message'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkDotExpr
+                  nkIdent 'e'
+                  nkIdent 'Message'
       nkVarSection
         nkIdentDefs
           nkIdent 'd'
@@ -2006,8 +2010,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "missing"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "missing"
       nkVarSection
         nkIdentDefs
           nkIdent 'b'

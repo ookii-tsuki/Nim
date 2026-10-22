@@ -412,12 +412,16 @@ nkStmtList
             nkIdent 'g'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkDotExpr
-                nkCall
-                  nkIdent 'nsCheckNilVar'
-                  nkIdent 'g'
-                nkIdent 'Id'
+              nkIdent 'nsAdoptException'
+              nkIdent 'g'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsCheckNilVar'
+                    nkIdent 'g'
+                  nkIdent 'Id'
   nkProcDef
     nkPostfix
       nkIdent '*'

@@ -426,14 +426,18 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '&'
-                nkCall
-                  nkIdent 'nsFmt'
-                  nkIdent 'what'
-                  nkStrLit ""
-                nkStrLit ": out of range"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '&'
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkIdent 'what'
+                    nkStrLit ""
+                  nkStrLit ": out of range"
       nkReturnStmt
         nkIdent 'r'
   nkProcDef

@@ -309,25 +309,29 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '&'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
                 nkInfix
                   nkIdent '&'
                   nkInfix
                     nkIdent '&'
-                    nkStrLit "int '"
-                    nkCall
-                      nkIdent 'nsFmt'
-                      nkIdent 's'
-                      nkStrLit ""
-                  nkStrLit "' -> FormatException: "
-                nkCall
-                  nkIdent 'nsFmt'
-                  nkDotExpr
-                    nkIdent 'e'
-                    nkIdent 'Message'
-                  nkStrLit ""
+                    nkInfix
+                      nkIdent '&'
+                      nkStrLit "int '"
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkIdent 's'
+                        nkStrLit ""
+                    nkStrLit "' -> FormatException: "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkDotExpr
+                      nkIdent 'e'
+                      nkIdent 'Message'
+                    nkStrLit ""
         nkExceptBranch
           nkInfix
             nkIdent 'as'
@@ -335,25 +339,29 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '&'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
                 nkInfix
                   nkIdent '&'
                   nkInfix
                     nkIdent '&'
-                    nkStrLit "int '"
-                    nkCall
-                      nkIdent 'nsFmt'
-                      nkIdent 's'
-                      nkStrLit ""
-                  nkStrLit "' -> OverflowException: "
-                nkCall
-                  nkIdent 'nsFmt'
-                  nkDotExpr
-                    nkIdent 'e'
-                    nkIdent 'Message'
-                  nkStrLit ""
+                    nkInfix
+                      nkIdent '&'
+                      nkStrLit "int '"
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkIdent 's'
+                        nkStrLit ""
+                    nkStrLit "' -> OverflowException: "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkDotExpr
+                      nkIdent 'e'
+                      nkIdent 'Message'
+                    nkStrLit ""
   nkProcDef
     nkIdent 'TryDouble'
     nkEmpty
@@ -403,17 +411,21 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '&'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
                 nkInfix
                   nkIdent '&'
-                  nkStrLit "double '"
-                  nkCall
-                    nkIdent 'nsFmt'
-                    nkIdent 's'
-                    nkStrLit ""
-                nkStrLit "' -> FormatException"
+                  nkInfix
+                    nkIdent '&'
+                    nkStrLit "double '"
+                    nkCall
+                      nkIdent 'nsFmt'
+                      nkIdent 's'
+                      nkStrLit ""
+                  nkStrLit "' -> FormatException"
   nkProcDef
     nkIdent 'Main'
     nkEmpty
@@ -544,10 +556,14 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkDotExpr
-                nkIdent 'e'
-                nkIdent 'Message'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkDotExpr
+                  nkIdent 'e'
+                  nkIdent 'Message'
       nkTryStmt
         nkStmtList
           nkCall
@@ -561,10 +577,14 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkDotExpr
-                nkIdent 'e'
-                nkIdent 'Message'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkDotExpr
+                  nkIdent 'e'
+                  nkIdent 'Message'
       nkTryStmt
         nkStmtList
           nkCall
@@ -578,10 +598,14 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkDotExpr
-                nkIdent 'e'
-                nkIdent 'Message'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkDotExpr
+                  nkIdent 'e'
+                  nkIdent 'Message'
       nkForStmt
         nkIdent 's'
         nkCall
@@ -858,10 +882,14 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkDotExpr
-                nkIdent 'e'
-                nkIdent 'Message'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkDotExpr
+                  nkIdent 'e'
+                  nkIdent 'Message'
       nkStmtList
         nkVarSection
           nkIdentDefs
@@ -919,10 +947,14 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkDotExpr
-                nkIdent 'e'
-                nkIdent 'Message'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkDotExpr
+                  nkIdent 'e'
+                  nkIdent 'Message'
       nkStmtList
         nkVarSection
           nkIdentDefs

@@ -209,13 +209,17 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '+'
-                nkStrLit "ioe: "
-                nkDotExpr
-                  nkIdent 'e'
-                  nkIdent 'Message'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkStrLit "ioe: "
+                  nkDotExpr
+                    nkIdent 'e'
+                    nkIdent 'Message'
       nkTryStmt
         nkStmtList
           nkVarSection
@@ -237,8 +241,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "ioe cast"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "ioe cast"
       nkVarSection
         nkIdentDefs
           nkIdent 'c'

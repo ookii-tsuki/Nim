@@ -1,0 +1,25 @@
+get: IndexOutOfRangeException: Index was outside the bounds of the array.
+set: IndexOutOfRangeException: Index was outside the bounds of the array.
+neg: IndexOutOfRangeException: Index was outside the bounds of the array.
+end: IndexOutOfRangeException: Index was outside the bounds of the array.
+str: IndexOutOfRangeException: Index was outside the bounds of the array.
+add: OverflowException: Arithmetic operation resulted in an overflow.
+lit: OverflowException: Arithmetic operation resulted in an overflow.
+sub: OverflowException: Arithmetic operation resulted in an overflow.
+mul: OverflowException: Arithmetic operation resulted in an overflow.
+lng: OverflowException: Arithmetic operation resulted in an overflow.
+uns: OverflowException: Arithmetic operation resulted in an overflow.
+neg: OverflowException: Arithmetic operation resulted in an overflow.
+byt: OverflowException: Arithmetic operation resulted in an overflow.
+sho: OverflowException: Arithmetic operation resulted in an overflow.
+cmp: OverflowException: Arithmetic operation resulted in an overflow.
+lam: OverflowException: Arithmetic operation resulted in an overflow.
+c1: OverflowException: Arithmetic operation resulted in an overflow.
+c2: OverflowException: Arithmetic operation resulted in an overflow.
+c3: OverflowException: Arithmetic operation resulted in an overflow.
+c4: OverflowException: Arithmetic operation resulted in an overflow.
+c5: OverflowException: Arithmetic operation resulted in an overflow.
+100 200 4464 100
+2147483646 0 -2147483648
+filter: Index was outside the bounds of the array.
+rethrown: Index was outside the bounds of the array.

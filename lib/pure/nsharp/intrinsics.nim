@@ -52,8 +52,63 @@ proc `+`*[T](a: T, b: string): string = $a & b
 #
 # The smallest value over `-1` overflows, and .NET throws `OverflowException` for
 # both `/` and `%` then, checked or not; the processor would trap on `%`.
-proc nsDivOverflow() {.noinline, noreturn.} =
-  raise newException(OverflowDefect, "Arithmetic operation resulted in an overflow.")
+template nsStamped*(T: typedesc; message, netName: string): untyped =
+  ## An exception N# raises under one of the defects .NET's exceptions alias,
+  ## named as .NET names its type. Nim's runtime raises the same defects named as
+  ## Nim does, which is how `nsAdoptException` tells them apart.
+  (let nsE = newException(T, message); nsE.name = netName; nsE)
+
+proc nsOverflowFail*() {.noinline, noreturn.} =
+  raise nsStamped(OverflowDefect, "Arithmetic operation resulted in an overflow.",
+                  "System.OverflowException")
+
+proc nsIndexFail*() {.noinline, noreturn.} =
+  raise nsStamped(IndexDefect, "Index was outside the bounds of the array.",
+                  "System.IndexOutOfRangeException")
+
+proc nsDivOverflow() {.noinline, noreturn.} = nsOverflowFail()
+
+# `checked` integer `+`, `-`, `*` and negation: the C compiler's overflow builtins,
+# the test Nim's own `overflowChecks` makes, failing with .NET's message.
+when defined(gcc) or defined(clang) or defined(llvm_gcc) or defined(icc):
+  proc nsAddOvf[T](a, b: T; r: var T): bool {.importc: "__builtin_add_overflow", nodecl.}
+  proc nsSubOvf[T](a, b: T; r: var T): bool {.importc: "__builtin_sub_overflow", nodecl.}
+  proc nsMulOvf[T](a, b: T; r: var T): bool {.importc: "__builtin_mul_overflow", nodecl.}
+
+  proc nsCkAdd*[T: SomeInteger](a, b: T): T {.inline.} =
+    if nsAddOvf(a, b, result): nsOverflowFail()
+  proc nsCkSub*[T: SomeInteger](a, b: T): T {.inline.} =
+    if nsSubOvf(a, b, result): nsOverflowFail()
+  proc nsCkMul*[T: SomeInteger](a, b: T): T {.inline.} =
+    if nsMulOvf(a, b, result): nsOverflowFail()
+else:
+  ## Another C compiler: Nim's checked arithmetic, whose defect `nsAdoptException` names.
+  {.push overflowChecks: on.}
+  proc nsCkAdd*[T: SomeInteger](a, b: T): T {.inline.} = a + b
+  proc nsCkSub*[T: SomeInteger](a, b: T): T {.inline.} = a - b
+  proc nsCkMul*[T: SomeInteger](a, b: T): T {.inline.} = a * b
+  {.pop.}
+
+{.push rangeChecks: off.}
+proc nsCkConv*[T: SomeInteger; S: SomeInteger](t: typedesc[T]; x: S): T {.inline.} =
+  ## `checked((T)x)` between integer types: .NET's `OverflowException` when `x` is
+  ## outside `T`, which Nim's range check does not make for an unsigned `T`.
+  when S is SomeSignedInt and T is SomeUnsignedInt:
+    if x < 0 or uint64(x) > uint64(high(T)): nsOverflowFail()
+  elif S is SomeUnsignedInt:
+    if uint64(x) > uint64(high(T)): nsOverflowFail()
+  else:
+    if int64(x) < int64(low(T)) or int64(x) > int64(high(T)): nsOverflowFail()
+  T(x)
+{.pop.}
+
+proc nsCkNeg*[T: SomeInteger](a: T): T {.inline.} =
+  when T is SomeSignedInt:
+    if a == low(T): nsOverflowFail()
+    -a
+  else:
+    if a != 0: nsOverflowFail()
+    a
 
 proc nsDiv*[T: SomeInteger](a, b: T): T {.inline.} =
   if b == 0: raise newException(DivByZeroDefect, "Attempted to divide by zero.")
@@ -225,7 +280,8 @@ proc nsOptAs*[T, U](a: Option[T]; t: typedesc[U]): Option[U] =
   if a.isSome: some(U(a.get)) else: none(U)
 
 proc nsNilFail*() {.noinline, noreturn.} =
-  raise newException(NilAccessDefect, "Object reference not set to an instance of an object.")
+  raise nsStamped(NilAccessDefect, "Object reference not set to an instance of an object.",
+                  "System.NullReferenceException")
 
 template nsCheckNil*(x: untyped): untyped =
   ## C# throws when a method is called on a nil receiver even if the body never
@@ -561,8 +617,24 @@ var nsExceptionName*: proc (e: ref Exception): string {.nimcall.} = nil
   ## An exception's .NET type name, which `System` knows (see its
   ## `nsExceptionTypeName`). An exception type takes no method: the defects .NET's
   ## exceptions alias are declared in Nim's `system`, whose types cannot.
-var nsExceptionMessage*: proc (e: ref Exception): string {.nimcall.} = nil
-  ## An exception's `Message`, in .NET's words where Nim's runtime raised it.
+proc nsAdoptException*(e: ref Exception) =
+  ## An exception as the program first sees it, in a `catch`: a defect Nim's
+  ## runtime raised (a check N# leaves to Nim, such as a string's index) is named as
+  ## Nim names its type, where N#'s own throws are named as .NET does (`nsStamped`),
+  ## and takes .NET's name and message here, once.
+  if e == nil or e.name.isNil: return
+  if e of IndexDefect:
+    if e.name == cstring"IndexDefect":
+      e.msg = "Index was outside the bounds of the array."
+      e.name = "System.IndexOutOfRangeException"
+  elif e of OverflowDefect:
+    if e.name == cstring"OverflowDefect":
+      e.msg = "Arithmetic operation resulted in an overflow."
+      e.name = "System.OverflowException"
+  elif e of NilAccessDefect:
+    if e.name == cstring"NilAccessDefect":
+      e.msg = "Object reference not set to an instance of an object."
+      e.name = "System.NullReferenceException"
 
 proc GetType*(x: RootRef): Type {.discardable.} =
   ## `x.GetType()` on a class value: its dynamic type.
@@ -668,7 +740,7 @@ proc nsUnbox*[T](o: RootRef; t: typedesc[T]): T =
     T(o)
   else:
     if o == nil:
-      raise newException(NilAccessDefect, "Object reference not set to an instance of an object.")
+      nsNilFail()
     if not (o of NsBox[T]): nsCastFail(GetType(o).FullName, nsTypeOf(T).FullName)
     NsBox[T](o).v
 
@@ -712,7 +784,7 @@ method nsTypeName*(a: NsMdBase): string = a.nsName
 proc nsNewMd*[T](t: typedesc[T]; dims: varargs[int]): NsMdArray[T] =
   var n = 1
   for d in dims:
-    if d < 0: raise newException(OverflowDefect, "Arithmetic operation resulted in an overflow.")
+    if d < 0: nsOverflowFail()
     n *= d
   NsMdArray[T](nsDims: @dims, nsData: newSeq[T](n), nsName: nsMdName[T](dims.len))
 
@@ -720,11 +792,11 @@ proc nsMdOf*[T](data: seq[T]; dims: seq[int]): NsMdArray[T] =
   NsMdArray[T](nsDims: dims, nsData: data, nsName: nsMdName[T](dims.len))
 
 proc nsFlat[T](a: NsMdArray[T]; idx: openArray[int]): int =
-  if a == nil: raise newException(NilAccessDefect, "Object reference not set to an instance of an object.")
-  if idx.len != a.nsDims.len: raise newException(IndexDefect, "Index was outside the bounds of the array.")
+  if a == nil: nsNilFail()
+  if idx.len != a.nsDims.len: nsIndexFail()
   for k, i in idx:
     if i < 0 or i >= a.nsDims[k]:
-      raise newException(IndexDefect, "Index was outside the bounds of the array.")
+      nsIndexFail()
     result = result * a.nsDims[k] + i
 
 proc `[]`*[T](a: NsMdArray[T]; i, j: SomeInteger): var T =
@@ -742,7 +814,7 @@ proc Length*[T](a: NsMdArray[T]): int32 = int32(a.nsData.len)
 proc Rank*[T](a: NsMdArray[T]): int32 = int32(a.nsDims.len)
 proc GetLength*[T](a: NsMdArray[T]; d: SomeInteger): int32 =
   if d < 0 or int(d) >= a.nsDims.len:
-    raise newException(IndexDefect, "Index was outside the bounds of the array.")
+    nsIndexFail()
   int32(a.nsDims[d])
 proc GetUpperBound*[T](a: NsMdArray[T]; d: SomeInteger): int32 = a.GetLength(d) - 1
 proc GetLowerBound*[T](a: NsMdArray[T]; d: SomeInteger): int32 = 0
@@ -777,7 +849,7 @@ proc nsArrayOf*[T](data: sink seq[T]): NsArray[T] {.inline.} =
 
 proc nsNewArray*[T](t: typedesc[T]; n: SomeInteger): NsArray[T] =
   ## `new T[n]`: `n` default elements.
-  if n < 0: raise newException(OverflowDefect, "Arithmetic operation resulted in an overflow.")
+  if n < 0: nsOverflowFail()
   nsArrayOf(newSeq[T](int(n)))
 
 template nsArrCheck(a: untyped) =
@@ -785,18 +857,33 @@ template nsArrCheck(a: untyped) =
   when not defined(danger):
     if a == nil: nsNilFail()
 
+# The bounds check is made here, in place of Nim's (which is off for the access), so
+# a failure throws with .NET's message and costs nothing more: one unsigned compare,
+# the throw out of line. It follows the compilation's `boundChecks` setting.
+const nsBoundChecks = compileOption("boundChecks")
+
+template nsBoundCheck(i, n: int) =
+  when nsBoundChecks:
+    if cast[uint](i) >= cast[uint](n): nsIndexFail()
+
+{.push boundChecks: off.}
 proc `[]`*[T](a: NsArray[T]; i: SomeInteger): var T {.inline.} =
   nsArrCheck(a)
+  nsBoundCheck(int(i), a.nsData.len)
   a.nsData[int(i)]
 proc `[]=`*[T](a: NsArray[T]; i: SomeInteger; v: sink T) {.inline.} =
   nsArrCheck(a)
+  nsBoundCheck(int(i), a.nsData.len)
   a.nsData[int(i)] = v
 proc `[]`*[T](a: NsArray[T]; i: BackwardsIndex): var T {.inline.} =
   nsArrCheck(a)
+  nsBoundCheck(a.nsData.len - int(i), a.nsData.len)
   a.nsData[i]
 proc `[]=`*[T](a: NsArray[T]; i: BackwardsIndex; v: sink T) {.inline.} =
   nsArrCheck(a)
+  nsBoundCheck(a.nsData.len - int(i), a.nsData.len)
   a.nsData[i] = v
+{.pop.}
 proc `[]`*[T; U, V: Ordinal | BackwardsIndex](a: NsArray[T]; r: HSlice[U, V]): NsArray[T] =
   ## `a[1..^1]`: a new array of those elements, as C# copies a range.
   nsArrCheck(a)
@@ -977,9 +1064,9 @@ when defined(cpp):
     ## An exception reached a place C++ entered N# (`where`: `Class.Member`): C++
     ## cannot see it, so it is handed to `nsOnUnhandled` and goes no further.
     let e = getCurrentException()
-    let message = (if nsExceptionMessage != nil: nsExceptionMessage(e) else: e.msg)
+    nsAdoptException(e)
     let kind = (if nsExceptionName != nil: nsExceptionName(e) else: $e.name)
-    nsOnUnhandled(cstring(where), cstring(message), cstring(kind))
+    nsOnUnhandled(cstring(where), cstring(e.msg), cstring(kind))
 
   # --- native objects N# owns --------------------------------------------------------
   #

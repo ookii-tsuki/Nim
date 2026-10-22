@@ -9,7 +9,7 @@ from std/unicode import nil
 # interfaces (`Array.Sort` takes an `IComparer<T>`), as .NET's namespaces may.
 import System/Collections/Generic {.cyclic.}
 from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, Equals, GetHashCode, NsArray, nsArrayOf, len,
-  items, `[]`, `[]=`, nsNoValue, nsExceptionName, nsExceptionMessage
+  items, `[]`, `[]=`, nsNoValue, nsExceptionName, nsStamped, nsAdoptException
 
 # `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
 from ../nsharp/pragmas import nsStatic, nsInterface
@@ -104,36 +104,11 @@ type
 # exception is a value object but is raised as a `ref`, which does not convert to
 # its base in an argument position.
 #
-# Nim's runtime checks raise the defects .NET's exceptions alias with Nim's own
-# text (`index 5 not in 0 .. 1`), which reading `Message` puts in .NET's words. The
-# static type picks the translation where it says which defect it is; otherwise
-# the dynamic type does, a test made only when a message is read.
+# The message is .NET's from the start: N#'s own throws make it, and a defect Nim's
+# runtime raised is given it where a `catch` first sees it (the intrinsics'
+# `nsAdoptException`), so reading it is reading the field.
 
-proc nsIndexText(m: string): string =
-  if m.startsWith("index out of bounds") or (m.startsWith("index ") and " not in " in m):
-    "Index was outside the bounds of the array."
-  else: m
-
-proc nsOverflowText(m: string): string =
-  if m == "over- or underflow": "Arithmetic operation resulted in an overflow." else: m
-
-proc nsNilText(m: string): string =
-  if m == "attempt to access a nil address":
-    "Object reference not set to an instance of an object."
-  else: m
-
-proc nsRuntimeText(e: ref Exception): string =
-  if e of IndexDefect: nsIndexText(e.msg)
-  elif e of OverflowDefect: nsOverflowText(e.msg)
-  elif e of NilAccessDefect: nsNilText(e.msg)
-  else: e.msg
-
-proc Message*[T: ref Exception](e: T): string =
-  when T is ref IndexDefect: nsIndexText(e.msg)
-  elif T is ref OverflowDefect: nsOverflowText(e.msg)
-  elif T is ref NilAccessDefect: nsNilText(e.msg)
-  elif T is ref CatchableError: e.msg
-  else: nsRuntimeText(e)
+proc Message*[T: ref Exception](e: T): string = e.msg
 
 # `new E(...)` of a library exception: the message .NET's constructor makes, which
 # a parameterless one takes from the type, and one naming a parameter or an object
@@ -267,7 +242,8 @@ proc nsUnhandled(e: ref Exception) {.nimcall, gcsafe, raises: [], tags: [].} =
       var text = "Unhandled exception. "
       for i, x in chain:
         if i > 0: text.add "\n ---> "
-        text.add nsExceptionTypeName(x) & ": " & nsRuntimeText(x)
+        nsAdoptException(x)
+        text.add nsExceptionTypeName(x) & ": " & x.msg
       for i in countdown(chain.high, 0):
         text.add nsTraceText(chain[i])
         if i > 0: text.add "\n   --- End of inner exception stack trace ---"
@@ -431,8 +407,8 @@ proc nsParseFail(s, T: string; how: NsParsed) {.noinline, noreturn.} =
   if how == npFormat:
     raise newException(FormatException,
                        "The input string '" & s & "' was not in a correct format.")
-  raise newException(OverflowException,
-                     "Value was either too large or too small for " & T & ".")
+  raise nsStamped(OverflowException, "Value was either too large or too small for " & T & ".",
+                  "System.OverflowException")
 
 proc Parse*[T: SomeInteger](t: typedesc[T]; s: string): T =
   let how = nsParseInt(s, result)
@@ -661,8 +637,9 @@ proc ReadLine*(): string = stdin.readLine
 # `int`; a generic one covers the other numeric types.
 proc nsAbsInt[T: SomeSignedInt](x: T): T =
   if x == low(T):
-    raise newException(OverflowException,
-      "Negating the minimum value of a twos complement number is invalid.")
+    raise nsStamped(OverflowException,
+      "Negating the minimum value of a twos complement number is invalid.",
+      "System.OverflowException")
   abs(x)
 proc Abs*(x: int32): int32 {.nsStatic: "Math".} = nsAbsInt(x)
 proc Abs*(x: float): float {.nsStatic: "Math".} = abs(x)
@@ -693,7 +670,6 @@ proc Dispose*[T](e: IEnumerator[T]) = e.nsDisposeEnumerator()
 # intrinsics' `nsNoValue`). A statement, so it comes after every declaration: a
 # module of an import cycle shares only the declarations before its first one.
 nsExceptionName = nsExceptionTypeName
-nsExceptionMessage = nsRuntimeText
 unhandledExceptionHook = nsUnhandled
 nsNoValue = proc () {.nimcall.} =
   raise newException(InvalidOperationException, "Nullable object must have a value.")

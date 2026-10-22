@@ -1089,52 +1089,56 @@ nkStmtList
             nkIdent 'InvalidOperationException'
             nkIdent 'e'
           nkStmtList
-            nkAsgn
-              nkIdent 'nsP_a'
-              nkNilLit
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
             nkStmtList
               nkAsgn
-                nkDotExpr
-                  nkCall
-                    nkIdent 'nsDerefCached'
-                    nkIdent 'a'
-                    nkIdent 'nsP_a'
-                  nkIdent 'n'
-                nkInfix
-                  nkIdent '+'
+                nkIdent 'nsP_a'
+                nkNilLit
+              nkStmtList
+                nkAsgn
                   nkDotExpr
                     nkCall
                       nkIdent 'nsDerefCached'
                       nkIdent 'a'
                       nkIdent 'nsP_a'
                     nkIdent 'n'
-                  nkIntLit 10
-              nkCall
-                nkIdent 'Print'
-                nkIdent 'Console'
-                nkInfix
-                  nkIdent '&'
                   nkInfix
-                    nkIdent '&'
-                    nkInfix
-                      nkIdent '&'
-                      nkStrLit "caught "
-                      nkCall
-                        nkIdent 'nsFmt'
-                        nkDotExpr
-                          nkIdent 'e'
-                          nkIdent 'Message'
-                        nkStrLit ""
-                    nkStrLit ": "
-                  nkCall
-                    nkIdent 'nsFmt'
+                    nkIdent '+'
                     nkDotExpr
                       nkCall
                         nkIdent 'nsDerefCached'
                         nkIdent 'a'
                         nkIdent 'nsP_a'
                       nkIdent 'n'
-                    nkStrLit ""
+                    nkIntLit 10
+                nkCall
+                  nkIdent 'Print'
+                  nkIdent 'Console'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkInfix
+                        nkIdent '&'
+                        nkStrLit "caught "
+                        nkCall
+                          nkIdent 'nsFmt'
+                          nkDotExpr
+                            nkIdent 'e'
+                            nkIdent 'Message'
+                          nkStrLit ""
+                      nkStrLit ": "
+                    nkCall
+                      nkIdent 'nsFmt'
+                      nkDotExpr
+                        nkCall
+                          nkIdent 'nsDerefCached'
+                          nkIdent 'a'
+                          nkIdent 'nsP_a'
+                        nkIdent 'n'
+                      nkStrLit ""
       nkCommand
         nkIdent 'inc'
         nkDotExpr

@@ -3364,21 +3364,25 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '+'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
                 nkInfix
                   nkIdent '+'
-                  nkCall
-                    nkDotExpr
-                      nkIdent 'System'
-                      nkIdent 'Message'
-                    nkIdent 'e'
-                  nkStrLit " "
-                nkDotExpr
-                  nkCall
-                    nkIdent 'newMessage'
-                  nkIdent 'Text'
+                  nkInfix
+                    nkIdent '+'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'System'
+                        nkIdent 'Message'
+                      nkIdent 'e'
+                    nkStrLit " "
+                  nkDotExpr
+                    nkCall
+                      nkIdent 'newMessage'
+                    nkIdent 'Text'
       nkVarSection
         nkIdentDefs
           nkIdent 'l'

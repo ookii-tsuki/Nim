@@ -458,8 +458,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "index"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "index"
       nkVarSection
         nkIdentDefs
           nkIdent 'g'
@@ -481,8 +485,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "null deref"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "null deref"
       nkTryStmt
         nkStmtList
           nkCall
@@ -500,8 +508,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "null call"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "null call"
       nkVarSection
         nkIdentDefs
           nkIdent 'm'
@@ -520,8 +532,8 @@ nkStmtList
                 nkIdent 'on'
             nkCall
               nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '+'
+              nkCall
+                nkIdent 'nsCkAdd'
                 nkIdent 'm'
                 nkIntLit 1
             nkPragma
@@ -533,8 +545,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "overflow"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "overflow"
       nkVarSection
         nkIdentDefs
           nkIdent 'z'
@@ -559,8 +575,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "zero"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "zero"
       nkTryStmt
         nkStmtList
           nkRaiseStmt
@@ -575,10 +595,14 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkDotExpr
-                nkIdent 'e'
-                nkIdent 'Message'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkDotExpr
+                  nkIdent 'e'
+                  nkIdent 'Message'
       nkCall
         nkIdent 'WriteLine'
         nkStrLit "done"

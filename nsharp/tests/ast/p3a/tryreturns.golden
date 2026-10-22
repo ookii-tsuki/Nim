@@ -298,10 +298,14 @@ nkStmtList
             nkIdent 'DivideByZeroException'
             nkIdent 'e'
           nkStmtList
-            nkReturnStmt
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkReturnStmt
+                nkPrefix
+                  nkIdent '-'
+                  nkIntLit 1
   nkProcDef
     nkIdent 'Digit'
     nkEmpty
@@ -415,16 +419,24 @@ nkStmtList
             nkIdent 'FormatException'
             nkIdent 'e'
           nkStmtList
-            nkReturnStmt
-              nkStrLit "bad"
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkReturnStmt
+                nkStrLit "bad"
         nkExceptBranch
           nkInfix
             nkIdent 'as'
             nkIdent 'OverflowException'
             nkIdent 'e'
           nkStmtList
-            nkReturnStmt
-              nkStrLit "big"
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkReturnStmt
+                nkStrLit "big"
         nkFinally
           nkStmtList
             nkCall
@@ -477,8 +489,12 @@ nkStmtList
             nkIdent 'InvalidOperationException'
             nkIdent 'e'
           nkStmtList
-            nkReturnStmt
-              nkIntLit 0
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkReturnStmt
+                nkIntLit 0
   nkProcDef
     nkIdent 'Main'
     nkEmpty

@@ -367,6 +367,7 @@ nkStmtList
                       nkIdent 'nsChecked2'
                       nkEmpty
                       nkCall
+                        nkIdent 'nsCkConv'
                         nkIdent 'int16'
                         nkIdent 'big'
                   nkPragma
@@ -382,8 +383,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "checked conversion throws"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "checked conversion throws"
       nkStmtList
         nkPragma
           nkIdent 'push'
@@ -400,6 +405,7 @@ nkStmtList
                 nkIdent 'n'
                 nkIdent 'int32'
                 nkCall
+                  nkIdent 'nsCkConv'
                   nkIdent 'int32'
                   nkIdent 'l'
             nkCall
@@ -412,8 +418,12 @@ nkStmtList
               nkIdent 'e'
             nkStmtList
               nkCall
-                nkIdent 'WriteLine'
-                nkStrLit "checked block throws"
+                nkIdent 'nsAdoptException'
+                nkIdent 'e'
+              nkStmtList
+                nkCall
+                  nkIdent 'WriteLine'
+                  nkStrLit "checked block throws"
         nkPragma
           nkIdent 'pop'
   nkProcDef

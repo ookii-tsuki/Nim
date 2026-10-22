@@ -726,6 +726,9 @@ nkStmtList
                 nkEmpty
                 nkCall
                   nkIdent 'getCurrentException'
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'nsExc1'
             nkVarSection
               nkIdentDefs
                 nkIdent 'nsPick2'
@@ -861,13 +864,17 @@ nkStmtList
             nkIdent 'ex'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '+'
-                nkStrLit "caught "
-                nkDotExpr
-                  nkIdent 'ex'
-                  nkIdent 'Message'
+              nkIdent 'nsAdoptException'
+              nkIdent 'ex'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkStrLit "caught "
+                  nkDotExpr
+                    nkIdent 'ex'
+                    nkIdent 'Message'
       nkVarSection
         nkIdentDefs
           nkIdent 'name'
@@ -956,8 +963,8 @@ nkStmtList
                     nkIdentDefs
                       nkIdent 'nsChecked4'
                       nkEmpty
-                      nkInfix
-                        nkIdent '+'
+                      nkCall
+                        nkIdent 'nsCkAdd'
                         nkIdent 'big'
                         nkIntLit 1
                   nkPragma
@@ -973,8 +980,12 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkStrLit "overflow"
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkStrLit "overflow"
       nkVarSection
         nkIdentDefs
           nkIdent 'shared'
@@ -1064,6 +1075,9 @@ nkStmtList
                     nkEmpty
                     nkCall
                       nkIdent 'getCurrentException'
+                nkCall
+                  nkIdent 'nsAdoptException'
+                  nkIdent 'nsExc7'
                 nkVarSection
                   nkIdentDefs
                     nkIdent 'nsPick8'
@@ -1143,6 +1157,9 @@ nkStmtList
                 nkEmpty
                 nkCall
                   nkIdent 'getCurrentException'
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'nsExc9'
             nkVarSection
               nkIdentDefs
                 nkIdent 'nsPick10'
@@ -1251,13 +1268,17 @@ nkStmtList
             nkIdent 'ex'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '+'
-                nkStrLit "null "
-                nkDotExpr
-                  nkIdent 'ex'
-                  nkIdent 'Message'
+              nkIdent 'nsAdoptException'
+              nkIdent 'ex'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkStrLit "null "
+                  nkDotExpr
+                    nkIdent 'ex'
+                    nkIdent 'Message'
       nkCall
         nkIdent 'WriteLine'
         nkCall

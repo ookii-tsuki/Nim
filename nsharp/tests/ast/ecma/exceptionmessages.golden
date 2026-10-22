@@ -1295,16 +1295,20 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '+'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
                 nkInfix
                   nkIdent '+'
-                  nkStrLit "["
-                  nkDotExpr
-                    nkIdent 'e'
-                    nkIdent 'Message'
-                nkStrLit "]"
+                  nkInfix
+                    nkIdent '+'
+                    nkStrLit "["
+                    nkDotExpr
+                      nkIdent 'e'
+                      nkIdent 'Message'
+                  nkStrLit "]"
   nkProcDef
     nkIdent 'Main'
     nkEmpty
@@ -1558,8 +1562,8 @@ nkStmtList
                     nkIdentDefs
                       nkIdent 'nsChecked1'
                       nkEmpty
-                      nkInfix
-                        nkIdent '+'
+                      nkCall
+                        nkIdent 'nsCkAdd'
                         nkIdent 'big'
                         nkIntLit 1
                   nkPragma
@@ -1634,16 +1638,20 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '+'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
                 nkInfix
                   nkIdent '+'
-                  nkStrLit "["
-                  nkDotExpr
-                    nkIdent 'e'
-                    nkIdent 'Message'
-                nkStrLit "]"
+                  nkInfix
+                    nkIdent '+'
+                    nkStrLit "["
+                    nkDotExpr
+                      nkIdent 'e'
+                      nkIdent 'Message'
+                  nkStrLit "]"
       nkTryStmt
         nkStmtList
           nkStmtList
@@ -1667,16 +1675,20 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '+'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
                 nkInfix
                   nkIdent '+'
-                  nkStrLit "["
-                  nkDotExpr
-                    nkIdent 'e'
-                    nkIdent 'Message'
-                nkStrLit "]"
+                  nkInfix
+                    nkIdent '+'
+                    nkStrLit "["
+                    nkDotExpr
+                      nkIdent 'e'
+                      nkIdent 'Message'
+                  nkStrLit "]"
       nkCall
         nkIdent 'Try'
         nkIdent 'Program'

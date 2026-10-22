@@ -1736,24 +1736,28 @@ nkStmtList
             nkIdent 'e'
           nkStmtList
             nkCall
-              nkIdent 'WriteLine'
-              nkInfix
-                nkIdent '+'
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
                 nkInfix
                   nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkCall
+                        nkDotExpr
+                          nkIdent 'e'
+                          nkIdent 'GetType'
+                      nkIdent 'FullName'
+                    nkStrLit " | "
                   nkDotExpr
                     nkCall
                       nkDotExpr
                         nkIdent 'e'
                         nkIdent 'GetType'
-                    nkIdent 'FullName'
-                  nkStrLit " | "
-                nkDotExpr
-                  nkCall
-                    nkDotExpr
-                      nkIdent 'e'
-                      nkIdent 'GetType'
-                  nkIdent 'Name'
+                    nkIdent 'Name'
   nkProcDef
     nkIdent 'Main'
     nkEmpty

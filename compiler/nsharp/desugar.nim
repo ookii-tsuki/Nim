@@ -8,7 +8,7 @@
 
 import std/[strutils, tables, algorithm, sets]
 import ../ast, ../idents, ../lineinfos, ../options
-import ast, bcl, symbols
+import ast, bcl, symbols, numeric
 
 const
   NsCond = "nsCond"
@@ -75,6 +75,9 @@ type
       ## lowering a statement that may move engine objects: handles resolve afresh
     nonneg: seq[string]
       ## the counters of the `for` loops being lowered that are never negative
+    checked: bool
+      ## lowering inside `checked`: integer `+`, `-`, `*` and negation go through
+      ## the intrinsics' `nsCk*`, which throw with .NET's message
   NsHoist = ref object
     names: seq[tuple[name, cls: string]]
     moves: Table[string, bool]   ## memo: whether an N# member may move engine objects
@@ -1143,6 +1146,12 @@ proc castToNim(l: Lowerer; n: NsNode): PNode =
     ## names both types.
     return newTree(nkCall, n.info, l.id("nsDowncast", n.info), l.expr(n.body),
                    l.typeToNim(n.typ, n.info))
+  if l.checked and n.typeKind == tkInt and n.typ != nil and n.typ.kind == nsnTypeName and
+     n.typ.sons.len == 0 and isNumericName(canonicalTypeName(n.typ.name)) and
+     n.body != nil and n.body.typeKind == tkInt and n.body.kind != nsnIntLit:
+    ## `checked((byte)x)`: out of range throws, as C# has it (see `nsCkConv`).
+    return newTree(nkCall, n.info, l.id("nsCkConv", n.info), l.typeToNim(n.typ, n.info),
+                   l.expr(n.body))
   result = newNodeI(nkCall, n.info)
   result.add convCallee(l.typeToNim(n.typ, n.info))
   if n.body != nil and n.body.typeKind == tkNullable:
@@ -1645,6 +1654,9 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     if isCheckedOp(n):
       result = newTree(nkCall, n.info, l.id(checkedOperatorName(n.argParam), n.info),
                        l.expr(n.body))
+    elif l.checked and n.name == "-" and n.typeKind == tkInt and n.body != nil and
+         n.body.typeKind == tkInt and n.body.kind != nsnIntLit:
+      result = newTree(nkCall, n.info, l.id("nsCkNeg", n.info), l.expr(n.body))
     else:
       result = newTree(nkPrefix, n.info, l.id(n.name, n.info), l.expr(n.body))
   of nsnIncDec:
@@ -1761,6 +1773,24 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     elif isCheckedOp(n):
       result = newTree(nkCall, n.info, l.id(checkedOperatorName(n.argParam), n.info),
                        l.ordered(n.sons[0], n.sons[1 .. 1]), l.expr(n.sons[1]))
+    elif l.checked and n.name in ["+", "-", "*"] and n.sons.len == 2 and
+         n.typeKind == tkInt and n.sons[0].typeKind == tkInt and
+         n.sons[1].typeKind == tkInt and
+         not (n.sons[0].kind == nsnIntLit and n.sons[1].kind == nsnIntLit):
+      ## Checked integer arithmetic (see `checked`); a literal on the left takes the
+      ## other operand's type, as for `nsDiv` below.
+      result = newNodeI(nkCall, n.info)
+      result.add l.id((case n.name
+                       of "+": "nsCkAdd"
+                       of "-": "nsCkSub"
+                       else: "nsCkMul"), n.info)
+      var left = l.ordered(n.sons[0], n.sons[1 .. 1])
+      let right = l.expr(n.sons[1])
+      if n.sons[0].kind == nsnIntLit and left.kind == nkIntLit:
+        left = newTree(nkCall, n.info,
+          newTree(nkCall, n.info, l.id("typeof", n.info), copyTree(right)), left)
+      result.add left
+      result.add right
     elif n.name in ["nsDiv", "nsMod", "nsFmod"] or isMaskedShift(n):
       ## Integer `/` and `%`, the floating-point `%`, and a shift whose count is not
       ## a constant in range go through library procs, which are called rather
@@ -2510,6 +2540,8 @@ proc filteredTryToNim(l: Lowerer; n: NsNode): PNode =
   for r in l.cacheResets(info): body.add r
   body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(exc, info),
     empty(info), newTree(nkCall, info, l.id("getCurrentException", info))))
+  ## Before a filter can read it (see `tryToNim`).
+  body.add newTree(nkCall, info, l.id("nsAdoptException", info), l.id(exc, info))
   body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id(pick, info),
     empty(info), newIntNode(nkIntLit, 0)))
   var k = 0
@@ -2628,7 +2660,13 @@ proc tryToNim(l: Lowerer; n: NsNode): PNode =
         ## `catch { }` takes everything, the runtime's errors too (a bare `except`
         ## would leave out Nim's defects, `NullReferenceException` among them).
         br.add l.anyException(c.info)
-      br.add l.afterThrow(l.stmtSeq(c.body))
+      var handler = l.afterThrow(l.stmtSeq(c.body))
+      if c.typ != nil and c.typ.kind notin {nsnEmpty, nsnVoidType} and c.name.len > 0:
+        ## A defect Nim's runtime raised is given .NET's message once, here, where
+        ## the program first sees it, so reading `Message` is reading a field.
+        handler = newTree(nkStmtList, c.info,
+          newTree(nkCall, c.info, l.id("nsAdoptException", c.info), l.id(c.name, c.info)), handler)
+      br.add handler
       result.add br
     elif c.kind == nsnFinally:
       let f = newNodeI(nkFinally, c.info)
@@ -2954,7 +2992,9 @@ proc checkedToNim(l: Lowerer; n: NsNode): PNode =
   ## which is Nim's `overflowChecks` switch.
   result = newNodeI(nkStmtList, n.info)
   result.add l.checkPush(n.kind == nsnChecked, n.info)
-  l.addStmts(result, n.sons, n.info)
+  var inner = l
+  inner.checked = n.kind == nsnChecked
+  inner.addStmts(result, n.sons, n.info)
   let pop = newNodeI(nkPragma, n.info)
   pop.add l.id("pop", n.info)
   result.add pop
@@ -2965,8 +3005,10 @@ proc checkedExprToNim(l: Lowerer; n: NsNode): PNode =
   let t = l.fresh("nsChecked")
   let sl = newNodeI(nkStmtList, info)
   sl.add l.checkPush(n.name == "checked", info)
+  var inner = l
+  inner.checked = n.name == "checked"
   sl.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(t, info),
-                                            empty(info), l.expr(n.body)))
+                                            empty(info), inner.expr(n.body)))
   sl.add newTree(nkPragma, info, l.id("pop", info))
   sl.add l.id(t, info)
   result = newTree(nkBlockExpr, info, empty(info), sl)
