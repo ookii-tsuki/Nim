@@ -1,0 +1,20 @@
+// `o is int ? a : b` is a type test then the conditional operator, and `as` works
+// with string, array and T? targets.
+using System;
+class Thing { }
+class Program {
+    static void Main() {
+        object o = 3L, p = 3, s = "str", n = null;
+        Console.WriteLine(o is int ? "int" : o is long ? "long" : "?");
+        Console.WriteLine(p is long ? "long" : "notlong");
+        Console.WriteLine(s is string ? 1 : 2);
+        Console.WriteLine(n is Thing ? "thing" : "null");
+        Console.WriteLine(s as string ?? "none");
+        int? q = 5; object b = q;
+        Console.WriteLine(b is int? ? "boxed int" : "other");
+        Console.WriteLine((p is int?) ? "yes" : "no");
+        int? asn = b as int?; int? asm = s as int?; Console.WriteLine(asn.Value + " " + asm.HasValue);
+        string t = "q"; Console.WriteLine((t as string) + ((o as string) ?? "-"));
+        object arr = new int[] { 1, 2 }; int[] ia = arr as int[]; Console.WriteLine(ia.Length + " " + ((s as int[]) == null));
+    }
+}

@@ -318,6 +318,18 @@ proc overloads*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
     for m in s.members.getOrDefault(key):
       if m.name == name: result.add m
 
+proc unnamedMembersOf*(s: NsBclSurface; module: string): seq[string] =
+  ## The operators and iterators a prelude module declares: C# reaches them
+  ## without naming them (`list[0]`, `foreach`, `a == b`), so a module imported by
+  ## name for a type it declares must bring them too. No C# name can be one.
+  result = @[]
+  for ms in s.members.values:
+    for m in ms:
+      if m.path != module or m.name.len == 0 or m.name in result: continue
+      if m.name[0] notin {'a'..'z', 'A'..'Z', '_'} or
+         m.name in ["items", "pairs", "mitems", "mpairs"]:
+        result.add m.name
+
 proc resultAgrees*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
                    name: string): bool =
   ## Whether every overload of a library member yields the same type, so the result

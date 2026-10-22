@@ -1287,7 +1287,9 @@ nkStmtList
       nkReturnStmt
         nkCall
           nkIdent 'newSum'
-          nkIntLit 0
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 0
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -2136,17 +2138,23 @@ nkStmtList
                   nkIdent 'Sum'
                   nkCall
                     nkIdent 'newSum'
-                    nkIntLit 1
+                    nkCall
+                      nkIdent 'int32'
+                      nkIntLit 1
                 nkCall
                   nkIdent 'Sum'
                   nkCall
                     nkIdent 'newSum'
-                    nkIntLit 2
+                    nkCall
+                      nkIdent 'int32'
+                      nkIntLit 2
                 nkCall
                   nkIdent 'Sum'
                   nkCall
                     nkIdent 'newSum'
-                    nkIntLit 3
+                    nkCall
+                      nkIdent 'int32'
+                      nkIntLit 3
           nkIdent 'V'
       nkCall
         nkIdent 'WriteLine'
@@ -2195,7 +2203,9 @@ nkStmtList
             nkIdent 'Program'
             nkCall
               nkIdent 'newMoney'
-              nkIntLit 21
+              nkCall
+                nkIdent 'int32'
+                nkIntLit 21
           nkIdent 'Cents'
   nkProcDef
     nkPostfix

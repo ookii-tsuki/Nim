@@ -8,9 +8,16 @@ nkStmtList
     nkIdent 'WriteLine'
   nkFromStmt
     nkStrLit "System/Collections/Generic"
+    nkAccQuoted
+      nkIdent '$'
     nkIdent 'Add'
     nkIdent 'Count'
     nkIdent 'List'
+    nkAccQuoted
+      nkIdent '[]'
+    nkAccQuoted
+      nkIdent '[]='
+    nkIdent 'items'
     nkIdent 'newList'
   nkPragma
     nkIdent 'push'

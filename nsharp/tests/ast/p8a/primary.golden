@@ -2248,8 +2248,12 @@ nkStmtList
         nkDotExpr
           nkCall
             nkIdent 'newSize'
-            nkIntLit 3
-            nkIntLit 4
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 3
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 4
           nkIdent 'Area'
       nkCall
         nkIdent 'WriteLine'

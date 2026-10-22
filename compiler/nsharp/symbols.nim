@@ -683,6 +683,12 @@ proc ctorOverloads*(scope: NsModuleScope; clsName: string): seq[seq[NsNode]] =
   if not scope.classes.hasKey(clsName): return
   result = scope.classes[clsName].ctorParams
   if result.len == 0: result = @[@[]]
+  elif scope.classes[clsName].classKind == ckStruct:
+    ## A struct always has the parameterless one, its default (ECMA-334 16.4.9).
+    var has = false
+    for ps in result:
+      if ps.len == 0: has = true
+    if not has: result.add @[]
 
 proc isDispatched*(scope: NsModuleScope; clsName, member: string): bool =
   ## True when `member` of `clsName` sits in a dispatch slot: declared `virtual`,

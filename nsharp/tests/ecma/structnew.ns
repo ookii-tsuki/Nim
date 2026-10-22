@@ -1,0 +1,11 @@
+// `new S()` on a struct that declares only other constructors is its default
+using System;
+struct Pt { public int X; public int Y; public Pt(int x) { X = x; Y = 9; } public Pt(int x, int y) { X = x; Y = y; } }
+struct Plain { public int A; }
+class Program {
+    static void Main() {
+        Pt a = new Pt(); Pt b = new Pt(3); Pt c = default; Pt[] arr = new Pt[1];
+        var d = new Pt { Y = 4 };
+        Console.WriteLine(a.X + "," + a.Y + " " + b.X + "," + b.Y + " " + c.Y + " " + arr[0].Y + " " + d.X + "," + d.Y + " " + new Plain().A);
+    }
+}

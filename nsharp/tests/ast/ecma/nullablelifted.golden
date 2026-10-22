@@ -1299,7 +1299,9 @@ nkStmtList
               nkIdent 'Pt'
             nkCall
               nkIdent 'newPt'
-              nkIntLit 3
+              nkCall
+                nkIdent 'int32'
+                nkIntLit 3
       nkVarSection
         nkIdentDefs
           nkIdent 'nn'

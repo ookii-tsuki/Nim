@@ -11,4 +11,5 @@ type
     ## the element type. `IEnumerator<T>` derives from it.
     nsStep*: proc (): bool
 
-proc MoveNext*(e: NsEnumerator): bool = e.nsStep()
+proc MoveNext*(e: NsEnumerator): bool {.discardable.} = e.nsStep()
+  ## C# lets a call statement drop the result.

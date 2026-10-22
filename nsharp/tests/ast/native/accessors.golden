@@ -471,8 +471,12 @@ nkStmtList
             nkIdent 'Position'
           nkCall
             nkIdent 'newVec2'
-            nkIntLit 1
-            nkIntLit 2
+            nkCall
+              nkIdent 'float32'
+              nkIntLit 1
+            nkCall
+              nkIdent 'float32'
+              nkIntLit 2
         nkAsgn
           nkIdent 'nsP_n'
           nkNilLit
@@ -513,8 +517,12 @@ nkStmtList
             nkIdent 'm'
           nkCall
             nkIdent 'newVec2'
-            nkIntLit 4
-            nkIntLit 0
+            nkCall
+              nkIdent 'float32'
+              nkIntLit 4
+            nkCall
+              nkIdent 'float32'
+              nkIntLit 0
         nkAsgn
           nkIdent 'nsP_n'
           nkNilLit

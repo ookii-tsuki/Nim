@@ -250,6 +250,21 @@ proc nsCreate*[T: not ref](t: typedesc[T]): T =
   ## which calls its parameterless constructor.
   default(T)
 
+type
+  NsDisposeStack* = ref object
+    ## The `finally` blocks an iterator is suspended inside, innermost last: what
+    ## disposing its enumerator runs (ECMA-334 15.15.5), as `foreach` does when it
+    ## is left early.
+    fins: seq[proc () {.closure.}]
+
+proc nsDisposePush*(d: NsDisposeStack; f: proc () {.closure.}) {.inline.} = d.fins.add f
+proc nsDisposePop*(d: NsDisposeStack) {.inline.} =
+  if d.fins.len > 0: d.fins.setLen(d.fins.len - 1)
+proc nsDisposeRun*(d: NsDisposeStack) =
+  while d.fins.len > 0:
+    let f = d.fins.pop()
+    f()
+
 proc nsCellOf*[T](v: T): ref T {.inline.} =
   ## A loop-body variable a lambda captures: one cell per iteration, which every
   ## closure of that iteration shares and no other iteration does.
@@ -577,9 +592,11 @@ proc nsBoxOf[T](x: T): RootRef =
 
 proc nsBox*(x: RootRef): RootRef {.inline.} = x
   ## A reference is already an object.
-proc nsBox*(x: int): RootRef = nsBoxOf(int32(x))
-  ## An untyped integer literal is a C# `int`.
-proc nsBox*[T: not RootRef and not int](x: T): RootRef = nsBoxOf(x)
+proc nsBox*[T: not RootRef](x: T): RootRef =
+  ## An untyped integer literal (Nim's `int`) is a C# `int`; any other value keeps
+  ## its type, `3'i64` a `long`. One generic, so a typed literal is not converted to
+  ## `int` to reach a narrower overload.
+  when T is int: nsBoxOf(int32(x)) else: nsBoxOf(x)
 proc nsBox*[T](x: Option[T]): RootRef =
   ## Boxing a `T?` boxes its value, or is null when it has none (ECMA-334 8.3.12).
   if x.isSome: nsBoxOf(x.get) else: nil
@@ -624,6 +641,17 @@ proc nsUnbox*[T](o: RootRef; t: typedesc[T]): T =
     if not (o of NsBox[T]):
       raise newException(ObjectConversionDefect, "Specified cast is not valid.")
     NsBox[T](o).v
+
+proc nsAsValue*[T](o: RootRef; t: typedesc[T]): T =
+  ## `o as T` for a `string`, an array or a `T?`: the value when `o` holds one of
+  ## the type, null (the empty string, nil, the absent value) otherwise.
+  when T is Option:
+    type E = typeof(default(T).get)
+    if o != nil and o of NsBox[E]: some(NsBox[E](o).v) else: none(E)
+  elif T is RootRef:
+    if o != nil and o of T: T(o) else: nil
+  else:
+    if o != nil and o of NsBox[T]: NsBox[T](o).v else: default(T)
 
 proc nsIsType*[T](o: RootRef; t: typedesc[T]): bool =
   ## `o is T`: a reference of that class, or a box of that value type.

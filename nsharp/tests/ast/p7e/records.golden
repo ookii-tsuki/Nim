@@ -4215,8 +4215,12 @@ nkStmtList
           nkEmpty
           nkCall
             nkIdent 'newSize'
-            nkIntLit 2
-            nkIntLit 3
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 2
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 3
       nkVarSection
         nkIdentDefs
           nkIdent 'sz2'
@@ -4258,8 +4262,12 @@ nkStmtList
             nkIdent 'sz2'
           nkCall
             nkIdent 'newSize'
-            nkIntLit 5
-            nkIntLit 3
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 5
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 3
       nkVarSection
         nkIdentDefs
           nkIdent 'm'

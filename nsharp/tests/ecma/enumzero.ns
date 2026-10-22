@@ -1,0 +1,19 @@
+// The literal 0 converts to every enum type (ECMA-334 10.2.4), and & | ^ of enum
+// values are of the enum.
+using System;
+[Flags] enum Perm { None = 0, R = 1, W = 2, X = 4 }
+enum Color { Red, Green }
+class Program {
+    static string Has(Perm p) => p == 0 ? "none" : p.ToString();
+    static Perm Zero() { return 0; }
+    static void Main() {
+        Perm p = Perm.R;
+        Console.WriteLine((p & Perm.W) == 0 ? "no W" : "W");
+        Console.WriteLine(p == 0 ? "zero" : "nonzero");
+        Perm q = 0; Console.WriteLine(q);
+        q = 0; q |= Perm.X; Console.WriteLine(q);
+        Console.WriteLine(Has(0) + " " + Has(Perm.W | Perm.R) + " " + Zero());
+        Perm all = Perm.R | Perm.W | Perm.X; Console.WriteLine((all ^ Perm.W) + " " + (int)(all & ~Perm.R));
+        Color c = 0; Console.WriteLine(c + " " + (0 == c));
+    }
+}

@@ -370,8 +370,12 @@ nkStmtList
             nkIdent 'Position'
           nkCall
             nkIdent 'newVec2'
-            nkIntLit 7
-            nkIntLit 0
+            nkCall
+              nkIdent 'float32'
+              nkIntLit 7
+            nkCall
+              nkIdent 'float32'
+              nkIntLit 0
         nkAsgn
           nkIdent 'nsP_n'
           nkNilLit

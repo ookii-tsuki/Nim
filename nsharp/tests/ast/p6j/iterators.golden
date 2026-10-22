@@ -1610,17 +1610,41 @@ nkStmtList
           nkIdent 'nsEnumerable'
           nkIdent 'int32'
           nkStmtList
-            nkTryStmt
-              nkStmtList
-                nkYieldStmt
-                  nkIntLit 1
-                nkYieldStmt
-                  nkIntLit 2
-              nkFinally
+            nkStmtList
+              nkLetSection
+                nkIdentDefs
+                  nkIdent 'nsFin4'
+                  nkEmpty
+                  nkLambda
+                    nkEmpty
+                    nkEmpty
+                    nkEmpty
+                    nkFormalParams
+                      nkEmpty
+                    nkPragma
+                      nkIdent 'closure'
+                    nkEmpty
+                    nkStmtList
+                      nkCall
+                        nkIdent 'WriteLine'
+                        nkStrLit "cleanup"
+              nkCall
+                nkIdent 'nsDisposePush'
+                nkIdent 'nsDisp'
+                nkIdent 'nsFin4'
+              nkTryStmt
                 nkStmtList
-                  nkCall
-                    nkIdent 'WriteLine'
-                    nkStrLit "cleanup"
+                  nkYieldStmt
+                    nkIntLit 1
+                  nkYieldStmt
+                    nkIntLit 2
+                nkFinally
+                  nkStmtList
+                    nkCall
+                      nkIdent 'nsDisposePop'
+                      nkIdent 'nsDisp'
+                    nkCall
+                      nkIdent 'nsFin4'
   nkProcDef
     nkIdent 'Sum'
     nkEmpty
@@ -1738,7 +1762,7 @@ nkStmtList
         nkStmtList
           nkLetSection
             nkIdentDefs
-              nkIdent 'nsEnum5'
+              nkIdent 'nsEnum6'
               nkEmpty
               nkCall
                 nkDotExpr
@@ -1750,7 +1774,7 @@ nkStmtList
           nkWhileStmt
             nkCall
               nkDotExpr
-                nkIdent 'nsEnum5'
+                nkIdent 'nsEnum6'
                 nkIdent 'MoveNext'
             nkStmtList
               nkLetSection
@@ -1758,7 +1782,7 @@ nkStmtList
                   nkIdent 'i'
                   nkEmpty
                   nkDotExpr
-                    nkIdent 'nsEnum5'
+                    nkIdent 'nsEnum6'
                     nkIdent 'Current'
               nkCall
                 nkIdent 'Write'
@@ -1776,7 +1800,7 @@ nkStmtList
         nkStmtList
           nkLetSection
             nkIdentDefs
-              nkIdent 'nsEnum6'
+              nkIdent 'nsEnum7'
               nkEmpty
               nkCall
                 nkDotExpr
@@ -1787,7 +1811,7 @@ nkStmtList
           nkWhileStmt
             nkCall
               nkDotExpr
-                nkIdent 'nsEnum6'
+                nkIdent 'nsEnum7'
                 nkIdent 'MoveNext'
             nkStmtList
               nkLetSection
@@ -1795,7 +1819,7 @@ nkStmtList
                   nkIdent 'c'
                   nkEmpty
                   nkDotExpr
-                    nkIdent 'nsEnum6'
+                    nkIdent 'nsEnum7'
                     nkIdent 'Current'
               nkCall
                 nkIdent 'Write'

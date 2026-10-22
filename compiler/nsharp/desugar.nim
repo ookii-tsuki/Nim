@@ -50,6 +50,8 @@ type
     curClass: NsNode        ## the class whose members are being lowered
     curBase: string         ## its base class, for `base.M()`
     curBaseType: NsNode     ## the base as written, with its type arguments
+    inIterator: bool        ## lowering an iterator block: its `try` statements
+                            ## register their `finally` for `Dispose` (`nsDisp`)
     curIsException: bool    ## whether it is lowered as a value object raised by `ref`
     curNamespace: string    ## the enclosing namespace, for `object.ToString()`
     ownNamespaces: HashSet[string]
@@ -451,6 +453,17 @@ proc someCall(l: Lowerer; v: PNode; inner: NsNode; info: TLineInfo): PNode
 proc presentOf(l: Lowerer; v: NsNode; info: TLineInfo): PNode
 proc wrappedArg(l: Lowerer; a: NsNode): PNode
 
+proc hasYield(n: NsNode): bool =
+  ## Whether a body is an iterator block: it holds a `yield` of its own, not one of
+  ## a nested local function.
+  if n == nil or n.kind in {nsnLambda, nsnLocalFunc}: return false
+  if n.kind == nsnYield: return true
+  if hasYield(n.body): return true
+  for x in n.sons:
+    if hasYield(x): return true
+  false
+
+
 proc copyNsNode(n: NsNode): NsNode =
   ## A shallow copy: the same children, so a rewrite can replace some of them.
   result = NsNode()
@@ -546,6 +559,7 @@ proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
   ## converts to; one it could not place keeps `auto`, which Nim infers when the
   ## lambda is passed where a concrete proc type is expected.
   var l = l
+  l.inIterator = false
   ## It may run any time later: no handle's object is kept across into it.
   if l.hoist != nil: l.hoist = NsHoist(moves: l.hoist.moves)
   let fp = newNodeI(nkFormalParams, n.info)
@@ -712,6 +726,17 @@ proc newToNim(l: Lowerer; n: NsNode): PNode =
     ## `new T()` on a type parameter (`where T : new()`): every class declares
     ## `nsCreate` over its typedesc, and the intrinsics do for value types.
     return newTree(nkCall, n.info, l.id("nsCreate", n.info), l.id(n.typ.name, n.info))
+  if n.typ != nil and n.typ.kind == nsnTypeName and n.sons.len == 0 and
+     l.scope.classes.hasKey(canonicalTypeName(n.typ.name)) and
+     l.scope.classes[canonicalTypeName(n.typ.name)].classKind == ckStruct and
+     not l.scope.isNative(canonicalTypeName(n.typ.name)):
+    var declared = false
+    for ps in l.scope.classes[canonicalTypeName(n.typ.name)].ctorParams:
+      if ps.len == 0: declared = true
+    if not declared and l.scope.classes[canonicalTypeName(n.typ.name)].ctorParams.len > 0:
+      ## `new S()` on a struct that declares only other constructors: its default,
+      ## every field zero (ECMA-334 16.4.9).
+      return newTree(nkCall, n.info, l.id("default", n.info), l.typeToNim(n.typ, n.info))
   var callee =
     if n.typ != nil and n.typ.kind == nsnTypeName:
       l.id("new" & nimTypeName(n.typ.name), n.info)
@@ -1036,6 +1061,11 @@ proc castToNim(l: Lowerer; n: NsNode): PNode =
 proc asToNim(l: Lowerer; n: NsNode): PNode =
   ## `x as T` yields nil instead of raising, and reads its operand once. The block
   ## scopes the temporary, so two of them in one body cannot collide.
+  if n.strVal == "boxed":
+    ## From an `object`: the value when it holds one of the type, else null.
+    return newTree(nkCall, n.info, l.id("nsAsValue", n.info), l.expr(n.body),
+                   l.typeToNim(n.typ, n.info))
+  if n.strVal == "same": return l.expr(n.body)
   let defs = newNodeI(nkIdentDefs, n.info)
   defs.add l.id("nsAs", n.info)
   defs.add newNodeI(nkEmpty, n.info)
@@ -2434,6 +2464,34 @@ proc lockToNim(l: Lowerer; n: NsNode): PNode =
 proc tryToNim(l: Lowerer; n: NsNode): PNode =
   for c in n.sons:
     if c.kind == nsnCatch and c.sons.len > 0: return l.filteredTryToNim(n)
+  if l.inIterator and hasYield(n.body):
+    for c in n.sons:
+      if c.kind == nsnFinally:
+        ## A `try` an iterator may be suspended in: its `finally` is a closure,
+        ## registered while the body runs, so disposing the enumerator early runs
+        ## it (`foreach` left by `break`), and run as usual otherwise.
+        let info = n.info
+        let fin = l.fresh("nsFin")
+        let fp = newTree(nkFormalParams, info, empty(info))
+        let finProc = newNodeI(nkLambda, info, 7)
+        for i in 0 .. 6: finProc[i] = empty(info)
+        finProc[3] = fp
+        finProc[4] = newTree(nkPragma, info, l.id("closure", info))
+        finProc[6] = l.afterThrow(l.stmtSeq(c.body))
+        var plain = copyNsNode(n)
+        plain.sons = @[]
+        for x in n.sons:
+          if x.kind != nsnFinally: plain.sons.add x
+        let tryPart = (if plain.sons.len > 0: l.tryToNim(plain) else: l.stmtSeq(n.body))
+        result = newTree(nkStmtList, info,
+          newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(fin, info),
+                                              empty(info), finProc)),
+          newTree(nkCall, info, l.id("nsDisposePush", info), l.id("nsDisp", info),
+                  l.id(fin, info)),
+          newTree(nkTryStmt, info, tryPart, newTree(nkFinally, info, newTree(nkStmtList, info,
+            newTree(nkCall, info, l.id("nsDisposePop", info), l.id("nsDisp", info)),
+            newTree(nkCall, info, l.id(fin, info))))))
+        return
   result = newNodeI(nkTryStmt, n.info)
   result.add l.stmtSeq(n.body)
   for c in n.sons:
@@ -3108,22 +3166,14 @@ proc deconstructToNim(l: Lowerer; n: NsNode): PNode =
       bare.nilChecks = false
       result.add newTree(nkAsgn, info, bare.expr(target), values[k])
 
-proc hasYield(n: NsNode): bool =
-  ## Whether a body is an iterator block: it holds a `yield` of its own, not one of
-  ## a nested local function.
-  if n == nil or n.kind in {nsnLambda, nsnLocalFunc}: return false
-  if n.kind == nsnYield: return true
-  if hasYield(n.body): return true
-  for x in n.sons:
-    if hasYield(x): return true
-  false
-
 proc memberBody(l: Lowerer; ret, body: NsNode; params: seq[NsNode] = @[]): PNode =
   ## A member's body. An iterator block becomes a closure iterator inside the
   ## `IEnumerable<T>` (or `IEnumerator<T>`) it returns, so each enumeration runs
   ## the body afresh, lazily, as C#'s does. A parameter the body assigns is a local
   ## copy (`var p = p`), inside the iterator for one.
-  result = prependAll(l.stmtSeq(body), l.shadowParams(params, body,
+  var inner = l
+  inner.inIterator = body != nil and hasYield(body)
+  result = prependAll(inner.stmtSeq(body), l.shadowParams(params, body,
                                                       (if body != nil: body.info else: unknownLineInfo)))
   if body == nil or not hasYield(body): return
   let el = iteratorElement(ret)
@@ -6374,8 +6424,14 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
     let f = newNodeI(nkFromStmt, module.info)
     f.add newAtom(nkStrLit, m, module.info)
     var names = l.imports.byModule[m]
+    if names.len > 0:
+      for x in l.surface.unnamedMembersOf(m):
+        if x notin names: names.add x
     names.sort()
-    for n in names: f.add l.id(n, module.info)
+    for n in names:
+      ## An operator is quoted, so the module reads back when it is rendered.
+      if n[0] in {'a'..'z', 'A'..'Z', '_'}: f.add l.id(n, module.info)
+      else: f.add newTree(nkAccQuoted, module.info, l.id(n, module.info))
     ## Named only qualified (`Ns.T`): the module, and nothing in scope.
     if names.len == 0: f.add newNodeI(nkNilLit, module.info)
     result.add f

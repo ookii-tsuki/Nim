@@ -26,6 +26,9 @@ type
     inGuard: bool
       ## Parsing a switch arm's `when` guard: the arm's `=>` follows it, so a name
       ## before it is not a lambda's parameter.
+    inTypeTest: bool
+      ## Parsing the type after `is` or `as`: a `?` there followed by what starts an
+      ## expression is the conditional operator (`o is int ? a : b`), not `int?`.
     typeAliases: Table[string, NsNode]
       ## `using A = X.Y<int>;`: a name for a type, which the parser writes out in its
       ## place, as C# resolves it.
@@ -170,7 +173,10 @@ proc parseType(p: var NsParser): NsNode =
       result.add p.parseType()
       if p.at(nsComma): discard p.advance else: break
     p.expectGt()
-  if p.at(nsQuestion):
+  if p.at(nsQuestion) and not (p.inTypeTest and p.peekAhead(1).kind in
+       {nsIdent, nsIntLit, nsFloatLit, nsStrLit, nsCharLit, nsLParen, nsBang, nsMinus,
+        nsPlus, nsTilde} and not (p.peekAhead(1).kind == nsIdent and
+                                  p.peekAhead(1).text in ["and", "or", "when"])):
     ## `T?`. It sits against the type, so a `?:` elsewhere is unaffected, and it is
     ## read before `[]` because `int?[]` is an array of nullable ints in C#.
     discard p.advance
@@ -895,7 +901,10 @@ proc parseBinary(p: var NsParser; minPrec: int): NsNode =
     elif typeOp and opTok.text == "is":
       ## `x is T` stays a type test; anything else (`is T t`, `is null`,
       ## `is > 5`, `is { P: 1 }`, `is not ...`) is a pattern.
+      let saved = p.inTypeTest
+      p.inTypeTest = true
       let pat = p.parsePattern()
+      p.inTypeTest = saved
       if pat.kind == nsnPatType and pat.name.len == 0:
         let n = nsn(nsnIs, p.infoOf(opTok))
         n.body = result
@@ -909,7 +918,10 @@ proc parseBinary(p: var NsParser; minPrec: int): NsNode =
     elif typeOp:
       let n = nsn(nsnAs, p.infoOf(opTok))
       n.body = result
+      let saved = p.inTypeTest
+      p.inTypeTest = true
       n.typ = p.parseType()
+      p.inTypeTest = saved
       result = n
     else:
       let rhs = p.parseBinary(prec + 1)

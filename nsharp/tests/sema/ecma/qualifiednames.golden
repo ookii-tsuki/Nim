@@ -1,0 +1,10 @@
+member Console.Write = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member HashSet.Contains = System.Collections.Generic | bool
+member HashSet.Count = System.Collections.Generic | int
+member List.Add = System.Collections.Generic | void
+member List.Add = System.Collections.Generic | void
+member List.Count = System.Collections.Generic | int

@@ -317,6 +317,25 @@ proc lexInterpolated(s: var Scanner; verbatim: bool; line, col: int) =
   if s.cur == '"': s.step
   s.emit(nsInterpEnd, "\"", el, ec)
 
+proc trimRaw(body: string): string =
+  ## A multi-line raw string drops its first and last line and the closing line's
+  ## indentation from every line, as C# does.
+  result = body
+  if '\n' in body:
+    var lines = body.split('\n')
+    if lines.len > 0 and lines[0].strip.len == 0: lines.delete(0)
+    var indent = ""
+    if lines.len > 0 and lines[^1].strip.len == 0:
+      indent = lines[^1]
+      lines.setLen(lines.len - 1)
+    var outp: seq[string] = @[]
+    for ln in lines:
+      var x = ln
+      if x.endsWith("\r"): x.setLen(x.len - 1)
+      if x.startsWith(indent): x = x[indent.len .. ^1]
+      outp.add x
+    result = outp.join("\n")
+
 proc lexRawString(s: var Scanner; line, col: int) =
   ## `"""..."""` (C# 11). A multi-line raw string drops its first and last line and
   ## the closing line's indentation from every line, as C# does.
@@ -338,21 +357,64 @@ proc lexRawString(s: var Scanner; line, col: int) =
       continue
     body.add s.cur
     s.step
-  if '\n' in body:
-    var lines = body.split('\n')
-    if lines.len > 0 and lines[0].strip.len == 0: lines.delete(0)
-    var indent = ""
-    if lines.len > 0 and lines[^1].strip.len == 0:
-      indent = lines[^1]
-      lines.setLen(lines.len - 1)
-    var outp: seq[string] = @[]
-    for ln in lines:
-      var x = ln
-      if x.endsWith("\r"): x.setLen(x.len - 1)
-      if x.startsWith(indent): x = x[indent.len .. ^1]
-      outp.add x
-    body = outp.join("\n")
-  s.emit(nsStrLit, body, line, col)
+  s.emit(nsStrLit, trimRaw(body), line, col)
+
+proc lexInterpolatedRaw(s: var Scanner; dollars: int; line, col: int) =
+  ## `$"""...{x}..."""` (C# 11), starting at the first quote: the raw text, trimmed
+  ## as a raw string is, with holes opened by as many `{` as there are `$` (more
+  ## braces than that are text) and closed by as many `}`. No escapes.
+  var quotes = 0
+  while s.cur == '"':
+    inc quotes
+    s.step
+  let bodyStart = s.i
+  var bodyEnd = -1
+  while s.i < s.stop:
+    if s.cur == '"':
+      var k = 0
+      while s.at(k) == '"': inc k
+      if k >= quotes:
+        bodyEnd = s.i
+        for _ in 0 ..< quotes: s.step
+        break
+      for _ in 0 ..< k: s.step
+      continue
+    s.step
+  if bodyEnd < 0: bodyEnd = s.i
+  let body = trimRaw(s.src[bodyStart ..< bodyEnd])
+  var inner = Scanner(src: body, i: 0, stop: body.len, line: line, col: col,
+                      defines: s.defines, isDefined: s.isDefined)
+  s.emit(nsInterpBegin, "$\"", line, col)
+  var chunk = ""
+  proc flush(s, inner: var Scanner; chunk: var string) =
+    if chunk.len > 0:
+      s.emit(nsStrLit, chunk, inner.line, inner.col)
+      chunk = ""
+  while inner.i < inner.stop:
+    if inner.cur == '{':
+      var k = 0
+      while inner.at(k) == '{': inc k
+      if k < dollars:
+        for _ in 0 ..< k:
+          chunk.add '{'
+          inner.step
+        continue
+      for _ in 0 ..< k - dollars:
+        chunk.add '{'
+        inner.step
+      flush(s, inner, chunk)
+      for _ in 0 ..< dollars: inner.step
+      inner.toks = @[]
+      inner.lexHole(true)
+      ## `lexHole` steps over one `}`; a `$$` hole closes with two.
+      for _ in 1 ..< dollars:
+        if inner.cur == '}': inner.step
+      for t in inner.toks: s.toks.add t
+      continue
+    chunk.add inner.cur
+    inner.step
+  flush(s, inner, chunk)
+  s.emit(nsInterpEnd, "\"", line, col)
 
 proc lexNumber(s: var Scanner) =
   ## Decimal, `0x`, `0b`, `_` separators, a fraction only when a digit follows the
@@ -545,6 +607,14 @@ proc lexAll(s: var Scanner) =
     let line = s.line
     let col = s.col
 
+    # interpolated raw strings: $"""..""", $$"""..""" (C# 11)
+    if c == '$':
+      var d = 0
+      while s.at(d) == '$': inc d
+      if s.at(d) == '"' and s.at(d + 1) == '"' and s.at(d + 2) == '"':
+        for _ in 0 ..< d: s.step
+        s.lexInterpolatedRaw(d, line, col)
+        continue
     # interpolated strings: $"..", $@"..", @$".."
     if c == '$' and s.at(1) == '"':
       s.step; s.step

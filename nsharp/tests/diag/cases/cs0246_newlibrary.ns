@@ -1,0 +1,4 @@
+// `new List<S>()` with no `using System.Collections.Generic;`: the library type is not in scope.
+using System;
+struct S { public int v; }
+class Prog { static void Main() { var list = new List<S>(); Console.WriteLine(list.Count); } }

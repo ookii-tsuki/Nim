@@ -1,0 +1,30 @@
+// Leaving a foreach early disposes the enumerator, which runs the finally blocks
+// the iterator is suspended in, innermost first (ECMA-334 13.9.5, 15.15.5).
+using System;
+using System.Collections.Generic;
+class Program {
+    static IEnumerable<string> Fin() {
+        try { yield return "a"; yield return "b"; }
+        finally { Console.WriteLine("fin"); }
+    }
+    static IEnumerable<int> Nested() {
+        try {
+            try { yield return 1; yield return 2; }
+            finally { Console.WriteLine("inner"); }
+            yield return 3;
+        }
+        finally { Console.WriteLine("outer"); }
+    }
+    static IEnumerable<int> Plain() { yield return 7; }
+    static int First() { foreach (var x in Nested()) return x; return -1; }
+    static void Main() {
+        foreach (var s in Fin()) { Console.WriteLine(s); break; }
+        foreach (var s in Fin()) Console.WriteLine(s);
+        foreach (var i in Nested()) { if (i == 2) break; Console.WriteLine(i); }
+        Console.WriteLine(First());
+        try { foreach (var i in Nested()) { if (i == 3) throw new Exception("boom"); } }
+        catch (Exception e) { Console.WriteLine("caught " + e.Message); }
+        var en = Fin().GetEnumerator(); en.MoveNext(); Console.WriteLine(en.Current); en.Dispose(); Console.WriteLine(en.MoveNext());
+        foreach (var p in Plain()) Console.WriteLine(p);
+    }
+}

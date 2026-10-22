@@ -1,0 +1,17 @@
+// A library type named with its namespace and no `using` brings its operators and
+// iterators along: `list[0]`, `foreach`, a collection initialiser.
+class Program {
+    static void Main() {
+        var list = new System.Collections.Generic.List<int>();
+        list.Add(5); list.Add(6);
+        list[1] = 7;
+        System.Console.WriteLine(list[0] + list[1] + " " + list.Count);
+        foreach (var x in list) System.Console.Write(x);
+        System.Console.WriteLine();
+        var d = new System.Collections.Generic.Dictionary<string, int>();
+        d["a"] = 1;
+        foreach (var kv in d) System.Console.WriteLine(kv.Key + "=" + kv.Value + " " + d["a"]);
+        System.Collections.Generic.HashSet<int> hs = new System.Collections.Generic.HashSet<int> { 1, 2, 2 };
+        System.Console.WriteLine(hs.Count + " " + hs.Contains(2));
+    }
+}

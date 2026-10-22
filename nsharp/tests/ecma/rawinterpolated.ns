@@ -1,0 +1,17 @@
+// Interpolated raw strings (C# 11): $"""...{x}...""", $$"""...{{x}}...""", multi-line.
+using System;
+class Program {
+    static void Main() {
+        int x = 41;
+        var a = $"""{x + 1} braces "quoted" """;
+        Console.WriteLine(a);
+        var b = $$"""{"json": {{x}}, "s": "{{"s"}}"}""";
+        Console.WriteLine(b);
+        var c = $"""
+            line one {x}
+              indented {x * 2:D4}
+            """;
+        Console.WriteLine(c);
+        Console.WriteLine($"""{(x > 40 ? "big" : "small")}""");
+    }
+}

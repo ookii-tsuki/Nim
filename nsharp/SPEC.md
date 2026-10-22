@@ -125,6 +125,7 @@ Status of the blocking decisions (full log in §18). ✅ = resolved, 🟡 = stil
 | Verbatim strings `@"..."`, verbatim identifiers `@class` | no escaping, `""` = quote | ✅ v1 | front |
 | Interpolated strings `$"...{x,align:fmt}..."`, `$@"..."` | format holes | ✅ v1 | front (holes lexed as expressions) + desugar (→ `nsFmt`/`nsAlign`, `lib/pure/nsharp/format.nim`) |
 | Raw strings `"""..."""` (C# 11) | multiline raw | ✅ v1 | front (closing-line indentation stripped, as C# does) |
+| Interpolated raw strings `$"""...{x}..."""`, `$$"""...{{x}}..."""` (C# 11) | raw text with holes | ✅ v1 | front: the raw text trimmed as a raw string's, holes opened by as many braces as there are `$` (more braces are text) |
 | UTF-8 strings `u8"..."` | byte spans | 🔜 later | front |
 | Preprocessor `#if/#elif/#else/#endif/#define/#undef` | conditional compile | ✅ v1 (lexical, as in C#; an undefined symbol is asked of `-d:`) | front |
 | `#region/#endregion`, `#nullable` | folding / NRT context | ✅ v1 (accepted and ignored) | front |
@@ -217,7 +218,7 @@ are excluded: N# has no `void` type and no decimal.
 | Feature | C# meaning | Disposition | Maps to |
 |---|---|---|---|
 | `class` | reference type | ✅ v1 | `ref object` |
-| `struct` | value type | ✅ v1 | `object` |
+| `struct` | value type | ✅ v1 | `object`; `new S()` on one declaring only other constructors is its default, every field zero (ECMA 16.4.9) |
 | `interface` | contract | ✅ v1 (values and dispatch) | fat value: object + static table (see §8) |
 | `enum` | named int constants | ✅ v1 | `distinct` underlying integer (`int` unless `: byte` etc.), each member a template over the enum's `typedesc` (`Color.Red`), `nsEnum` for `== < <= \| & ^ ~`, `HasFlag`, `hash` and printing; so `(Color)7` and combinations are values, members may repeat or skip values, and an unnamed value prints as its number |
 | `[Flags] enum` | bit flags | ✅ v1 | as `enum`; a value prints as the names of its set bits (`Read, Write`) as .NET does |
@@ -471,6 +472,7 @@ v2.
 | `lock (o) { }` | mutual exclusion | ✅ v1 | desugar (a block that evaluates `o`; a program has one thread, so the lock is always free) |
 | `yield return e;` | iterator | ✅ v1 | desugar (→ Nim `yield` inside the closure iterator below) |
 | `yield break;` | end iterator | ✅ v1 | desugar (→ `return` from the closure iterator) |
+| Disposing an iterator's enumerator | runs the `finally` blocks it is suspended in (15.15.5); `foreach` disposes however it is left (13.9.5) | ✅ v1 | desugar + lib: in an iterator block a `try` holding a `yield` registers its `finally` as a closure on the enumeration's `nsDisp` stack while its body runs; `Dispose` runs what is registered, innermost first, and ends the enumeration; `items` over an `IEnumerable<T>` disposes in a `finally` |
 | Iterator methods (`IEnumerable` return) | lazy seq | ✅ v1 | sem + desugar: a method or local function returning `IEnumerable<T>`/`IEnumerator<T>` whose body yields becomes `result = nsEnumerable(T): body` -- a closure iterator started afresh per enumeration, so the body runs lazily as C#'s does. A property's or indexer's getter may be an iterator the same way; an iterator operator is NS9999; `yield` in a lambda is NS1621, in a non-iterator member NS1624. A class may implement `IEnumerable<T>` or `IEnumerator<T>`: they are library types rather than tables, so they leave its base list (with the non-generic members implemented explicitly beside the generic ones), `foreach` uses its `GetEnumerator`, and where an `IEnumerable<T>`/`IEnumerator<T>` is expected sema converts it through the library's `nsToIEnumerable`/`nsToIEnumerator`, a view that asks the class for each enumeration |
 | `checked { }` / `unchecked { }` | ovf checks | ✅ v1 | desugar (→ `{.push overflowChecks.}`, §7.3) |
 | `unsafe { }` blocks (pointers, `&`, `*`) | unsafe | ✅ v1 | front |
@@ -503,8 +505,9 @@ v2.
 | `??` null-coalescing | ✅ | ✅ v1 | desugar (`nsCond` temporary) |
 | `??=` | ✅ | ✅ v1 | desugar (`x = x ?? b`, re-wrapped for a `T?` target) |
 | `?.` / `?[]` null-conditional | ✅ | ✅ v1 | front + desugar (`nsCond` per link) |
+| A library type named with its namespace and no `using` | `new System.Collections.Generic.List<int>()` | ✅ v1 | desugar: the type is imported by name with the operators and iterators its module declares (`[]`, `items`, ...), which no C# name can clash with; a library type in `new` whose namespace the file does not import is NS0246 |
 | `?:` ternary | ✅ | ✅ v1 | front (→ `nkIfExpr`) |
-| `is` / `as` | type test/cast | ✅ v1 | front (→ Nim `of`/conv) |
+| `is` / `as` | type test/cast | ✅ v1 | front (→ Nim `of`/conv). In the type after `is`/`as`, a `?` followed by what starts an expression is the conditional operator (`o is int ? a : b`). `as` takes `string`, array and `T?` targets too (from an `object`, `nsAsValue`) |
 | `(T)x` explicit cast | conversion | ✅ v1 | front (→ Nim `T(x)`) |
 | Patterns: type `T x`, constant, `null`, relational `> 5`, `and`/`or`/`not`, property `{ P: pat }`, `var x`, `_` | C# 7-9 | ✅ v1 | desugar (a boolean test assigning the pattern's variables, which are declared where C# scopes them); positional patterns: see below |
 | Positional and tuple patterns `Point(var x, 0)`, `(0, _)` | deconstruction | ✅ v1 | sem + desugar: of the type (or not null), then the parts -- a tuple's elements, or the `out` values of the `Deconstruct` with as many parameters -- each against its pattern; a designation binds the whole |
@@ -586,6 +589,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Arrays | `T[]`, `new T[n]` | `NsArray[T]` | `T[]` → `NsArray[T]` (a `ref` over a `seq[T]`); `new T[n]` → `nsNewArray(T, n)`; `new T[]{..}` → `nsArrayFrom[T]([..])`; `.Length` is the library's proc, reached by Nim's dot-call | front/lib |
 | Bounds checks in counted loops | the JIT drops the check on `a[i]` in `for (int i = 0; i < a.Length; i++)` | - | the same loop -- a counter starting at a non-negative constant (or an enclosing such counter plus one) and stepped only by its `++`, an array the body never replaces -- reads `a[i]` unchecked (`nsAtUnchecked`), when both are the routine's own locals or parameters, no closure captures them and the array is not a `ref` parameter. Any other index keeps its check | front/lib |
 | Enum field scope | scoped to the enum type | unqualified globals | `E.A` resolves via Nim qualified access; two enums must not share a field name | front |
+| The literal `0` and enums | `0` converts to every enum type (10.2.4); `&`, `|`, `^` of an enum are of it | - | sema: a `0` literal where an enum is expected, or beside one in a binary, is converted to it; the bitwise operators keep the enum type | sem |
 | Exceptions | all derive from `Exception` | `Exception` is the root of both `CatchableError` and `Defect` | C# `Exception` → Nim's exception root, so `catch (Exception)`, and a catch-all `catch`, catch runtime errors too; the .NET names are declared by the library, aliasing the defect Nim raises where one exists (`OverflowException` → `OverflowDefect`); `throw` → `raise`; an exception class is a value `object` (so `except T` can match) but is raised as `ref T` | front/lib |
 | `e.Message` | property on every exception | an ordinary proc over `Exception` (`e.msg`) | the library declares `Message` for the exception root; Nim's dot-call reaches it, and the compiler knows no member name | lib |
 | Bool/float spelling | `True`, `NaN`, `∞` | `true`, `nan`, `inf` | Nim's rendering stands; where C# differs the test carries a `.csout` beside its `.out` | lib |

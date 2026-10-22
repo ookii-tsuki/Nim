@@ -47,6 +47,7 @@ type
     retType: NsNode                            ## enclosing member's return type
     isStaticCtx: bool                          ## inside a static member: no `this`
     typeParams: seq[string]                    ## the generic parameters in scope
+    usingNamespaces: HashSet[string]           ## the namespaces the file imports or is in
     curMember: NsNode                          ## the member whose body is walked
     tmpCounter: int                            ## numbers the temporaries sema introduces
     inCtor: bool                               ## inside a constructor of `clsName`
@@ -301,6 +302,10 @@ proc isConstantLit(n: NsNode): bool =
                 (n.kind == nsnUnary and n.name == "-" and n.body != nil and
                  n.body.kind == nsnIntLit))
 
+proc isZeroLiteral(n: NsNode): bool =
+  ## The literal `0`, which converts to every enum type.
+  n != nil and n.kind == nsnIntLit and n.intVal == 0 and n.typeName.len == 0
+
 proc constValue(n: NsNode): BiggestInt =
   if n.kind == nsnIntLit: n.intVal else: -n.body.intVal
 
@@ -408,6 +413,11 @@ proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineI
   ## The implicit numeric conversion C# applies where a value of one numeric type is
   ## used as another: recorded when C# allows it, CS0266 when only a cast would.
   ## A variant interface or delegate conversion is recorded too.
+  if value != nil and value.conv.len == 0 and isZeroLiteral(value) and
+     ctx.scope.enums.contains(canonicalTypeName(targetName)):
+    ## `Perm p = 0;`: the literal `0` is of any enum type (10.2.4).
+    value.conv = canonicalTypeName(targetName)
+    return
   if value != nil and value.conv.len == 0 and value.typeName.len == 0 and
      (isConstantLit(value) or value.kind == nsnFloatLit) and
      ctx.scope.classes.hasKey(canonicalTypeName(targetName)):
@@ -2775,6 +2785,20 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     if n.typ != nil and ctx.clsName.len > 0:
       let u = ctx.firstUnknownType(n.typ)
       if u != nil: nsError(ctx.config, u.info, ndNamespaceNotFound, u.name)
+      elif n.typ.kind == nsnTypeName and '.' notin n.typ.name and
+           not ctx.scope.classes.hasKey(n.typ.name) and
+           not ctx.scope.delegates.hasKey(n.typ.name):
+        ## A library type is only in scope through its namespace (`new List<int>()`
+        ## needs `using System.Collections.Generic;`), CS0246 otherwise.
+        let nim = nimTypeName(n.typ.name)
+        let key = (if ctx.surface.types.hasKey(nim & $n.typ.sons.len): nim & $n.typ.sons.len
+                   else: nim)
+        if ctx.surface.types.hasKey(key):
+          let ns = ctx.surface.types[key].path.replace('/', '.')
+          if ns.len > 0 and ns notin ctx.usingNamespaces:
+            var shown = n.typ.name
+            if n.typ.sons.len > 0: shown.add "<" & repeat(",", n.typ.sons.len - 1) & ">"
+            nsError(ctx.config, n.typ.info, ndNamespaceNotFound, shown)
     if n.typ == nil:
       ## `new()` whose target gave it no type.
       nsError(ctx.config, n.info, ndUnsupported, "a target-typed 'new()' without a target")
@@ -3107,7 +3131,12 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ctx.checkTypeTest(n)
     discard ctx.walkExpr(n.body)
     let target = ctx.classifyType(n.typ)
-    if target in NsValueKinds:
+    if target in {tkString, tkSequence, tkNullable}:
+      ## `o as string`, `o as int[]`, `o as int?`: references and `T?` take `as`;
+      ## from an `object` the box is asked, from one of the type it is the value.
+      if canonicalTypeName(n.body.typeName) in ["object", "Object"]: n.strVal = "boxed"
+      elif n.body.typeKind == target: n.strVal = "same"
+    elif target in NsValueKinds:
       ## C# rejects `as` on a value type, which is what a cast is for.
       nsError(ctx.config, n.info, ndUnsupported, "'as' with a value type")
     ## The result is of the named type, which a `var` declared from it takes.
@@ -3175,6 +3204,19 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
          (implicitlyConvertible(on, liftedInner) or
           (isConstantLit(other) and fitsLiteral(constValue(other), liftedInner))):
         other.conv = liftedInner
+    ## An enum operand: the literal `0` beside it is of the enum (10.2.4), and
+    ## `&`, `|`, `^` of two values of it are of it too (`(p & Perm.W) == 0`).
+    let leftEnum = canonicalTypeName(n.sons[0].typeName)
+    let rightEnum = canonicalTypeName(n.sons[1].typeName)
+    let le = ctx.scope.enums.contains(leftEnum)
+    let re = ctx.scope.enums.contains(rightEnum)
+    if le or re:
+      if le and isZeroLiteral(n.sons[1]): n.sons[1].conv = leftEnum
+      if re and isZeroLiteral(n.sons[0]): n.sons[0].conv = rightEnum
+      if n.name in ["and", "or", "xor"] and n.strVal != "logical":
+        let e = (if le: leftEnum else: rightEnum)
+        n.setType(tkUnknown, e)
+        return tkUnknown
     if n.name in ["+", "-"] and lk == tkDelegate and rk == tkDelegate:
       ## Delegate combination and removal: a delegate of the left operand's type.
       n.setType(tkDelegate, n.sons[0].typeName)
@@ -4005,7 +4047,9 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       ctx.checkConvertible(n.sons[1], targetOfExpr(ctx, n.sons[0]), n.info)
       if n.sons[0].typeKind != tkNullable:
         ## A literal into a user type names the type, which may convert from it.
-        let target = (if numName(n.sons[0]).len == 0 and n.sons[0].typeKind == tkClass and
+        let target = (if numName(n.sons[0]).len == 0 and
+                         (n.sons[0].typeKind == tkClass or
+                          ctx.scope.enums.contains(canonicalTypeName(n.sons[0].typeName))) and
                          (isConstantLit(n.sons[1]) or n.sons[1].kind == nsnFloatLit):
                         canonicalTypeName(n.sons[0].typeName)
                       else: numName(n.sons[0]))
@@ -4890,6 +4934,18 @@ proc checkModule*(module: NsNode; scope: NsModuleScope; config: ConfigRef) =
     for d in module.sons: checkFileTypeUses(d, config, fileTypes)
   checkDuplicateTypes(module.sons, config, "<global namespace>")
   markOverlappingDefaults(scope)
+  ## The namespaces whose library types are in scope: each `using`, and each
+  ## namespace the file declares with every enclosing one (`A.B` sees `A`'s).
+  proc noteNamespaces(ns: seq[NsNode]; into: var HashSet[string]; outer: string) =
+    for d in ns:
+      if d == nil: continue
+      if d.kind == nsnUsing and d.alias.len == 0: into.incl d.name
+      elif d.kind == nsnNamespace:
+        let full = (if outer.len > 0: outer & "." & d.name else: d.name)
+        var parts = full.split('.')
+        for k in 1 .. parts.len: into.incl parts[0 ..< k].join(".")
+        if d.body != nil: noteNamespaces(d.body.sons, into, full)
+  noteNamespaces(module.sons, ctx.usingNamespaces, "")
   for d in module.sons: ctx.walkTop(d)
   ## The anonymous types the walk synthesized, checked as the declarations they
   ## now are; checking one cannot synthesize another.

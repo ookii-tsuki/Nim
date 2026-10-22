@@ -441,8 +441,12 @@ nkStmtList
             nkIdent 'Pos'
           nkCall
             nkIdent 'newVec2'
-            nkIntLit 0
-            nkIntLit 2
+            nkCall
+              nkIdent 'float32'
+              nkIntLit 0
+            nkCall
+              nkIdent 'float32'
+              nkIntLit 2
         nkAsgn
           nkIdent 'nsP_m'
           nkNilLit
@@ -562,10 +566,14 @@ nkStmtList
             nkIdent '*'
             nkCall
               nkIdent 'newVec2'
-              nkIntLit 0
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 2
+              nkCall
+                nkIdent 'float32'
+                nkIntLit 0
+              nkCall
+                nkIdent 'float32'
+                nkPrefix
+                  nkIdent '-'
+                  nkIntLit 2
             nkIdent 'dt'
         nkAsgn
           nkIdent 'nsP_m'
@@ -629,7 +637,9 @@ nkStmtList
                         nkIdent 'm'
                       nkIdent 'Pos'
                     nkIdent 'x'
-                  nkIntLit 0
+                  nkCall
+                    nkIdent 'float32'
+                    nkIntLit 0
               nkAsgn
                 nkIdent 'nsP_m'
                 nkNilLit

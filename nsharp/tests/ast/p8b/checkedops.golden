@@ -525,7 +525,9 @@ nkStmtList
       nkReturnStmt
         nkCall
           nkIdent 'newSmall'
-          nkIntLit 0
+          nkCall
+            nkIdent 'int32'
+            nkIntLit 0
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -678,14 +680,18 @@ nkStmtList
           nkEmpty
           nkCall
             nkIdent 'newSmall'
-            nkIntLit 60
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 60
       nkVarSection
         nkIdentDefs
           nkIdent 'b'
           nkEmpty
           nkCall
             nkIdent 'newSmall'
-            nkIntLit 70
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 70
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr
@@ -779,10 +785,14 @@ nkStmtList
               nkIdent 'nsCheckedAdd'
               nkCall
                 nkIdent 'newSmall'
-                nkIntLit 10
+                nkCall
+                  nkIdent 'int32'
+                  nkIntLit 10
               nkCall
                 nkIdent 'newSmall'
-                nkIntLit 20
+                nkCall
+                  nkIdent 'int32'
+                  nkIntLit 20
         nkCall
           nkIdent 'WriteLine'
           nkDotExpr
@@ -824,7 +834,9 @@ nkStmtList
                 nkIdent 'nsExplicitChecked_byte'
                 nkCall
                   nkIdent 'newSmall'
-                  nkIntLit 90
+                  nkCall
+                    nkIdent 'int32'
+                    nkIntLit 90
           nkExceptBranch
             nkInfix
               nkIdent 'as'
@@ -886,7 +898,9 @@ nkStmtList
           nkIdent 'nsExplicit_byte'
           nkCall
             nkIdent 'newSmall'
-            nkIntLit 90
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 90
   nkProcDef
     nkPostfix
       nkIdent '*'

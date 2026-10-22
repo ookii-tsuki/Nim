@@ -1,0 +1,17 @@
+using System
+using System.Collections.Generic
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Exception.Message = System | string
+member IEnumerator.Dispose = System | void
+member IEnumerator.MoveNext = System.Collections | bool
+member IEnumerator.MoveNext = System.Collections | bool

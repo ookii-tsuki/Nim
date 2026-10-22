@@ -18,6 +18,7 @@ collection_to_wrong_iface CS0266 match
 compare_class_int CS0019 match
 console_wrong CS1503 code:NS1501
 continue_outside CS0139 match
+cs0246_newlibrary CS0246 match
 ctor_arg_count CS7036 match
 ctor_arg_type CS1503 match
 delegate_mismatch CS0123 match

@@ -65,7 +65,7 @@ import ../Collections
 from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remove,
   copyOfSet, nsKeyHash, withComparer, initLike
 from ../../../nsharp/hashmap as nshash import nil
-from ../../../nsharp/intrinsics import Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName,
+from ../../../nsharp/intrinsics import NsDisposeStack, nsDisposeRun, Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName,
   nsVtByKey, nsKeyOf, Equals, GetHashCode,
   NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
 export Collections
@@ -152,6 +152,8 @@ type
     ## stepped to.
     step: iterator(): T
     current: T
+    disp: NsDisposeStack  ## the iterator's pending `finally` blocks, if it is one
+    done: bool            ## run to its end, or disposed
   IEnumerable*[T] = ref object
     ## C#'s `IEnumerable<T>`: something that hands out enumerators.
     make: proc(): IEnumerator[T]
@@ -1380,38 +1382,55 @@ proc Clear*[E, P](q: PriorityQueue[E, P]) =
 # collection converts to `IEnumerable<T>` (`nsToIEnumerable`), enumerated live,
 # as .NET's interface views are.
 
-proc nsEnumeratorOf*[T](step: iterator(): T): IEnumerator[T] =
+proc nsEnumeratorOf*[T](step: iterator(): T; disp: NsDisposeStack = nil): IEnumerator[T] =
   ## The enumerator that runs `step`, one element per `MoveNext`.
-  let e = IEnumerator[T](step: step)
+  let e = IEnumerator[T](step: step, disp: disp)
   e.nsStep = proc (): bool =
+    if e.done: return false
     let v = e.step()
-    if finished(e.step): return false
+    if finished(e.step):
+      e.done = true
+      return false
     e.current = v
     true
   e
 
 proc Current*[T](e: IEnumerator[T]): T = e.current
 
-proc Dispose*[T](e: IEnumerator[T]) = discard
-  ## An enumerator holds nothing to release.
+proc Dispose*[T](e: IEnumerator[T]) =
+  ## Ends the enumeration: an iterator suspended inside `try` blocks runs their
+  ## `finally` blocks, innermost first, and `MoveNext` answers false from then on.
+  if not e.done:
+    e.done = true
+    if e.disp != nil: nsDisposeRun(e.disp)
 
 proc GetEnumerator*[T](s: IEnumerable[T]): IEnumerator[T] = s.make()
 
 iterator items*[T](s: IEnumerable[T]): T =
+  ## `foreach` disposes the enumerator however the loop is left (13.9.5).
   let e = s.make()
-  while e.MoveNext(): yield e.current
+  try:
+    while e.MoveNext(): yield e.current
+  finally:
+    e.Dispose()
 
 template nsEnumerator*(T: typedesc; body: untyped): untyped =
   ## The enumerator of an iterator block whose member returns `IEnumerator<T>`.
-  nsEnumeratorOf[T](iterator(): T {.closure.} =
-    body)
+  ## `nsDisp` is where the block's `try` statements register their `finally`.
+  block:
+    let nsDisp {.inject.} = NsDisposeStack()
+    let nsStepIt = iterator(): T {.closure.} =
+      body
+    nsEnumeratorOf[T](nsStepIt, nsDisp)
 
 template nsEnumerable*(T: typedesc; body: untyped): untyped =
   ## The sequence of an iterator block whose member returns `IEnumerable<T>`: each
   ## enumeration starts the block again.
   IEnumerable[T](make: proc(): IEnumerator[T] =
-    nsEnumeratorOf[T](iterator(): T {.closure.} =
-      body))
+    let nsDisp {.inject.} = NsDisposeStack()
+    let nsStepIt = iterator(): T {.closure.} =
+      body
+    nsEnumeratorOf[T](nsStepIt, nsDisp))
 
 template nsSequenceView(xs: untyped; T: typedesc): untyped =
   IEnumerable[T](make: proc(): IEnumerator[T] =

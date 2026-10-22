@@ -3,7 +3,14 @@ nkStmtList
     nkStrLit "nsharp/intrinsics"
   nkFromStmt
     nkStrLit "System/Collections/Generic"
+    nkAccQuoted
+      nkIdent '$'
     nkIdent 'Count'
+    nkAccQuoted
+      nkIdent '[]'
+    nkAccQuoted
+      nkIdent '[]='
+    nkIdent 'items'
   nkPragma
     nkIdent 'push'
     nkExprColonExpr
