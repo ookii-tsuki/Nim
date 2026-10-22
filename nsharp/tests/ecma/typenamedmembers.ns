@@ -1,0 +1,35 @@
+// A member named like a type (`public Color Color { get; set; }`, a method `Item()`
+// beside a class `Item`) is legal: members live in their type's declaration
+// space (ECMA-334 7.3). So is a type named like a library member (`Message`).
+using System;
+using System.Collections.Generic;
+enum Color { Red, Green }
+class Item { public int V = 3; }
+class Count { }
+class Message { public string Text = "msg"; }
+interface IShape { Color Color { get; } string Item(); }
+class P { public int Q = 1; }
+class Box : IShape {
+    public int P { get; set; }
+    public Color Color { get; set; }
+    public virtual string Item() => "box-item";
+    public static Item Make() => new Item();
+    public static string Message() => "static msg";
+}
+class Crate : Box {
+    public override string Item() => "crate>" + base.Item();
+}
+class Holder { public Color Color; public Item Item = new Item(); }
+class Program {
+    static void Main() {
+        var b = new Box { P = 5, Color = Color.Green };
+        b.P += 2; b.P++;
+        Console.WriteLine(b.P + " " + b.Color + " " + b.Item() + " " + Box.Make().V + " " + Box.Message());
+        IShape s = new Crate(); Console.WriteLine(s.Color + " " + s.Item());
+        Box c = new Crate(); Console.WriteLine(c.Item());
+        Func<string> f = c.Item; Console.WriteLine(f());
+        var h = new Holder { Color = Color.Green }; Console.WriteLine(h.Color + " " + h.Item.V + " " + new P().Q);
+        try { throw new Exception("boom"); } catch (Exception e) { Console.WriteLine(e.Message + " " + new Message().Text); }
+        var l = new List<int> { 1, 2 }; Console.WriteLine(l.Count + " " + (new Count() != null));
+    }
+}

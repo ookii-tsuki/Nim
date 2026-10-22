@@ -29,6 +29,13 @@ type
       ## every concrete instance of a generic class the module names (`Box[int32]`),
       ## whose overrides the module instantiates (`forceOverrides`)
     instanceKeys: HashSet[string]
+    memberRenames: HashSet[string]
+      ## the members of this compilation's types named like one of its types
+      ## (`public Color Color { get; }`): Nim cannot have a proc and a type of one
+      ## name in a module, so such a member is `nsM_Color` (`memberIdent`)
+    userTypes: HashSet[string]
+      ## the type names this compilation declares, which a library member of the
+      ## same name is called module-qualified around (`System.Message(e)`)
 
 type
   Lowerer = object
@@ -130,6 +137,19 @@ proc qualifierNamespace(l: Lowerer; n: NsNode): string =
   for i in countdown(parts.len - 1, 0):
     dotted = if dotted.len == 0: parts[i] else: dotted & "." & parts[i]
     if l.surface.isLibraryNamespace(dotted): result = dotted
+
+proc isUserReceiver(l: Lowerer; recv: NsNode): bool =
+  ## Whether a member is reached on a value or type this compilation declares.
+  if recv == nil or recv.kind in {nsnThis, nsnBase}: return true
+  let tn = canonicalTypeName(recv.typeName).split('<')[0]
+  tn.len > 0 and (l.scope.classes.hasKey(tn) or l.scope.enums.contains(tn))
+
+proc memberIdent(l: Lowerer; name: string; recv: NsNode; info: TLineInfo): PNode =
+  ## A member's Nim name: `nsM_X` for one named like a type of this compilation
+  ## (see `memberRenames`), the C# name otherwise.
+  if l.imports != nil and name in l.imports.memberRenames and l.isUserReceiver(recv):
+    l.id("nsM_" & name, info)
+  else: l.id(name, info)
 
 proc noteMemberImport(l: Lowerer; n: NsNode) =
   ## Records the prelude declaration a member access resolved to, so the module can
@@ -363,7 +383,7 @@ proc baseCall(l: Lowerer; name: string; args: seq[PNode]; info: TLineInfo): PNod
   ## `base.M(args)`: `procCall M(Base(self), args)`, which calls the base's own
   ## implementation instead of dispatching again.
   let call = newNodeI(nkCall, info)
-  call.add l.id(name, info)
+  call.add l.memberIdent(name, nil, info)
   call.add l.baseConv(info)
   for a in args: call.add a
   result = newTree(nkCommand, info, l.id("procCall", info), call)
@@ -898,10 +918,10 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
     ## class's typedesc first, with any written type arguments.
     let head =
       if callee.typeArgs.len > 0:
-        let h = newTree(nkBracketExpr, n.info, l.id(callee.name, n.info))
+        let h = newTree(nkBracketExpr, n.info, l.memberIdent(callee.name, callee.body, n.info))
         for t in callee.typeArgs: h.add l.typeToNim(t, n.info)
         h
-      else: l.id(callee.name, n.info)
+      else: l.memberIdent(callee.name, callee.body, n.info)
     result = newTree(nkCall, n.info, head, l.typeRef(callee.body))
     for a in l.argsToNim(n): result.add a
     return
@@ -944,9 +964,9 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
     let recvArgs = (if callee.body.rtype != nil and callee.body.rtype.kind == nsnTypeName:
                       callee.body.rtype.sons else: @[])
     if clsTps.len > 0 and recvArgs.len != clsTps.len:
-      result.add l.id(callee.name, n.info)
+      result.add l.memberIdent(callee.name, callee.body, n.info)
     else:
-      let head = newTree(nkBracketExpr, n.info, l.id(callee.name, n.info))
+      let head = newTree(nkBracketExpr, n.info, l.memberIdent(callee.name, callee.body, n.info))
       if clsTps.len > 0:
         for t in recvArgs: head.add l.typeToNim(t, n.info)
       for t in callee.typeArgs: head.add l.typeToNim(t, n.info)
@@ -959,7 +979,8 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
     return
   if l.nilChecks and callee.kind == nsnMember and l.nilableReceiver(callee.body):
     let checked = l.checkNil(callee.body, l.expr(callee.body), n.info)
-    result.add newTree(nkDotExpr, n.info, checked, l.id(callee.name, n.info))
+    result.add newTree(nkDotExpr, n.info, checked,
+                       l.memberIdent(callee.name, callee.body, n.info))
   else:
     result.add l.expr(callee)
   for a in l.argsToNim(n): result.add a
@@ -969,7 +990,7 @@ proc staticMethodGroup(l: Lowerer; n: NsNode): PNode =
   let m = l.scope.findMemberInfo(n.body.typeName, n.name)
   let fp = newNodeI(nkFormalParams, n.info)
   fp.add l.typeToNim(m.typ, n.info)
-  let call = newTree(nkCall, n.info, l.id(n.name, n.info), l.typeRef(n.body))
+  let call = newTree(nkCall, n.info, l.memberIdent(n.name, n.body, n.info), l.typeRef(n.body))
   for p in m.params:
     fp.add newTree(nkIdentDefs, n.info, l.id(p.name, n.info), l.typeToNim(p.typ, n.info),
                    empty(n.info))
@@ -985,7 +1006,7 @@ proc instanceMethodGroup(l: Lowerer; n: NsNode): PNode =
   let fp = newNodeI(nkFormalParams, n.info)
   fp.add l.typeToNim(m.typ, n.info)
   let call = newTree(nkCall, n.info, newTree(nkDotExpr, n.info, l.id("nsRecv", n.info),
-                                             l.id(n.name, n.info)))
+                                             l.memberIdent(n.name, n.body, n.info)))
   for p in m.params:
     fp.add newTree(nkIdentDefs, n.info, l.id(p.name, n.info), l.typeToNim(p.typ, n.info),
                    empty(n.info))
@@ -1449,8 +1470,18 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       result = l.instanceMethodGroup(n)
     else:
       l.noteMemberImport(n)
+      if l.imports != nil and n.name in l.imports.userTypes and n.body != nil and
+         not l.isUserReceiver(n.body) and n.body.typeKind != tkType:
+        ## A library member named like a type of this compilation (`e.Message`
+        ## beside a class `Message`): `x.Message` would convert to the type, so it is
+        ## called through the module that declares it.
+        let ovs = l.surface.overloads(n.body.typeName, n.body.typeKind, n.name)
+        if ovs.len > 0 and ovs[0].path.len > 0:
+          return newTree(nkCall, n.info, newTree(nkDotExpr, n.info,
+            l.id(ovs[0].path.split('/')[^1], n.info), l.id(n.name, n.info)),
+            l.memberReceiverChecked(n))
       result = newTree(nkDotExpr, n.info, l.memberReceiverChecked(n),
-                       l.id(n.name, n.info))
+                       l.memberIdent(n.name, n.body, n.info))
       let owner = (if n.body != nil and n.body.kind == nsnThis and l.curClass != nil:
                      l.curClass.name
                    elif n.body != nil: n.body.typeName else: "")
@@ -4169,11 +4200,12 @@ proc lowerImplementations(l: var Lowerer; n: NsNode; isException: bool;
         for p in m.params: call.add l.id(p.name, info)
         body = call
       elif slot.setter:
-        body = newTree(nkAsgn, info, newTree(nkDotExpr, info, me, l.id(m.name, info)),
+        body = newTree(nkAsgn, info, newTree(nkDotExpr, info, me,
+                                             l.memberIdent(m.name, nil, info)),
                        l.id("value", info))
       else:
         let call = newNodeI(nkCall, info)
-        call.add l.id(target, info)
+        call.add l.memberIdent(target, nil, info)
         if staticCls != n.name:
           ## A member the class does not dispatch (one hidden by `new` included): the
           ## one of the class that names the interface.
@@ -6437,6 +6469,59 @@ proc markLoopCells(module: NsNode) =
     w.scopes.add initTable[string, NsCellDecl]()
     w.cellWalk(module)
 
+proc renameMemberDecls(l: Lowerer; module: PNode) =
+  ## The declarations of the members `memberIdent` renames: their routines (and
+  ## setters, `X=`), and fields of that name, which the same accesses reach.
+  proc renamed(l: Lowerer; n: PNode): PNode =
+    ## `X` / `X=` / `X*` as its `nsM_` spelling, or nil when it is not renamed.
+    case n.kind
+    of nkIdent:
+      let s = n.ident.s
+      let base = (if s.endsWith("="): s[0 ..< ^1] else: s)
+      if base in l.imports.memberRenames:
+        return l.id("nsM_" & s, n.info)
+    of nkPostfix:
+      let r = l.renamed(n[1])
+      if r != nil: return newTree(nkPostfix, n.info, n[0], r)
+    of nkAccQuoted:
+      if n.len == 1:
+        let r = l.renamed(n[0])
+        if r != nil: return newTree(nkAccQuoted, n.info, r)
+    of nkPragmaExpr:
+      let r = l.renamed(n[0])
+      if r != nil: return newTree(nkPragmaExpr, n.info, r, n[1])
+    else: discard
+    nil
+  proc ownReceiver(n: PNode): bool =
+    ## `self` / `result` (or a conversion or cast of one): this class's object, so
+    ## a member the lowering generated against it is one of its own.
+    case n.kind
+    of nkIdent: n.ident.s in ["self", "result"]
+    of nkCall, nkCast, nkHiddenStdConv, nkConv:
+      n.len > 0 and ownReceiver(n[^1])
+    else: false
+  proc walk(l: Lowerer; n: PNode) =
+    case n.kind
+    of nkProcDef, nkMethodDef, nkFuncDef, nkTemplateDef, nkIteratorDef, nkConverterDef:
+      let r = l.renamed(n[namePos])
+      if r != nil: n[namePos] = r
+      for i in 1 ..< n.len: l.walk(n[i])
+    of nkRecList:
+      for i in 0 ..< n.len:
+        if n[i].kind == nkIdentDefs:
+          for k in 0 ..< n[i].len - 2:
+            let r = l.renamed(n[i][k])
+            if r != nil: n[i][k] = r
+        else: l.walk(n[i])
+    of nkDotExpr:
+      if n.len == 2 and ownReceiver(n[0]):
+        let r = l.renamed(n[1])
+        if r != nil: n[1] = r
+      for i in 0 ..< n.len: l.walk(n[i])
+    else:
+      for i in 0 ..< n.safeLen: l.walk(n[i])
+  l.walk(module)
+
 proc lowerModule*(module: NsNode; scope: NsModuleScope;
                   cache: IdentCache; config: ConfigRef): PNode =
   ## Lowers a whole `.ns` module to the Nim statements the rest of the compiler
@@ -6455,6 +6540,16 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
         for x in n.body.sons: noteOwn(x, into)
   for d in module.sons: noteOwn(d, l.ownNamespaces)
   markLoopCells(module)
+  ## Types and members of one name (`Color Color`): see `memberRenames`.
+  for cn, cls in l.scope.classes:
+    l.imports.userTypes.incl cn
+  for e in l.scope.enums: l.imports.userTypes.incl e
+  for d in l.scope.delegates.keys: l.imports.userTypes.incl d
+  for cn, cls in l.scope.classes:
+    if l.scope.isNative(cn): continue
+    for m in cls.members:
+      if (m.isMethod or m.isProperty or m.isEvent) and m.name in l.imports.userTypes:
+        l.imports.memberRenames.incl m.name
   for d in module.sons:
     l.lowerDecl(d, stmts)
   result = newNodeI(nkStmtList, module.info)
@@ -6599,4 +6694,5 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
     result.add makeMainCall(l, l.entryPoint)
   if l.nilChecks: elideNilChecks(result)
   elideBounds(result, l.cache)
+  if l.imports.memberRenames.len > 0: l.renameMemberDecls(result)
 
