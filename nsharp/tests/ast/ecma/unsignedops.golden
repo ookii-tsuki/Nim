@@ -35,7 +35,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -135,7 +136,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Program"
@@ -391,7 +393,11 @@ nkStmtList
           nkIdent 'int32'
           nkCall
             nkIdent 'nsFmod'
-            nkIntLit 5
+            nkCall
+              nkCall
+                nkIdent 'typeof'
+                nkFloat32Lit 2.5
+              nkIntLit 5
             nkFloat32Lit 2.5
   nkProcDef
     nkPostfix

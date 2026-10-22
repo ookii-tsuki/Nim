@@ -254,7 +254,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Sum'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -448,7 +449,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Text'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -706,7 +708,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Money'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -858,7 +861,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1080,7 +1084,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Sum'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Sum"
@@ -1359,7 +1364,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Text'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Text"
@@ -1744,7 +1750,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Money'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Money"
@@ -1973,7 +1980,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"

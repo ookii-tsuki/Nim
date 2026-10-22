@@ -8,6 +8,7 @@
 # does in .NET for a type that does not implement `IFormattable`.
 
 import std/[strutils, math]
+import std/options except `$`
 
 proc nsGroup(intDigits: string): string =
   ## `1234567` as `1,234,567`.
@@ -225,5 +226,11 @@ template nsFmt*(x: untyped; spec: string): string =
     let nsV = x
     when nsV is SomeNumber:
       nsFormatNumber(nsV, spec)
+    elif nsV is Option:
+      ## A `T?` formats its value, and a null formats as nothing.
+      when typeof(nsV.get) is SomeNumber:
+        if nsV.isSome: nsFormatNumber(nsV.get, spec) else: ""
+      else:
+        $nsV
     else:
       $nsV

@@ -148,7 +148,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'StringExt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -275,7 +276,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'ListExt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -406,7 +408,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Point'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -504,7 +507,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'PointExt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -647,7 +651,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -772,7 +777,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -872,7 +878,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'StringExt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Tools.StringExt"
@@ -1036,7 +1043,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'ListExt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Tools.ListExt"
@@ -1201,7 +1209,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Point'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Point"
@@ -1322,7 +1331,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'PointExt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.PointExt"
@@ -1538,7 +1548,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Counter"
@@ -1697,7 +1708,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"

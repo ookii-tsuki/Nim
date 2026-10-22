@@ -152,7 +152,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Animal'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -243,7 +244,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Outer'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -334,7 +336,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -577,7 +580,8 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Color'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -609,7 +613,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Inner'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -700,7 +705,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -791,7 +797,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Dog'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -891,7 +898,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Animal'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Animal"
@@ -995,7 +1003,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Dog'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Dog"
@@ -1102,7 +1111,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Pt"
@@ -1450,7 +1460,8 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Color'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkPrefix
@@ -1488,7 +1499,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Outer'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Outer"
@@ -1592,7 +1604,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Inner'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Outer+Inner"
@@ -1696,7 +1709,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"

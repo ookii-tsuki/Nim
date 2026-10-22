@@ -1,0 +1,51 @@
+// GetType() of an exception is its .NET type, whether the runtime, the library or
+// the program threw it; Type.Name drops the namespace, enclosing type and generic
+// arguments, and a generic class names its arguments.
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class MyErr : Exception { public MyErr(string m) : base(m) { } }
+    class MyOp : InvalidOperationException { }
+    class Box<T> { }
+    class Pair<A, B> { }
+    class Outer { public class Inner { } }
+
+    class Program
+    {
+        static void Show(Action a)
+        {
+            try { a(); }
+            catch (Exception e) { Console.WriteLine(e.GetType().FullName + " | " + e.GetType().Name); }
+        }
+
+        static void Main()
+        {
+            int z = 0;
+            Program nobody = null;
+            Show(() => { int[] a = new int[1]; a[3] = 1; });
+            Show(() => { throw new InvalidOperationException("x"); });
+            Show(() => { throw new MyErr("x"); });
+            Show(() => { throw new MyOp(); });
+            Show(() => { throw new Exception("x"); });
+            Show(() => { var d = new Dictionary<string, int>(); var v = d["k"]; });
+            Show(() => { object o = "s"; int i = (int)o; });
+            Show(() => { int r = 5 / z; });
+            Show(() => { nobody.ToString(); });
+            Show(() => { int.Parse("x"); });
+            Show(() => { var l = new List<int>(); var v = l[2]; });
+            Show(() => { throw new ArgumentNullException("p"); });
+            Show(() => { throw new NotImplementedException(); });
+            var made = new ArgumentOutOfRangeException("p", "m");
+            Console.WriteLine(made.GetType().Name);
+            MyErr mine = new MyErr("y");
+            Console.WriteLine(mine.GetType().FullName + " " + typeof(MyErr).Name + " " + typeof(MyErr).FullName);
+            Console.WriteLine(mine.GetType() == typeof(MyErr));
+            Console.WriteLine(new Box<int>().GetType().Name);
+            Console.WriteLine(new Box<string>().ToString() + " " + new Pair<int, Box<bool>>().ToString());
+            Console.WriteLine(new Outer.Inner().GetType().Name + " " + new Outer.Inner().GetType().FullName);
+            Console.WriteLine(typeof(int[]).Name + " " + typeof(List<int>).Name + " " + typeof(int).Name);
+        }
+    }
+}

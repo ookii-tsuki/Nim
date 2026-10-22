@@ -92,7 +92,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Node'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -218,7 +219,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -326,7 +328,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -412,7 +415,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Sq'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -564,7 +568,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Node'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Node"
@@ -751,7 +756,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Shape"
@@ -877,7 +883,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Sq'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Sq"
@@ -1026,7 +1033,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"

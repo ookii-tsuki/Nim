@@ -5,6 +5,7 @@ nkStmtList
     nkStrLit "System"
     nkIdent 'ArgumentException'
     nkIdent 'InvalidOperationException'
+    nkIdent 'nsNewException'
   nkPragma
     nkIdent 'push'
     nkExprColonExpr
@@ -318,7 +319,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -489,7 +491,7 @@ nkStmtList
                 nkStmtList
                   nkRaiseStmt
                     nkCall
-                      nkIdent 'newException'
+                      nkIdent 'nsNewException'
                       nkIdent 'ArgumentException'
                       nkStrLit "negative start"
             nkAsgn
@@ -545,7 +547,7 @@ nkStmtList
           nkStmtList
             nkRaiseStmt
               nkCall
-                nkIdent 'newException'
+                nkIdent 'nsNewException'
                 nkIdent 'InvalidOperationException'
                 nkStrLit "fuse blew on tick 1"
       nkCall
@@ -617,7 +619,7 @@ nkStmtList
     nkStmtList
       nkRaiseStmt
         nkCall
-          nkIdent 'newException'
+          nkIdent 'nsNewException'
           nkIdent 'InvalidOperationException'
           nkStrLit "blown on purpose"
   nkProcDef
@@ -734,7 +736,7 @@ nkStmtList
     nkStmtList
       nkRaiseStmt
         nkCall
-          nkIdent 'newException'
+          nkIdent 'nsNewException'
           nkIdent 'InvalidOperationException'
           nkStrLit "too heavy to weigh"
   nkProcDef
@@ -1020,7 +1022,7 @@ nkStmtList
           nkStmtList
             nkRaiseStmt
               nkCall
-                nkIdent 'newException'
+                nkIdent 'nsNewException'
                 nkIdent 'InvalidOperationException'
                 nkStrLit "stage tick 1"
       nkCall
@@ -1083,7 +1085,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Entry"
@@ -1192,7 +1195,7 @@ nkStmtList
     nkStmtList
       nkRaiseStmt
         nkCall
-          nkIdent 'newException'
+          nkIdent 'nsNewException'
           nkIdent 'InvalidOperationException'
           nkStrLit "exported failure"
   nkProcDef

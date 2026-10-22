@@ -56,7 +56,8 @@ nkStmtList
           nkIdent 'Box'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -179,7 +180,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -285,10 +287,18 @@ nkStmtList
           nkIdent 'Box'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.Box"
+      nkCall
+        nkIdent 'nsGenericName'
+        nkStrLit "Demo.Box"
+        nkCall
+          nkIdent 'FullName'
+          nkCall
+            nkIdent 'nsTypeOf'
+            nkIdent 'T'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -343,7 +353,14 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.Box"
+      nkCall
+        nkIdent 'nsGenericName'
+        nkStrLit "Demo.Box"
+        nkCall
+          nkIdent 'FullName'
+          nkCall
+            nkIdent 'nsTypeOf'
+            nkIdent 'T'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -430,7 +447,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"

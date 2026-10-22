@@ -1,0 +1,20 @@
+System.IndexOutOfRangeException | IndexOutOfRangeException
+System.InvalidOperationException | InvalidOperationException
+Demo.MyErr | MyErr
+Demo.MyOp | MyOp
+System.Exception | Exception
+System.Collections.Generic.KeyNotFoundException | KeyNotFoundException
+System.InvalidCastException | InvalidCastException
+System.DivideByZeroException | DivideByZeroException
+System.NullReferenceException | NullReferenceException
+System.FormatException | FormatException
+System.ArgumentOutOfRangeException | ArgumentOutOfRangeException
+System.ArgumentNullException | ArgumentNullException
+System.NotImplementedException | NotImplementedException
+ArgumentOutOfRangeException
+Demo.MyErr MyErr Demo.MyErr
+True
+Box`1
+Demo.Box`1[System.String] Demo.Pair`2[System.Int32,Demo.Box`1[System.Boolean]]
+Inner Demo.Outer+Inner
+Int32[] List`1 Int32

@@ -1,0 +1,15 @@
+// A `T?` prints and formats as its value, and as nothing when it has none.
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        int? m = 2; int? none = null; double? dd = 1.5; long? big = 12345;
+        Console.WriteLine($"{m} [{none}] {dd}");
+        Console.WriteLine(m); Console.WriteLine(none); Console.WriteLine(dd);
+        Console.WriteLine("x" + m + "|" + none + "|");
+        Console.WriteLine($"{m,4}|{m:D3}|{none:D3}|{big:N0}|{dd:F2}|{none,3}|");
+        Console.WriteLine(m.ToString() + "/" + none.ToString() + "/");
+    }
+}

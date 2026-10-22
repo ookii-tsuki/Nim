@@ -51,7 +51,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Small'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -206,7 +207,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -306,7 +308,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Small'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Small"
@@ -470,7 +473,7 @@ nkStmtList
           nkStmtList
             nkRaiseStmt
               nkCall
-                nkIdent 'newException'
+                nkIdent 'nsNewException'
                 nkIdent 'OverflowException'
                 nkStrLit "Small overflow"
       nkReturnStmt
@@ -515,7 +518,7 @@ nkStmtList
     nkStmtList
       nkRaiseStmt
         nkCall
-          nkIdent 'newException'
+          nkIdent 'nsNewException'
           nkIdent 'OverflowException'
           nkStrLit "neg"
   nkMethodDef
@@ -530,7 +533,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"

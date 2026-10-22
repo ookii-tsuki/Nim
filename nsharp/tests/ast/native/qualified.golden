@@ -41,7 +41,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -162,7 +163,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Entry"
@@ -245,7 +247,7 @@ nkStmtList
         nkStmtList
           nkRaiseStmt
             nkCall
-              nkIdent 'newException'
+              nkIdent 'nsNewException'
               nkIdent 'InvalidOperationException'
               nkStrLit "qualified throw"
         nkExceptBranch

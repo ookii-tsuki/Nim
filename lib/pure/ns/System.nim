@@ -9,7 +9,7 @@ from std/unicode import nil
 # interfaces (`Array.Sort` takes an `IComparer<T>`), as .NET's namespaces may.
 import System/Collections/Generic {.cyclic.}
 from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, Equals, GetHashCode, NsArray, nsArrayOf, len,
-  items, `[]`, `[]=`, nsNoValue
+  items, `[]`, `[]=`, nsNoValue, nsExceptionName, nsExceptionMessage
 
 # `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
 from ../nsharp/pragmas import nsStatic, nsInterface
@@ -103,9 +103,184 @@ type
 # `e.Message` reaches a proc on the exception root, and is generic because an N#
 # exception is a value object but is raised as a `ref`, which does not convert to
 # its base in an argument position.
+#
+# Nim's runtime checks raise the defects .NET's exceptions alias with Nim's own
+# text (`index 5 not in 0 .. 1`), which reading `Message` puts in .NET's words. The
+# static type picks the translation where it says which defect it is; otherwise
+# the dynamic type does, a test made only when a message is read.
 
+proc nsIndexText(m: string): string =
+  if m.startsWith("index out of bounds") or (m.startsWith("index ") and " not in " in m):
+    "Index was outside the bounds of the array."
+  else: m
 
-proc Message*[T: ref Exception](e: T): string = e.msg
+proc nsOverflowText(m: string): string =
+  if m == "over- or underflow": "Arithmetic operation resulted in an overflow." else: m
+
+proc nsNilText(m: string): string =
+  if m == "attempt to access a nil address":
+    "Object reference not set to an instance of an object."
+  else: m
+
+proc nsRuntimeText(e: ref Exception): string =
+  if e of IndexDefect: nsIndexText(e.msg)
+  elif e of OverflowDefect: nsOverflowText(e.msg)
+  elif e of NilAccessDefect: nsNilText(e.msg)
+  else: e.msg
+
+proc Message*[T: ref Exception](e: T): string =
+  when T is ref IndexDefect: nsIndexText(e.msg)
+  elif T is ref OverflowDefect: nsOverflowText(e.msg)
+  elif T is ref NilAccessDefect: nsNilText(e.msg)
+  elif T is ref CatchableError: e.msg
+  else: nsRuntimeText(e)
+
+# `new E(...)` of a library exception: the message .NET's constructor makes, which
+# a parameterless one takes from the type, and one naming a parameter or an object
+# appends.
+
+proc nsNetName(nimName: string): string =
+  ## The .NET name of an exception from the name `raise` gives it, Nim's: the
+  ## defects .NET's exceptions alias, and this library's own types.
+  case nimName
+  of "IndexDefect", "IndexOutOfRangeException": "System.IndexOutOfRangeException"
+  of "NilAccessDefect", "NullReferenceException": "System.NullReferenceException"
+  of "OverflowDefect", "OverflowException": "System.OverflowException"
+  of "DivByZeroDefect", "DivideByZeroException": "System.DivideByZeroException"
+  of "ObjectConversionDefect", "InvalidCastException": "System.InvalidCastException"
+  of "RangeDefect", "ArgumentOutOfRangeException": "System.ArgumentOutOfRangeException"
+  of "KeyError", "KeyNotFoundException": "System.Collections.Generic.KeyNotFoundException"
+  of "ValueError", "FormatException": "System.FormatException"
+  of "SystemException", "ApplicationException", "ArgumentException",
+     "ArgumentNullException", "InvalidOperationException", "NotSupportedException",
+     "NotImplementedException", "ObjectDisposedException":
+    "System." & nimName
+  of "", "Exception", "CatchableError", "Defect": "System.Exception"
+  else: nimName
+
+proc nsExceptionTypeName(e: ref Exception): string =
+  ## `e.GetType()` of an exception: its `name`, which its constructor sets to the
+  ## .NET name (see `nsNewException`, and the allocator of an exception class), and
+  ## `raise` to Nim's when nothing did.
+  nsNetName(if e.name.isNil: "" else: $e.name)
+
+proc nsDefaultMessage*[T: Exception](e: ref T): string =
+  ## The message of an exception made without one, as .NET's parameterless
+  ## constructors make it: the nearest library type's, or `Exception`'s, which
+  ## names the type.
+  when T is ArgumentNullException: "Value cannot be null."
+  elif T is ArgumentException: "Value does not fall within the expected range."
+  elif T is ArgumentOutOfRangeException: "Specified argument was out of the range of valid values."
+  elif T is ObjectDisposedException: "Cannot access a disposed object."
+  elif T is InvalidOperationException:
+    "Operation is not valid due to the current state of the object."
+  elif T is NotSupportedException: "Specified method is not supported."
+  elif T is NotImplementedException: "The method or operation is not implemented."
+  elif T is ApplicationException: "Error in the application."
+  elif T is SystemException: "System error."
+  elif T is KeyNotFoundException: "The given key was not present in the dictionary."
+  elif T is FormatException: "One of the identified items was in an invalid format."
+  elif T is IndexOutOfRangeException: "Index was outside the bounds of the array."
+  elif T is NullReferenceException: "Object reference not set to an instance of an object."
+  elif T is InvalidCastException: "Specified cast is not valid."
+  elif T is OverflowException: "Arithmetic operation resulted in an overflow."
+  elif T is DivideByZeroException: "Attempted to divide by zero."
+  else: "Exception of type '" & nsExceptionTypeName(e) & "' was thrown."
+
+proc nsMade[T: Exception](t: typedesc[T]): ref T =
+  ## A new exception, named as .NET names its type.
+  new(result)
+  const name = nsNetName($T)
+  result.name = name
+
+proc nsParam(m, param: string): string =
+  if param.len > 0: m & " (Parameter '" & param & "')" else: m
+
+proc nsNewException*[T: Exception](t: typedesc[T]): ref T =
+  ## `new E()`.
+  result = nsMade(T)
+  result.msg = nsDefaultMessage(result)
+
+proc nsNewException*[T: Exception](t: typedesc[T]; a: string): ref T =
+  ## `new E(message)`; of `ArgumentNullException` and `ArgumentOutOfRangeException`
+  ## the parameter's name, and of `ObjectDisposedException` the object's.
+  result = nsMade(T)
+  when T is ArgumentNullException or T is ArgumentOutOfRangeException:
+    result.msg = nsParam(nsDefaultMessage(result), a)
+  elif T is ObjectDisposedException:
+    result.msg = nsDefaultMessage(result) & "\nObject name: '" & a & "'."
+  else:
+    result.msg = a
+
+proc nsNewException*[T: Exception](t: typedesc[T]; a, b: string): ref T =
+  ## `new ArgumentException(message, paramName)`, and the `(paramName, message)`
+  ## of its relatives; `new ObjectDisposedException(objectName, message)`.
+  result = nsMade(T)
+  when T is ArgumentNullException or T is ArgumentOutOfRangeException:
+    result.msg = nsParam(b, a)
+  elif T is ArgumentException:
+    result.msg = nsParam(a, b)
+  elif T is ObjectDisposedException:
+    result.msg = b & "\nObject name: '" & a & "'."
+  else:
+    {.error: "this exception has no constructor taking two strings".}
+
+proc nsNewException*[T: Exception](t: typedesc[T]; a: string;
+                                   inner: ref Exception): ref T =
+  ## `new E(message, innerException)`.
+  result = nsMade(T)
+  result.msg = a
+  result.parent = inner
+
+# An exception nothing catches ends the program as .NET's runtime ends it: its type,
+# message and inner exceptions on stderr, and an abort (exit status 134).
+
+proc nsAbort() {.importc: "abort", header: "<stdlib.h>", noreturn.}
+proc nsSignal(sig: cint; handler: pointer): pointer {.importc: "signal", header: "<signal.h>".}
+var nsSIGABRT {.importc: "SIGABRT", header: "<signal.h>".}: cint
+proc nimErrorFlag(): ptr bool {.importc: "nimErrorFlag", nodecl.}
+  ## The runtime's flag for an exception in flight, with goto-based exceptions.
+
+proc nsTraceText(e: ref Exception): string =
+  ## `   at Main in Program.ns:line 6`, innermost call first, when the build keeps
+  ## stack traces: the program's own calls, not the library's or the module's
+  ## initialisation.
+  result = ""
+  when declared(getStackTraceEntries):
+    let entries = e.getStackTraceEntries()
+    for i in countdown(entries.high, 0):
+      let t = entries[i]
+      let file = $t.filename
+      if file.endsWith(".nim") or file.endsWith("/" & $t.procname & ".ns"): continue
+      result.add "\n   at " & $t.procname & " in " & file
+      if t.line > 0: result.add ":line " & $t.line
+
+proc nsUnhandled(e: ref Exception) {.nimcall, gcsafe, raises: [], tags: [].} =
+  {.cast(gcsafe), cast(raises: []), cast(tags: []).}:
+    when compileOption("exceptions", "goto"):
+      ## `e` is still in flight, which every call below would take for its own.
+      nimErrorFlag()[] = false
+    try:
+      flushFile(stdout)
+      var chain = @[e]
+      while chain[^1].parent != nil: chain.add chain[^1].parent
+      var text = "Unhandled exception. "
+      for i, x in chain:
+        if i > 0: text.add "\n ---> "
+        text.add nsExceptionTypeName(x) & ": " & nsRuntimeText(x)
+      for i in countdown(chain.high, 0):
+        text.add nsTraceText(chain[i])
+        if i > 0: text.add "\n   --- End of inner exception stack trace ---"
+      stderr.write text & "\n"
+      flushFile(stderr)
+    except CatchableError: discard
+    ## Nim's handler for the signal would report it again.
+    discard nsSignal(nsSIGABRT, nil)
+    nsAbort()
+
+proc InnerException*[T: ref Exception](e: T): ref Exception = e.parent
+  ## The exception a constructor was handed as the cause, or null.
+
 
 # --- System.Int32, Double, Char, String -------------------------------------
 #
@@ -517,5 +692,8 @@ proc Dispose*[T](e: IEnumerator[T]) = e.nsDisposeEnumerator()
 # An absent `T?` read with `.Value` or a cast throws .NET's exception (see the
 # intrinsics' `nsNoValue`). A statement, so it comes after every declaration: a
 # module of an import cycle shares only the declarations before its first one.
+nsExceptionName = nsExceptionTypeName
+nsExceptionMessage = nsRuntimeText
+unhandledExceptionHook = nsUnhandled
 nsNoValue = proc () {.nimcall.} =
   raise newException(InvalidOperationException, "Nullable object must have a value.")

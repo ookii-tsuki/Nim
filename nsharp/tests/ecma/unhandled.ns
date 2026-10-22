@@ -1,0 +1,17 @@
+// An exception nothing catches ends the program as .NET's runtime ends it: the
+// output so far, then its type and message, and its inner exceptions', on stderr,
+// and an abort.
+using System;
+
+class Program
+{
+    static void Fail(int[] a) { a[2] = 1; }
+
+    static void Main()
+    {
+        Console.WriteLine("before");
+        try { Fail(new int[1]); }
+        catch (Exception e) { throw new InvalidOperationException("outer", e); }
+        Console.WriteLine("not reached");
+    }
+}

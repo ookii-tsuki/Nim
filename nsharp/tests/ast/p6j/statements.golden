@@ -82,7 +82,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Resource'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -198,7 +199,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -360,7 +362,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Resource'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Resource"
@@ -515,7 +518,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"
@@ -590,7 +594,7 @@ nkStmtList
           nkElseExpr
             nkRaiseStmt
               nkCall
-                nkIdent 'newException'
+                nkIdent 'nsNewException'
                 nkIdent 'ArgumentException'
                 nkStrLit "empty"
   nkProcDef
@@ -708,7 +712,7 @@ nkStmtList
         nkStmtList
           nkRaiseStmt
             nkCall
-              nkIdent 'newException'
+              nkIdent 'nsNewException'
               nkIdent 'InvalidOperationException'
               nkStrLit "bad"
         nkExceptBranch
@@ -1046,7 +1050,7 @@ nkStmtList
             nkStmtList
               nkRaiseStmt
                 nkCall
-                  nkIdent 'newException'
+                  nkIdent 'nsNewException'
                   nkIdent 'ArgumentException'
                   nkStrLit "inner"
             nkExceptBranch
@@ -1332,7 +1336,7 @@ nkStmtList
                   nkIntLit 0
                 nkRaiseStmt
                   nkCall
-                    nkIdent 'newException'
+                    nkIdent 'nsNewException'
                     nkIdent 'ArgumentException'
                     nkStrLit "missing"
               nkElseExpr

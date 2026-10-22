@@ -1,0 +1,66 @@
+// A local function in a loop body sees the variables of the iteration it was made
+// in (ECMA-334 13.9.5), as a lambda does: called directly, made into a delegate,
+// called through another local function or a lambda, recursively, and before its
+// declaration in the block.
+using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        var acts = new List<Func<int>>();
+        for (int i = 0; i < 3; i++)
+        {
+            int x = i * 10;
+            int Get() => x;
+            acts.Add(Get);
+        }
+        foreach (var a in acts) Console.WriteLine(a());
+
+        var acts2 = new List<Action>();
+        foreach (var s in new[] { "a", "b", "c" })
+        {
+            int n = s.Length;
+            void Show() { Console.WriteLine(s + n); }
+            void Twice() { Show(); Show(); }
+            Show();
+            acts2.Add(Twice);
+            acts2.Add(() => Show());
+            n++;
+        }
+        foreach (var a in acts2) a();
+
+        int total = 0;
+        for (int k = 0; k < 3; k++)
+        {
+            int v = k + 1;
+            int Fact(int m) => m <= 1 ? v : m * Fact(m - 1);
+            void Add(ref int t) { t += v; }
+            Add(ref total);
+            Console.WriteLine(Fact(3));
+        }
+        Console.WriteLine(total);
+
+        var fs = new List<Func<int, int>>();
+        int j = 0;
+        while (j < 2)
+        {
+            int w = j;
+            int Scale(int q) { w++; return q * w; }
+            fs.Add(Scale);
+            j++;
+        }
+        Console.WriteLine(fs[0](5) + " " + fs[0](5) + " " + fs[1](5));
+
+        var early = new List<Action>();
+        for (int i = 0; i < 2; i++)
+        {
+            int y = i + 100;
+            Early();
+            early.Add(Early);
+            void Early() => Console.WriteLine(y);
+        }
+        foreach (var a in early) a();
+    }
+}

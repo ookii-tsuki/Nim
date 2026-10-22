@@ -301,7 +301,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'TagAttribute'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -387,7 +388,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Thing'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -665,7 +667,8 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Perm'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -848,7 +851,8 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Level'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -880,7 +884,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -980,7 +985,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'TagAttribute'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.TagAttribute"
@@ -1086,7 +1092,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Thing'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Thing"
@@ -1504,7 +1511,8 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Perm'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkPrefix
@@ -1804,7 +1812,8 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Level'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkPrefix
@@ -1842,7 +1851,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"

@@ -763,12 +763,14 @@ proc newToNim(l: Lowerer; n: NsNode): PNode =
   if n.typ != nil and n.typ.kind == nsnTypeName and n.typ.sons.len == 0 and
      not l.scope.classes.hasKey(canonicalTypeName(n.typ.name)) and
      l.surface.isExceptionType(nimTypeName(n.typ.name)):
-    ## `new InvalidOperationException(msg)` of the library: `newException(T, msg)`,
-    ## a `ref`, as `throw` makes it.
+    ## `new InvalidOperationException(msg)` of the library: `nsNewException(T, msg)`,
+    ## a `ref`, as `throw` makes it, with the message .NET's constructor makes.
     let q = l.qualifiedName(n.typ.name, n.info, 0)
-    return newTree(nkCall, n.info, l.id("newException", n.info),
-                   (if q != nil: q else: l.id(nimTypeName(n.typ.name), n.info)),
-                   (if n.sons.len > 0: l.expr(n.sons[0]) else: newAtom(nkStrLit, "", n.info)))
+    result = newTree(nkCall, n.info, l.id("nsNewException", n.info),
+                     (if q != nil: q else: l.id(nimTypeName(n.typ.name), n.info)))
+    for a in n.sons: result.add l.expr(a)
+    if l.imports != nil: l.imports.note(namespaceModulePath("System"), "nsNewException")
+    return
   if n.typ != nil and n.typ.kind == nsnTypeName and n.typ.name in l.procTypeParams:
     ## `new T()` on a type parameter (`where T : new()`): every class declares
     ## `nsCreate` over its typedesc, and the intrinsics do for value types.
@@ -1004,6 +1006,12 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
     result.add recv
     for a in l.argsToNim(n): result.add a
     return
+  if callee.kind == nsnIdent and callee.paramMod == "cells":
+    ## A local function taking cells: this iteration's, after the arguments.
+    result.add l.id(callee.name, n.info)
+    for a in l.argsToNim(n): result.add a
+    for c in callee.argParam.captures: result.add l.id(c, n.info)
+    return
   if l.nilChecks and callee.kind == nsnMember and l.nilableReceiver(callee.body):
     let checked = l.checkNil(callee.body, l.expr(callee.body), n.info)
     result.add newTree(nkDotExpr, n.info, checked,
@@ -1011,6 +1019,32 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
   else:
     result.add l.expr(callee)
   for a in l.argsToNim(n): result.add a
+
+proc cellFuncDelegate(l: Lowerer; n: NsNode): PNode =
+  ## A local function taking cells, as a delegate: a closure made by a factory that
+  ## takes this iteration's cells, as a lambda capturing them is.
+  let f = n.argParam
+  let fp = l.formalParams(f.typ, f.params, n.info)
+  let call = newTree(nkCall, n.info, l.id(f.name, n.info))
+  for p in f.params: call.add l.id(p.name, n.info)
+  for c in f.captures: call.add l.id(c, n.info)
+  let lam = newNodeI(nkLambda, n.info, 7)
+  for i in 0 .. 6: lam[i] = empty(n.info)
+  lam[3] = fp
+  lam[6] = newTree(nkStmtList, n.info, call)
+  let ffp = newTree(nkFormalParams, n.info, l.id("auto", n.info))
+  let made = newNodeI(nkCall, n.info)
+  for c in f.captures:
+    ffp.add newTree(nkIdentDefs, n.info, l.id(c, n.info),
+                    newTree(nkCall, n.info, l.id("typeof", n.info), l.id(c, n.info)),
+                    empty(n.info))
+  let factory = newNodeI(nkLambda, n.info, 7)
+  for i in 0 .. 6: factory[i] = empty(n.info)
+  factory[3] = ffp
+  factory[6] = newTree(nkStmtList, n.info, lam)
+  made.add newTree(nkPar, n.info, factory)
+  for c in f.captures: made.add l.id(c, n.info)
+  result = made
 
 proc staticMethodGroup(l: Lowerer; n: NsNode): PNode =
   ## `IntFn f = Double;`: the method's parameters, forwarded with the class first.
@@ -1099,6 +1133,16 @@ proc castToNim(l: Lowerer; n: NsNode): PNode =
       return l.noneCall(n.typ, n.info)
     return l.someCall(newTree(nkCall, n.info, l.typeToNim(n.typ.typ, n.info), l.expr(n.body)),
                       n.typ.typ, n.info)
+  if n.typ != nil and n.typ.kind == nsnTypeName and n.typeKind == tkClass and
+     n.body != nil and n.body.typeKind == tkClass and
+     canonicalTypeName(n.body.typeName) != canonicalTypeName(n.typ.name) and
+     l.scope.classes.hasKey(canonicalTypeName(n.typ.name)) and
+     l.scope.classes[canonicalTypeName(n.typ.name)].classKind == ckClass and
+     not l.scope.nativeBased(canonicalTypeName(n.typ.name)):
+    ## `(Dog)animal`: the downcast tested once, failing with .NET's message, which
+    ## names both types.
+    return newTree(nkCall, n.info, l.id("nsDowncast", n.info), l.expr(n.body),
+                   l.typeToNim(n.typ, n.info))
   result = newNodeI(nkCall, n.info)
   result.add convCallee(l.typeToNim(n.typ, n.info))
   if n.body != nil and n.body.typeKind == tkNullable:
@@ -1418,6 +1462,7 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnEmpty: result = empty(n.info)
   of nsnIdent:
     result = l.id(n.name, n.info)
+    if n.paramMod == "cells": return l.cellFuncDelegate(n)
     if n.paramMod == "deref":
       ## A `ref` local reads and writes the variable it refers to.
       return newTree(nkBracketExpr, n.info, result)
@@ -1720,10 +1765,20 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       ## Integer `/` and `%`, the floating-point `%`, and a shift whose count is not
       ## a constant in range go through library procs, which are called rather
       ## than used as an infix operator.
+      ## They are generic over the operand type, which an untyped literal on the
+      ## left would bind to Nim's `int` (`5 / z`): the literal takes the other
+      ## operand's type, or for a shift, whose type is the left operand's, C#'s `int`.
       result = newNodeI(nkCall, n.info)
       result.add l.id(shiftProc(n.name), n.info)
-      result.add l.ordered(n.sons[0], n.sons[1 .. 1])
-      result.add l.expr(n.sons[1])
+      var left = l.ordered(n.sons[0], n.sons[1 .. 1])
+      let right = l.expr(n.sons[1])
+      if n.sons[0].kind == nsnIntLit and left.kind == nkIntLit and
+         n.sons[1].kind != nsnIntLit:
+        let to = (if n.name in ["shl", "shr", "ushr"]: l.id("int32", n.info)
+                  else: newTree(nkCall, n.info, l.id("typeof", n.info), copyTree(right)))
+        left = newTree(nkCall, n.info, to, left)
+      result.add left
+      result.add right
     else:
       result = newTree(nkInfix, n.info, l.id(n.name, n.info),
                        l.ordered(n.sons[0], n.sons[1 .. 1]), l.expr(n.sons[1]))
@@ -1831,11 +1886,18 @@ proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode =
   ## block, Nim only after its definition, so each is declared forward first; its
   ## captures are still resolved where it is defined.
   result = newNodeI(nkStmtList, info)
+  ## One taking loop-body cells names their types, so it is declared after the
+  ## last of them this block declares, which C# requires a call to follow.
+  var later = initTable[int, seq[PNode]]()
   for s in stmts:
     if s != nil and s.kind == nsnLocalFunc:
       let fwd = l.localFuncToNim(s)
       fwd[6] = empty(s.info)
-      result.add fwd
+      var at = -1
+      for i, d in stmts:
+        if d != nil and d.kind == nsnLocalDecl and d.name in s.captures: at = i
+      if at < 0: result.add fwd
+      else: later.mgetOrPut(at, @[]).add fwd
   let kept = (if l.hoist != nil: l.hoist.names.len else: 0)
   defer:
     if l.hoist != nil: l.hoist.names.setLen(kept)
@@ -1847,6 +1909,7 @@ proc stmtsToNode(l: Lowerer; stmts: seq[NsNode]; info: TLineInfo): PNode =
       st[0][0] = newTree(nkPragmaExpr, s.info, st[0][0],
                          newTree(nkPragma, s.info, l.id("cursor", s.info)))
     result.add st
+    for fwd in later.getOrDefault(i): result.add fwd
 
 proc addStmts(l: Lowerer; dest: PNode; stmts: seq[NsNode]; info: TLineInfo) =
   ## A run of statements added to `dest`, lowered as a block's are.
@@ -1859,21 +1922,19 @@ proc stmtSeq(l: Lowerer; blk: NsNode): PNode =
 
 proc throwToNim(l: Lowerer; n: NsNode): PNode =
   ## `throw new T(msg)`:
-  ##   * external exception (system or a prelude exception) -> `newException(T, msg)`
+  ##   * external exception (system or a prelude exception) -> `nsNewException(T, args)`
   ##   * user-declared exception class -> raise the allocator result, which is
   ##     already a `ref T` because such a class is lowered as a value object.
   var e = l.expr(n.body)
   if n.body != nil and n.body.kind == nsnNew and n.body.typ != nil and
      n.body.typ.kind == nsnTypeName and
      not l.scope.classes.hasKey(n.body.typ.name):
-    let msg =
-      if n.body.sons.len > 0: l.expr(n.body.sons[0])
-      else: newAtom(nkStrLit, "", n.info)
     let ne = newNodeI(nkCall, n.info)
-    ne.add l.id("newException", n.info)
+    ne.add l.id("nsNewException", n.info)
     let q = l.qualifiedName(n.body.typ.name, n.info, n.body.typ.sons.len)
     ne.add (if q != nil: q else: l.id(nimTypeName(n.body.typ.name), n.info))
-    ne.add msg
+    for a in n.body.sons: ne.add l.expr(a)
+    if l.imports != nil: l.imports.note(namespaceModulePath("System"), "nsNewException")
     e = ne
   result = newTree(nkRaiseStmt, n.info, e)
 
@@ -3250,6 +3311,12 @@ proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   for t in n.typeParams: inner.procTypeParams.add t.name
   let fp = inner.formalParams(n.typ, n.params, n.info)
   if n.paramMod == "ref": fp[0] = newTree(nkVarTy, n.info, fp[0])
+  for c in n.captures:
+    ## A loop-body variable it captures, as the cell of the caller's iteration (see
+    ## `markLoopCells`).
+    fp.add newTree(nkIdentDefs, n.info, l.id(c, n.info),
+                   newTree(nkCall, n.info, l.id("typeof", n.info), l.id(c, n.info)),
+                   empty(n.info))
   inner.procTypeParams = @[]
   for t in n.typeParams: inner.procTypeParams.add t.name
   result = inner.mkProc(l.id(n.name, n.info), fp, inner.memberBody(n.typ, n.body, n.params),
@@ -3515,8 +3582,11 @@ proc lowerEnum(l: Lowerer; n: NsNode; into: var seq[PNode]) =
     newTree(nkCall, info, l.id("nsEnumName", info),
       newTree(nkCall, info, l.id("int64", info), under("a")), table,
       l.id(if n.hasAttribute("Flags"): "true" else: "false", info)))
-  into.add op("ToString", l.id("string", info), @[single(copyTree(e))],
+  let ts = op("ToString", l.id("string", info), @[single(copyTree(e))],
     newTree(nkPrefix, info, l.id("$", info), l.id("a", info)))
+  ## A call statement may drop it, as any method's result.
+  ts[4] = newTree(nkPragma, info, l.id("discardable", info))
+  into.add ts
   let local = (if n.outer.len > 0: n.outer & "+" & n.name else: n.name)
   let full = (if l.curNamespace.len > 0: l.curNamespace & "." & local else: local)
   into.add l.mkProc(l.exportId("nsTypeOf", info),
@@ -3855,6 +3925,22 @@ proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
   result = l.mkProc(l.exportedName(m.attrs, "init" & cls.name, m.info), ip, ibody,
                     m.info, withPragmas = true)
 
+proc dotnetName(l: Lowerer; cls: NsNode): string =
+  ## A type's .NET full name: `Demo.Outer+Inner`.
+  let local = (if cls.outer.len > 0: cls.outer & "+" & cls.name else: cls.name)
+  (if l.curNamespace.len > 0: l.curNamespace & "." & local else: local)
+
+proc defaultMessage(l: Lowerer; cls: NsNode; info: TLineInfo): PNode =
+  ## `result.name = "Demo.E"; result.msg = nsDefaultMessage(result)`: an exception
+  ## is named as .NET names its type, which `GetType()` reads, and has the message
+  ## .NET's parameterless constructors make until its constructor passes one on.
+  if l.imports != nil: l.imports.note(namespaceModulePath("System"), "nsDefaultMessage")
+  result = newTree(nkStmtList, info,
+    newTree(nkAsgn, info, newTree(nkDotExpr, info, l.id("result", info), l.id("name", info)),
+            newAtom(nkStrLit, l.dotnetName(cls), info)),
+    newTree(nkAsgn, info, newTree(nkDotExpr, info, l.id("result", info), l.id("msg", info)),
+            newTree(nkCall, info, l.id("nsDefaultMessage", info), l.id("result", info))))
+
 proc lowerAllocator(l: Lowerer; cls, m: NsNode; isException: bool): PNode =
   ## `proc newC(params): C = new(result); initC(result, params)`. A struct is a
   ## value, already zero-initialised, so it needs no `new`.
@@ -3868,6 +3954,7 @@ proc lowerAllocator(l: Lowerer; cls, m: NsNode; isException: bool): PNode =
     newCall.add l.id("new", m.info)
     newCall.add l.id("result", m.info)
     abody.add newCall
+  if isException: abody.add l.defaultMessage(cls, m.info)
   let fwd = newNodeI(nkCall, m.info)
   fwd.add l.id("init" & cls.name, m.info)
   fwd.add l.id("result", m.info)
@@ -4472,8 +4559,8 @@ proc recordMembers(l: Lowerer; n: NsNode; isClass: bool; into: var seq[PNode]) =
   var cond: PNode = l.id("true", info)
   for f in st.compared:
     let eq = newTree(nkInfix, info, l.id("==", info),
-                     newTree(nkDotExpr, info, copyTree(a), l.id(f, info)),
-                     newTree(nkDotExpr, info, copyTree(b), l.id(f, info)))
+                     newTree(nkDotExpr, info, copyTree(a), l.memberIdent(f, nil, info)),
+                     newTree(nkDotExpr, info, copyTree(b), l.memberIdent(f, nil, info)))
     cond = newTree(nkInfix, info, l.id("and", info), cond, eq)
   var body: PNode
   if isClass:
@@ -4493,7 +4580,7 @@ proc recordMembers(l: Lowerer; n: NsNode; isClass: bool; into: var seq[PNode]) =
     ## compares the members.
     into.add l.mkProc(l.alwaysExported("Equals", info),
       newTree(nkFormalParams, info, l.id("bool", info), pairDefs()),
-      newTree(nkStmtList, info, body), info)
+      newTree(nkStmtList, info, body), info, withPragmas = true)
   else:
     into.add l.mkProc(l.alwaysExported("==", info),
       newTree(nkFormalParams, info, l.id("bool", info), pairDefs()),
@@ -4501,7 +4588,7 @@ proc recordMembers(l: Lowerer; n: NsNode; isClass: bool; into: var seq[PNode]) =
     into.add l.mkProc(l.alwaysExported("Equals", info),
       newTree(nkFormalParams, info, l.id("bool", info), pairDefs()),
       newTree(nkStmtList, info, newTree(nkInfix, info, l.id("==", info), copyTree(a),
-                                        copyTree(b))), info)
+                                        copyTree(b))), info, withPragmas = true)
   ## `hash`: the members' hashes mixed, so a record can key a dictionary.
   let hbody = newNodeI(nkStmtList, info)
   hbody.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id("h", info),
@@ -4513,7 +4600,7 @@ proc recordMembers(l: Lowerer; n: NsNode; isClass: bool; into: var seq[PNode]) =
   for f in st.compared:
     hbody.add newTree(nkAsgn, info, l.id("h", info), newTree(nkInfix, info, l.id("!&", info),
       l.id("h", info), newTree(nkCall, info, l.id("hash", info),
-        newTree(nkDotExpr, info, l.id("self", info), l.id(f, info)))))
+        newTree(nkDotExpr, info, l.id("self", info), l.memberIdent(f, nil, info)))))
   hbody.add newTree(nkPrefix, info, l.id("!$", info), l.id("h", info))
   into.add l.mkProc(l.alwaysExported("hash", info),
     newTree(nkFormalParams, info, l.id("Hash", info),
@@ -4552,6 +4639,14 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
   selfDefs.add l.id("self", info)
   selfDefs.add l.clsType(n.name, info)
   selfDefs.add empty(info)
+  ## The type's .NET name; of a generic one, `Demo.Box`1[System.Int32]`, from the
+  ## arguments' names.
+  var typeName = newAtom(nkStrLit, full, info)
+  if n.typeParams.len > 0:
+    typeName = newTree(nkCall, info, l.id("nsGenericName", info), newAtom(nkStrLit, full, info))
+    for t in l.clsTypeParams:
+      typeName.add newTree(nkCall, info, l.id("FullName", info),
+                           newTree(nkCall, info, l.id("nsTypeOf", info), l.id(t, info)))
   if n.attrs.isRecord:
     ## `R { A = 1, B = x }`: the type's own name and its public members. A record
     ## prints this unless it declares `ToString` itself.
@@ -4576,22 +4671,18 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
     fp.add l.id("string", info)
     fp.add copyTree(selfDefs)
     result.add l.mkProc(l.alwaysExported("ToString", info), fp,
-                        newTree(nkStmtList, info, text), info,
+                        newTree(nkStmtList, info, text), info, withPragmas = true,
                         kind = (if isClass: nkMethodDef else: nkProcDef))
   elif not overridden:
     let fp = newNodeI(nkFormalParams, info)
     fp.add l.id("string", info)
     fp.add copyTree(selfDefs)
     result.add l.mkProc(l.alwaysExported("ToString", info), fp,
-                        newTree(nkStmtList, info, newAtom(nkStrLit, full, info)), info,
-                        kind = (if isClass: nkMethodDef else: nkProcDef))
+                        newTree(nkStmtList, info, copyTree(typeName)), info,
+                        withPragmas = true, kind = (if isClass: nkMethodDef else: nkProcDef))
   ## `typeof(C)` and, for a class, the dynamic type `GetType()` reads.
   if n.typeParams.len > 0:
-    ## `typeof(Box<int>)`: ``Demo.Box`1[System.Int32]``, from the arguments' names.
-    let call = newTree(nkCall, info, l.id("nsGenericName", info), newAtom(nkStrLit, full, info))
-    for t in l.clsTypeParams:
-      call.add newTree(nkCall, info, l.id("FullName", info),
-                       newTree(nkCall, info, l.id("nsTypeOf", info), l.id(t, info)))
+    let call = copyTree(typeName)
     let pd = l.mkProc(l.alwaysExported("nsTypeOf", info),
       newTree(nkFormalParams, info, l.id("Type", info), newTree(nkIdentDefs, info,
         l.id("t", info), newTree(nkBracketExpr, info, l.id("typedesc", info),
@@ -4609,7 +4700,7 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
   if isClass:
     result.add l.mkProc(l.alwaysExported("nsTypeName", info),
       newTree(nkFormalParams, info, l.id("string", info), copyTree(selfDefs)),
-      newTree(nkStmtList, info, newAtom(nkStrLit, full, info)), info, kind = nkMethodDef)
+      newTree(nkStmtList, info, copyTree(typeName)), info, kind = nkMethodDef)
   if not isClass:
     ## `$` for a struct: the class form is the intrinsics' generic one.
     let fp = newNodeI(nkFormalParams, info)
@@ -4618,6 +4709,20 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
     let call = newTree(nkCall, info, l.id("ToString", info), l.id("self", info))
     result.add l.mkProc(l.alwaysExported("$", info), fp, newTree(nkStmtList, info, call),
                         info)
+
+proc exceptionTypeName(l: Lowerer; n: NsNode): seq[PNode] =
+  ## `typeof(E)` of an exception class. The dynamic type `GetType()` reads is its
+  ## `name`, which its allocator sets (see `defaultMessage`); its `ToString` and
+  ## `Message` are the library's, from the exception root.
+  let info = n.info
+  let full = l.dotnetName(n)
+  result = @[]
+  result.add l.mkProc(l.alwaysExported("nsTypeOf", info),
+    newTree(nkFormalParams, info, l.id("Type", info), newTree(nkIdentDefs, info,
+      l.id("t", info), newTree(nkBracketExpr, info, l.id("typedesc", info),
+        newTree(nkRefTy, info, l.clsType(n.name, info))), empty(info))),
+    newTree(nkStmtList, info, newTree(nkCall, info, l.id("nsTypeNamed", info),
+                                      newAtom(nkStrLit, full, info))), info)
 
 # --- native C++ types ----------------------------------------------------------
 #
@@ -5712,6 +5817,8 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   if not isException:
     if n.attrs.isRecord: l.recordMembers(n, isClass, into)
     for p in l.objectToString(n, isClass): into.add p
+  else:
+    for p in l.exceptionTypeName(n): into.add p
   l.lowerImplementations(n, isException, into)
 
   # 1. the type: `C = ref object` for a class, a plain `object` for a struct and
@@ -5960,6 +6067,7 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       nc.add l.id("new", info)
       nc.add l.id("result", info)
       abody.add nc
+    if isException: abody.add l.defaultMessage(n, info)
     let fw = newNodeI(nkCall, info)
     fw.add l.id("init" & n.name, info)
     fw.add l.id("result", info)
@@ -6367,7 +6475,7 @@ type
     level: int          ## how many lambdas (or local functions) enclose it
   NsCellFrame = object
     node: NsNode
-    isLambda: bool      ## a lambda, which gets a factory; a local function does not
+    isLambda: bool      ## a lambda, which gets a factory; a local function parameters
   NsCellWalk = object
     scopes: seq[Table[string, NsCellDecl]]
     loop: int
@@ -6386,8 +6494,11 @@ proc cellDeclare(w: var NsCellWalk; name: string; node: NsNode; inLoop: bool) =
 proc cellWalk(w: var NsCellWalk; n: NsNode)
 
 proc cellWalkStmts(w: var NsCellWalk; list: seq[NsNode]) =
-  ## A statement list is a scope: a declaration is seen by the statements after it.
+  ## A statement list is a scope: a declaration is seen by the statements after it,
+  ## and a local function by the whole block.
   w.scopes.add initTable[string, NsCellDecl]()
+  for x in list:
+    if x != nil and x.kind == nsnLocalFunc: w.cellDeclare(x.name, x, false)
   for x in list: w.cellWalk(x)
   discard w.scopes.pop
 
@@ -6415,16 +6526,21 @@ proc cellWalk(w: var NsCellWalk; n: NsNode) =
     if d == nil: return
     if w.mark:
       if d.node.cell and n.paramMod.len == 0: n.paramMod = "deref"
+      elif d.node.kind == nsnLocalFunc and d.node.captures.len > 0 and n.paramMod.len == 0:
+        ## A local function taking cells: a call passes them, a delegate binds them.
+        n.paramMod = "cells"
+        n.argParam = d.node
     elif d.inLoop and d.level < w.frames.len and d.node.kind in {nsnLocalDecl, nsnForeach}:
-      ## Captured across a lambda boundary from a loop body. Through a local
-      ## function there is no factory to hand the cell over, so that one is left.
-      var viaLambdas = true
+      ## Captured across a lambda or local function boundary from a loop body: each
+      ## one in between takes the cell, a lambda from its factory and a local
+      ## function as a parameter its callers pass.
+      d.node.cell = true
       for k in d.level ..< w.frames.len:
-        if not w.frames[k].isLambda: viaLambdas = false
-      if viaLambdas:
-        d.node.cell = true
-        for k in d.level ..< w.frames.len:
-          if n.name notin w.frames[k].node.captures: w.frames[k].node.captures.add n.name
+        if n.name notin w.frames[k].node.captures: w.frames[k].node.captures.add n.name
+    elif d.node.kind == nsnLocalFunc:
+      ## Naming a local function that takes cells uses them here.
+      for c in d.node.captures:
+        w.cellWalk(nsnIdent(c, n.info))
   of nsnLocalDecl:
     w.cellWalk(n.body)
     ## A `ref` local is a pointer already; a constant is never captured as a variable.
@@ -6492,7 +6608,9 @@ proc cellWalk(w: var NsCellWalk; n: NsNode) =
 
 proc markLoopCells(module: NsNode) =
   ## Finds the loop-body variables lambdas capture, then marks every use of them.
-  for mark in [false, true]:
+  ## The first pass runs twice: a local function may be named before the walk
+  ## reaches the cells its body takes.
+  for mark in [false, false, true]:
     var w = NsCellWalk(mark: mark)
     w.scopes.add initTable[string, NsCellDecl]()
     w.cellWalk(module)
@@ -6699,8 +6817,16 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   ## Identity, not structure: a routine defined early is skipped where it would be.
   var early = initHashSet[int]()
   if late.len > 0 or instanceForces.len > 0:
+    ## A type's `nsTypeOf` first: a generic class's name names its arguments', so
+    ## an instance made here reaches theirs, which name nothing of the module.
     for r in routines:
-      if r[genericParamsPos].kind == nkGenericParams:
+      var name = r[namePos]
+      if name.kind == nkPostfix: name = name[1]
+      if name.kind == nkIdent and name.ident.s == "nsTypeOf" and cast[int](r) notin early:
+        result.add r
+        early.incl cast[int](r)
+    for r in routines:
+      if r[genericParamsPos].kind == nkGenericParams and cast[int](r) notin early:
         result.add r
         early.incl cast[int](r)
     for f in instanceForces: result.add f

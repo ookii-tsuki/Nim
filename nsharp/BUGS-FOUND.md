@@ -22,13 +22,36 @@ Roslyn), reorder, native and diagnostics.
 | C26 members named like types; types named like library members (`e.Message`) | `4f31745` |
 | (found while fixing) exception-typed variables, fields and properties | `ba68d06` |
 
+### Follow-up: .NET exception messages, and what turned up on the way
+
+Asked whether exceptions could carry C#'s messages, and at what cost: they now do,
+with nothing added where no exception is thrown (the checks are unchanged; the work
+is done when one is thrown, its `Message` read, or the program dies of it). Each
+item has a test under `nsharp/tests/ecma/`, checked against Roslyn.
+
+| item | test |
+|---|---|
+| `Message` in .NET's words for a runtime check's defect (index, overflow, null); a failed cast or downcast names both types | `exceptionmessages` |
+| a library exception's constructor makes .NET's message: the default of a parameterless one, `(Parameter 'p')`, `ObjectDisposedException`'s object name; `InnerException` | `exceptionmessages` |
+| a user exception class starts with its nearest library base's default, or `Exception of type 'E' was thrown.` | `exceptionmessages` |
+| an exception nothing catches prints .NET's report on stderr and aborts (exit 134) | `unhandled` (new `.exit` marker in `run.sh` and `run_cs.sh`) |
+| `e.GetType()` of any exception was `System.Object`; `Type.Name` unreachable on a `var` of a library exception; `typeof(MyErr)` was `System.Object` | `exceptiontypes` |
+| `GetType()` and the default `ToString()` of a generic class lacked the arity and arguments (``Demo.Box`1[System.Int32]``) | `exceptiontypes` |
+| `p.ToString();`, `c.ToString();` (enum), `r.Equals(r);` (record), `i.ToString("D2");`, `x.GetType();` as statements did not compile | `discardcalls` |
+| `int r = 5 / z;` did not compile: a literal on the left of `/`, `%` or a shift bound the generic to Nim's `int` | `literaloperands` |
+| a `T?` printed as `some(2)` / `none(int32)`, and ignored a format spec | `nullableformat` (and `p1e/nullable.out`, which had pinned the wrong output) |
+| a local function in a loop body shared one copy of the body's variables across iterations | `localfunccells` |
+| a cast to a class, `((MyEx)e).Message`, lost its type name in sema | sema projection of `exceptionvalues` |
+| a record's positional member named like a class (`record R(int A)` beside `class A`) broke its `==` and `hash` | `discardcalls` |
+
 Still open, recorded rather than fixed:
 
-* A local *function* (not a lambda) declared in a loop body that captures one of
-  the body's variables still shares one copy across iterations (SPEC, closures).
-* `System.Random` is not in the prelude (library work).
-* The documented divergences stand: float and bool spelling, Nim's output for an
-  unhandled exception, a null `string` being `""`, `decimal`, `goto`, LINQ.
+* `GetType()` of a library collection (`List<int>`) is `System.Object`, and a
+  generic type's `FullName` does not assembly-qualify its arguments as .NET does.
+* `string.Format`, and `Equals` / `GetHashCode` on `int`, `string` and structs, are
+  not in the prelude; nor is `System.Random` (library work).
+* The documented divergences stand: float and bool spelling, a null `string` being
+  `""`, `decimal`, `goto`, LINQ.
 
 The original report follows unchanged.
 

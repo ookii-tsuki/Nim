@@ -40,7 +40,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -210,7 +211,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Program"
@@ -524,7 +526,7 @@ nkStmtList
                   nkStmtList
                     nkRaiseStmt
                       nkCall
-                        nkIdent 'newException'
+                        nkIdent 'nsNewException'
                         nkIdent 'Exception'
                         nkStrLit "boom"
         nkExceptBranch

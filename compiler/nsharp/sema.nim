@@ -2413,6 +2413,13 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       if n.rtype == nil:
         ## A result of a generic library type (`xs.Where(f)`), bound by the receiver.
         n.rtype = libGenericResult(ctx.surface, callee.body, callee.name, n.sons.len)
+    if kind == tkUnknown and callee.name == "GetType" and n.sons.len == 0 and
+       rk notin {tkType, tkUnknown}:
+      ## `x.GetType()` on a value of a library type (an exception the library
+      ## aliases) is a `Type`, as it is of any value.
+      kind = tkClass
+      tn = "Type"
+      n.rtype = nsnTypeName("Type", n.info)
     if callee.typeArgs.len > 0 and ctx.scope.classes.hasKey(owner):
       ## `M<Transform>()`: the written type arguments give the result its type.
       let mi = ctx.scope.findMemberInfo(owner, callee.name)
@@ -3116,6 +3123,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     elif isObjectTarget(n.typ):
       ## `(object)v` is an `object`, which a cast of it unboxes: `(int)(object)5`.
       n.setType(target, "object")
+    elif target in {tkClass, tkException} and n.typ != nil and n.typ.kind == nsnTypeName:
+      ## `((MyEx)e).Message`: the result is of the named class, as `as` makes it.
+      n.setType(target, declTypeName(n.typ))
+      n.rtype = n.typ
     else:
       n.setType(target)
     result = target

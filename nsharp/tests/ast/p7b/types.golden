@@ -236,7 +236,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Account'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -413,7 +414,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Grid'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -546,7 +548,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Outer'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -675,7 +678,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Node'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -766,7 +770,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Leaf'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1008,7 +1013,8 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Kind'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1040,7 +1046,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1184,7 +1191,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Account'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Account"
@@ -1445,7 +1453,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Grid'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Grid"
@@ -1612,7 +1621,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Outer'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Outer"
@@ -1777,7 +1787,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Node'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Outer+Node"
@@ -1888,7 +1899,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Leaf'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Outer+Node+Leaf"
@@ -2241,7 +2253,8 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Kind'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkPrefix
@@ -2279,7 +2292,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"

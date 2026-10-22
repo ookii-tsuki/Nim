@@ -35,7 +35,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -219,7 +220,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"
@@ -335,9 +337,8 @@ nkStmtList
           nkStmtList
             nkRaiseStmt
               nkCall
-                nkIdent 'newException'
+                nkIdent 'nsNewException'
                 nkIdent 'FormatException'
-                nkStrLit ""
       nkReturnStmt
         nkInfix
           nkIdent '-'
@@ -380,9 +381,8 @@ nkStmtList
               nkStmtList
                 nkRaiseStmt
                   nkCall
-                    nkIdent 'newException'
+                    nkIdent 'nsNewException'
                     nkIdent 'OverflowException'
-                    nkStrLit ""
           nkVarSection
             nkIdentDefs
               nkIdent 'v'
@@ -469,9 +469,8 @@ nkStmtList
                   nkIdent 'x'
           nkRaiseStmt
             nkCall
-              nkIdent 'newException'
+              nkIdent 'nsNewException'
               nkIdent 'InvalidOperationException'
-              nkStrLit ""
         nkExceptBranch
           nkInfix
             nkIdent 'as'

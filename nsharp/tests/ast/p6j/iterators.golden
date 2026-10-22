@@ -106,7 +106,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Range'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -222,7 +223,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Countdown'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -324,7 +326,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'CountdownEnumerator'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -441,7 +444,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Bag'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -569,7 +573,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -779,7 +784,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Range'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Range"
@@ -947,7 +953,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Countdown'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Countdown"
@@ -1072,7 +1079,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'CountdownEnumerator'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.CountdownEnumerator"
@@ -1225,7 +1233,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Bag'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Bag"
@@ -1398,7 +1407,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"

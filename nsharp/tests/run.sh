@@ -5,6 +5,9 @@
 #   * `<name>.ns` with a sibling `<name>.fail` -> compilation must FAIL
 #   * `<name>.ns` with a sibling `<name>.warn` -> compiles and runs as above, and the
 #     compilation must also report the diagnostic the marker names
+#   * `<name>.ns` with a sibling `<name>.exit` -> runs as above, and must end with
+#     the exit status on the marker's first line and the stderr on the rest, its
+#     stack-trace lines (`   at ...`) aside: an exception nothing catches
 #
 # A `.fail`, `.unsupported` or `.warn` marker may name the diagnostic it expects with
 # a `code: NSxxxx` line, which the output must then carry.
@@ -61,7 +64,20 @@ run_one() {
     cat "$log"
     return 1
   fi
-  got="$("$bin")"
+  exitmark="${ns%.ns}.exit"
+  if [ -f "$exitmark" ]; then
+    ## The shell reports a signal's death on its own stderr, which is not the test's.
+    got="$( (sh -c 'exec "$0" 2> "$1"' "$bin" "$tmp/stderr"; echo $? > "$tmp/status") 2> /dev/null )"
+    st="$(cat "$tmp/status")"
+    err="$(grep -v '^   at ' "$tmp/stderr")"
+    if [ "$st" != "$(head -1 "$exitmark")" ] || [ "$err" != "$(tail -n +2 "$exitmark")" ]; then
+      echo "FAIL (exit status $st, or stderr, differs from .exit): ${ns#$root/}"
+      echo "--- stderr ---"; echo "$err"
+      return 1
+    fi
+  else
+    got="$("$bin")"
+  fi
   want="$(cat "$exp")"
   if [ "$got" = "$want" ]; then
     echo "ok: ${ns#$root/}"

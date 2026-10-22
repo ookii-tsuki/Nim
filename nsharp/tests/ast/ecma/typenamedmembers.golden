@@ -422,7 +422,8 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Color'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -487,7 +488,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Item'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -578,7 +580,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Count'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -669,7 +672,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Message'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -805,7 +809,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'P'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -896,7 +901,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1167,7 +1173,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Holder'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1226,7 +1233,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1300,7 +1308,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Crate'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1737,7 +1746,8 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Color'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkPrefix
@@ -1775,7 +1785,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Item'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Item"
@@ -1884,7 +1895,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Count'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Count"
@@ -1988,7 +2000,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Message'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Message"
@@ -2212,7 +2225,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'P'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "P"
@@ -2321,7 +2335,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Box"
@@ -2720,7 +2735,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Crate'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Crate"
@@ -2956,7 +2972,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Holder'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Holder"
@@ -3066,7 +3083,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Program"
@@ -3336,7 +3354,7 @@ nkStmtList
         nkStmtList
           nkRaiseStmt
             nkCall
-              nkIdent 'newException'
+              nkIdent 'nsNewException'
               nkIdent 'Exception'
               nkStrLit "boom"
         nkExceptBranch

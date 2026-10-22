@@ -150,7 +150,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'PriceChangedEventArgs'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -312,7 +313,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Stock'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -479,7 +481,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -596,7 +599,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'PriceChangedEventArgs'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.PriceChangedEventArgs"
@@ -796,7 +800,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Stock'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Stock"
@@ -1081,7 +1086,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"
@@ -1216,8 +1222,11 @@ nkStmtList
                         nkIdent '+'
                         nkDotExpr
                           nkCall
-                            nkIdent 'Stock'
-                            nkIdent 'sender'
+                            nkIdent 'nsCheckNil'
+                            nkCall
+                              nkIdent 'nsDowncast'
+                              nkIdent 'sender'
+                              nkIdent 'Stock'
                           nkIdent 'Name'
                         nkStrLit ": "
                       nkDotExpr

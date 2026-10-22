@@ -1,16 +1,16 @@
-engine: Fuse.Fuse threw ArgumentException: negative start
+engine: Fuse.Fuse threw System.ArgumentException: negative start
 spawned both
 N# caught its own call
-engine: Heavy.Weight threw InvalidOperationException: too heavy to weigh
+engine: Heavy.Weight threw System.InvalidOperationException: too heavy to weigh
 weigh a heavy one: 0
-engine: Fuse.OnTick threw InvalidOperationException: fuse blew on tick 1
-engine: Fuse.OnTick threw InvalidOperationException: fuse blew on tick 1
-engine: Range.Tick threw InvalidOperationException: stage tick 1
+engine: Fuse.OnTick threw System.InvalidOperationException: fuse blew on tick 1
+engine: Fuse.OnTick threw System.InvalidOperationException: fuse blew on tick 1
+engine: Range.Tick threw System.InvalidOperationException: stage tick 1
 fuse tick 2
 fuse tick 2
 stage tick 2
 fuse tick 3
 fuse tick 3
 stage tick 3
-engine: Entry.Fail threw InvalidOperationException: exported failure
+engine: Entry.Fail threw System.InvalidOperationException: exported failure
 still running

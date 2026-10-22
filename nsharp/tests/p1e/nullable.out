@@ -1,7 +1,7 @@
-some(5)
+5
 5
 a has a value
-none(int32)
+
 b is absent
 a is present
 5
@@ -9,12 +9,12 @@ a is present
 7
 7
 4
-none(int32)
-some(6)
-some(4)
-some(10)
-some(2)
-some(1)
+
+6
+4
+10
+2
+1
 true
 false
 true

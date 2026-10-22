@@ -29,7 +29,9 @@ run_one() {
     grep -m3 "Error" "$tmp/compile.log"
     return 1
   fi
-  if [ "$("$tmp/bin")" = "$(cat "$exp")" ]; then
+  ## An exception nothing catches (a `.exit` marker) reports on stderr, which
+  ## `run.sh` checks; only the output is compared here.
+  if [ "$( (sh -c 'exec "$0" 2> /dev/null' "$tmp/bin"; true) 2> /dev/null )" = "$(cat "$exp")" ]; then
     echo "ok (reversed): ${ns#$root/}"
   else
     echo "REORDER DIFF: ${ns#$root/}"

@@ -1,0 +1,31 @@
+// A call statement may drop the result of any method (ECMA-334 13.7): ToString,
+// GetType, Equals and GetHashCode of a class, struct, record, enum or value,
+// including on a receiver that is checked for null first.
+using System;
+
+enum Color { Red, Green }
+struct Pt { public int X; }
+record R(int A);
+class A
+{
+    public override string ToString() { return "A!"; }
+    public int F() { return 1; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Program p = new Program(); p.ToString(); p.GetType();
+        A a = new A(); a.ToString(); a.F(); a.GetHashCode(); a.Equals(a);
+        Color c = Color.Green; c.ToString(); c.GetType();
+        Pt pt = new Pt(); pt.ToString(); pt.GetType();
+        var r = new R(1); r.ToString(); r.GetHashCode(); r.Equals(r);
+        int i = 3; i.ToString(); i.ToString("D2"); i.CompareTo(2);
+        string s = "x"; s.ToString(); s.ToUpper();
+        object o = new object(); o.ToString(); o.GetType(); o.Equals(o); o.GetHashCode();
+        Program q = null;
+        try { q.ToString(); } catch (NullReferenceException) { Console.WriteLine("null receiver"); }
+        Console.WriteLine(c.ToString() + " " + pt.ToString() + " " + r.ToString() + " " + o.GetType().Name + " " + p.ToString());
+    }
+}

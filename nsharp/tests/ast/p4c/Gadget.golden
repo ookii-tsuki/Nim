@@ -33,7 +33,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Gadget'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -140,7 +141,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Gadget'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Company.Products.Gadget"

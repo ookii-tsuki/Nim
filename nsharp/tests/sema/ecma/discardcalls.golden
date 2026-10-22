@@ -1,0 +1,21 @@
+using System
+member A.Equals = System | bool
+member A.GetHashCode = System | int
+member Color.ToString = System | string
+member Color.ToString = System | string
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Program.ToString = System | string
+member Program.ToString = System | string
+member Program.ToString = System | string
+member Pt.ToString = System | string
+member Pt.ToString = System | string
+member Type.Name = System.Reflection | string
+member int.CompareTo = System | int
+member int.ToString = System | string
+member int.ToString = System | string
+member object.Equals = System | bool
+member object.GetHashCode = System | int
+member object.ToString = System | string
+member string.ToString = System | string
+member string.ToUpper = System | string

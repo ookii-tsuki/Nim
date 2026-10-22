@@ -1,0 +1,4 @@
+Color.GetType = result:other
+Program.GetType = result:other
+Pt.GetType = result:other
+object.GetType = result:other

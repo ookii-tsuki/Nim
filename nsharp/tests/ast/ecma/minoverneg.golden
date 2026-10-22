@@ -35,7 +35,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -135,7 +136,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Program"
@@ -299,7 +301,11 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'nsMod'
-          nkIntLit 7
+          nkCall
+            nkCall
+              nkIdent 'typeof'
+              nkIdent 'd'
+            nkIntLit 7
           nkIdent 'd'
       nkCall
         nkIdent 'WriteLine'

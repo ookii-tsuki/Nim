@@ -119,7 +119,23 @@ check_one() {
     return 0
   fi
 
-  got="$("$bin")"
+  exitmark="${ns%.ns}.exit"
+  if [ -f "$exitmark" ]; then
+    ## An exception nothing catches: .NET's exit status and report, its stack
+    ## trace aside, are what the marker records. The shell reports the abort on its
+    ## own stderr, which is not the program's.
+    got="$( (sh -c 'exec "$0" 2> "$1"' "$bin" "$work/stderr"; echo $? > "$work/status") 2> /dev/null )"
+    st="$(cat "$work/status")"
+    err="$(grep -v '^   at ' "$work/stderr")"
+    if [ "$st" != "$(head -1 "$exitmark")" ] || [ "$err" != "$(tail -n +2 "$exitmark")" ]; then
+      echo "DIFF (C# exit status $st, or stderr, vs .exit): ${ns#$root/}"
+      echo "--- C# stderr ---"; echo "$err"
+      fail=1; touch "$work/FAILED"
+      return 0
+    fi
+  else
+    got="$("$bin")"
+  fi
   csout="${ns%.ns}.csout"
   if [ -f "$csout" ]; then
     ## The test records how C# differs, so that is what C# must produce.

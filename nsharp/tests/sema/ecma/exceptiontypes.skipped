@@ -1,0 +1,5 @@
+ArgumentOutOfRangeException.GetType = result:other
+Box.GetType = result:other
+Exception.GetType = result:other
+Inner.GetType = result:other
+MyErr.GetType = result:other

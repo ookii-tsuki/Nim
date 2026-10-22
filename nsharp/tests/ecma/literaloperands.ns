@@ -1,0 +1,22 @@
+// An integer literal on the left of `/`, `%` or a shift takes C#'s type: the other
+// operand's for `/` and `%` (ECMA-334 12.4.7, binary numeric promotion), and `int`
+// for a shift, whose result is the left operand's type.
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        int z = 3; long L = 7; uint u = 2; short s = 4; byte b = 5;
+        int a = 5 / z; int m = 5 % z; long c = 100 / L; uint d = 9 / u; int e = 9 / s; int f = 11 % b;
+        int g = 1 << z; int h = 100 >> z; long k = 1L << z; long big = 1 << 33 + z;
+        int? n = 4; int? q = 8 / n;
+        z = 20 / z;
+        Console.WriteLine(a + " " + m + " " + c + " " + d + " " + e + " " + f);
+        Console.WriteLine(g + " " + h + " " + k + " " + big + " " + q + " " + z);
+        Func<int, int> half = x => 100 / x;
+        Console.WriteLine(half(7));
+        int zero = 0;
+        try { Console.WriteLine(1 / zero); } catch (DivideByZeroException) { Console.WriteLine("divide by zero"); }
+    }
+}

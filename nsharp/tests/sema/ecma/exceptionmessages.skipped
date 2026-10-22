@@ -1,0 +1,3 @@
+Exception.InnerException = result:other
+InvalidOperationException.InnerException = result:other
+none.Value = nullable

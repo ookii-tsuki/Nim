@@ -13,27 +13,27 @@ import std/strutils
 import std/hashes
 export hashes
 
-method ToString*(x: RootRef): string {.base.} =
+method ToString*(x: RootRef): string {.base, discardable.} =
   ## C#'s `object.ToString()`. Every class N# compiles overrides it with its own
   ## name, or with the user's override, so this is reached only by a class the
   ## compiler did not see.
   "System.Object"
 
-proc ToString*[T: not RootRef](x: T): string = $x
+proc ToString*[T: not RootRef](x: T): string {.discardable.} = $x
   ## A value's `ToString()` is its `$`.
 
 # `n.ToString("D2")`: a number in a .NET format, as an interpolation hole's. One
 # overload per numeric type, as .NET declares them.
-proc ToString*(x: int32; format: string): string = nsFormatNumber(x, format)
-proc ToString*(x: int64; format: string): string = nsFormatNumber(x, format)
-proc ToString*(x: int16; format: string): string = nsFormatNumber(x, format)
-proc ToString*(x: int8; format: string): string = nsFormatNumber(x, format)
-proc ToString*(x: uint32; format: string): string = nsFormatNumber(x, format)
-proc ToString*(x: uint64; format: string): string = nsFormatNumber(x, format)
-proc ToString*(x: uint16; format: string): string = nsFormatNumber(x, format)
-proc ToString*(x: uint8; format: string): string = nsFormatNumber(x, format)
-proc ToString*(x: float; format: string): string = nsFormatNumber(x, format)
-proc ToString*(x: float32; format: string): string = nsFormatNumber(x, format)
+proc ToString*(x: int32; format: string): string {.discardable.} = nsFormatNumber(x, format)
+proc ToString*(x: int64; format: string): string {.discardable.} = nsFormatNumber(x, format)
+proc ToString*(x: int16; format: string): string {.discardable.} = nsFormatNumber(x, format)
+proc ToString*(x: int8; format: string): string {.discardable.} = nsFormatNumber(x, format)
+proc ToString*(x: uint32; format: string): string {.discardable.} = nsFormatNumber(x, format)
+proc ToString*(x: uint64; format: string): string {.discardable.} = nsFormatNumber(x, format)
+proc ToString*(x: uint16; format: string): string {.discardable.} = nsFormatNumber(x, format)
+proc ToString*(x: uint8; format: string): string {.discardable.} = nsFormatNumber(x, format)
+proc ToString*(x: float; format: string): string {.discardable.} = nsFormatNumber(x, format)
+proc ToString*(x: float32; format: string): string {.discardable.} = nsFormatNumber(x, format)
 
 proc `$`*[T: RootRef](x: T): string =
   ## Printing a class asks it, so an override is what `Console.WriteLine` shows.
@@ -87,9 +87,14 @@ proc nsUShr*[T: SomeInteger](a: T; n: SomeInteger): T {.inline.} =
   elif sizeof(T) == 2: cast[T](cast[uint16](a) shr nsShiftMask[T](n))
   else: cast[T](cast[uint8](a) shr nsShiftMask[T](n))
 
-import std/options
+import std/options except `$`
 
-export options
+export options except `$`
+
+proc `$`*[T](x: Option[T]): string =
+  ## A `T?` prints as its value, and as nothing when it has none, as C# formats a
+  ## null.
+  if x.isSome: $x.get else: ""
 
 # `.NET`'s nullable members and `??` are the *type's* business, so they are ordinary
 # procs over `Option` reached by Nim's own dot-call, the way `int.high` reaches
@@ -220,7 +225,7 @@ proc nsOptAs*[T, U](a: Option[T]; t: typedesc[U]): Option[U] =
   if a.isSome: some(U(a.get)) else: none(U)
 
 proc nsNilFail*() {.noinline, noreturn.} =
-  raise newException(NilAccessDefect, "attempt to access a nil address")
+  raise newException(NilAccessDefect, "Object reference not set to an instance of an object.")
 
 template nsCheckNil*(x: untyped): untyped =
   ## C# throws when a method is called on a nil receiver even if the body never
@@ -241,8 +246,13 @@ proc nsIfaceCast*[T](v: T; src: RootRef): T =
   ## `(I)x` for an interface `I`: `v` is what the object's class answered for `I`,
   ## empty when it does not implement it. C# throws `InvalidCastException` then,
   ## unless `x` was null, which casts to the null interface value.
+  mixin nsTypeName, nsTypeOf
   if src != nil and v.nsObj == nil:
-    raise newException(ObjectConversionDefect, "Specified cast is not valid.")
+    when compiles(nsTypeOf(T)):
+      raise newException(ObjectConversionDefect, "Unable to cast object of type '" &
+        src.nsTypeName & "' to type '" & nsTypeOf(T).FullName & "'.")
+    else:
+      raise newException(ObjectConversionDefect, "Specified cast is not valid.")
   v
 
 proc nsCreate*[T: not ref](t: typedesc[T]): T =
@@ -547,11 +557,21 @@ proc nsTypeOf*(t: typedesc[RootRef]): Type = nsTypeNamed("System.Object")
 method nsTypeName*(x: RootRef): string {.base.} = "System.Object"
   ## The dynamic type's name; every class N# lowers overrides it.
 
-proc GetType*(x: RootRef): Type =
+var nsExceptionName*: proc (e: ref Exception): string {.nimcall.} = nil
+  ## An exception's .NET type name, which `System` knows (see its
+  ## `nsExceptionTypeName`). An exception type takes no method: the defects .NET's
+  ## exceptions alias are declared in Nim's `system`, whose types cannot.
+var nsExceptionMessage*: proc (e: ref Exception): string {.nimcall.} = nil
+  ## An exception's `Message`, in .NET's words where Nim's runtime raised it.
+
+proc GetType*(x: RootRef): Type {.discardable.} =
   ## `x.GetType()` on a class value: its dynamic type.
-  if x == nil: raise newException(NilAccessDefect, "attempt to access a nil address")
-  nsTypeNamed(x.nsTypeName)
-proc GetType*[T: not RootRef](x: T): Type = nsTypeOf(T)
+  if x == nil: nsNilFail()
+  if x of Exception and nsExceptionName != nil:
+    nsTypeNamed(nsExceptionName((ref Exception)(x)))
+  else:
+    nsTypeNamed(x.nsTypeName)
+proc GetType*[T: not RootRef](x: T): Type {.discardable.} = nsTypeOf(T)
   ## A value's type is its static one.
 
 # `sizeof(T)` for the built-in value types, as C# defines them (a `char` is two
@@ -616,30 +636,40 @@ method nsTypeName*(b: NsBoxed): string = b.nsType
 proc nsBoxEquals*(a: NsBoxed; b: RootRef): bool = a.nsEq(a, b)
 proc nsBoxHash*(a: NsBoxed): int32 = a.nsHash(a)
 
-method Equals*(a, b: RootRef): bool {.base.} = a == b
+method Equals*(a, b: RootRef): bool {.base, discardable.} = a == b
   ## `object.Equals`: the reference, unless a class overrides it.
-method GetHashCode*(x: RootRef): int32 {.base.} =
+method GetHashCode*(x: RootRef): int32 {.base, discardable.} =
   ## `object.GetHashCode`: the reference's address, folded to 32 bits.
   cast[int32](cast[int](x) xor (cast[int](x) shr 32))
 method Equals*(a: NsBoxed; b: RootRef): bool = a.nsEq(a, b)
   ## A boxed value is equal to a box of an equal value (see `NsBox`).
 method GetHashCode*(x: NsBoxed): int32 = x.nsHash(x)
 
+proc nsCastFail(src, dst: string) {.noinline, noreturn.} =
+  raise newException(ObjectConversionDefect,
+    "Unable to cast object of type '" & src & "' to type '" & dst & "'.")
+
+proc nsDowncast*[T: RootRef](x: RootRef; t: typedesc[T]): T {.inline.} =
+  ## `(T)x` from a base class: `x` itself when it is a `T` or null, else .NET's
+  ## `InvalidCastException`.
+  mixin nsTypeOf
+  if x != nil and not (x of T): nsCastFail(GetType(x).FullName, nsTypeOf(T).FullName)
+  T(x)
+
 proc nsUnbox*[T](o: RootRef; t: typedesc[T]): T =
   ## `(T)o`: the boxed value, which must be exactly a `T`.
+  mixin nsTypeOf
   when T is Option:
     ## `(int?)o`: null is the absent value, a box of an `int` a present one.
     type E = typeof(default(T).get)
     if o == nil: none(E) else: some(nsUnbox(o, E))
   elif T is RootRef:
-    if o != nil and not (o of T):
-      raise newException(ObjectConversionDefect, "Specified cast is not valid.")
+    if o != nil and not (o of T): nsCastFail(GetType(o).FullName, nsTypeOf(T).FullName)
     T(o)
   else:
     if o == nil:
       raise newException(NilAccessDefect, "Object reference not set to an instance of an object.")
-    if not (o of NsBox[T]):
-      raise newException(ObjectConversionDefect, "Specified cast is not valid.")
+    if not (o of NsBox[T]): nsCastFail(GetType(o).FullName, nsTypeOf(T).FullName)
     NsBox[T](o).v
 
 proc nsAsValue*[T](o: RootRef; t: typedesc[T]): T =
@@ -947,7 +977,9 @@ when defined(cpp):
     ## An exception reached a place C++ entered N# (`where`: `Class.Member`): C++
     ## cannot see it, so it is handed to `nsOnUnhandled` and goes no further.
     let e = getCurrentException()
-    nsOnUnhandled(cstring(where), cstring(e.msg), e.name)
+    let message = (if nsExceptionMessage != nil: nsExceptionMessage(e) else: e.msg)
+    let kind = (if nsExceptionName != nil: nsExceptionName(e) else: $e.name)
+    nsOnUnhandled(cstring(where), cstring(message), cstring(kind))
 
   # --- native objects N# owns --------------------------------------------------------
   #

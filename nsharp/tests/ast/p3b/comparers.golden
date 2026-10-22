@@ -99,7 +99,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'ByLength'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -233,7 +234,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Mod10'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -506,7 +508,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Squares'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -677,7 +680,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -799,7 +803,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'ByLength'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.ByLength"
@@ -997,7 +1002,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Mod10'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Mod10"
@@ -1398,7 +1404,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Squares'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Squares"
@@ -1657,7 +1664,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"

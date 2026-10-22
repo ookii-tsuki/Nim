@@ -1,0 +1,81 @@
+// An exception's Message is .NET's text: what the runtime's checks throw, what a
+// library constructor makes without a message or from a parameter's name, and a
+// user exception's default, which names its type.
+using System;
+using System.Collections.Generic;
+
+class Animal { }
+class Cat : Animal { }
+class Dog : Animal { }
+class MyErr : Exception { public MyErr() { } public MyErr(string m) : base(m) { } }
+class MyOp : InvalidOperationException { }
+
+class Program
+{
+    static void Try(Action a)
+    {
+        try { a(); }
+        catch (Exception e) { Console.WriteLine("[" + e.Message + "]"); }
+    }
+
+    static void Main()
+    {
+        int z = 0;
+        int[] arr = new int[2];
+        var list = new List<int> { 1 };
+        var dict = new Dictionary<string, int>();
+        object str = "s";
+        Animal pet = new Cat();
+        int big = int.MaxValue;
+        Program nobody = null;
+        int? none = null;
+        Try(() => Console.WriteLine(5 / z));
+        Try(() => Console.WriteLine(5 % z));
+        Try(() => Console.WriteLine(arr[5]));
+        Try(() => Console.WriteLine(list[3]));
+        Try(() => Console.WriteLine(dict["k"]));
+        Try(() => Console.WriteLine((int)str));
+        Try(() => Console.WriteLine(((Dog)pet).ToString()));
+        Try(() => Console.WriteLine(checked(big + 1)));
+        Try(() => Console.WriteLine(nobody.ToString()));
+        Try(() => Console.WriteLine(int.Parse("abc")));
+        Try(() => Console.WriteLine(none.Value));
+        try { arr[2] = 1; }
+        catch (IndexOutOfRangeException e) { Console.WriteLine("[" + e.Message + "]"); }
+        try { checked { big++; } }
+        catch (OverflowException e) { Console.WriteLine("[" + e.Message + "]"); }
+
+        Try(() => { throw new Exception(); });
+        Try(() => { throw new InvalidOperationException(); });
+        Try(() => { throw new ArgumentException(); });
+        Try(() => { throw new ArgumentNullException(); });
+        Try(() => { throw new ArgumentOutOfRangeException(); });
+        Try(() => { throw new NotSupportedException(); });
+        Try(() => { throw new NotImplementedException(); });
+        Try(() => { throw new FormatException(); });
+        Try(() => { throw new KeyNotFoundException(); });
+        Try(() => { throw new IndexOutOfRangeException(); });
+        Try(() => { throw new NullReferenceException(); });
+        Try(() => { throw new InvalidCastException(); });
+        Try(() => { throw new OverflowException(); });
+        Try(() => { throw new DivideByZeroException(); });
+        Try(() => { throw new SystemException(); });
+        Try(() => { throw new ApplicationException(); });
+        Try(() => { throw new MyErr(); });
+        Try(() => { throw new MyOp(); });
+
+        Try(() => { throw new IndexOutOfRangeException("mine"); });
+        Try(() => { throw new Exception(""); });
+        Try(() => { throw new MyErr("own"); });
+        Try(() => { throw new ArgumentException("bad", "p"); });
+        Try(() => { throw new ArgumentNullException("p"); });
+        Try(() => { throw new ArgumentOutOfRangeException("p"); });
+        Try(() => { throw new ArgumentOutOfRangeException("p", "msg"); });
+        Try(() => { throw new ArgumentNullException("p", "msg"); });
+        Try(() => { throw new ObjectDisposedException("obj"); });
+        Try(() => { throw new ObjectDisposedException("obj", "gone"); });
+        var outer = new InvalidOperationException("outer", new FormatException("inner"));
+        Console.WriteLine(outer.Message + " / " + outer.InnerException.Message);
+        Console.WriteLine(new Exception("alone").InnerException == null);
+    }
+}

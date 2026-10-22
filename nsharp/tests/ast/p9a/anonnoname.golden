@@ -50,7 +50,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -151,7 +152,8 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'nsAnon0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -197,7 +199,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -317,7 +320,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"
@@ -444,7 +448,8 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'nsAnon0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkIfExpr
@@ -560,7 +565,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkInfix

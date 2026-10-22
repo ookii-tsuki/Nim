@@ -36,6 +36,24 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkRefTy
+            nkIdent 'AppException'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initAppException'
     nkEmpty
     nkEmpty
@@ -86,7 +104,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -177,6 +196,27 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkRefTy
+            nkIdent 'AppException'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.AppException"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initAppException'
     nkEmpty
     nkEmpty
@@ -223,6 +263,19 @@ nkStmtList
       nkCall
         nkIdent 'new'
         nkIdent 'result'
+      nkStmtList
+        nkAsgn
+          nkDotExpr
+            nkIdent 'result'
+            nkIdent 'name'
+          nkStrLit "Demo.AppException"
+        nkAsgn
+          nkDotExpr
+            nkIdent 'result'
+            nkIdent 'msg'
+          nkCall
+            nkIdent 'nsDefaultMessage'
+            nkIdent 'result'
       nkCall
         nkIdent 'initAppException'
         nkIdent 'result'
@@ -239,7 +292,8 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"
@@ -321,7 +375,7 @@ nkStmtList
         nkStmtList
           nkRaiseStmt
             nkCall
-              nkIdent 'newException'
+              nkIdent 'nsNewException'
               nkIdent 'ArgumentException'
               nkStrLit "bad"
         nkExceptBranch
