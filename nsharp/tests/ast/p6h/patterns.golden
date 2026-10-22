@@ -618,6 +618,44 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsEnumMembers'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'seq'
+        nkTupleConstr
+          nkIdent 'string'
+          nkIdent 'int64'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Color'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsEnumIsFlags'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'bool'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Color'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkAccQuoted
         nkIdent 'ToString'
     nkEmpty
@@ -1455,6 +1493,75 @@ nkStmtList
                   nkIdent 'Color'
                   nkIdent 'Blue'
         nkIdent 'false'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsEnumMembers'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'seq'
+        nkTupleConstr
+          nkIdent 'string'
+          nkIdent 'int64'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Color'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '@'
+        nkBracket
+          nkTupleConstr
+            nkStrLit "Red"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'int32'
+                nkDotExpr
+                  nkIdent 'Color'
+                  nkIdent 'Red'
+          nkTupleConstr
+            nkStrLit "Green"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'int32'
+                nkDotExpr
+                  nkIdent 'Color'
+                  nkIdent 'Green'
+          nkTupleConstr
+            nkStrLit "Blue"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'int32'
+                nkDotExpr
+                  nkIdent 'Color'
+                  nkIdent 'Blue'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsEnumIsFlags'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'bool'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Color'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'false'
   nkProcDef
     nkPostfix
       nkIdent '*'

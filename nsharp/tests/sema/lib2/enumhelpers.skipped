@@ -1,0 +1,5 @@
+DayOfWeek.Monday = result:other
+Enum.GetNames = result:other
+Enum.GetValues = type-parameter
+Enum.Parse = type-parameter
+Exception.GetType = result:other

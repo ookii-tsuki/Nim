@@ -1,0 +1,55 @@
+// System.TimeSpan and System.DateTime: construction, parts, arithmetic and its
+// overflow, the invariant TimeSpan format, and en-US date formats, standard and
+// custom (the gates pin en-US, whose AM/PM follows a narrow no-break space).
+using System;
+namespace Demo {
+class Program {
+    static void Main() {
+        var a = new TimeSpan(1, 2, 3);
+        var b = new TimeSpan(2, 3, 4, 5, 678);
+        Console.WriteLine(a);
+        Console.WriteLine(b);
+        Console.WriteLine(-b);
+        Console.WriteLine(a + b);
+        Console.WriteLine(b.Days + " " + b.Hours + " " + b.Minutes + " " + b.Seconds + " " + b.Milliseconds);
+        Console.WriteLine(a.TotalMinutes);
+        Console.WriteLine(TimeSpan.FromSeconds(90));
+        Console.WriteLine(TimeSpan.FromMilliseconds(1.5));
+        Console.WriteLine(TimeSpan.FromHours(1.25));
+        Console.WriteLine(TimeSpan.Zero + " " + TimeSpan.MaxValue + " " + TimeSpan.MinValue);
+        Console.WriteLine(a * 2.5);
+        Console.WriteLine(b / a);
+        Console.WriteLine(a < b);
+        Console.WriteLine(a.CompareTo(b) + " " + (a == new TimeSpan(0, 62, 3)));
+        Console.WriteLine(new TimeSpan(-5).Duration());
+        try { var x = TimeSpan.MaxValue + a; } catch (OverflowException e) { Console.WriteLine(e.Message); }
+        var d = new DateTime(2024, 2, 29, 13, 5, 9);
+        Console.WriteLine(d);
+        Console.WriteLine(d.Year + "-" + d.Month + "-" + d.Day + " " + d.Hour + ":" + d.Minute + ":" + d.Second);
+        Console.WriteLine(d.DayOfWeek + " " + d.DayOfYear);
+        Console.WriteLine(d.DayOfWeek == DayOfWeek.Thursday);
+        Console.WriteLine(d.AddYears(1).ToString("yyyy-MM-dd"));
+        Console.WriteLine(d.AddMonths(-13).ToString("yyyy-MM-dd HH:mm:ss"));
+        Console.WriteLine(d.AddDays(1.5));
+        Console.WriteLine(d.AddHours(-13.25).ToString("dddd, MMMM d, yyyy h:mm tt"));
+        Console.WriteLine(d.ToString("ddd MMM yy, H'h' m's' fff"));
+        Console.WriteLine(d.ToString("s"));
+        Console.WriteLine(d.ToString("o"));
+        Console.WriteLine(d.ToString("D") + " | " + d.ToString("d") + " | " + d.ToString("T") + " | " + d.ToString("t"));
+        Console.WriteLine(d.ToShortDateString() + " " + d.ToLongTimeString());
+        Console.WriteLine(d.Date + " " + d.TimeOfDay);
+        var e2 = new DateTime(2000, 1, 1);
+        Console.WriteLine(d - e2);
+        Console.WriteLine((d - e2).TotalDays);
+        Console.WriteLine(d > e2);
+        Console.WriteLine(DateTime.IsLeapYear(1900) + " " + DateTime.IsLeapYear(2000) + " " + DateTime.DaysInMonth(2023, 2));
+        Console.WriteLine(DateTime.MinValue + " | " + DateTime.MaxValue.ToString("o"));
+        Console.WriteLine(new DateTime(1, 1, 1).DayOfWeek + " " + new DateTime(1970, 1, 1).Ticks);
+        Console.WriteLine(new DateTime(2024, 12, 31, 0, 0, 0, 5).ToString("yyyy/MM/dd HH:mm:ss.FFF tt"));
+        Console.WriteLine(DateTime.Now > new DateTime(2020, 1, 1));
+        Console.WriteLine((DateTime.UtcNow - DateTime.Now).TotalHours < 25);
+        try { new DateTime(2023, 2, 29); } catch (ArgumentOutOfRangeException ex) { Console.WriteLine(ex.Message); }
+        try { DateTime.MaxValue.AddDays(1); } catch (ArgumentOutOfRangeException ex) { Console.WriteLine(ex.Message); }
+    }
+}
+}

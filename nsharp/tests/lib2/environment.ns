@@ -1,0 +1,21 @@
+// System.Environment, ending with Environment.Exit: the program stops there with
+// that status, after what it wrote.
+using System;
+
+namespace Demo {
+    class Program {
+        static void Main() {
+            Console.WriteLine(Environment.NewLine.Length);
+            Console.WriteLine(Environment.TickCount64 > 0);
+            Console.WriteLine(Environment.ProcessorCount > 0);
+            Console.WriteLine(Environment.GetCommandLineArgs().Length >= 1);
+            Console.WriteLine(Environment.GetEnvironmentVariable("NS_SURELY_UNSET_VARIABLE") == null);
+            Environment.SetEnvironmentVariable("NS_TEST_VARIABLE", "set");
+            Console.WriteLine(Environment.GetEnvironmentVariable("NS_TEST_VARIABLE"));
+            Console.WriteLine(Environment.CurrentDirectory.Length > 0);
+            Console.Write("before exit");
+            Environment.Exit(3);
+            Console.WriteLine("never");
+        }
+    }
+}

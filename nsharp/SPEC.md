@@ -919,13 +919,16 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | `Tuple<...>` | ✅ v1 | Nim tuple |
 | `Nullable<T>` | ✅ v1 | `Option[T]` |
 | `Exception` hierarchy | ✅ v1 | `lib` |
-| `DateTime`, `TimeSpan` | 🔜 later | `std/times` |
+| `DateTime`, `TimeSpan`, `DayOfWeek`, `DateTimeKind` | ✅ v1 | `lib`: structs of .NET's 100 ns ticks (a date's since 0001-01-01, proleptic Gregorian), the clock read through `std/times`; en-US's formats (§15.2) |
 | `Random` | ✅ v1 | `lib`: .NET's subtractive generator, so a seeded one gives .NET's sequence (§15.2) |
 | `Equals` / `GetHashCode` of a value | ✅ v1 | the intrinsics: .NET's definitions for the built-in types (NaN equals NaN; a `long` folds its halves); a struct's over its fields; a string's hash is stable only within a run, as .NET's |
-| `Convert.*` | ✅ v1 | `lib` |
+| `Convert.*` | ✅ v1 | `lib`, over `typedesc[Convert]`: to an integer rounding half to even with .NET's per-type `OverflowException` text, a string read as that type's `Parse` reads it, bases 2/8/10/16 (§15.2) |
+| `Enum.GetValues`/`GetNames`/`GetName`/`IsDefined`/`Parse`/`TryParse` | ✅ v1 | `lib`, generic over the enum, reading the `nsEnumMembers`/`nsEnumIsFlags` every enum's lowering declares (§15.2) |
+| `Environment` | ✅ v1 | `lib` (`std/os`): §15.2 |
+| `Stopwatch`, `Debug` | ✅ v1 | `lib/pure/ns/System/Diagnostics.nim` over the monotonic clock (§15.4) |
 | `IEnumerable<T>` / `ICollection<T>` / `IList<T>` / `IReadOnlyCollection<T>` / `IReadOnlyList<T>` / `ISet<T>` / `IReadOnlySet<T>` / `IDictionary<K,V>` / `IReadOnlyDictionary<K,V>` | ✅ v1 | values (SS15.1): `List`, arrays, `Dictionary`, `HashSet`, `Queue`, `Stack`, `LinkedList` and a dictionary's `Keys`/`Values` implement the ones .NET's do |
 | LINQ (method syntax) | ✅ v1 | `lib/pure/ns/System/Linq.nim`: procs over `NsEnumerable[T]`, the type class of every C# `IEnumerable<T>` (an array, any collection, a query, a group), which the surface files under each alternative as a C# extension method is a member of each implementing type, seen only with `using System.Linq;` (§15.3) |
-| `File` / `Directory` / streams | 🔜 later | `std/os`, `std/streams` |
+| `File` / `Directory` / `Path` / `StreamReader` / `StreamWriter` | ✅ v1 | `lib/pure/ns/System/IO.nim` over `std/os` and `File` (§15.5) |
 | `Regex` | 🔜 later | `std/re` |
 | `GC.*` | 🚫 out | Nim manages memory |
 | `Task`, `Thread`, `Interlocked` | 🔜 later | `std/*` |
@@ -986,8 +989,6 @@ Deliberately deferred, with the reason recorded:
   `Remove(value)`; it runs correctly.
 * **`LinkedListNode<T>.List`**: a Nim proc cannot share the name of the `List`
   type.
-* **`TryDequeue`, `TryPeek`, `TryPop`, `Remove(k, out v)`**: not yet written
-  (`Dictionary.TryGetValue` is).
 * **`IComparer<T>`, `IEqualityComparer<T>`** are values like the collection
   interfaces below. `Comparer<T>.Default`/`Create`, `EqualityComparer<T>.Default`
   and `StringComparer.Ordinal`/`OrdinalIgnoreCase` implement them, and so may a
@@ -1040,11 +1041,32 @@ Deliberately deferred, with the reason recorded:
 | `Random` | constructors `()`, `(int seed)`; `Next` (`()`, `(max)`, `(min, max)`) `NextDouble` |
 | `Array` (static) | `Copy` `Fill` `Clear` `Resize` `Reverse` `IndexOf` `LastIndexOf` `Exists` `TrueForAll` `Find` `FindLast` `FindIndex` `ForEach` `Sort` |
 | every value | `Equals` `GetHashCode` `ToString` `GetType`, and `CompareTo` on numbers, `char`, `bool` and `string` |
+| `Convert` | `ToInt32` `ToInt64` `ToInt16` `ToByte` `ToUInt32` (from a number, `bool`, `char`, `string`; `ToInt32`/`ToInt64` also `(string, fromBase)`) `ToDouble` `ToSingle` `ToBoolean` `ToChar` `ToString` (any value; an integer with `toBase`) |
+| `Enum` (static, generic) | `GetValues<T>` `GetNames<T>` `GetName` `IsDefined` `Parse<T>` (and `ignoreCase`) `TryParse` (and `ignoreCase`): a number is taken as it is, names may be listed with commas and are or-ed |
+| `Environment` | `NewLine` `Exit` `GetCommandLineArgs` `GetEnvironmentVariable` `SetEnvironmentVariable` `TickCount` `TickCount64` `ProcessorCount` `CurrentDirectory` `UserName` |
+| `TimeSpan` | constructors `(ticks)`, `(h, m, s)`, `(d, h, m, s)`, `(d, h, m, s, ms)`; `From{Days,Hours,Minutes,Seconds,Milliseconds}` (`double`, and .NET 9's whole-number overloads) `FromTicks`; `Ticks` `Days` `Hours` `Minutes` `Seconds` `Milliseconds` `Total{Days,Hours,Minutes,Seconds,Milliseconds}`; `Add` `Subtract` `Negate` `Duration` `Multiply` `Divide` `CompareTo` `Compare` `Equals`, `+ - * /` and comparisons; `Zero` `MaxValue` `MinValue` `TicksPer*`; prints `[-][d.]hh:mm:ss[.fffffff]` |
+| `DateTime` | constructors `(ticks)`, `(y, M, d)`, `(y, M, d, h, m, s)` (and a `DateTimeKind`), `(y, M, d, h, m, s, ms)`; `Now` `UtcNow` `Today` `MinValue` `MaxValue` `UnixEpoch` `IsLeapYear` `DaysInMonth`; `Year` `Month` `Day` `Hour` `Minute` `Second` `Millisecond` `DayOfWeek` `DayOfYear` `Date` `TimeOfDay` `Ticks` `Kind`; `Add{Ticks,Milliseconds,Seconds,Minutes,Hours,Days,Months,Years}` `Add` `Subtract` `CompareTo` `Compare` `Equals`, `+ -` and comparisons; `ToString` (en-US's `G`, a standard letter `d D t T g G f F s o u M Y`, or custom `y M d h H m s f F t K` with quotes and `\`) `ToShortDateString` `ToLongDateString` `ToShortTimeString` `ToLongTimeString` |
 
-Deliberately absent: `StringBuilder.Capacity`/`EnsureCapacity`/`CopyTo`; `Random`'s
+Deliberately absent: `Convert`'s `decimal`, `object` and `IFormatProvider` overloads,
+`ToBase64String` and kin; `Enum.GetValues(Type)` and the other `Type`-taking forms,
+`Enum.Format`, `GetUnderlyingType`; `Environment.StackTrace`, `MachineName`,
+`OSVersion`; `DateTime.Parse`/`ParseExact`, time zones and `ToLocalTime`/
+`ToUniversalTime`, `DateTimeOffset`, `DateOnly`/`TimeOnly`, `TimeSpan.Parse` and
+its format strings; `StringBuilder.Capacity`/`EnsureCapacity`/`CopyTo`; `Random`'s
 `Shared`, `NextInt64`, `NextBytes`, `NextSingle`; `MidpointRounding`; `Math.BigMul`,
 `DivRem`, `FusedMultiplyAdd`; a culture other than en-US; `char`'s Unicode
 categories beyond ASCII.
+
+`Convert.ToChar` of a code above 255 overflows, since N#'s `char` is a byte of
+UTF-8 text (§4.4); a bare integer literal passed to a generic `Convert` member is
+C#'s `int`, 32 bits. `DateTime`'s en-US patterns put a narrow no-break space
+(U+202F) before AM/PM, as .NET's do over ICU. `Enum.GetName` of a value no member
+has is null, which N# spells as the empty string.
+
+A library member may be declared `nsM_X` where a type of the same name exists
+(`DateTime.DayOfWeek` returns a `DayOfWeek`): Nim gives a name to one of them,
+so the member is spelled as the lowering spells a user's own `Color Color`, and
+the surface files it as `X`.
 
 ### 15.3 System.Linq - pinned member surface
 
@@ -1067,6 +1089,38 @@ enumeration and sees the source as it is then; an integer `Sum` overflows with
 `InvalidOperationException` text. Deliberately absent: query syntax, a
 dictionary or a string as a source, the comparer overloads, `Join`, `GroupJoin`,
 `ToLookup`, `OfType`/`Cast`, the nullable-element aggregates, `Zip` into tuples.
+
+### 15.4 System.Diagnostics - pinned member surface
+
+| Type | Members |
+|---|---|
+| `Stopwatch` | constructor `()`; `StartNew` `Start` `Stop` `Reset` `Restart` `IsRunning` `Elapsed` `ElapsedMilliseconds` `ElapsedTicks`; `Frequency` (1e9: ticks are nanoseconds, as .NET's on Linux) `IsHighResolution` `GetTimestamp` |
+| `Debug` | `Assert` (and a message) `Write` `WriteLine` (a value) |
+
+`Debug`'s members are .NET's `[Conditional("DEBUG")]`: here they run unless the
+program is built with `-d:release`, writing to stderr, and a failed assertion ends
+the program with status 134; stdout reads the same either way. Deliberately
+absent: `Process`, `Trace`, listeners, `Debugger`, `StackTrace`.
+
+### 15.5 System.IO - pinned member surface
+
+| Type | Members |
+|---|---|
+| `File` | `Exists` `ReadAllText` `ReadAllLines` `ReadLines` `WriteAllText` `WriteAllLines` `AppendAllText` `AppendAllLines` `Copy` (and `overwrite`) `Move` `Delete` |
+| `Directory` | `Exists` `CreateDirectory` (returns a `DirectoryInfo`: `FullName` `Name` `Exists`) `Delete` (and `recursive`) `GetFiles` `GetDirectories` `EnumerateFiles` `EnumerateDirectories` (and a `*`/`?` search pattern) `GetCurrentDirectory` `SetCurrentDirectory` |
+| `Path` | `Combine` `Join` `GetFileName` `GetExtension` `GetFileNameWithoutExtension` `GetDirectoryName` `ChangeExtension` `HasExtension` `IsPathRooted` `GetFullPath` `GetTempPath`, `DirectorySeparatorChar` `AltDirectorySeparatorChar` `PathSeparator` |
+| `StreamReader` | constructor `(path)`; `ReadLine` `ReadToEnd` `Read` `Peek` `EndOfStream` `Close` `Dispose` |
+| `StreamWriter` | constructors `(path)`, `(path, append)`; `Write` `WriteLine` (a value, or nothing) `Flush` `Close` `Dispose` |
+| exceptions | `IOException` `FileNotFoundException` `DirectoryNotFoundException` `EndOfStreamException`, and `System.UnauthorizedAccessException` |
+
+Text is UTF-8 without a byte order mark (one is skipped when read), lines are
+written with `"\n"` and read up to `"\n"`, `"\r\n"` or `"\r"`. A missing path
+throws .NET's exception with its message, naming the full path. A directory's
+listing is sorted by name; .NET leaves its order to the file system. A
+`StreamReader` reads its file whole when opened. `ReadLine` at the end returns
+null, which N# spells as the empty string, so a loop reads to `EndOfStream`.
+Deliberately absent: `FileStream` and the byte-level `Stream` family, `FileInfo`,
+`Encoding`, attributes and times, `FileSystemWatcher`.
 
 ## 16. N# extensions (beyond C#)
 

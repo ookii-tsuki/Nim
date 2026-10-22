@@ -1,0 +1,23 @@
+Red,Green,Blue
+Red,Green,Blue
+Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday
+0 1 2 4 
+Blue
+Green
+Blue
+ArgumentException: Requested value 'blue' was not found.
+Green
+7
+ArgumentException: Must specify valid information for parsing in the string. (Parameter 'value')
+Read, Write
+Read, Write, Exec
+OverflowException: Value was either too large or too small for an unsigned byte.
+Friday
+True False
+False
+Green Monday
+True Green
+False Red
+True Red
+True Write, Exec 6
+3

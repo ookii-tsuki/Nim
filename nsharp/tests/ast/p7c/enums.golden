@@ -657,6 +657,44 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsEnumMembers'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'seq'
+        nkTupleConstr
+          nkIdent 'string'
+          nkIdent 'int64'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Perm'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsEnumIsFlags'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'bool'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Perm'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkAccQuoted
         nkIdent 'ToString'
     nkEmpty
@@ -834,6 +872,44 @@ nkStmtList
       nkIdentDefs
         nkIdent 'a'
         nkIdent 'Level'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsEnumMembers'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'seq'
+        nkTupleConstr
+          nkIdent 'string'
+          nkIdent 'int64'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Level'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsEnumIsFlags'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'bool'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Level'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1501,6 +1577,93 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsEnumMembers'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'seq'
+        nkTupleConstr
+          nkIdent 'string'
+          nkIdent 'int64'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Perm'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '@'
+        nkBracket
+          nkTupleConstr
+            nkStrLit "None"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'uint8'
+                nkDotExpr
+                  nkIdent 'Perm'
+                  nkIdent 'None'
+          nkTupleConstr
+            nkStrLit "Read"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'uint8'
+                nkDotExpr
+                  nkIdent 'Perm'
+                  nkIdent 'Read'
+          nkTupleConstr
+            nkStrLit "Write"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'uint8'
+                nkDotExpr
+                  nkIdent 'Perm'
+                  nkIdent 'Write'
+          nkTupleConstr
+            nkStrLit "Exec"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'uint8'
+                nkDotExpr
+                  nkIdent 'Perm'
+                  nkIdent 'Exec'
+          nkTupleConstr
+            nkStrLit "All"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'uint8'
+                nkDotExpr
+                  nkIdent 'Perm'
+                  nkIdent 'All'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsEnumIsFlags'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'bool'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Perm'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'true'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkAccQuoted
         nkIdent 'ToString'
     nkEmpty
@@ -1799,6 +1962,84 @@ nkStmtList
                   nkIdent 'Level'
                   nkIdent 'Max'
         nkIdent 'false'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsEnumMembers'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'seq'
+        nkTupleConstr
+          nkIdent 'string'
+          nkIdent 'int64'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Level'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkPrefix
+        nkIdent '@'
+        nkBracket
+          nkTupleConstr
+            nkStrLit "Low"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'int32'
+                nkDotExpr
+                  nkIdent 'Level'
+                  nkIdent 'Low'
+          nkTupleConstr
+            nkStrLit "Mid"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'int32'
+                nkDotExpr
+                  nkIdent 'Level'
+                  nkIdent 'Mid'
+          nkTupleConstr
+            nkStrLit "High"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'int32'
+                nkDotExpr
+                  nkIdent 'Level'
+                  nkIdent 'High'
+          nkTupleConstr
+            nkStrLit "Max"
+            nkCall
+              nkIdent 'int64'
+              nkCall
+                nkIdent 'int32'
+                nkDotExpr
+                  nkIdent 'Level'
+                  nkIdent 'Max'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsEnumIsFlags'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'bool'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Level'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'false'
   nkProcDef
     nkPostfix
       nkIdent '*'

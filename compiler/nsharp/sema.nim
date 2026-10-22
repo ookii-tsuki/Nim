@@ -3430,6 +3430,19 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
                                              checked = true)
             if cop != nil: n.argParam = cop
           break
+    let lhs = n.sons[0]
+    let rhs = n.sons[1]
+    if n.rtype == nil and lhs != nil and rhs != nil and lhs.typeKind == tkClass and
+       lhs.typeName.len > 0 and not ctx.scope.classes.hasKey(lhs.typeName):
+      ## An operator the library declares on its own struct (`DateTime - DateTime`
+      ## is a `TimeSpan`): the overload whose right operand is the right side's type.
+      let want = canonicalTypeName(rhs.typeName)
+      for o in ctx.surface.overloads(lhs.typeName, tkClass, n.name):
+        if o.paramTypes.len == 2 and o.ret.len > 0 and want.len > 0 and
+           headSpelling(o.paramTypes[1]) in [want, ctx.surface.nimSpellingOf(want)]:
+          result = ctx.surface.kindOfName(o.ret)
+          n.setType(result, o.ret)
+          break
     if n.typeKind != tkClass or n.rtype == nil:
       ctx.checkOperands(n, lk0, rk0)
   of nsnNullDot:

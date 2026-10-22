@@ -3,13 +3,13 @@
 # Members are ordinary Nim procs: an instance member is reached by Nim's
 # dot-call, a static one through the qualifier the frontend drops.
 
-import std/[syncio, strutils, math, hashes, algorithm, times]
+import std/[syncio, strutils, math, hashes, algorithm, times, typetraits, os, monotimes, cpuinfo]
 from std/unicode import nil
 # `System.Collections.Generic` builds on this namespace, and this one names its
 # interfaces (`Array.Sort` takes an `IComparer<T>`), as .NET's namespaces may.
 import System/Collections/Generic {.cyclic.}
 from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, Equals, GetHashCode, NsArray, nsArrayOf, len,
-  items, `[]`, `[]=`, nsFormatValue, nsAlign, nsBox, nsNoValue, nsExceptionName, ToString, nsTypeName, nsStamped, nsAdoptException
+  items, `[]`, `[]=`, nsFormatValue, nsAlign, nsBox, nsNoValue, nsExceptionName, ToString, nsTypeName, nsStamped, nsAdoptException, nsEnumName
 
 # `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
 from ../nsharp/pragmas import nsStatic, nsInterface
@@ -38,6 +38,7 @@ type
   NotSupportedException* = object of SystemException
   NotImplementedException* = object of SystemException
   ObjectDisposedException* = object of InvalidOperationException
+  UnauthorizedAccessException* = object of SystemException
 
   # --- System delegates the collections take -------------------------------------
   #
@@ -128,8 +129,12 @@ proc nsNetName(nimName: string): string =
   of "ValueError", "FormatException": "System.FormatException"
   of "SystemException", "ApplicationException", "ArgumentException",
      "ArgumentNullException", "InvalidOperationException", "NotSupportedException",
-     "NotImplementedException", "ObjectDisposedException":
+     "NotImplementedException", "ObjectDisposedException", "UnauthorizedAccessException":
     "System." & nimName
+  of "IOException", "FileNotFoundException", "DirectoryNotFoundException",
+     "EndOfStreamException", "PathTooLongException":
+    ## Declared by `System.IO`, which builds on this module.
+    "System.IO." & nimName
   of "", "Exception", "CatchableError", "Defect": "System.Exception"
   else: nimName
 
@@ -152,6 +157,7 @@ proc nsDefaultMessage*[T: Exception](e: ref T): string =
   elif T is NotSupportedException: "Specified method is not supported."
   elif T is NotImplementedException: "The method or operation is not implemented."
   elif T is ApplicationException: "Error in the application."
+  elif T is UnauthorizedAccessException: "Attempted to perform an unauthorized operation."
   elif T is SystemException: "System error."
   elif T is KeyNotFoundException: "The given key was not present in the dictionary."
   elif T is FormatException: "One of the identified items was in an invalid format."
@@ -160,7 +166,14 @@ proc nsDefaultMessage*[T: Exception](e: ref T): string =
   elif T is InvalidCastException: "Specified cast is not valid."
   elif T is OverflowException: "Arithmetic operation resulted in an overflow."
   elif T is DivideByZeroException: "Attempted to divide by zero."
-  else: "Exception of type '" & nsExceptionTypeName(e) & "' was thrown."
+  else:
+    ## The types of namespaces that build on this one, which it cannot name.
+    case nsExceptionTypeName(e)
+    of "System.IO.IOException": "I/O error occurred."
+    of "System.IO.FileNotFoundException": "Unable to find the specified file."
+    of "System.IO.DirectoryNotFoundException": "Attempted to access a path that is not on the disk."
+    of "System.IO.EndOfStreamException": "Attempted to read past the end of the stream."
+    else: "Exception of type '" & nsExceptionTypeName(e) & "' was thrown."
 
 proc nsMade[T: Exception](t: typedesc[T]): ref T =
   ## A new exception, named as .NET names its type.
@@ -978,6 +991,697 @@ proc FindIndex*[T](a: NsArray[T]; match: Predicate[T]): int32 {.nsStatic: "Array
     if match(a.nsData[i]): return int32(i)
 proc ForEach*[T](a: NsArray[T]; action: Action[T]) {.nsStatic: "Array".} =
   for x in a.nsData: action(x)
+
+# --- System.Convert -------------------------------------------------------------
+#
+# Members over `typedesc[Convert]`, as `Math.PI` is reached, so that `ToString` and
+# its kin never meet the instance members of the same name. A number converts to
+# an integer type rounded to even, as .NET rounds, and out of range throws
+# `OverflowException` naming the target as .NET's messages do; a string converts as
+# that type's `Parse` reads it.
+
+type
+  Convert* = object
+    ## `System.Convert`: its members are static.
+
+proc nsConvFail(T: string) {.noinline, noreturn.} =
+  raise nsStamped(OverflowException, "Value was either too large or too small for " & T & ".",
+                  "System.OverflowException")
+
+proc nsToInteger[T: SomeInteger](x: float): T =
+  ## Rounded half to even; NaN and values out of range overflow.
+  var r = floor(x)
+  let d = x - r
+  if d > 0.5 or (d == 0.5 and floorMod(r, 2.0) != 0.0): r += 1.0
+  if not (r >= float(low(T)) and r < float(high(T)) + 1.0): nsConvFail(nsNetName(T))
+  T(r)
+
+proc nsToInteger[T: SomeInteger; S: SomeInteger](x: S): T =
+  when S is SomeUnsignedInt:
+    if uint64(x) > uint64(high(T)): nsConvFail(nsNetName(T))
+  elif T is SomeUnsignedInt:
+    if x < 0 or uint64(x) > uint64(high(T)): nsConvFail(nsNetName(T))
+  else:
+    if int64(x) < int64(low(T)) or int64(x) > int64(high(T)): nsConvFail(nsNetName(T))
+  T(x)
+
+proc nsDigitsIn(s: string; base: int32; bits: int): uint64 =
+  ## `Convert.ToInt32(s, fromBase)`: digits of base 2, 8, 10 or 16 (`0x` allowed
+  ## before hexadecimal), whose bits are the value, so `ffffffff` is -1.
+  if base notin [2'i32, 8, 10, 16]:
+    raise nsNewException(ArgumentException, "Invalid Base.")
+  var i = 0
+  if base == 16 and s.len > 2 and s[0] == '0' and s[1] in {'x', 'X'}: i = 2
+  if i >= s.len: raise newException(FormatException, "Could not find any recognizable digits.")
+  result = 0
+  while i < s.len:
+    let c = toLowerAscii(s[i])
+    let d = (if c in {'0'..'9'}: ord(c) - ord('0') elif c in {'a'..'f'}: ord(c) - ord('a') + 10 else: 99)
+    if d >= int(base):
+      if i == 0: raise newException(FormatException, "Could not find any recognizable digits.")
+      raise newException(FormatException, "Additional non-parsable characters are at the end of the string.")
+    let limit = (if bits == 64: high(uint64) else: (1'u64 shl bits) - 1)
+    if result > (limit - uint64(d)) div uint64(base):
+      nsConvFail(if bits == 64: "a UInt64" else: "a UInt32")
+    result = result * uint64(base) + uint64(d)
+    inc i
+
+proc ToInt32*(t: typedesc[Convert]; value: float): int32 = nsToInteger[int32](value)
+proc ToInt32*[S: SomeInteger](t: typedesc[Convert]; value: S): int32 = nsToInteger[int32, S](value)
+proc ToInt32*(t: typedesc[Convert]; value: bool): int32 = int32(ord(value))
+proc ToInt32*(t: typedesc[Convert]; value: char): int32 = int32(ord(value))
+proc ToInt32*(t: typedesc[Convert]; value: string): int32 = Parse(int32, value)
+proc ToInt32*(t: typedesc[Convert]; value: string; fromBase: int32): int32 =
+  let v = nsDigitsIn(value, fromBase, 32)
+  if fromBase == 10:
+    if v > uint64(high(int32)): nsConvFail("an Int32")
+    int32(v)
+  else: cast[int32](uint32(v))
+proc ToInt64*(t: typedesc[Convert]; value: float): int64 = nsToInteger[int64](value)
+proc ToInt64*[S: SomeInteger](t: typedesc[Convert]; value: S): int64 = nsToInteger[int64, S](value)
+proc ToInt64*(t: typedesc[Convert]; value: bool): int64 = int64(ord(value))
+proc ToInt64*(t: typedesc[Convert]; value: char): int64 = int64(ord(value))
+proc ToInt64*(t: typedesc[Convert]; value: string): int64 = Parse(int64, value)
+proc ToInt64*(t: typedesc[Convert]; value: string; fromBase: int32): int64 =
+  let v = nsDigitsIn(value, fromBase, 64)
+  if fromBase == 10:
+    if v > uint64(high(int64)): nsConvFail("an Int64")
+    int64(v)
+  else: cast[int64](v)
+proc ToInt16*(t: typedesc[Convert]; value: float): int16 = nsToInteger[int16](value)
+proc ToInt16*[S: SomeInteger](t: typedesc[Convert]; value: S): int16 = nsToInteger[int16, S](value)
+proc ToInt16*(t: typedesc[Convert]; value: bool): int16 = int16(ord(value))
+proc ToInt16*(t: typedesc[Convert]; value: string): int16 = Parse(int16, value)
+proc ToByte*(t: typedesc[Convert]; value: float): uint8 = nsToInteger[uint8](value)
+proc ToByte*[S: SomeInteger](t: typedesc[Convert]; value: S): uint8 = nsToInteger[uint8, S](value)
+proc ToByte*(t: typedesc[Convert]; value: bool): uint8 = uint8(ord(value))
+proc ToByte*(t: typedesc[Convert]; value: char): uint8 = uint8(ord(value))
+proc ToByte*(t: typedesc[Convert]; value: string): uint8 = Parse(uint8, value)
+proc ToUInt32*(t: typedesc[Convert]; value: float): uint32 = nsToInteger[uint32](value)
+proc ToUInt32*[S: SomeInteger](t: typedesc[Convert]; value: S): uint32 = nsToInteger[uint32, S](value)
+proc ToUInt32*(t: typedesc[Convert]; value: string): uint32 = Parse(uint32, value)
+
+proc ToDouble*[S: SomeNumber](t: typedesc[Convert]; value: S): float = float(value)
+proc ToDouble*(t: typedesc[Convert]; value: bool): float = (if value: 1.0 else: 0.0)
+proc ToDouble*(t: typedesc[Convert]; value: string): float = Parse(float, value)
+proc ToSingle*[S: SomeNumber](t: typedesc[Convert]; value: S): float32 = float32(value)
+proc ToSingle*(t: typedesc[Convert]; value: string): float32 = Parse(float32, value)
+
+proc ToBoolean*[S: SomeNumber](t: typedesc[Convert]; value: S): bool = value != S(0)
+proc ToBoolean*(t: typedesc[Convert]; value: string): bool = Parse(bool, value)
+
+proc ToChar*[S: SomeInteger](t: typedesc[Convert]; value: S): char =
+  ## A code above 255 overflows: N#'s `char` holds one byte, where .NET's holds
+  ## UTF-16 code units.
+  when S is SomeSignedInt:
+    if value < 0 or int64(value) > 255: nsConvFail("a character")
+  else:
+    if uint64(value) > 255: nsConvFail("a character")
+  char(value)
+proc ToChar*(t: typedesc[Convert]; value: string): char = Parse(char, value)
+
+proc ToString*[S](t: typedesc[Convert]; value: S): string = ToString(value)
+  ## `value.ToString()`.
+proc ToString*[S: SomeInteger](t: typedesc[Convert]; value: S; toBase: int32): string =
+  ## In base 2, 8, 10 or 16; outside 10 a negative number is its bits, as many as
+  ## the type has.
+  if toBase notin [2'i32, 8, 10, 16]:
+    raise nsNewException(ArgumentException, "Invalid Base.")
+  if toBase == 10: return $value
+  ## A bare literal arrives as Nim's `int`, and is C#'s `int`, 32 bits.
+  var u = (when S is int: uint64(cast[uint32](int32(value)))
+           elif sizeof(S) == 8: cast[uint64](value) elif sizeof(S) == 4: uint64(cast[uint32](value))
+           elif sizeof(S) == 2: uint64(cast[uint16](value)) else: uint64(cast[uint8](value)))
+  if u == 0: return "0"
+  result = ""
+  while u != 0:
+    result.insert($("0123456789abcdef"[int(u mod uint64(toBase))]), 0)
+    u = u div uint64(toBase)
+
+# --- System.Enum ----------------------------------------------------------------
+#
+# Generic statics over an enum type, reading its members through what the lowering
+# of every enum declares: `nsEnumMembers` (names and values in declaration order)
+# and `nsEnumIsFlags`.
+
+type
+  Enum* = object
+    ## `System.Enum`, reached for its static members.
+
+proc nsEnumOf[T](v: int64): T = T(distinctBase(T)(v))
+
+proc GetValues*[T: distinct](): NsArray[T] {.nsStatic: "Enum".} =
+  ## The members' values in declaration order.
+  mixin nsEnumMembers
+  var xs: seq[T] = @[]
+  for m in nsEnumMembers(T): xs.add nsEnumOf[T](m[1])
+  nsArrayOf(xs)
+
+proc GetNames*[T: distinct](): NsArray[string] {.nsStatic: "Enum".} =
+  mixin nsEnumMembers
+  var xs: seq[string] = @[]
+  for m in nsEnumMembers(T): xs.add m[0]
+  nsArrayOf(xs)
+
+proc GetName*[T: distinct](value: T): string {.nsStatic: "Enum".} =
+  ## The name of the first member with this value; null when none has it.
+  mixin nsEnumMembers
+  for m in nsEnumMembers(T):
+    if m[1] == int64(distinctBase(T)(value)): return m[0]
+  ""
+
+proc IsDefined*[T: distinct](value: T): bool {.nsStatic: "Enum".} =
+  mixin nsEnumMembers
+  for m in nsEnumMembers(T):
+    if m[1] == int64(distinctBase(T)(value)): return true
+  false
+
+proc nsEnumParse[T](value: string; ignoreCase: bool; r: var T): int =
+  ## 0 parsed; 1 no text; 2 a name not found; 3 a number out of range. A number
+  ## is taken whatever it is; otherwise names, separated by commas, are or-ed.
+  mixin nsEnumMembers
+  let (i, e) = nsTrimmed(value)
+  if i >= e: return 1
+  let s = value.substr(i, e - 1)
+  if s[0] in {'0'..'9', '-', '+'}:
+    var n: distinctBase(T)
+    case nsParseInt(s, n)
+    of npOk:
+      r = T(n)
+      return 0
+    of npOverflow: return 3
+    of npFormat: discard
+  var bits = 0'i64
+  for part in s.split(','):
+    let w = part.strip
+    var found = false
+    for m in nsEnumMembers(T):
+      if (if ignoreCase: cmpIgnoreCase(m[0], w) == 0 else: m[0] == w):
+        bits = bits or m[1]
+        found = true
+        break
+    if not found: return 2
+  r = nsEnumOf[T](bits)
+  0
+
+proc nsEnumParseFail(value, under: string; how: int) {.noinline, noreturn.} =
+  if how == 1:
+    raise nsNewException(ArgumentException,
+      "Must specify valid information for parsing in the string.", "value")
+  if how == 3:
+    nsConvFail(under)
+  raise nsNewException(ArgumentException, "Requested value '" & value & "' was not found.")
+
+proc Parse*[T: distinct](value: string): T {.nsStatic: "Enum".} =
+  let how = nsEnumParse(value, false, result)
+  if how != 0: nsEnumParseFail(value, nsNetName(distinctBase(T)), how)
+proc Parse*[T: distinct](value: string; ignoreCase: bool): T {.nsStatic: "Enum".} =
+  let how = nsEnumParse(value, ignoreCase, result)
+  if how != 0: nsEnumParseFail(value, nsNetName(distinctBase(T)), how)
+proc TryParse*[T: distinct](value: string; r: var T): bool {.nsStatic: "Enum".} =
+  ## Leaves the default (zero) when the text is not a member or number.
+  var x: T
+  result = nsEnumParse(value, false, x) == 0
+  r = (if result: x else: default(T))
+proc TryParse*[T: distinct](value: string; ignoreCase: bool; r: var T): bool {.nsStatic: "Enum".} =
+  var x: T
+  result = nsEnumParse(value, ignoreCase, x) == 0
+  r = (if result: x else: default(T))
+
+# --- System.Environment ---------------------------------------------------------
+
+type
+  Environment* = object
+    ## `System.Environment`: its members are static.
+
+proc nsExit(code: cint) {.importc: "exit", header: "<stdlib.h>", noreturn.}
+
+template NewLine*(t: typedesc[Environment]): string = "\n"
+  ## `"\n"`, as on the Unix systems N# targets.
+proc Exit*(t: typedesc[Environment]; exitCode: int32) =
+  ## Ends the program now, with this status; what was written is flushed first.
+  flushFile(stdout)
+  flushFile(stderr)
+  nsExit(cint(exitCode))
+proc GetCommandLineArgs*(t: typedesc[Environment]): NsArray[string] =
+  ## The program's path, then its arguments.
+  var xs = @[getAppFilename()]
+  for i in 1 .. paramCount(): xs.add paramStr(i)
+  nsArrayOf(xs)
+proc GetEnvironmentVariable*(t: typedesc[Environment]; variable: string): string =
+  ## The variable's value; null (N#'s empty string) when it is not set.
+  getEnv(variable)
+proc SetEnvironmentVariable*(t: typedesc[Environment]; variable, value: string) =
+  ## A null or empty value removes the variable, as in .NET.
+  if value.len == 0: delEnv(variable) else: putEnv(variable, value)
+proc TickCount*(t: typedesc[Environment]): int32 =
+  ## Milliseconds since an arbitrary start (the monotonic clock's), wrapping.
+  cast[int32](uint32(getMonoTime().ticks div 1_000_000))
+proc TickCount64*(t: typedesc[Environment]): int64 = getMonoTime().ticks div 1_000_000
+proc ProcessorCount*(t: typedesc[Environment]): int32 = int32(max(1, countProcessors()))
+proc CurrentDirectory*(t: typedesc[Environment]): string = getCurrentDir()
+proc UserName*(t: typedesc[Environment]): string = getEnv("USER")
+
+# --- System.TimeSpan ------------------------------------------------------------
+#
+# A struct of ticks (100 ns), as in .NET; its arithmetic overflows into
+# `OverflowException`, and it prints as `[-][d.]hh:mm:ss[.fffffff]` in every
+# culture.
+
+type
+  TimeSpan* = object
+    ## `System.TimeSpan`.
+    nsTicks: int64
+
+const
+  nsTicksPerMs = 10_000'i64
+  nsTicksPerSecond = 10_000_000'i64
+  nsTicksPerMinute = 600_000_000'i64
+  nsTicksPerHour = 36_000_000_000'i64
+  nsTicksPerDay = 864_000_000_000'i64
+
+proc addOverflow(a, b: int64; r: var int64): bool =
+  if (b > 0 and a > high(int64) - b) or (b < 0 and a < low(int64) - b): return true
+  r = a + b
+proc subOverflow(a, b: int64; r: var int64): bool =
+  if (b < 0 and a > high(int64) + b) or (b > 0 and a < low(int64) + b): return true
+  r = a - b
+
+proc nsSpanFail() {.noinline, noreturn.} =
+  raise nsStamped(OverflowException, "TimeSpan overflowed because the duration is too long.",
+                  "System.OverflowException")
+
+proc nsSpanTicks(a, b: int64): int64 =
+  ## `a * b` ticks, overflowing as a TimeSpan does.
+  if a != 0 and (abs(b) > high(int64) div abs(a)): nsSpanFail()
+  a * b
+
+proc newTimeSpan*(ticks: int64): TimeSpan = TimeSpan(nsTicks: ticks)
+proc newTimeSpan*(hours, minutes, seconds: int32): TimeSpan =
+  TimeSpan(nsTicks: (int64(hours) * 3600 + int64(minutes) * 60 + int64(seconds)) * nsTicksPerSecond)
+proc newTimeSpan*(days, hours, minutes, seconds: int32): TimeSpan =
+  TimeSpan(nsTicks: (int64(days) * 86400 + int64(hours) * 3600 + int64(minutes) * 60 +
+                     int64(seconds)) * nsTicksPerSecond)
+proc newTimeSpan*(days, hours, minutes, seconds, milliseconds: int32): TimeSpan =
+  TimeSpan(nsTicks: ((int64(days) * 86400 + int64(hours) * 3600 + int64(minutes) * 60 +
+                      int64(seconds)) * 1000 + int64(milliseconds)) * nsTicksPerMs)
+
+proc nsSpanOf(value: float; scale: int64): TimeSpan =
+  if value != value:
+    raise nsNewException(ArgumentException, "TimeSpan does not accept floating point Not-a-Number values.")
+  let t = value * float(scale)
+  if not (t >= -9.223372036854775808e18 and t < 9.223372036854775808e18): nsSpanFail()
+  TimeSpan(nsTicks: int64(t))
+
+proc FromDays*(t: typedesc[TimeSpan]; value: float): TimeSpan = nsSpanOf(value, nsTicksPerDay)
+proc FromHours*(t: typedesc[TimeSpan]; value: float): TimeSpan = nsSpanOf(value, nsTicksPerHour)
+proc FromMinutes*(t: typedesc[TimeSpan]; value: float): TimeSpan = nsSpanOf(value, nsTicksPerMinute)
+proc FromSeconds*(t: typedesc[TimeSpan]; value: float): TimeSpan = nsSpanOf(value, nsTicksPerSecond)
+proc FromMilliseconds*(t: typedesc[TimeSpan]; value: float): TimeSpan = nsSpanOf(value, nsTicksPerMs)
+proc FromTicks*(t: typedesc[TimeSpan]; value: int64): TimeSpan = TimeSpan(nsTicks: value)
+# .NET 9's whole-unit overloads, which a whole number picks.
+proc FromDays*[S: SomeInteger](t: typedesc[TimeSpan]; value: S): TimeSpan =
+  TimeSpan(nsTicks: nsSpanTicks(int64(value), nsTicksPerDay))
+proc FromHours*[S: SomeInteger](t: typedesc[TimeSpan]; value: S): TimeSpan =
+  TimeSpan(nsTicks: nsSpanTicks(int64(value), nsTicksPerHour))
+proc FromMinutes*[S: SomeInteger](t: typedesc[TimeSpan]; value: S): TimeSpan =
+  TimeSpan(nsTicks: nsSpanTicks(int64(value), nsTicksPerMinute))
+proc FromSeconds*[S: SomeInteger](t: typedesc[TimeSpan]; value: S): TimeSpan =
+  TimeSpan(nsTicks: nsSpanTicks(int64(value), nsTicksPerSecond))
+proc FromMilliseconds*[S: SomeInteger](t: typedesc[TimeSpan]; value: S): TimeSpan =
+  TimeSpan(nsTicks: nsSpanTicks(int64(value), nsTicksPerMs))
+
+template Zero*(t: typedesc[TimeSpan]): TimeSpan = TimeSpan(nsTicks: 0)
+template MaxValue*(t: typedesc[TimeSpan]): TimeSpan = TimeSpan(nsTicks: high(int64))
+template MinValue*(t: typedesc[TimeSpan]): TimeSpan = TimeSpan(nsTicks: low(int64))
+template TicksPerMillisecond*(t: typedesc[TimeSpan]): int64 = nsTicksPerMs
+template TicksPerSecond*(t: typedesc[TimeSpan]): int64 = nsTicksPerSecond
+template TicksPerMinute*(t: typedesc[TimeSpan]): int64 = nsTicksPerMinute
+template TicksPerHour*(t: typedesc[TimeSpan]): int64 = nsTicksPerHour
+template TicksPerDay*(t: typedesc[TimeSpan]): int64 = nsTicksPerDay
+
+proc Ticks*(s: TimeSpan): int64 = s.nsTicks
+proc Days*(s: TimeSpan): int32 = int32(s.nsTicks div nsTicksPerDay)
+proc Hours*(s: TimeSpan): int32 = int32(s.nsTicks div nsTicksPerHour mod 24)
+proc Minutes*(s: TimeSpan): int32 = int32(s.nsTicks div nsTicksPerMinute mod 60)
+proc Seconds*(s: TimeSpan): int32 = int32(s.nsTicks div nsTicksPerSecond mod 60)
+proc Milliseconds*(s: TimeSpan): int32 = int32(s.nsTicks div nsTicksPerMs mod 1000)
+proc TotalDays*(s: TimeSpan): float = float(s.nsTicks) / float(nsTicksPerDay)
+proc TotalHours*(s: TimeSpan): float = float(s.nsTicks) / float(nsTicksPerHour)
+proc TotalMinutes*(s: TimeSpan): float = float(s.nsTicks) / float(nsTicksPerMinute)
+proc TotalSeconds*(s: TimeSpan): float = float(s.nsTicks) / float(nsTicksPerSecond)
+proc TotalMilliseconds*(s: TimeSpan): float = float(s.nsTicks) / float(nsTicksPerMs)
+
+proc `+`*(a, b: TimeSpan): TimeSpan =
+  var r: int64
+  if addOverflow(a.nsTicks, b.nsTicks, r): nsSpanFail()
+  TimeSpan(nsTicks: r)
+proc `-`*(a, b: TimeSpan): TimeSpan =
+  var r: int64
+  if subOverflow(a.nsTicks, b.nsTicks, r): nsSpanFail()
+  TimeSpan(nsTicks: r)
+proc `-`*(a: TimeSpan): TimeSpan =
+  if a.nsTicks == low(int64):
+    raise nsStamped(OverflowException,
+      "Negating the minimum value of a twos complement number is invalid.", "System.OverflowException")
+  TimeSpan(nsTicks: -a.nsTicks)
+proc `+`*(a: TimeSpan): TimeSpan = a
+proc `*`*(a: TimeSpan; factor: float): TimeSpan =
+  if factor != factor:
+    raise nsNewException(ArgumentException, "TimeSpan does not accept floating point Not-a-Number values.")
+  let t = round(float(a.nsTicks) * factor)
+  if not (t >= -9.223372036854775808e18 and t < 9.223372036854775808e18): nsSpanFail()
+  TimeSpan(nsTicks: int64(t))
+proc `*`*(factor: float; a: TimeSpan): TimeSpan = a * factor
+proc `/`*(a: TimeSpan; divisor: float): TimeSpan =
+  if divisor != divisor:
+    raise nsNewException(ArgumentException, "TimeSpan does not accept floating point Not-a-Number values.")
+  let t = round(float(a.nsTicks) / divisor)
+  if not (t >= -9.223372036854775808e18 and t < 9.223372036854775808e18): nsSpanFail()
+  TimeSpan(nsTicks: int64(t))
+proc `/`*(a, b: TimeSpan): float = float(a.nsTicks) / float(b.nsTicks)
+proc `<`*(a, b: TimeSpan): bool = a.nsTicks < b.nsTicks
+proc `<=`*(a, b: TimeSpan): bool = a.nsTicks <= b.nsTicks
+proc Add*(a, b: TimeSpan): TimeSpan = a + b
+proc Subtract*(a, b: TimeSpan): TimeSpan = a - b
+proc Negate*(a: TimeSpan): TimeSpan = -a
+proc Duration*(a: TimeSpan): TimeSpan =
+  if a.nsTicks == low(int64):
+    raise nsStamped(OverflowException,
+      "The duration cannot be returned for TimeSpan.MinValue because the absolute value of " &
+      "TimeSpan.MinValue exceeds the value of TimeSpan.MaxValue.", "System.OverflowException")
+  TimeSpan(nsTicks: abs(a.nsTicks))
+proc Multiply*(a: TimeSpan; factor: float): TimeSpan = a * factor
+proc Divide*(a: TimeSpan; divisor: float): TimeSpan = a / divisor
+proc CompareTo*(a, b: TimeSpan): int32 = int32(cmp(a.nsTicks, b.nsTicks))
+proc Equals*(a, b: TimeSpan): bool = a.nsTicks == b.nsTicks
+proc GetHashCode*(a: TimeSpan): int32 = int32(a.nsTicks xor (a.nsTicks shr 32))
+proc Compare*(t: typedesc[TimeSpan]; a, b: TimeSpan): int32 = int32(cmp(a.nsTicks, b.nsTicks))
+
+proc nsPad(v: int64; width: int): string = align($v, width, '0')
+
+proc ToString*(s: TimeSpan): string =
+  ## `[-][d.]hh:mm:ss[.fffffff]`.
+  result = ""
+  var t = uint64(s.nsTicks)
+  if s.nsTicks < 0:
+    result.add '-'
+    t = 0'u64 - t
+  let days = t div uint64(nsTicksPerDay)
+  let rest = int64(t mod uint64(nsTicksPerDay))
+  if days != 0: result.add $days & "."
+  result.add nsPad(rest div nsTicksPerHour, 2) & ":" &
+             nsPad(rest div nsTicksPerMinute mod 60, 2) & ":" &
+             nsPad(rest div nsTicksPerSecond mod 60, 2)
+  let frac = rest mod nsTicksPerSecond
+  if frac != 0: result.add "." & nsPad(frac, 7)
+proc `$`*(s: TimeSpan): string = s.ToString
+
+# --- System.DateTime ------------------------------------------------------------
+#
+# A struct of ticks since 0001-01-01 and a kind, as in .NET. The proleptic
+# Gregorian calendar throughout; `Now` is the local time. Without a format it
+# prints in en-US's general pattern (`M/d/yyyy h:mm:ss tt`), the culture the
+# gates pin; a format of the standard letters or custom specifiers is honoured.
+
+type
+  DayOfWeek* = distinct int32
+    ## `System.DayOfWeek`, an enum declared as the lowering declares one.
+  DateTimeKind* = distinct int32
+    ## `System.DateTimeKind`.
+  DateTime* = object
+    ## `System.DateTime`.
+    nsTicks: int64
+    nsKind: int32
+
+const nsDayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+const nsMonthNames = ["January", "February", "March", "April", "May", "June", "July",
+                      "August", "September", "October", "November", "December"]
+
+template Sunday*(t: typedesc[DayOfWeek]): DayOfWeek = DayOfWeek(0)
+template Monday*(t: typedesc[DayOfWeek]): DayOfWeek = DayOfWeek(1)
+template Tuesday*(t: typedesc[DayOfWeek]): DayOfWeek = DayOfWeek(2)
+template Wednesday*(t: typedesc[DayOfWeek]): DayOfWeek = DayOfWeek(3)
+template Thursday*(t: typedesc[DayOfWeek]): DayOfWeek = DayOfWeek(4)
+template Friday*(t: typedesc[DayOfWeek]): DayOfWeek = DayOfWeek(5)
+template Saturday*(t: typedesc[DayOfWeek]): DayOfWeek = DayOfWeek(6)
+proc `==`*(a, b: DayOfWeek): bool = int32(a) == int32(b)
+proc `<`*(a, b: DayOfWeek): bool = int32(a) < int32(b)
+proc `<=`*(a, b: DayOfWeek): bool = int32(a) <= int32(b)
+proc hash*(a: DayOfWeek): Hash = hash(int32(a))
+proc nsEnumMembers*(t: typedesc[DayOfWeek]): seq[(string, int64)] =
+  for i, n in nsDayNames: result.add (n, int64(i))
+proc nsEnumIsFlags*(t: typedesc[DayOfWeek]): bool = false
+proc `$`*(a: DayOfWeek): string = nsEnumName(int64(a), nsEnumMembers(DayOfWeek), false)
+proc ToString*(a: DayOfWeek): string = $a
+
+template Unspecified*(t: typedesc[DateTimeKind]): DateTimeKind = DateTimeKind(0)
+template Utc*(t: typedesc[DateTimeKind]): DateTimeKind = DateTimeKind(1)
+template Local*(t: typedesc[DateTimeKind]): DateTimeKind = DateTimeKind(2)
+proc `==`*(a, b: DateTimeKind): bool = int32(a) == int32(b)
+proc hash*(a: DateTimeKind): Hash = hash(int32(a))
+proc nsEnumMembers*(t: typedesc[DateTimeKind]): seq[(string, int64)] =
+  @[("Unspecified", 0'i64), ("Utc", 1'i64), ("Local", 2'i64)]
+proc nsEnumIsFlags*(t: typedesc[DateTimeKind]): bool = false
+proc `$`*(a: DateTimeKind): string = nsEnumName(int64(a), nsEnumMembers(DateTimeKind), false)
+proc ToString*(a: DateTimeKind): string = $a
+
+const
+  nsMaxDateTicks = 3_155_378_975_999_999_999'i64  ## 9999-12-31 23:59:59.9999999
+  nsUnixEpochTicks = 621_355_968_000_000_000'i64
+
+proc nsIsLeap(y: int64): bool = (y mod 4 == 0 and y mod 100 != 0) or y mod 400 == 0
+proc nsDaysIn(y, m: int64): int64 =
+  case m
+  of 2: (if nsIsLeap(y): 29 else: 28)
+  of 4, 6, 9, 11: 30
+  else: 31
+
+proc nsDaysFromCivil(y0, m, d: int64): int64 =
+  ## Days from 0001-01-01 (Hinnant's algorithm, shifted from 1970).
+  let y = (if m <= 2: y0 - 1 else: y0)
+  let era = floorDiv(y, 400)
+  let yoe = y - era * 400
+  let doy = (153 * (if m > 2: m - 3 else: m + 9) + 2) div 5 + d - 1
+  let doe = yoe * 365 + yoe div 4 - yoe div 100 + doy
+  era * 146097 + doe - 719468 + 719162
+
+proc nsCivil(days: int64): (int64, int64, int64) =
+  let z = days - 719162 + 719468
+  let era = floorDiv(z, 146097)
+  let doe = z - era * 146097
+  let yoe = (doe - doe div 1460 + doe div 36524 - doe div 146096) div 365
+  let doy = doe - (365 * yoe + yoe div 4 - yoe div 100)
+  let mp = (5 * doy + 2) div 153
+  let d = doy - (153 * mp + 2) div 5 + 1
+  let m = (if mp < 10: mp + 3 else: mp - 9)
+  ((if m <= 2: yoe + era * 400 + 1 else: yoe + era * 400), m, d)
+
+proc nsDateFail(message, param: string) {.noinline, noreturn.} =
+  raise nsNewException(ArgumentOutOfRangeException, param, message)
+
+proc nsDateTicks(year, month, day: int32): int64 =
+  if year < 1 or year > 9999 or month < 1 or month > 12 or day < 1 or
+     day > nsDaysIn(year, month):
+    nsDateFail("Year, Month, and Day parameters describe an un-representable DateTime.", "")
+  nsDaysFromCivil(year, month, day) * nsTicksPerDay
+
+proc nsTimeTicks(hour, minute, second: int32): int64 =
+  if hour notin 0'i32 .. 23 or minute notin 0'i32 .. 59 or second notin 0'i32 .. 59:
+    nsDateFail("Hour, Minute, and Second parameters describe an un-representable DateTime.", "")
+  (int64(hour) * 3600 + int64(minute) * 60 + int64(second)) * nsTicksPerSecond
+
+proc nsDate(ticks: int64; kind: int32 = 0): DateTime =
+  if ticks < 0 or ticks > nsMaxDateTicks:
+    nsDateFail("The added or subtracted value results in an un-representable DateTime.", "value")
+  DateTime(nsTicks: ticks, nsKind: kind)
+
+proc newDateTime*(ticks: int64): DateTime =
+  if ticks < 0 or ticks > nsMaxDateTicks:
+    nsDateFail("Ticks must be between DateTime.MinValue.Ticks and DateTime.MaxValue.Ticks.", "ticks")
+  DateTime(nsTicks: ticks)
+proc newDateTime*(year, month, day: int32): DateTime =
+  DateTime(nsTicks: nsDateTicks(year, month, day))
+proc newDateTime*(year, month, day, hour, minute, second: int32): DateTime =
+  DateTime(nsTicks: nsDateTicks(year, month, day) + nsTimeTicks(hour, minute, second))
+proc newDateTime*(year, month, day, hour, minute, second, millisecond: int32): DateTime =
+  if millisecond notin 0'i32 .. 999:
+    nsDateFail("Valid values are between 0 and 999, inclusive.", "millisecond")
+  DateTime(nsTicks: nsDateTicks(year, month, day) + nsTimeTicks(hour, minute, second) +
+                    int64(millisecond) * nsTicksPerMs)
+proc newDateTime*(year, month, day, hour, minute, second: int32; kind: DateTimeKind): DateTime =
+  DateTime(nsTicks: nsDateTicks(year, month, day) + nsTimeTicks(hour, minute, second),
+           nsKind: int32(kind))
+
+proc UtcNow*(t: typedesc[DateTime]): DateTime =
+  let n = getTime()
+  DateTime(nsTicks: nsUnixEpochTicks + n.toUnix * nsTicksPerSecond + n.nanosecond div 100,
+           nsKind: 1)
+proc Now*(t: typedesc[DateTime]): DateTime =
+  let n = times.now()
+  let local = n.toTime.toUnix - n.utcOffset
+  DateTime(nsTicks: nsUnixEpochTicks + local * nsTicksPerSecond + n.nanosecond div 100,
+           nsKind: 2)
+proc Today*(t: typedesc[DateTime]): DateTime =
+  let n = Now(DateTime)
+  DateTime(nsTicks: n.nsTicks - n.nsTicks mod nsTicksPerDay, nsKind: 2)
+template MinValue*(t: typedesc[DateTime]): DateTime = DateTime(nsTicks: 0)
+template MaxValue*(t: typedesc[DateTime]): DateTime = DateTime(nsTicks: nsMaxDateTicks)
+template UnixEpoch*(t: typedesc[DateTime]): DateTime = DateTime(nsTicks: nsUnixEpochTicks, nsKind: 1)
+proc IsLeapYear*(t: typedesc[DateTime]; year: int32): bool =
+  if year < 1 or year > 9999: nsDateFail("Year must be between 1 and 9999.", "year")
+  nsIsLeap(year)
+proc DaysInMonth*(t: typedesc[DateTime]; year, month: int32): int32 =
+  if month < 1 or month > 12: nsDateFail("Month must be between one and twelve.", "month")
+  if year < 1 or year > 9999: nsDateFail("Year must be between 1 and 9999.", "year")
+  int32(nsDaysIn(year, month))
+
+proc Ticks*(d: DateTime): int64 = d.nsTicks
+proc Kind*(d: DateTime): DateTimeKind = DateTimeKind(d.nsKind)
+proc Year*(d: DateTime): int32 = int32(nsCivil(d.nsTicks div nsTicksPerDay)[0])
+proc Month*(d: DateTime): int32 = int32(nsCivil(d.nsTicks div nsTicksPerDay)[1])
+proc Day*(d: DateTime): int32 = int32(nsCivil(d.nsTicks div nsTicksPerDay)[2])
+proc Hour*(d: DateTime): int32 = int32(d.nsTicks div nsTicksPerHour mod 24)
+proc Minute*(d: DateTime): int32 = int32(d.nsTicks div nsTicksPerMinute mod 60)
+proc Second*(d: DateTime): int32 = int32(d.nsTicks div nsTicksPerSecond mod 60)
+proc Millisecond*(d: DateTime): int32 = int32(d.nsTicks div nsTicksPerMs mod 1000)
+proc nsM_DayOfWeek*(d: DateTime): DayOfWeek = DayOfWeek(int32((d.nsTicks div nsTicksPerDay + 1) mod 7))
+proc DayOfYear*(d: DateTime): int32 =
+  let (y, _, _) = nsCivil(d.nsTicks div nsTicksPerDay)
+  int32(d.nsTicks div nsTicksPerDay - nsDaysFromCivil(y, 1, 1) + 1)
+proc Date*(d: DateTime): DateTime =
+  DateTime(nsTicks: d.nsTicks - d.nsTicks mod nsTicksPerDay, nsKind: d.nsKind)
+proc TimeOfDay*(d: DateTime): TimeSpan = TimeSpan(nsTicks: d.nsTicks mod nsTicksPerDay)
+
+proc AddTicks*(d: DateTime; value: int64): DateTime =
+  var r: int64
+  if addOverflow(d.nsTicks, value, r): r = -1
+  nsDate(r, d.nsKind)
+proc nsAddUnits(d: DateTime; value: float; scale: int64): DateTime =
+  ## The whole units, then the fraction of one, as .NET adds them.
+  let whole = trunc(value)
+  let t = whole * float(scale)
+  if not (t > -float(nsMaxDateTicks) - 1 and t < float(nsMaxDateTicks) + 1):
+    nsDateFail("Value to add was out of range.", "value")
+  d.AddTicks(int64(whole) * scale + int64((value - whole) * float(scale)))
+proc AddMilliseconds*(d: DateTime; value: float): DateTime = d.nsAddUnits(value, nsTicksPerMs)
+proc AddSeconds*(d: DateTime; value: float): DateTime = d.nsAddUnits(value, nsTicksPerSecond)
+proc AddMinutes*(d: DateTime; value: float): DateTime = d.nsAddUnits(value, nsTicksPerMinute)
+proc AddHours*(d: DateTime; value: float): DateTime = d.nsAddUnits(value, nsTicksPerHour)
+proc AddDays*(d: DateTime; value: float): DateTime = d.nsAddUnits(value, nsTicksPerDay)
+proc AddMonths*(d: DateTime; months: int32): DateTime =
+  ## The same day of the month, or the month's last when it has fewer days.
+  if months < -120000 or months > 120000:
+    nsDateFail("Months value must be between +/-120000.", "months")
+  let (y, m, day) = nsCivil(d.nsTicks div nsTicksPerDay)
+  let i = m - 1 + months
+  let ny = y + floorDiv(i, 12)
+  let nm = floorMod(i, 12) + 1
+  if ny < 1 or ny > 9999:
+    nsDateFail("The added or subtracted value results in an un-representable DateTime.", "months")
+  DateTime(nsTicks: nsDaysFromCivil(ny, nm, min(day, nsDaysIn(ny, nm))) * nsTicksPerDay +
+                    d.nsTicks mod nsTicksPerDay, nsKind: d.nsKind)
+proc AddYears*(d: DateTime; value: int32): DateTime =
+  if value < -10000 or value > 10000:
+    nsDateFail("Years value must be between +/-10000.", "years")
+  d.AddMonths(value * 12)
+proc Add*(d: DateTime; value: TimeSpan): DateTime = d.AddTicks(value.nsTicks)
+proc Subtract*(d: DateTime; value: TimeSpan): DateTime =
+  var r: int64
+  if subOverflow(d.nsTicks, value.nsTicks, r): r = -1
+  nsDate(r, d.nsKind)
+proc Subtract*(a, b: DateTime): TimeSpan = TimeSpan(nsTicks: a.nsTicks - b.nsTicks)
+proc `+`*(d: DateTime; value: TimeSpan): DateTime = d.Add(value)
+proc `-`*(d: DateTime; value: TimeSpan): DateTime = d.Subtract(value)
+proc `-`*(a, b: DateTime): TimeSpan = a.Subtract(b)
+proc `==`*(a, b: DateTime): bool = a.nsTicks == b.nsTicks
+  ## The instant alone, as .NET compares: the kind is not part of it.
+proc `<`*(a, b: DateTime): bool = a.nsTicks < b.nsTicks
+proc `<=`*(a, b: DateTime): bool = a.nsTicks <= b.nsTicks
+proc CompareTo*(a, b: DateTime): int32 = int32(cmp(a.nsTicks, b.nsTicks))
+proc Equals*(a, b: DateTime): bool = a.nsTicks == b.nsTicks
+proc GetHashCode*(a: DateTime): int32 = int32(a.nsTicks xor (a.nsTicks shr 32))
+proc Compare*(t: typedesc[DateTime]; a, b: DateTime): int32 = int32(cmp(a.nsTicks, b.nsTicks))
+
+proc nsFormatDate(d: DateTime; format: string): string =
+  ## en-US's names and separators; the standard patterns by their letter, whose
+  ## AM/PM follows a narrow no-break space (U+202F), as ICU's en-US has it.
+  var f = format
+  if f.len == 1:
+    case f[0]
+    of 'd': f = "M/d/yyyy"
+    of 'D': f = "dddd, MMMM d, yyyy"
+    of 't': f = "h:mm\u202Ftt"
+    of 'T': f = "h:mm:ss\u202Ftt"
+    of 'g': f = "M/d/yyyy h:mm\u202Ftt"
+    of 'G': f = "M/d/yyyy h:mm:ss\u202Ftt"
+    of 'f': f = "dddd, MMMM d, yyyy h:mm\u202Ftt"
+    of 'F': f = "dddd, MMMM d, yyyy h:mm:ss\u202Ftt"
+    of 's': f = "yyyy'-'MM'-'dd'T'HH':'mm':'ss"
+    of 'o', 'O': f = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffffK"
+    of 'u': f = "yyyy'-'MM'-'dd HH':'mm':'ss'Z'"
+    of 'M', 'm': f = "MMMM d"
+    of 'Y', 'y': f = "MMMM yyyy"
+    else:
+      raise newException(FormatException, "Input string was not in a correct format.")
+  let (y, mo, da) = nsCivil(d.nsTicks div nsTicksPerDay)
+  let h = d.nsTicks div nsTicksPerHour mod 24
+  result = ""
+  var i = 0
+  while i < f.len:
+    let c = f[i]
+    var n = 1
+    while i + n < f.len and f[i + n] == c and c in {'y', 'M', 'd', 'h', 'H', 'm', 's', 'f', 'F', 't'}: inc n
+    case c
+    of 'y':
+      if n <= 2: result.add nsPad(y mod 100, n) else: result.add nsPad(y, n)
+    of 'M':
+      if n <= 2: result.add nsPad(mo, n)
+      elif n == 3: result.add nsMonthNames[mo - 1][0 .. 2]
+      else: result.add nsMonthNames[mo - 1]
+    of 'd':
+      if n <= 2: result.add nsPad(da, n)
+      else:
+        let w = nsDayNames[int((d.nsTicks div nsTicksPerDay + 1) mod 7)]
+        result.add(if n == 3: w[0 .. 2] else: w)
+    of 'h': result.add nsPad((if h mod 12 == 0: 12 else: h mod 12), min(n, 2))
+    of 'H': result.add nsPad(h, min(n, 2))
+    of 'm': result.add nsPad(d.nsTicks div nsTicksPerMinute mod 60, min(n, 2))
+    of 's': result.add nsPad(d.nsTicks div nsTicksPerSecond mod 60, min(n, 2))
+    of 'f', 'F':
+      if n > 7: raise newException(FormatException, "Input string was not in a correct format.")
+      var digits = nsPad(d.nsTicks mod nsTicksPerSecond, 7)[0 ..< n]
+      if c == 'F':
+        digits = digits.strip(leading = false, chars = {'0'})
+        if digits.len == 0 and result.endsWith("."): result.setLen(result.len - 1)
+      result.add digits
+    of 't': result.add(if n == 1: (if h < 12: "A" else: "P") else: (if h < 12: "AM" else: "PM"))
+    of 'K':
+      if d.nsKind == 1: result.add 'Z'
+      elif d.nsKind == 2:
+        let off = -times.now().utcOffset div 60
+        result.add (if off < 0: "-" else: "+") & nsPad(abs(off) div 60, 2) & ":" & nsPad(abs(off) mod 60, 2)
+    of '\'', '"':
+      var j = i + 1
+      while j < f.len and f[j] != c:
+        result.add f[j]
+        inc j
+      n = j - i + 1
+    of '\\':
+      if i + 1 < f.len: result.add f[i + 1]
+      n = 2
+    of '%': discard
+    else: result.add c
+    i += n
+
+proc ToString*(d: DateTime): string = nsFormatDate(d, "G")
+proc ToString*(d: DateTime; format: string): string =
+  nsFormatDate(d, if format.len == 0: "G" else: format)
+proc `$`*(d: DateTime): string = d.ToString
+proc ToShortDateString*(d: DateTime): string = nsFormatDate(d, "d")
+proc ToLongDateString*(d: DateTime): string = nsFormatDate(d, "D")
+proc ToShortTimeString*(d: DateTime): string = nsFormatDate(d, "t")
+proc ToLongTimeString*(d: DateTime): string = nsFormatDate(d, "T")
 
 {.pop.}
 

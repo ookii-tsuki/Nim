@@ -1,0 +1,653 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Program"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'q'
+          nkEmpty
+          nkCall
+            nkBracketExpr
+              nkIdent 'newQueue'
+              nkIdent 'int32'
+      nkCall
+        nkDotExpr
+          nkIdent 'q'
+          nkIdent 'Enqueue'
+        nkIntLit 1
+      nkCall
+        nkDotExpr
+          nkIdent 'q'
+          nkIdent 'Enqueue'
+        nkIntLit 2
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'x'
+          nkIdent 'int32'
+          nkEmpty
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'q'
+                    nkIdent 'TryPeek'
+                  nkIdent 'x'
+                nkStrLit " "
+              nkIdent 'x'
+            nkStrLit " "
+          nkDotExpr
+            nkIdent 'q'
+            nkIdent 'Count'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'q'
+                    nkIdent 'TryDequeue'
+                  nkIdent 'x'
+                nkStrLit " "
+              nkIdent 'x'
+            nkStrLit " "
+          nkDotExpr
+            nkIdent 'q'
+            nkIdent 'Count'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkCall
+              nkDotExpr
+                nkIdent 'q'
+                nkIdent 'TryDequeue'
+              nkIdent 'x'
+            nkStrLit " "
+          nkIdent 'x'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'q'
+                        nkIdent 'TryDequeue'
+                      nkIdent 'x'
+                    nkStrLit " "
+                  nkIdent 'x'
+                nkStrLit " "
+              nkCall
+                nkDotExpr
+                  nkIdent 'q'
+                  nkIdent 'TryPeek'
+                nkIdent 'x'
+            nkStrLit " "
+          nkIdent 'x'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 's'
+          nkEmpty
+          nkCall
+            nkBracketExpr
+              nkIdent 'newStack'
+              nkIdent 'string'
+      nkCall
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'Push'
+        nkStrLit "a"
+      nkCall
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'Push'
+        nkStrLit "b"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 't'
+          nkIdent 'string'
+          nkEmpty
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkCall
+              nkDotExpr
+                nkIdent 's'
+                nkIdent 'TryPeek'
+              nkIdent 't'
+            nkStrLit " "
+          nkIdent 't'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkDotExpr
+                    nkIdent 's'
+                    nkIdent 'TryPop'
+                  nkIdent 't'
+                nkStrLit " "
+              nkIdent 't'
+            nkStrLit " "
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'Count'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkCall
+              nkDotExpr
+                nkIdent 's'
+                nkIdent 'TryPop'
+              nkIdent 't'
+            nkStrLit " "
+          nkIdent 't'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkCall
+                nkDotExpr
+                  nkIdent 's'
+                  nkIdent 'TryPop'
+                nkIdent 't'
+              nkStrLit " ["
+            nkIdent 't'
+          nkStrLit "]"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'pq'
+          nkEmpty
+          nkCall
+            nkBracketExpr
+              nkIdent 'newPriorityQueue'
+              nkIdent 'string'
+              nkIdent 'int32'
+      nkCall
+        nkDotExpr
+          nkIdent 'pq'
+          nkIdent 'Enqueue'
+        nkStrLit "low"
+        nkIntLit 5
+      nkCall
+        nkDotExpr
+          nkIdent 'pq'
+          nkIdent 'Enqueue'
+        nkStrLit "high"
+        nkIntLit 1
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'e'
+          nkIdent 'string'
+          nkEmpty
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'p'
+          nkIdent 'int32'
+          nkEmpty
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'pq'
+                    nkIdent 'TryPeek'
+                  nkIdent 'e'
+                  nkIdent 'p'
+                nkStrLit " "
+              nkIdent 'e'
+            nkStrLit " "
+          nkIdent 'p'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'pq'
+                        nkIdent 'TryDequeue'
+                      nkIdent 'e'
+                      nkIdent 'p'
+                    nkStrLit " "
+                  nkIdent 'e'
+                nkStrLit " "
+              nkIdent 'p'
+            nkStrLit " "
+          nkDotExpr
+            nkIdent 'pq'
+            nkIdent 'Count'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'pq'
+                    nkIdent 'TryDequeue'
+                  nkIdent 'e'
+                  nkIdent 'p'
+                nkStrLit " "
+              nkIdent 'e'
+            nkStrLit " "
+          nkIdent 'p'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'pq'
+                    nkIdent 'TryDequeue'
+                  nkIdent 'e'
+                  nkIdent 'p'
+                nkStrLit " ["
+              nkIdent 'e'
+            nkStrLit "] "
+          nkIdent 'p'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'd'
+          nkEmpty
+          nkBlockExpr
+            nkEmpty
+            nkStmtList
+              nkVarSection
+                nkIdentDefs
+                  nkIdent 'nsInit1'
+                  nkEmpty
+                  nkCall
+                    nkBracketExpr
+                      nkIdent 'newDictionary'
+                      nkIdent 'string'
+                      nkIdent 'int32'
+              nkCall
+                nkDotExpr
+                  nkIdent 'nsInit1'
+                  nkIdent 'Add'
+                nkStrLit "one"
+                nkIntLit 1
+              nkCall
+                nkDotExpr
+                  nkIdent 'nsInit1'
+                  nkIdent 'Add'
+                nkStrLit "two"
+                nkIntLit 2
+              nkIdent 'nsInit1'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'v'
+          nkIdent 'int32'
+          nkEmpty
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'd'
+                    nkIdent 'Remove'
+                  nkStrLit "one"
+                  nkIdent 'v'
+                nkStrLit " "
+              nkIdent 'v'
+            nkStrLit " "
+          nkDotExpr
+            nkIdent 'd'
+            nkIdent 'Count'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'd'
+                    nkIdent 'Remove'
+                  nkStrLit "one"
+                  nkIdent 'v'
+                nkStrLit " "
+              nkIdent 'v'
+            nkStrLit " "
+          nkDotExpr
+            nkIdent 'd'
+            nkIdent 'Count'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkCall
+              nkDotExpr
+                nkIdent 'd'
+                nkIdent 'Remove'
+              nkStrLit "two"
+            nkStrLit " "
+          nkDotExpr
+            nkIdent 'd'
+            nkIdent 'Count'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

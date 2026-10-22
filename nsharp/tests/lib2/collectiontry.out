@@ -1,0 +1,15 @@
+true 1 2
+true 1 1
+true 2
+false 0 false 0
+true b
+true b 1
+true a
+false []
+true high 1
+true high 1 1
+true low 5
+false [] 0
+true 1 1
+false 0 1
+true 0

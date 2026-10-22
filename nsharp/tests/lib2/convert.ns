@@ -1,0 +1,65 @@
+// System.Convert: rounding to even, .NET's range checks and messages, strings
+// read as Parse reads them, and numbers in other bases.
+using System;
+
+namespace Demo {
+    class Program {
+        static void T(Action f) {
+            try { f(); }
+            catch (Exception e) { Console.WriteLine(e.GetType().Name + ": " + e.Message); }
+        }
+
+        static void Main() {
+            T(() => Console.WriteLine(Convert.ToInt32(2.5)));
+            T(() => Console.WriteLine(Convert.ToInt32(3.5)));
+            T(() => Console.WriteLine(Convert.ToInt32(-2.5)));
+            T(() => Console.WriteLine(Convert.ToInt32(2.51)));
+            T(() => Console.WriteLine(Convert.ToInt32("42")));
+            T(() => Console.WriteLine(Convert.ToInt32(" 7 ")));
+            T(() => Console.WriteLine(Convert.ToInt32("x")));
+            T(() => Console.WriteLine(Convert.ToInt32("")));
+            T(() => Console.WriteLine(Convert.ToInt32(true)));
+            T(() => Console.WriteLine(Convert.ToInt32('A')));
+            T(() => Console.WriteLine(Convert.ToInt32(3000000000L)));
+            T(() => Console.WriteLine(Convert.ToInt32(1e10)));
+            T(() => Console.WriteLine(Convert.ToInt32(double.NaN)));
+            T(() => Console.WriteLine(Convert.ToInt64(2.5)));
+            T(() => Console.WriteLine(Convert.ToInt64("-9223372036854775808")));
+            T(() => Console.WriteLine(Convert.ToInt16(-5.5)));
+            T(() => Console.WriteLine(Convert.ToInt16(40000)));
+            T(() => Console.WriteLine(Convert.ToByte(300)));
+            T(() => Console.WriteLine(Convert.ToByte(-1)));
+            T(() => Console.WriteLine(Convert.ToByte("12")));
+            T(() => Console.WriteLine(Convert.ToUInt32(-1)));
+            T(() => Console.WriteLine(Convert.ToDouble("1.5")));
+            T(() => Console.WriteLine(Convert.ToDouble(3)));
+            T(() => Console.WriteLine(Convert.ToDouble(true)));
+            T(() => Console.WriteLine(Convert.ToBoolean("TRUE")));
+            T(() => Console.WriteLine(Convert.ToBoolean("yes")));
+            T(() => Console.WriteLine(Convert.ToBoolean(0)));
+            T(() => Console.WriteLine(Convert.ToBoolean(0.5)));
+            T(() => Console.WriteLine(Convert.ToChar(66)));
+            T(() => Console.WriteLine(Convert.ToChar(-1)));
+            T(() => Console.WriteLine(Convert.ToChar("Z")));
+            T(() => Console.WriteLine(Convert.ToString(42)));
+            T(() => Console.WriteLine(Convert.ToString(1.5)));
+            T(() => Console.WriteLine(Convert.ToString('c') + Convert.ToString("s")));
+            T(() => Console.WriteLine(Convert.ToString(255, 2)));
+            T(() => Console.WriteLine(Convert.ToString(255, 16)));
+            T(() => Console.WriteLine(Convert.ToString(-1, 16)));
+            T(() => Console.WriteLine(Convert.ToString(-2L, 16)));
+            T(() => Console.WriteLine(Convert.ToString(8, 8)));
+            T(() => Console.WriteLine(Convert.ToString(0, 2)));
+            T(() => Console.WriteLine(Convert.ToString(5, 3)));
+            T(() => Console.WriteLine(Convert.ToInt32("ff", 16)));
+            T(() => Console.WriteLine(Convert.ToInt32("0x1F", 16)));
+            T(() => Console.WriteLine(Convert.ToInt32("ffffffff", 16)));
+            T(() => Console.WriteLine(Convert.ToInt32("101", 2)));
+            T(() => Console.WriteLine(Convert.ToInt32("777", 8)));
+            T(() => Console.WriteLine(Convert.ToInt32("12z", 16)));
+            T(() => Console.WriteLine(Convert.ToInt32("z", 16)));
+            T(() => Console.WriteLine(Convert.ToInt32("100000000", 16)));
+            T(() => Console.WriteLine(Convert.ToInt64("ffffffffffffffff", 16)));
+        }
+    }
+}

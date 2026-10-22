@@ -56,10 +56,15 @@ Still open, recorded rather than fixed:
 
 * `GetType()` of a library collection (`List<int>`) is `System.Object`, and a
   generic type's `FullName` does not assembly-qualify its arguments as .NET does.
-* `string.Format`, and `Equals` / `GetHashCode` on `int`, `string` and structs, are
-  not in the prelude; nor is `System.Random` (library work).
 * The documented divergences stand: float and bool spelling, a null `string` being
-  `""`, `decimal`, `goto`, LINQ.
+  `""`, `decimal`, `goto`. (`string.Format`, value `Equals`/`GetHashCode`,
+  `Random` and LINQ method syntax have since been written; SPEC §15.)
+* Found while testing the library (language, not library):
+  * `static void T<R>(Func<R> f)` called as `T(() => 42)`: the type argument is not
+    inferred from the lambda's result (`undeclared identifier: 'R'`). Writing
+    `T<int>(...)` works.
+  * `Func<object> f = () => 42;` (or a lambda passed for a `Func<object>`): the
+    result is not boxed (`got 'int literal(42)' ... expected 'RootRef'`).
 
 The original report follows unchanged.
 

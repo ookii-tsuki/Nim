@@ -1,0 +1,49 @@
+// System.Enum's generic statics over a user's enums and the library's
+// DayOfWeek alike: values and names in declaration order, parsing names,
+// numbers and flag lists, and the failures .NET reports.
+using System;
+
+namespace Demo {
+    enum Color { Red, Green = 5, Blue }
+
+    [Flags]
+    enum Perm { None = 0, Read = 1, Write = 2, Exec = 4 }
+
+    enum Small : byte { A = 1, B = 200 }
+
+    class Program {
+        static void T(Action f) {
+            try { f(); }
+            catch (Exception e) { Console.WriteLine(e.GetType().Name + ": " + e.Message); }
+        }
+
+        static void Main() {
+            Console.WriteLine(string.Join(",", Enum.GetValues<Color>()));
+            Console.WriteLine(string.Join(",", Enum.GetNames<Color>()));
+            Console.WriteLine(string.Join(",", Enum.GetNames<DayOfWeek>()));
+            foreach (Perm p in Enum.GetValues<Perm>()) Console.Write((int)p + " ");
+            Console.WriteLine();
+            T(() => Console.WriteLine(Enum.Parse<Color>("Blue")));
+            T(() => Console.WriteLine(Enum.Parse<Color>("  Green ")));
+            T(() => Console.WriteLine(Enum.Parse<Color>("blue", true)));
+            T(() => Console.WriteLine(Enum.Parse<Color>("blue")));
+            T(() => Console.WriteLine(Enum.Parse<Color>("5")));
+            T(() => Console.WriteLine(Enum.Parse<Color>("7")));
+            T(() => Console.WriteLine(Enum.Parse<Color>("")));
+            T(() => Console.WriteLine(Enum.Parse<Perm>("Read, Write")));
+            T(() => Console.WriteLine(Enum.Parse<Perm>("Read,Exec,Write")));
+            T(() => Console.WriteLine(Enum.Parse<Small>("300")));
+            T(() => Console.WriteLine(Enum.Parse<DayOfWeek>("Friday")));
+            Console.WriteLine(Enum.IsDefined(Color.Blue) + " " + Enum.IsDefined((Color)3));
+            Console.WriteLine(Enum.IsDefined(Perm.Read | Perm.Write));
+            Console.WriteLine(Enum.GetName(Color.Green) + " " + Enum.GetName(DayOfWeek.Monday));
+            Color c;
+            Console.WriteLine(Enum.TryParse<Color>("Green", out c) + " " + c);
+            Console.WriteLine(Enum.TryParse("Nope", out c) + " " + c);
+            Console.WriteLine(Enum.TryParse("RED", true, out c) + " " + c);
+            Perm q;
+            Console.WriteLine(Enum.TryParse("Write, Exec", out q) + " " + q + " " + (int)q);
+            Console.WriteLine(Enum.GetValues<Color>().Length);
+        }
+    }
+}

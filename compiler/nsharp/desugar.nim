@@ -152,6 +152,9 @@ proc memberIdent(l: Lowerer; name: string; recv: NsNode; info: TLineInfo): PNode
   ## (see `memberRenames`), the C# name otherwise.
   if l.imports != nil and name in l.imports.memberRenames and l.isUserReceiver(recv):
     l.id("nsM_" & name, info)
+  elif name in l.surface.renamedMembers and not l.isUserReceiver(recv):
+    ## The library declares it under the same spelling, for the same reason.
+    l.id("nsM_" & name, info)
   else: l.id(name, info)
 
 proc noteMemberImport(l: Lowerer; n: NsNode) =
@@ -167,7 +170,7 @@ proc noteMemberImport(l: Lowerer; n: NsNode) =
   let m = l.surface.member(recv, rk, n.name)
   if m.path == NsIntrinsicsPath: return
   if m.name.len > 0:
-    l.imports.note(m.path, m.name)
+    l.imports.note(m.path, (if m.name in l.surface.renamedMembers: "nsM_" & m.name else: m.name))
     return
   ## The library declares nothing of this shape, but the qualifier names one of its
   ## namespaces: the name belongs to that namespace's *module*, since the qualifier
@@ -3624,6 +3627,18 @@ proc lowerEnum(l: Lowerer; n: NsNode; into: var seq[PNode]) =
     newTree(nkCall, info, l.id("nsEnumName", info),
       newTree(nkCall, info, l.id("int64", info), under("a")), table,
       l.id(if n.hasAttribute("Flags"): "true" else: "false", info)))
+  ## The members and whether they are flags, for `Enum`'s static members (the
+  ## library's `GetValues`, `Parse`, ...) to read through the type.
+  proc onType(name: string; ret, body: PNode): PNode =
+    l.mkProc(l.exportId(name, info), newTree(nkFormalParams, info, ret,
+      newTree(nkIdentDefs, info, l.id("t", info), newTree(nkBracketExpr, info,
+        l.id("typedesc", info), copyTree(e)), empty(info))),
+      newTree(nkStmtList, info, body), info)
+  into.add onType("nsEnumMembers", newTree(nkBracketExpr, info, l.id("seq", info),
+      newTree(nkTupleConstr, info, l.id("string", info), l.id("int64", info))),
+    newTree(nkPrefix, info, l.id("@", info), copyTree(table)))
+  into.add onType("nsEnumIsFlags", l.id("bool", info),
+    l.id(if n.hasAttribute("Flags"): "true" else: "false", info))
   let ts = op("ToString", l.id("string", info), @[single(copyTree(e))],
     newTree(nkPrefix, info, l.id("$", info), l.id("a", info)))
   ## A call statement may drop it, as any method's result.

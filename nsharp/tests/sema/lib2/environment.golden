@@ -1,0 +1,21 @@
+using System
+member Console.Write = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Environment.CurrentDirectory = System | string
+member Environment.Exit = System | void
+member Environment.GetEnvironmentVariable = System | string
+member Environment.GetEnvironmentVariable = System | string
+member Environment.NewLine = System | string
+member Environment.ProcessorCount = System | int
+member Environment.SetEnvironmentVariable = System | void
+member Environment.TickCount64 = System | int
+member array.Length = System | int
+member string.Length = System | int
+member string.Length = System | int

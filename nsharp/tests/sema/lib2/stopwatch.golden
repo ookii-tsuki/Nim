@@ -1,0 +1,27 @@
+using System
+using System.Diagnostics
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Debug.Assert = System.Diagnostics | void
+member Debug.Assert = System.Diagnostics | void
+member Debug.Write = System.Diagnostics | void
+member Debug.WriteLine = System.Diagnostics | void
+member Stopwatch.ElapsedMilliseconds = System.Diagnostics | int
+member Stopwatch.ElapsedTicks = System.Diagnostics | int
+member Stopwatch.ElapsedTicks = System.Diagnostics | int
+member Stopwatch.ElapsedTicks = System.Diagnostics | int
+member Stopwatch.ElapsedTicks = System.Diagnostics | int
+member Stopwatch.Frequency = System.Diagnostics | int
+member Stopwatch.GetTimestamp = System.Diagnostics | int
+member Stopwatch.IsRunning = System.Diagnostics | bool
+member Stopwatch.IsRunning = System.Diagnostics | bool
+member Stopwatch.IsRunning = System.Diagnostics | bool
+member Stopwatch.IsRunning = System.Diagnostics | bool
+member Stopwatch.Reset = System.Diagnostics | void
+member Stopwatch.Restart = System.Diagnostics | void
+member Stopwatch.Start = System.Diagnostics | void
+member Stopwatch.Stop = System.Diagnostics | void

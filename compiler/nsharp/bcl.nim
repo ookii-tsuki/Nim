@@ -58,6 +58,9 @@ type
       ## The namespaces the prelude is written in, and their prefixes.
     staticDecls: seq[NsStaticDecl]
       ## Pending `{.nsStatic: "T".}` pragmas, resolved after every file is read.
+    renamedMembers*: HashSet[string]
+      ## Members declared as `nsM_X` because a type is named `X` too (Nim gives a
+      ## name to one of them), as the lowering renames a user's own; filed as `X`.
 
 const
   ## The prelude's location in the library, and the module every N# module gets.
@@ -465,6 +468,9 @@ proc loadTypes(s: var NsBclSurface; n: PNode; module = "") =
           elif n.kind == nkPar and n.len == 1: alternatives(n[0], into)
           else: into.add n
         alternatives(body, t.union)
+      of nkDistinctTy:
+        ## `distinct int32`, how an enum lowers: its own type, not the number's.
+        discard
       else:
         let a = headSpelling(body)
         if a.len > 0 and a != t.name: t.alias = a
@@ -487,8 +493,11 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
   ## One declaration as a member: the receiver is its first parameter, and a type
   ## parameter receiver stands for what that parameter is constrained to.
   if n.len < 4: return
-  let name = declaredName(n[0])
+  var name = declaredName(n[0])
   if name.len == 0: return
+  if name.startsWith("nsM_") and name.len > 4:
+    name = name[4 .. ^1]
+    s.renamedMembers.incl name
   var constraints = initTable[string, string]()
   if n[2] != nil and n[2].kind == nkGenericParams:
     for i in 0 ..< n[2].len:

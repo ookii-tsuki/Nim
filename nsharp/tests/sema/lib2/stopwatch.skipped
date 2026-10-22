@@ -1,0 +1,3 @@
+Stopwatch.Elapsed = result:other
+Stopwatch.StartNew = result:other
+TimeSpan.Zero = result:other

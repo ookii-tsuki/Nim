@@ -1,0 +1,33 @@
+true false
+true
+17
+3 [hello|world|last]
+last!
+x\ny\n
+4
+IOException: The file '<dir>/c.txt' already exists.
+a.txt
+b.log
+d.txt
+txt a.txt
+txt d.txt
+dir sub
+FileNotFoundException: Could not find file '<dir>/nope.txt'.
+DirectoryNotFoundException: Could not find a part of the path '<dir>/no/nope.txt'.
+DirectoryNotFoundException: Could not find a part of the path '<dir>/no/nope.txt'.
+IOException: Directory not empty : '<dir>'
+false
+o
+1: one
+2: 2-
+3: 
+4: four
+5: five
+o|17|-1
+false
+a/b/c.txt /abs/x y
+a/b z.tar.gz .gz
+z.tar /x/y /
+[][][.bashrc][]
+/a/b.md b.cs true truefalse
+/a/c /:

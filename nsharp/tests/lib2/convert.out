@@ -1,0 +1,50 @@
+2
+4
+-2
+3
+42
+7
+FormatException: The input string 'x' was not in a correct format.
+FormatException: The input string '' was not in a correct format.
+1
+65
+OverflowException: Value was either too large or too small for an Int32.
+OverflowException: Value was either too large or too small for an Int32.
+OverflowException: Value was either too large or too small for an Int32.
+2
+-9223372036854775808
+-6
+OverflowException: Value was either too large or too small for an Int16.
+OverflowException: Value was either too large or too small for an unsigned byte.
+OverflowException: Value was either too large or too small for an unsigned byte.
+12
+OverflowException: Value was either too large or too small for a UInt32.
+1.5
+3.0
+1.0
+true
+FormatException: String 'yes' was not recognized as a valid Boolean.
+false
+true
+B
+OverflowException: Value was either too large or too small for a character.
+Z
+42
+1.5
+cs
+11111111
+ff
+ffffffff
+fffffffffffffffe
+10
+0
+ArgumentException: Invalid Base.
+255
+31
+-1
+5
+511
+FormatException: Additional non-parsable characters are at the end of the string.
+FormatException: Could not find any recognizable digits.
+OverflowException: Value was either too large or too small for a UInt32.
+-1

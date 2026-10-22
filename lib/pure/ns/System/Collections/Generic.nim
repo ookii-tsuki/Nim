@@ -24,7 +24,8 @@
 #                    RemoveAll RemoveAt RemoveRange Reverse Sort ToArray TrimExcess
 #                    TrueForAll, [] []=
 #   Dictionary<K,V>  Add Clear ContainsKey ContainsValue Count GetValueOrDefault
-#                    Keys Remove TryAdd Values, [] []=, foreach KeyValuePair
+#                    Keys Remove (also with `out value`) TryAdd TryGetValue
+#                    Values, [] []=, foreach KeyValuePair
 #   KeyCollection, ValueCollection  Count CopyTo, foreach (live views)
 #   KeyValuePair<K,V> Key Value
 #   HashSet<T>       Add Clear Contains Count ExceptWith IntersectWith
@@ -36,12 +37,14 @@
 #   SortedList<K,V>  the SortedDictionary<K,V> members, plus GetKeyAtIndex
 #                    GetValueAtIndex IndexOfKey IndexOfValue RemoveAt
 #   Queue<T>         Clear Contains CopyTo Count Dequeue Enqueue Peek ToArray
-#                    TrimExcess
+#                    TrimExcess TryDequeue TryPeek
 #   Stack<T>         Clear Contains CopyTo Count Peek Pop Push ToArray TrimExcess
+#                    TryPeek TryPop
 #   LinkedList<T>    AddAfter AddBefore AddFirst AddLast Clear Contains Count Find
 #                    FindLast First Last Remove RemoveFirst RemoveLast
 #   LinkedListNode<T> Next Previous Value
 #   PriorityQueue<E,P> Clear Count Dequeue Enqueue EnqueueDequeue Peek
+#                    TryDequeue TryPeek
 #
 # Every collection can be walked with `foreach`. Constructors take nothing, a
 # capacity (ignored, as it only sizes the backing store), or any collection of
@@ -49,8 +52,6 @@
 # `IEnumerable<T>` likewise takes any collection or array.
 #
 # Deliberately absent, with the reason:
-#   * `TryDequeue`, `TryPeek`, `TryPop`, `Remove(key, out value)`: not yet written
-#     (`Dictionary.TryGetValue` is).
 #   * `IComparer<T>`, `IEqualityComparer<T>` and the overloads that take them.
 #     `IEnumerable<T>` is a concrete type here. The collection interfaces
 #     (`IList<T>`, `IDictionary<K,V>`, ...) are at the end of this file.
@@ -680,6 +681,16 @@ proc GetValueOrDefault*[K, V](t: Dictionary[K, V]; k: K; defaultValue: V): V =
 proc Remove*[K, V](t: Dictionary[K, V]; k: K): bool =
   result = t.data.remove(k)
   if result: touch t
+proc Remove*[K, V](t: Dictionary[K, V]; k: K; value: var V): bool =
+  ## Removes the entry under `k`, handing back its value; the default when none.
+  let p = t.data.getPtr(k)
+  if p == nil:
+    value = default(V)
+    return false
+  value = p[]
+  discard t.data.remove(k)
+  touch t
+  true
 proc TryGetValue*[K, V](t: Dictionary[K, V]; k: K; value: var V): bool =
   ## The value under `k` when there is one; `value` is the default when not.
   let p = t.data.getPtr(k)
@@ -1149,6 +1160,20 @@ proc Dequeue*[T](q: Queue[T]): T =
 proc Peek*[T](q: Queue[T]): T =
   if q.data.len == 0: raise newException(InvalidOperationException, "Queue empty.")
   q.data.peekFirst
+proc TryDequeue*[T](q: Queue[T]; value: var T): bool =
+  ## `Dequeue` when there is an element; otherwise false and the default.
+  if q.data.len == 0:
+    value = default(T)
+    return false
+  touch q
+  value = q.data.popFirst
+  true
+proc TryPeek*[T](q: Queue[T]; value: var T): bool =
+  if q.data.len == 0:
+    value = default(T)
+    return false
+  value = q.data.peekFirst
+  true
 proc Contains*[T](q: Queue[T]; x: T): bool = x in q.data
 proc Clear*[T](q: Queue[T]) =
   q.data.clear()
@@ -1186,6 +1211,20 @@ proc Pop*[T](s: Stack[T]): T =
 proc Peek*[T](s: Stack[T]): T =
   if s.data.len == 0: raise newException(InvalidOperationException, "Stack empty.")
   s.data[^1]
+proc TryPop*[T](s: Stack[T]; value: var T): bool =
+  ## `Pop` when there is an element; otherwise false and the default.
+  if s.data.len == 0:
+    value = default(T)
+    return false
+  touch s
+  value = s.data.pop
+  true
+proc TryPeek*[T](s: Stack[T]; value: var T): bool =
+  if s.data.len == 0:
+    value = default(T)
+    return false
+  value = s.data[^1]
+  true
 proc Contains*[T](s: Stack[T]; x: T): bool = x in s.data
 proc Clear*[T](s: Stack[T]) =
   s.data.setLen(0)
@@ -1382,6 +1421,24 @@ proc Dequeue*[E, P](q: PriorityQueue[E, P]): E =
   let last = q.nodes.pop
   if q.nodes.len > 0: q.moveDown(last, 0)
   touch q
+proc TryPeek*[E, P](q: PriorityQueue[E, P]; element: var E; priority: var P): bool =
+  ## The front element and its priority, when there is one.
+  if q.nodes.len == 0:
+    element = default(E)
+    priority = default(P)
+    return false
+  (element, priority) = q.nodes[0]
+  true
+proc TryDequeue*[E, P](q: PriorityQueue[E, P]; element: var E; priority: var P): bool =
+  if q.nodes.len == 0:
+    element = default(E)
+    priority = default(P)
+    return false
+  (element, priority) = q.nodes[0]
+  let last = q.nodes.pop
+  if q.nodes.len > 0: q.moveDown(last, 0)
+  touch q
+  true
 proc EnqueueDequeue*[E, P](q: PriorityQueue[E, P]; element: E; priority: P): E =
   ## Enqueues, then dequeues; an element that would leave at once never enters.
   if q.nodes.len == 0 or not (q.nodes[0][1] < priority): return element
