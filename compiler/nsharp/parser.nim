@@ -538,6 +538,14 @@ proc parseParams(p: var NsParser): seq[NsNode]
 proc parsePrimary(p: var NsParser): NsNode =
   if looksLikeLambda(p):
     return p.parseLambda()
+  if p.at(nsIdent) and p.peek.text == "static" and not p.peek.verbatim:
+    ## `static x => ...` / `static delegate (...) { }` (C# 9): a lambda that may not
+    ## capture, which changes nothing about what it does.
+    let save = p.pos
+    discard p.advance
+    if looksLikeLambda(p): return p.parseLambda()
+    if p.at(nsIdent) and p.peek.text == "delegate": return p.parsePrimary()
+    p.pos = save
   let t = p.peek
   case t.kind
   of nsStrLit:

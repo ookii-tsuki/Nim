@@ -1575,8 +1575,10 @@ proc checkOperands(ctx: NsCheckContext; n: NsNode; lk, rk: NsTypeKind) =
   proc integral(k: NsTypeKind): bool = k in {tkInt, tkChar}
   let ok =
     case n.name
-    of "+": lk == tkString or rk == tkString or (num(lk) and num(rk))
-    of "-", "*", "/", "nsDiv", "mod", "nsMod", "nsFmod": num(lk) and num(rk)
+    of "+": lk == tkString or rk == tkString or (num(lk) and num(rk)) or
+            (lk == tkDelegate and rk == tkDelegate)
+    of "-": (num(lk) and num(rk)) or (lk == tkDelegate and rk == tkDelegate)
+    of "*", "/", "nsDiv", "mod", "nsMod", "nsFmod": num(lk) and num(rk)
     of "<", ">", "<=", ">=": num(lk) and num(rk)
     of "==", "!=":
       (num(lk) and num(rk)) or (lk == rk and lk in {tkBool, tkString, tkClass})
@@ -2262,6 +2264,19 @@ proc isDeferred(v: NsNode): bool =
   v != nil and (v.kind == nsnLambda or
                 v.kind in {nsnNew, nsnDefault, nsnArrayLit, nsnCollection} and v.typ == nil)
 
+proc applySigDeep(ctx: NsCheckContext; lam: NsNode; sig: NsSig) =
+  ## `applySig`, and a lambda the lambda returns (`x => y => x + y`) takes the
+  ## signature of the delegate the outer one's result is.
+  applySig(lam, sig)
+  if lam == nil or lam.kind != nsnLambda or not sig.known or sig.ret == nil: return
+  let inner = delegateSig(ctx.scope, ctx.surface, sig.ret)
+  if not inner.known or lam.body == nil: return
+  for st in lam.body.sons:
+    if st == nil: continue
+    if st.kind == nsnLambda: ctx.applySigDeep(st, inner)
+    elif st.kind == nsnReturn and st.body != nil and st.body.kind == nsnLambda:
+      ctx.applySigDeep(st.body, inner)
+
 proc isLambdaArg(a: NsNode): bool =
   a != nil and (isDeferred(a) or
                 (a.kind == nsnNamedArg and isDeferred(a.body)))
@@ -2467,7 +2482,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   for j, a in n.sons:
     if isLambdaArg(a):
       let v = (if a.kind == nsnNamedArg: a.body else: a)
-      if v.kind == nsnLambda: applySig(v, sigs[j])
+      if v.kind == nsnLambda: applySigDeep(ctx, v, sigs[j])
       elif a.argParam != nil:
         var pt = a.argParam.typ
         if a.argElement and pt != nil and pt.kind == nsnArrayType: pt = pt.typ
@@ -3124,6 +3139,11 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
             ## division rule below asks about.
             lk = kindOfNumeric(p)
             rk = lk
+    if n.name in ["+", "-"] and lk == tkDelegate and rk == tkDelegate:
+      ## Delegate combination and removal: a delegate of the left operand's type.
+      n.setType(tkDelegate, n.sons[0].typeName)
+      n.rtype = n.sons[0].rtype
+      return tkDelegate
     case n.name
     of "==", "!=", "<", ">", "<=", ">=":
       result = tkBool
@@ -3572,7 +3592,7 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
     if sig.known and n.body.strVal != "anyParams" and n.body.params.len != sig.params.len:
       ## The lambda takes another number of parameters than its delegate (CS1593).
       nsError(ctx.config, n.body.info, ndLambdaArity, typeSpelling(n.typ), $n.body.params.len)
-    applySig(n.body, sig)
+    applySigDeep(ctx, n.body, sig)
   if n.kind == nsnLocalDecl: ctx.checkTypeArgs(n.typ)
   if n.body != nil:
     let initKind = ctx.walkExpr(n.body)
@@ -3911,7 +3931,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
     if n.sons.len > 1: ctx.targetTyped(n.sons[1], n.sons[0].rtype)
     if n.sons.len > 1 and n.sons[1] != nil and n.sons[1].kind == nsnLambda:
       ## `f = x => ...;`: the target's delegate type types the lambda.
-      applySig(n.sons[1], delegateSig(ctx.scope, ctx.surface, n.sons[0].rtype))
+      applySigDeep(ctx, n.sons[1], delegateSig(ctx.scope, ctx.surface, n.sons[0].rtype))
     for i in 1 ..< n.sons.len: discard ctx.walkExpr(n.sons[i])
     ctx.checkAssignable(n.sons[0])
     let ev = ctx.eventOf(n.sons[0])
@@ -4027,6 +4047,9 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
         nsError(ctx.config, n.info, ndReturnNeedsValue, typeSpelling(ctx.retType))
     if n.body != nil:
       if n.kind == nsnReturn: ctx.targetTyped(n.body, ctx.retType)
+      if n.kind == nsnReturn and n.body.kind == nsnLambda and ctx.retType != nil:
+        ## `return x => ...` takes the declared delegate's signature.
+        ctx.applySigDeep(n.body, delegateSig(ctx.scope, ctx.surface, ctx.retType))
       discard ctx.walkExpr(n.body)
       if n.kind == nsnReturn:
         ## The declared return type is the conversion C# applies to `return`.
@@ -4248,7 +4271,7 @@ proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
       ctx.isStaticCtx = m.attrs.isStatic
       ctx.targetTyped(m.body, m.typ)
       if m.body.kind == nsnLambda:
-        applySig(m.body, delegateSig(ctx.scope, ctx.surface, m.typ))
+        applySigDeep(ctx, m.body, delegateSig(ctx.scope, ctx.surface, m.typ))
       discard ctx.walkExpr(m.body)
       ctx.checkConvertible(m.body, ctx.targetOfType(m.typ), m.body.info)
       ctx.coerce(m.body, declTypeName(m.typ), m.body.info, m.typ)

@@ -1,0 +1,18 @@
+// A lambda returning a lambda (`x => y => x + y`) types the inner one from the
+// delegate the outer one's result is, also through `return`.
+using System;
+class Program {
+    static Func<int, Func<int, int>> Make() { return a => b => a * b; }
+    static void Main() {
+        Func<int, Func<int, int>> adder = x => y => x + y;
+        Console.WriteLine(adder(3)(4));
+        Func<int, Func<int, Func<int, int>>> three = x => y => z => x + y + z;
+        Console.WriteLine(three(1)(2)(3));
+        Func<string, Func<int, string>> rep = s => { return n => s + n; };
+        Console.WriteLine(rep("a")(5));
+        Console.WriteLine(Make()(6)(7));
+        Func<int, Func<int, int>> f2;
+        f2 = x => y => x - y;
+        Console.WriteLine(f2(10)(3));
+    }
+}

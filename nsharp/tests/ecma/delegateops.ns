@@ -1,0 +1,20 @@
+// Delegate combination and removal with `+`/`-` (ECMA-334 12.10.5), C# 9 static
+// lambdas and anonymous methods, and a statement-expression body (`() => cnt++`)
+// for a delegate that returns nothing (12.19.4).
+using System;
+class Program {
+    static int Twice(int x) => x * 2;
+    static void Main() {
+        Action a = () => Console.Write("x");
+        Action b = () => Console.Write("y");
+        Action ab = a + b; ab(); Console.WriteLine();
+        Action aba = ab + a; aba(); Console.WriteLine();
+        Action back = aba - a; back(); Console.WriteLine();
+        Action none = a - a; Console.WriteLine(none == null ? "null" : "not null");
+        Func<int, int> f = static x => x + 1;
+        Func<int, int> g = static delegate (int x) { return x * 3; };
+        Func<int, int, int> h = static (x, y) => x * y;
+        Console.WriteLine(f(1) + " " + g(2) + " " + h(3, 4));
+        int cnt = 0; Action inc = () => cnt++; inc(); inc(); Console.WriteLine(cnt);
+    }
+}

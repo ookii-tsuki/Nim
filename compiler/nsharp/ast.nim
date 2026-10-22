@@ -249,6 +249,9 @@ type
     argNative*: bool          ## ... to a native class's constructor (C++ types)
     noDefault*: bool          ## nsnParam: its default is filled in at each call
                               ## instead (an overload of the same arity exists)
+    cell*: bool               ## nsnLocalDecl / nsnForeach: a variable of a loop body
+                              ## a lambda captures, kept in a cell per iteration
+    captures*: seq[string]    ## nsnLambda: the loop-body cells it captures
     typeKind*: NsTypeKind     ## set by `sema.nim` on expressions
     typeName*: string         ## the resolved type name behind `typeKind`
     argConv*: NsArgConv       ## `nsnCall`/`nsnNew` argument: C#'s implicit conversion

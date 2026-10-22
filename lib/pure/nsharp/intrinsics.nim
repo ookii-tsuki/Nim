@@ -193,6 +193,12 @@ proc nsCreate*[T: not ref](t: typedesc[T]): T =
   ## which calls its parameterless constructor.
   default(T)
 
+proc nsCellOf*[T](v: T): ref T {.inline.} =
+  ## A loop-body variable a lambda captures: one cell per iteration, which every
+  ## closure of that iteration shares and no other iteration does.
+  new(result)
+  result[] = v
+
 proc nsIsNull*[T](x: T): bool {.inline.} =
   ## `x == null` for a value of a type parameter: never for a value type, as C#
   ## has it, the empty string for a `string` (N#'s null one), and `nil` otherwise.

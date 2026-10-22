@@ -449,6 +449,11 @@ proc someNamed(l: Lowerer; v: PNode; name: string; info: TLineInfo): PNode
 proc presentOf(l: Lowerer; v: NsNode; info: TLineInfo): PNode
 proc wrappedArg(l: Lowerer; a: NsNode): PNode
 
+proc copyNsNode(n: NsNode): NsNode =
+  ## A shallow copy: the same children, so a rewrite can replace some of them.
+  result = NsNode()
+  result[] = n[]
+
 proc isTypeParamValue(l: Lowerer; e: NsNode): bool =
   ## A value whose static type is one of the enclosing type parameters.
   e != nil and e.kind != nsnNull and e.typeName.len > 0 and
@@ -554,8 +559,35 @@ proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
   result = newNodeI(nkLambda, n.info, 7)
   for i in 0 .. 6: result[i] = empty(n.info)
   result[3] = fp
-  result[6] = if n.body != nil: prependAll(l.stmtSeq(n.body), l.shadowParams(n.params, n.body, n.info))
+  var body = n.body
+  if body != nil and body.strVal == "expr" and body.sons.len == 1 and n.typ != nil and
+     n.typ.kind in {nsnVoidType, nsnEmpty}:
+    ## `() => x++` for a delegate returning nothing: the expression is a statement
+    ## (12.19.4), so its value, if it has one, is dropped.
+    let st = nsn(nsnExprStmt, body.sons[0].info)
+    st.body = body.sons[0]
+    body = copyNsNode(body)
+    body.strVal = ""
+    body.sons = @[st]
+  result[6] = if body != nil: prependAll(l.stmtSeq(body), l.shadowParams(n.params, body, n.info))
               else: emptyList(n.info)
+  if n.captures.len > 0:
+    ## It captures loop-body cells: made by a factory taking them, so it keeps
+    ## this iteration's (see `markLoopCells`).
+    let ffp = newNodeI(nkFormalParams, n.info)
+    ffp.add l.id("auto", n.info)
+    let call = newNodeI(nkCall, n.info)
+    for c in n.captures:
+      ffp.add newTree(nkIdentDefs, n.info, l.id(c, n.info),
+                      newTree(nkCall, n.info, l.id("typeof", n.info), l.id(c, n.info)),
+                      empty(n.info))
+    let factory = newNodeI(nkLambda, n.info, 7)
+    for i in 0 .. 6: factory[i] = empty(n.info)
+    factory[3] = ffp
+    factory[6] = newTree(nkStmtList, n.info, result)
+    call.add newTree(nkPar, n.info, factory)
+    for c in n.captures: call.add l.id(c, n.info)
+    result = call
 
 proc mayMutate(n: NsNode): bool =
   ## Whether evaluating `n` may change a variable: it calls something, assigns, or
@@ -1555,6 +1587,13 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       let v = (if n.sons[0].kind == nsnNull: n.sons[1] else: n.sons[0])
       result = newTree(nkCall, n.info, l.id("nsIsNull", n.info), l.expr(v))
       if n.name == "!=": result = newTree(nkPrefix, n.info, l.id("not", n.info), result)
+    elif n.name in ["+", "-"] and n.sons.len == 2 and n.sons[0].typeKind == tkDelegate and
+         n.sons[1].typeKind == tkDelegate:
+      ## `a + b` on delegates: one that calls `a`'s list, then `b`'s; `a - b`: `a`'s
+      ## list without the last run equal to `b`'s (12.10.5, 12.11.6).
+      result = newTree(nkCall, n.info,
+                       l.id((if n.name == "+": "nsCombine" else: "nsRemove"), n.info),
+                       l.ordered(n.sons[0], n.sons[1 .. 1]), l.expr(n.sons[1]))
     elif isCheckedOp(n):
       result = newTree(nkCall, n.info, l.id(checkedOperatorName(n.argParam), n.info),
                        l.ordered(n.sons[0], n.sons[1 .. 1]), l.expr(n.sons[1]))
@@ -1657,7 +1696,7 @@ proc cursorLocal(l: Lowerer; d: NsNode; rest: openArray[NsNode]): bool =
   ## `var b = a[i];` where nothing for the rest of the block can release `b`'s
   ## object or reassign `b`: Nim's `{.cursor.}`, a borrow that counts no
   ## reference (the element keeps it alive), as C#'s plain reference read does.
-  if d.body == nil or d.body.kind != nsnIndex or d.paramMod.len > 0 or
+  if d.body == nil or d.body.kind != nsnIndex or d.paramMod.len > 0 or d.cell or
      d.declKind == dkConst or d.body.typeKind notin {tkClass, tkString}:
     return false
   for x in rest:
@@ -2447,6 +2486,16 @@ proc localDeclToNim(l: Lowerer; n: NsNode): PNode =
   elif nullable:
     ## `int? x;` starts absent.
     value = l.noneCall(n.typ, n.info)
+  if n.cell:
+    ## A loop-body variable a lambda captures: a cell per iteration.
+    let t = defs[1]
+    let init = (if value.kind != nkEmpty: value
+                else: newTree(nkCall, n.info, l.id("default", n.info), copyTree(t)))
+    let maker = (if t.kind != nkEmpty:
+                   newTree(nkBracketExpr, n.info, l.id("nsCellOf", n.info), copyTree(t))
+                 else: l.id("nsCellOf", n.info))
+    defs[1] = empty(n.info)
+    value = newTree(nkCall, n.info, maker, init)
   defs.add value
   let kind = case n.declKind
     of dkVar: nkVarSection
@@ -2473,11 +2522,6 @@ proc isPropertyRead(l: Lowerer; e: NsNode): bool =
   let owner = (if e.body.kind == nsnThis and l.curClass != nil: l.curClass.name
                else: canonicalTypeName(e.body.typeName))
   l.scope.classes.hasKey(owner) and l.scope.findMemberInfo(owner, e.name).isProperty
-
-proc copyNsNode(n: NsNode): NsNode =
-  ## A shallow copy: the same children, so a rewrite can replace some of them.
-  result = NsNode()
-  result[] = n[]
 
 proc stabilize(l: Lowerer; target, later: NsNode; pre: var seq[PNode]): NsNode =
   ## The target of a compound assignment or an increment with every part C#
@@ -2899,7 +2943,7 @@ proc stmtMoves(l: Lowerer; n: NsNode): bool =
 proc hoistedLocal(l: Lowerer; n: NsNode): string =
   ## The engine class a local's handle is of, when it is one N# may keep the object
   ## of: "" otherwise.
-  if defined(nsNoHandleCache) or l.hoist == nil or n.paramMod.len > 0 or
+  if defined(nsNoHandleCache) or l.hoist == nil or n.paramMod.len > 0 or n.cell or
      n.declKind == dkConst:
     return ""
   let tn = (if n.typ != nil and n.typ.kind == nsnTypeName: canonicalTypeName(n.typ.name)
@@ -3153,6 +3197,22 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
   of nsnForeach:
     if n.strVal == "GetEnumerator": return l.enumeratorLoop(n)
     result = newNodeI(nkForStmt, n.info)
+    if n.cell:
+      ## A loop variable a lambda captures: each iteration's in a cell of its own.
+      let it = l.fresh("nsIt")
+      result.add l.id(it, n.info)
+      result.add l.expr(n.body)
+      let maker = (if n.typ != nil and n.typ.kind != nsnEmpty and
+                      not (n.typ.kind == nsnTypeName and n.typ.name == "var"):
+                     newTree(nkBracketExpr, n.info, l.id("nsCellOf", n.info),
+                             l.typeToNim(n.typ, n.info))
+                   else: l.id("nsCellOf", n.info))
+      let body = l.stmtsToNode(n.sons, n.info)
+      body.sons.insert(newTree(nkVarSection, n.info, newTree(nkIdentDefs, n.info,
+        l.id(n.name, n.info), empty(n.info),
+        newTree(nkCall, n.info, maker, l.id(it, n.info)))), 0)
+      result.add body
+      return
     result.add l.id(n.name, n.info)
     result.add l.expr(n.body)
     ## A handle loop variable keeps its object for the iteration (see `stmt`).
@@ -6084,6 +6144,155 @@ proc receiverName(r: PNode): string =
     typeName(params[1][^2])
   else: ""
 
+# --- per-iteration variables -----------------------------------------------
+#
+# C# gives each iteration of a loop its own copy of the variables declared in the
+# loop's body, and of a `foreach` variable (ECMA-334 13.9.5), so a lambda created
+# in one iteration keeps that iteration's variable. Nim lifts every captured local
+# of a routine into one environment, which all iterations share. So a loop-body
+# variable a lambda captures is kept in a heap cell (`var x = nsCellOf(v)`, used as
+# `x[]`), and the lambda is made by a factory that takes the cells as parameters
+# (`(proc (x: typeof(x)): auto = <lambda>)(x)`): each closure keeps its own
+# iteration's cell, and a write after the lambda is made is still seen by it, as
+# C#'s capture by reference has it.
+
+type
+  NsCellDecl = ref object
+    node: NsNode        ## the nsnLocalDecl / nsnForeach / nsnParam declaring it
+    inLoop: bool        ## declared in a loop body of its routine or lambda
+    level: int          ## how many lambdas (or local functions) enclose it
+  NsCellFrame = object
+    node: NsNode
+    isLambda: bool      ## a lambda, which gets a factory; a local function does not
+  NsCellWalk = object
+    scopes: seq[Table[string, NsCellDecl]]
+    loop: int
+    frames: seq[NsCellFrame]
+    mark: bool          ## the second pass: every use of a cell reads through it
+
+proc cellResolve(w: NsCellWalk; name: string): NsCellDecl =
+  for i in countdown(w.scopes.high, 0):
+    if w.scopes[i].hasKey(name): return w.scopes[i][name]
+  nil
+
+proc cellDeclare(w: var NsCellWalk; name: string; node: NsNode; inLoop: bool) =
+  if name.len == 0 or w.scopes.len == 0: return
+  w.scopes[^1][name] = NsCellDecl(node: node, inLoop: inLoop, level: w.frames.len)
+
+proc cellWalk(w: var NsCellWalk; n: NsNode)
+
+proc cellWalkStmts(w: var NsCellWalk; list: seq[NsNode]) =
+  ## A statement list is a scope: a declaration is seen by the statements after it.
+  w.scopes.add initTable[string, NsCellDecl]()
+  for x in list: w.cellWalk(x)
+  discard w.scopes.pop
+
+proc cellWalkRoutine(w: var NsCellWalk; n: NsNode; frame: bool; isLambda: bool) =
+  ## A routine, lambda or local function: its parameters, then its body, with the
+  ## loop depth counted afresh.
+  let savedLoop = w.loop
+  w.loop = 0
+  if frame: w.frames.add NsCellFrame(node: n, isLambda: isLambda)
+  w.scopes.add initTable[string, NsCellDecl]()
+  for p in n.params:
+    if p != nil and p.kind == nsnParam: w.cellDeclare(p.name, p, false)
+    else: w.cellWalk(p)
+  w.cellWalk(n.body)
+  for x in n.sons: w.cellWalk(x)
+  discard w.scopes.pop
+  if frame: discard w.frames.pop
+  w.loop = savedLoop
+
+proc cellWalk(w: var NsCellWalk; n: NsNode) =
+  if n == nil: return
+  case n.kind
+  of nsnIdent:
+    let d = w.cellResolve(n.name)
+    if d == nil: return
+    if w.mark:
+      if d.node.cell and n.paramMod.len == 0: n.paramMod = "deref"
+    elif d.inLoop and d.level < w.frames.len and d.node.kind in {nsnLocalDecl, nsnForeach}:
+      ## Captured across a lambda boundary from a loop body. Through a local
+      ## function there is no factory to hand the cell over, so that one is left.
+      var viaLambdas = true
+      for k in d.level ..< w.frames.len:
+        if not w.frames[k].isLambda: viaLambdas = false
+      if viaLambdas:
+        d.node.cell = true
+        for k in d.level ..< w.frames.len:
+          if n.name notin w.frames[k].node.captures: w.frames[k].node.captures.add n.name
+  of nsnLocalDecl:
+    w.cellWalk(n.body)
+    ## A `ref` local is a pointer already; a constant is never captured as a variable.
+    w.cellDeclare(n.name, n, w.loop > 0 and n.paramMod.len == 0 and n.declKind == dkVar)
+  of nsnMultiDecl:
+    for x in n.sons: w.cellWalk(x)
+  of nsnOutDecl, nsnPatType, nsnPatVar:
+    ## Declared by an expression; not made a cell (its lowering declares it).
+    w.cellDeclare(n.name, n, false)
+  of nsnBlock, nsnBlockStmt:
+    w.cellWalkStmts(n.sons)
+  of nsnFor:
+    w.scopes.add initTable[string, NsCellDecl]()
+    let h = n.body
+    if h != nil and h.sons.len > 0: w.cellWalk(h.sons[0])   ## shared by the iterations
+    inc w.loop
+    if h != nil:
+      for i in 1 ..< h.sons.len: w.cellWalk(h.sons[i])
+    w.cellWalkStmts(n.sons)
+    dec w.loop
+    discard w.scopes.pop
+  of nsnForeach:
+    w.cellWalk(n.body)
+    inc w.loop
+    w.scopes.add initTable[string, NsCellDecl]()
+    ## The enumerator form and a handle loop variable declare it their own way.
+    w.cellDeclare(n.name, n, n.strVal != "GetEnumerator")
+    w.cellWalkStmts(n.sons)
+    discard w.scopes.pop
+    dec w.loop
+  of nsnWhile, nsnDoWhile:
+    w.cellWalk(n.body)
+    inc w.loop
+    w.cellWalkStmts(n.sons)
+    dec w.loop
+  of nsnIfBranch:
+    w.cellWalk(n.body)
+    w.cellWalkStmts(n.sons)
+  of nsnElseBranch:
+    w.cellWalkStmts(n.sons)
+  of nsnCatch:
+    w.scopes.add initTable[string, NsCellDecl]()
+    w.cellDeclare(n.name, n, false)
+    w.cellWalk(n.body)
+    for x in n.sons: w.cellWalk(x)
+    discard w.scopes.pop
+  of nsnUsingStmt:
+    w.scopes.add initTable[string, NsCellDecl]()
+    for x in n.sons: w.cellWalk(x)
+    w.cellWalk(n.body)
+    discard w.scopes.pop
+  of nsnLambda:
+    w.cellWalkRoutine(n, true, true)
+  of nsnLocalFunc:
+    w.cellDeclare(n.name, n, false)
+    w.cellWalkRoutine(n, true, false)
+  of nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl, nsnIndexerDecl:
+    w.cellWalkRoutine(n, false, false)
+  else:
+    w.cellWalk(n.body)
+    for x in n.sons: w.cellWalk(x)
+    for x in n.inits: w.cellWalk(x)
+    for x in n.initArgs: w.cellWalk(x)
+    for x in n.params: w.cellWalk(x)
+
+proc markLoopCells(module: NsNode) =
+  ## Finds the loop-body variables lambdas capture, then marks every use of them.
+  for mark in [false, true]:
+    var w = NsCellWalk(mark: mark)
+    w.scopes.add initTable[string, NsCellDecl]()
+    w.cellWalk(module)
+
 proc lowerModule*(module: NsNode; scope: NsModuleScope;
                   cache: IdentCache; config: ConfigRef): PNode =
   ## Lowers a whole `.ns` module to the Nim statements the rest of the compiler
@@ -6101,6 +6310,7 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
       if n.body != nil:
         for x in n.body.sons: noteOwn(x, into)
   for d in module.sons: noteOwn(d, l.ownNamespaces)
+  markLoopCells(module)
   for d in module.sons:
     l.lowerDecl(d, stmts)
   result = newNodeI(nkStmtList, module.info)

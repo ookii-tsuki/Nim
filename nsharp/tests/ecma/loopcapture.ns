@@ -1,0 +1,38 @@
+// Each loop iteration has its own copy of the variables its body declares and of a
+// `foreach` variable (ECMA-334 13.9.5), so a lambda made in one iteration keeps that
+// iteration's; a `for` variable is shared by all iterations, as in C#.
+using System;
+using System.Collections.Generic;
+class Program {
+    static void Main() {
+        var gs = new List<Func<int>>();
+        foreach (var i in new int[] {1,2,3}) gs.Add(() => i);
+        foreach (var g in gs) Console.Write(g()); Console.WriteLine();
+        var hs = new List<Func<int>>();
+        foreach (int i in new List<int> {4,5,6}) hs.Add(() => i * 10);
+        foreach (var h in hs) Console.Write(h() + ","); Console.WriteLine();
+        var ks = new List<Func<int>>();
+        for (int i = 0; i < 3; i++) { int copy = i; ks.Add(() => copy); if (i == 1) copy = 99; }
+        foreach (var k in ks) Console.Write(k() + ","); Console.WriteLine();
+        var shared = new List<Func<int>>();
+        for (int i = 0; i < 3; i++) shared.Add(() => i);
+        foreach (var k in shared) Console.Write(k()); Console.WriteLine();
+        var ws = new List<Action>();
+        int w = 0;
+        while (w < 3) { int c2 = w; string s = "s" + w; ws.Add(() => Console.Write(c2 + s + " ")); w++; }
+        foreach (var a in ws) a(); Console.WriteLine();
+        var nested = new List<Func<string>>();
+        foreach (var x in new[] {"a", "b"})
+            foreach (var y in new[] {"1", "2"}) nested.Add(() => x + y);
+        foreach (var n in nested) Console.Write(n() + " "); Console.WriteLine();
+        var deep = new List<Func<Func<int>>>();
+        foreach (var d in new[] {7, 8}) deep.Add(() => () => d);
+        foreach (var f in deep) Console.Write(f()()); Console.WriteLine();
+        var counters = new List<Action>();
+        foreach (var name in new[] {"p", "q"}) { int count = 0; counters.Add(() => { count++; Console.Write(name + count + " "); }); }
+        counters[0](); counters[0](); counters[1](); Console.WriteLine();
+        int total = 0;
+        foreach (var v in new[] {1, 2, 3}) { Action add = () => total += v; add(); }
+        Console.WriteLine(total);
+    }
+}
