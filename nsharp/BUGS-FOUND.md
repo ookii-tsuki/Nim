@@ -1,5 +1,37 @@
 # N# bug hunt: findings (2026-10-21)
 
+## Status (2026-10-22): every finding below is fixed
+
+Each fix has a regression test under `nsharp/tests/ecma/`, whose expected output
+Roslyn confirms (`run_cs.sh` now runs here: the .NET 10 SDK is installed from
+Ubuntu's archive), and every gate passes: run, AST, C#, sema (goldens from
+Roslyn), reorder, native and diagnostics.
+
+| findings | commit |
+|---|---|
+| A1 narrowing, B1 `MinValue % -1`, A7 `uint` constants, C25 float `%`, C29 `>>>` (and shift-count masking, `Math.Abs(MinValue)`) | `6e54b32` |
+| A2, A3 compound assignment order and single evaluation | `8de958c` |
+| C1 value parameters, C2 generic `base.`, C6/C7 `params`, C22/C23 null strings, C24 boxing into `object` | `25cf31a` |
+| A5 overrides of generic base members | `255d728` |
+| A6 overload resolution, C8 user conversions from literals | `0c8455b` |
+| A4 loop closures, C4, C5, C21, C27 lambdas and delegates | `4694523` |
+| A9, A10, C11-C17, C19, C20 nullable values, boxing, `?.` values; `(int?)x` casts | `af198c1` |
+| A8 iterator `finally`, C3 qualified library types, C9 enum `0`, C10 `new S()`, C18 `is int ?`, C28 `$"""`, D `newList` diagnostic; `as` with `string`/array/`T?` | `a361a31` |
+| E static constructors on first use | `92e69aa` |
+| D strict-defs build | `12aafd3` |
+| C26 members named like types; types named like library members (`e.Message`) | `4f31745` |
+| (found while fixing) exception-typed variables, fields and properties | `ba68d06` |
+
+Still open, recorded rather than fixed:
+
+* A local *function* (not a lambda) declared in a loop body that captures one of
+  the body's variables still shares one copy across iterations (SPEC, closures).
+* `System.Random` is not in the prelude (library work).
+* The documented divergences stand: float and bool spelling, Nim's output for an
+  unhandled exception, a null `string` being `""`, `decimal`, `goto`, LINQ.
+
+The original report follows unchanged.
+
 Found by compiling small C# programs with an N# compiler built from `3c21d35` and
 comparing what they print with what ECMA-334 (and Roslyn/.NET) require. No .NET SDK
 was available, so the "C#" column is the specified behaviour, not a Roslyn run.
