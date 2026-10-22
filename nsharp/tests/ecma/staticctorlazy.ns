@@ -1,0 +1,29 @@
+// A static constructor runs, after the static field initialisers in order, the
+// first time the class is used: a static field or method, or an instance
+// (ECMA-334 15.12), and only once.
+using System;
+class Lazy {
+    public static int A = Log("Lazy.A", 1);
+    static Lazy() { Console.WriteLine("Lazy cctor, A=" + A + " B=" + B); B = B * 10; }
+    public static int B = Log("Lazy.B", 2);
+    public static int Log(string s, int v) { Console.WriteLine(s); return v; }
+}
+class ByMethod {
+    static ByMethod() { Console.WriteLine("ByMethod cctor"); }
+    public static void Hello() { Console.WriteLine("hello"); }
+}
+class ByNew {
+    static ByNew() { Console.WriteLine("ByNew cctor"); }
+    public ByNew() { Console.WriteLine("ByNew ctor"); }
+    public static int Count { get; set; }
+}
+class Program {
+    static void Main() {
+        Console.WriteLine("start");
+        Console.WriteLine("B=" + Lazy.B);
+        Console.WriteLine("A=" + Lazy.A);
+        ByMethod.Hello(); ByMethod.Hello();
+        new ByNew(); new ByNew();
+        ByNew.Count += 2; Console.WriteLine(ByNew.Count);
+    }
+}

@@ -511,6 +511,9 @@ proc Round*(x: float): float {.nsStatic: "Math".} =
 
 {.pop.}
 
+proc Dispose*[T](e: IEnumerator[T]) = e.nsDisposeEnumerator()
+  ## `IDisposable.Dispose` of an enumerator (see `nsDisposeEnumerator`).
+
 # An absent `T?` read with `.Value` or a cast throws .NET's exception (see the
 # intrinsics' `nsNoValue`). A statement, so it comes after every declaration: a
 # module of an import cycle shares only the declarations before its first one.

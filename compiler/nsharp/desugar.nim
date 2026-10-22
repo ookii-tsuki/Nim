@@ -3497,15 +3497,31 @@ proc typedescDefs(l: Lowerer; cls: string; info: TLineInfo): PNode =
   result.add newTree(nkBracketExpr, info, l.id("typedesc", info), l.clsType(cls, info))
   result.add empty(info)
 
-proc staticStorageRef(l: Lowerer; storage: string; info: TLineInfo): PNode =
+proc lazyStaticCtor(l: Lowerer; n: NsNode): bool =
+  ## A class that is not generic with a static constructor: C# runs its static
+  ## field initialisers and that constructor on first use (ECMA-334 15.12), so its
+  ## statics are reached through `nsStaticCtor_C()`. A native class keeps the
+  ## initialiser that runs at start.
+  if n == nil or n.typeParams.len > 0 or l.scope.isNative(n.name) or
+     l.scope.nativeBased(n.name): return false
+  for m in n.sons:
+    if m.kind == nsnCtorDecl and m.attrs.isStatic: return true
+  false
+
+proc staticStorageRef(l: Lowerer; storage: string; info: TLineInfo;
+                      direct = false): PNode =
   ## The storage behind a static member: the global, or for a generic class the
-  ## per-instantiation storage proc, `nsC_x[T]()`.
+  ## per-instantiation storage proc, `nsC_x[T]()`; behind a static constructor, a
+  ## proc that runs it first, `nsStaticRef_nsC_x()`.
+  if l.clsTypeParams.len == 0 and not direct and l.lazyStaticCtor(l.curClass):
+    return newTree(nkCall, info, l.id("nsStaticRef_" & storage, info))
   if l.clsTypeParams.len == 0: return l.id(storage, info)
   let callee = newTree(nkBracketExpr, info, l.id(storage, info))
   for t in l.clsTypeParams: callee.add l.id(t, info)
   result = newTree(nkCall, info, callee)
 
-proc staticAccessor(l: Lowerer; cls: string; m: NsNode; storage: string): PNode =
+proc staticAccessor(l: Lowerer; cls: string; m: NsNode; storage: string;
+                    direct = false): PNode =
   ## `template x*(t: typedesc[C]): untyped = nsC_x`: `C.x` reads and writes the
   ## global, so `C.x = 1` and `C.x += 1` need nothing else.
   let fp = newNodeI(nkFormalParams, m.info)
@@ -3516,7 +3532,7 @@ proc staticAccessor(l: Lowerer; cls: string; m: NsNode; storage: string): PNode 
   for i in 1 .. 5: result[i] = empty(m.info)
   result[2] = l.genericParams(l.clsTypeParams, m.info)
   result[3] = fp
-  result[6] = newTree(nkStmtList, m.info, l.staticStorageRef(storage, m.info))
+  result[6] = newTree(nkStmtList, m.info, l.staticStorageRef(storage, m.info, direct))
 
 proc genericStaticCtor(n: NsNode): NsNode =
   ## A generic class's static constructor, which each instantiation runs on its
@@ -3529,6 +3545,8 @@ proc genericStaticCtor(n: NsNode): NsNode =
 proc staticCtorCall(l: Lowerer; info: TLineInfo): PNode =
   ## `nsStaticCtor_C[T]()`, which runs the instantiation's static constructor the
   ## first time anything of it is used; nil when the class has none to run.
+  if l.lazyStaticCtor(l.curClass):
+    return newTree(nkCall, info, l.id("nsStaticCtor_" & l.curClass.name, info))
   if genericStaticCtor(l.curClass) == nil: return nil
   let callee = newTree(nkBracketExpr, info, l.id("nsStaticCtor_" & l.curClass.name, info))
   for t in l.clsTypeParams: callee.add l.id(t, info)
@@ -3544,6 +3562,15 @@ proc emitStaticStorage(l: Lowerer; storage: string; typ: NsNode; init: NsNode;
                                                 l.typeToNim(typ, info), empty(info)))
     if init != nil:
       inits.add newTree(nkAsgn, info, l.id(storage, info), l.expr(init))
+    if l.lazyStaticCtor(l.curClass):
+      ## `proc nsStaticRef_nsC_x(): var T = (nsStaticCtor_C(); nsC_x)`
+      let fp = newNodeI(nkFormalParams, info)
+      fp.add newTree(nkVarTy, info, l.typeToNim(typ, info))
+      into.add l.mkProc(newTree(nkPostfix, info, l.id("*", info),
+                                l.id("nsStaticRef_" & storage, info)), fp,
+        newTree(nkStmtList, info,
+                newTree(nkCall, info, l.id("nsStaticCtor_" & l.curClass.name, info)),
+                l.id(storage, info)), info)
     return
   let body = newNodeI(nkStmtList, info)
   let sc = l.staticCtorCall(info)
@@ -3584,7 +3611,8 @@ proc lowerStaticField(l: Lowerer; cls: NsNode; m: NsNode; inits: var seq[PNode];
     into.add newTree(nkConstSection, m.info, defs)
     var nl = l
     nl.clsTypeParams = @[]
-    into.add nl.staticAccessor(cls.name, m, storage)
+    ## A constant is no static field: reading it initialises nothing.
+    into.add nl.staticAccessor(cls.name, m, storage, direct = true)
     return
   l.emitStaticStorage(storage, m.typ, m.body, m.info, inits, into)
   into.add l.staticAccessor(cls.name, m, storage)
@@ -5793,7 +5821,28 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     of nsnFieldDecl: discard
     else: discard
 
-  if staticInits.len > 0:
+  if l.lazyStaticCtor(n):
+    ## Run on first use, once: the static field initialisers in order, then the
+    ## static constructor's body. The flag is set first, so the statics they touch
+    ## do not run it again.
+    let info = n.info
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add empty(info)
+    let body = newNodeI(nkStmtList, info)
+    body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info,
+      newTree(nkPragmaExpr, info, l.id("nsRan", info),
+              newTree(nkPragma, info, l.id("global", info))),
+      empty(info), l.id("false", info)))
+    let run = newTree(nkStmtList, info,
+                      newTree(nkAsgn, info, l.id("nsRan", info), l.id("true", info)))
+    for st in staticInits: run.add st
+    body.add newTree(nkIfStmt, info, newTree(nkElifBranch, info,
+      newTree(nkPrefix, info, l.id("not", info), l.id("nsRan", info)), run))
+    var nl = l
+    nl.procTypeParams = @[]
+    into.add nl.mkProc(newTree(nkPostfix, info, l.id("*", info),
+                               l.id("nsStaticCtor_" & n.name, info)), fp, body, info)
+  elif staticInits.len > 0:
     let fp = newNodeI(nkFormalParams, n.info)
     fp.add empty(n.info)
     let body = newNodeI(nkStmtList, n.info)

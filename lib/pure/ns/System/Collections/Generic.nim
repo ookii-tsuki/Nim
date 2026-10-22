@@ -1397,9 +1397,10 @@ proc nsEnumeratorOf*[T](step: iterator(): T; disp: NsDisposeStack = nil): IEnume
 
 proc Current*[T](e: IEnumerator[T]): T = e.current
 
-proc Dispose*[T](e: IEnumerator[T]) =
+proc nsDisposeEnumerator*[T](e: IEnumerator[T]) =
   ## Ends the enumeration: an iterator suspended inside `try` blocks runs their
   ## `finally` blocks, innermost first, and `MoveNext` answers false from then on.
+  ## `System` declares `Dispose` with it, since .NET's is `IDisposable`'s.
   if not e.done:
     e.done = true
     if e.disp != nil: nsDisposeRun(e.disp)
@@ -1412,7 +1413,7 @@ iterator items*[T](s: IEnumerable[T]): T =
   try:
     while e.MoveNext(): yield e.current
   finally:
-    e.Dispose()
+    e.nsDisposeEnumerator()
 
 template nsEnumerator*(T: typedesc; body: untyped): untyped =
   ## The enumerator of an iterator block whose member returns `IEnumerator<T>`.

@@ -78,7 +78,8 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkIdent 'nsCounter_Created'
+      nkCall
+        nkIdent 'nsStaticRef_nsCounter_Created'
   nkConstSection
     nkConstDef
       nkIdent 'nsCounter_Limit'
@@ -124,7 +125,8 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkIdent 'nsCounter_Tag'
+      nkCall
+        nkIdent 'nsStaticRef_nsCounter_Tag'
   nkVarSection
     nkIdentDefs
       nkIdent 'nsCounter_seed'
@@ -145,21 +147,13 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkIdent 'nsCounter_seed'
+      nkCall
+        nkIdent 'nsStaticRef_nsCounter_seed'
   nkVarSection
     nkIdentDefs
       nkIdent 'nsCounter_TotalBacking'
       nkIdent 'int32'
       nkEmpty
-  nkProcDef
-    nkIdent 'nsStaticInitCounter'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkEmpty
-    nkEmpty
-    nkEmpty
-    nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -204,6 +198,54 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticRef_nsCounter_Created'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'int32'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticRef_nsCounter_Tag'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'string'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticRef_nsCounter_seed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'int32'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticRef_nsCounter_TotalBacking'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'int32'
     nkEmpty
     nkEmpty
     nkEmpty
@@ -377,6 +419,17 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticCtor_Counter'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -496,8 +549,6 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkEmpty
-  nkCall
-    nkIdent 'nsStaticInitCounter'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -553,6 +604,66 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsStaticRef_nsCounter_Created'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'int32'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsStaticCtor_Counter'
+      nkIdent 'nsCounter_Created'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticRef_nsCounter_Tag'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'string'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsStaticCtor_Counter'
+      nkIdent 'nsCounter_Tag'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticRef_nsCounter_seed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'int32'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsStaticCtor_Counter'
+      nkIdent 'nsCounter_seed'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticRef_nsCounter_TotalBacking'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkVarTy
+        nkIdent 'int32'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsStaticCtor_Counter'
+      nkIdent 'nsCounter_TotalBacking'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'Total'
     nkEmpty
     nkEmpty
@@ -566,7 +677,8 @@ nkStmtList
         nkEmpty
     nkEmpty
     nkEmpty
-    nkIdent 'nsCounter_TotalBacking'
+    nkCall
+      nkIdent 'nsStaticRef_nsCounter_TotalBacking'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -588,7 +700,8 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkAsgn
-      nkIdent 'nsCounter_TotalBacking'
+      nkCall
+        nkIdent 'nsStaticRef_nsCounter_TotalBacking'
       nkIdent 'value'
   nkProcDef
     nkPostfix
@@ -645,6 +758,8 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
+      nkCall
+        nkIdent 'nsStaticCtor_Counter'
       nkAsgn
         nkDotExpr
           nkIdent 'self'
@@ -722,6 +837,8 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
+        nkIdent 'nsStaticCtor_Counter'
+      nkCall
         nkIdent 'initCounter'
         nkIdent 'self'
       nkAsgn
@@ -772,6 +889,8 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
+      nkCall
+        nkIdent 'nsStaticCtor_Counter'
       nkReturnStmt
         nkDotExpr
           nkIdent 'Counter'
@@ -823,6 +942,58 @@ nkStmtList
               nkIdent 'Counter'
               nkIdent 'Tag'
           nkStrLit ")"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsStaticCtor_Counter'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkPragmaExpr
+            nkIdent 'nsRan'
+            nkPragma
+              nkIdent 'global'
+          nkEmpty
+          nkIdent 'false'
+      nkIfStmt
+        nkElifBranch
+          nkPrefix
+            nkIdent 'not'
+            nkIdent 'nsRan'
+          nkStmtList
+            nkAsgn
+              nkIdent 'nsRan'
+              nkIdent 'true'
+            nkAsgn
+              nkIdent 'nsCounter_Created'
+              nkIntLit 0
+            nkAsgn
+              nkIdent 'nsCounter_seed'
+              nkIntLit 40
+            nkAsgn
+              nkIdent 'nsCounter_TotalBacking'
+              nkIntLit 100
+            nkAsgn
+              nkDotExpr
+                nkIdent 'Counter'
+                nkIdent 'Tag'
+              nkStrLit "ctr"
+            nkAsgn
+              nkDotExpr
+                nkIdent 'Counter'
+                nkIdent 'seed'
+              nkInfix
+                nkIdent '+'
+                nkDotExpr
+                  nkIdent 'Counter'
+                  nkIdent 'seed'
+                nkIntLit 2
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1045,39 +1216,6 @@ nkStmtList
       nkCall
         nkIdent 'initProgram'
         nkIdent 'result'
-  nkProcDef
-    nkIdent 'nsStaticInitCounter'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkAsgn
-        nkIdent 'nsCounter_Created'
-        nkIntLit 0
-      nkAsgn
-        nkIdent 'nsCounter_seed'
-        nkIntLit 40
-      nkAsgn
-        nkIdent 'nsCounter_TotalBacking'
-        nkIntLit 100
-      nkAsgn
-        nkDotExpr
-          nkIdent 'Counter'
-          nkIdent 'Tag'
-        nkStrLit "ctr"
-      nkAsgn
-        nkDotExpr
-          nkIdent 'Counter'
-          nkIdent 'seed'
-        nkInfix
-          nkIdent '+'
-          nkDotExpr
-            nkIdent 'Counter'
-            nkIdent 'seed'
-          nkIntLit 2
   nkWhenStmt
     nkElifBranch
       nkIdent 'isMainModule'

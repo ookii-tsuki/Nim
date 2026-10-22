@@ -1,0 +1,13 @@
+start
+Lazy.A
+Lazy.B
+Lazy cctor, A=1 B=2
+B=20
+A=1
+ByMethod cctor
+hello
+hello
+ByNew cctor
+ByNew ctor
+ByNew ctor
+2
