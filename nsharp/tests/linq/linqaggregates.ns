@@ -1,0 +1,60 @@
+// LINQ's element, quantifier and aggregate operators, the conversions and
+// generators, deferred execution seeing later changes, and .NET's exceptions.
+// (`Contains` and `SequenceEqual` are called on a list: on an array, C# 14 binds
+// them to System.MemoryExtensions' span overloads rather than to LINQ.)
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Demo
+{
+    class Person
+    {
+        public string Name;
+        public int Age;
+        public string City;
+        public Person(string n, int a, string c) { Name = n; Age = a; City = c; }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var people = new List<Person> {
+                new Person("Ann", 31, "Oslo"), new Person("Bob", 25, "Rome"),
+                new Person("Cid", 31, "Rome"), new Person("Dee", 19, "Oslo"),
+                new Person("Eve", 25, "Kyiv") };
+            int[] nums = { 5, 3, 8, 1, 9, 2, 8 };
+            Console.WriteLine(nums.First() + " " + nums.First(n => n > 5) + " " + nums.Last() + " " + nums.Last(n => n < 5) + " " + nums.ElementAt(2) + " " + nums.ElementAtOrDefault(99));
+            Console.WriteLine(nums.FirstOrDefault(n => n > 100) + " " + nums.LastOrDefault(n => n > 100) + " " + new int[0].FirstOrDefault() + " " + nums.Single(n => n == 9) + " " + nums.SingleOrDefault(n => n == 42));
+            Console.WriteLine(nums.Any() + " " + nums.Any(n => n > 8) + " " + nums.All(n => n > 0) + " " + nums.ToList().Contains(3) + " " + nums.ToList().SequenceEqual(new[] { 5, 3, 8, 1, 9, 2, 8 }) + " " + new List<int>().Any());
+            Console.WriteLine(nums.Count() + " " + nums.Count(n => n == 8) + " " + nums.Sum() + " " + nums.Min() + " " + nums.Max() + " " + nums.Average());
+            Console.WriteLine(people.Sum(p => p.Age) + " " + people.Min(p => p.Age) + " " + people.Max(p => p.Name) + " " + people.MinBy(p => p.Age).Name + " " + people.MaxBy(p => p.Age).Name + " " + people.Average(p => p.Age));
+            Console.WriteLine(nums.Aggregate((a, b) => a * 10 + b) + " " + nums.Aggregate("x", (acc, n) => acc + n) + " " + new[] { 1.5, 2.5 }.Sum() + " " + new[] { 1.5, 2.5 }.Average());
+
+            var list = nums.Where(n => n % 2 == 1).ToList();
+            list.Add(100);
+            Console.WriteLine(list.Count + " " + string.Join(",", list));
+            int[] arr = people.Select(p => p.Age).ToArray();
+            Console.WriteLine(arr.Length + " " + arr[0]);
+            Console.WriteLine(string.Join(",", Enumerable.Range(3, 4)) + " " + string.Join(",", Enumerable.Repeat("ab", 3)) + " " + Enumerable.Empty<int>().Count());
+            Console.WriteLine(string.Join(",", Enumerable.Range(1, 10).Where(n => n % 3 == 0).Select(n => n * n)));
+
+            var src = new List<int> { 1, 2, 3 };
+            var query = src.Select(n => n * 2);
+            src.Add(4);
+            Console.WriteLine(string.Join(",", query) + " " + query.Count());
+            IEnumerable<int> ordered = src.OrderByDescending(n => n);
+            Console.WriteLine(string.Join(",", ordered));
+
+            try { new int[0].First(); } catch (InvalidOperationException e) { Console.WriteLine(e.Message); }
+            try { nums.First(n => n > 100); } catch (InvalidOperationException e) { Console.WriteLine(e.Message); }
+            try { nums.Single(); } catch (InvalidOperationException e) { Console.WriteLine(e.Message); }
+            try { nums.Single(n => n == 8); } catch (InvalidOperationException e) { Console.WriteLine(e.Message); }
+            try { new List<int>().Max(); } catch (InvalidOperationException e) { Console.WriteLine(e.Message); }
+            try { nums.ElementAt(99); } catch (ArgumentOutOfRangeException e) { Console.WriteLine(e.Message); }
+            try { new[] { int.MaxValue, 1 }.Sum(); } catch (OverflowException e) { Console.WriteLine(e.Message); }
+            try { people.ToDictionary(p => p.Age); } catch (ArgumentException e) { Console.WriteLine(e.Message); }
+        }
+    }
+}

@@ -25,6 +25,8 @@ type
     genParams*: seq[string] ## its generic parameters
     sig*: PNode           ## a delegate (proc type): its formal parameters
     fields*: seq[string]  ## an object type's fields, which C# reads as properties
+    union*: seq[PNode]    ## a type class `A[T] | B[T]`: its alternatives
+    baseNode*: PNode      ## the declared base as written, with its type arguments
 
   NsBclMember* = object
     ## A prelude proc seen as a member; the receiver is its first parameter.
@@ -39,6 +41,11 @@ type
     paramTypes*: seq[PNode] ## every parameter's type, the receiver's first
     qualifier*: string    ## the `{.nsStatic: "T".}` this declaration carries, if any
     retType*: PNode       ## the declared result type, as written (nil for `void`)
+    retNumeric*: bool     ## the result is a type parameter constrained to a number
+                          ## type, which stands for .NET's per-type overloads
+                          ## (`Sum<T>(Func<T, N>)` is `int Sum(Func<T, int>)`, ...)
+    viaUnion*: bool       ## filed under this receiver as a member of a type class it
+                          ## is one of: a C# extension method, seen with its `using`
 
   NsStaticDecl* = tuple[typ, member, module: string]
     ## A `{.nsStatic: "T".}` pragma: the qualifier, the proc, and its module.
@@ -260,6 +267,8 @@ proc nimSpellingOf*(s: NsBclSurface; name: string): string =
   if s.types.hasKey(canon): return s.types[canon].name
   for e in NsNimKinds:
     if e.nim == canon: return canon
+  ## `int[]`: the library's array.
+  if canon.endsWith("[]") and s.types.hasKey("NsArray"): return "NsArray"
   ""
 
 proc kindOfName*(s: NsBclSurface; name: string): NsTypeKind =
@@ -299,6 +308,37 @@ proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
     inc hops
     for m in s.members.getOrDefault(cur):
       if m.name == name: return m
+
+proc retIsInstance*(m: NsBclMember): bool =
+  ## Whether a member's result is a generic type instantiated (`IEnumerable[T]`),
+  ## whose arguments the call binds.
+  m.retType != nil and m.retType.kind == nkBracketExpr
+
+proc withBases*(s: NsBclSurface; nimName: string): seq[string] =
+  ## A prelude type's own spelling, then its bases' (`IGrouping` is an
+  ## `IGroupingBase`), under which its inherited members are filed.
+  result = @[]
+  var cur = nimName
+  var hops = 0
+  while cur.len > 0 and cur notin result and hops < 16:
+    result.add cur
+    cur = (if s.types.hasKey(cur): s.types[cur].base else: "")
+    inc hops
+
+proc extensionModule*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
+                      name: string): string =
+  ## The module of a member a receiver has only as one of a type class's (LINQ's
+  ## `Where` on a `List<T>`), which C# sees only where its namespace is imported;
+  ## "" when the receiver has it of its own, or not at all.
+  var keys: seq[string] = @[]
+  let nim = s.nimSpellingOf(recvName)
+  if nim.len > 0:
+    for k in s.withBases(nim): keys.add k
+  for key in keys:
+    for m in s.members.getOrDefault(key):
+      if m.name != name: continue
+      if not m.viaUnion: return ""
+      result = m.path
 
 proc overloads*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
                 name: string): seq[NsBclMember] =
@@ -402,6 +442,11 @@ proc loadTypes(s: var NsBclSurface; n: PNode; module = "") =
       case body.kind
       of nkObjectTy, nkRefTy, nkPtrTy:
         t.base = headSpelling(body)
+        var ob = body
+        while ob != nil and ob.kind in {nkRefTy, nkPtrTy} and ob.len > 0: ob = ob[0]
+        if ob != nil and ob.kind == nkObjectTy and ob.len > 1 and ob[1] != nil and
+           ob[1].kind == nkOfInherit and ob[1].len > 0:
+          t.baseNode = ob[1][0]
         if t.base.len == 0: t.kind = tkClass
         let obj = (if body.kind == nkObjectTy: body
                    elif body.len > 0 and body[0] != nil and body[0].kind == nkObjectTy: body[0]
@@ -411,6 +456,15 @@ proc loadTypes(s: var NsBclSurface; n: PNode; module = "") =
             if f.kind == nkIdentDefs:
               for k in 0 ..< f.len - 2: t.fields.add declaredName(f[k])
       of nkProcTy, nkIteratorTy: t.kind = tkDelegate
+      of nkInfix:
+        ## `A[T] | B[T] | ...`: a member declared over it is each alternative's.
+        proc alternatives(n: PNode; into: var seq[PNode]) =
+          if n.kind == nkInfix and n.len == 3 and declaredName(n[0]) == "|":
+            alternatives(n[1], into)
+            alternatives(n[2], into)
+          elif n.kind == nkPar and n.len == 1: alternatives(n[0], into)
+          else: into.add n
+        alternatives(body, t.union)
       else:
         let a = headSpelling(body)
         if a.len > 0 and a != t.name: t.alias = a
@@ -444,7 +498,22 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
       for k in 0 ..< gp.len - 2:
         constraints[declaredName(gp[k])] = constraintSpelling(gp[gp.len - 2])
   let fp = n[3]
-  if fp == nil or fp.kind != nkFormalParams or fp.len < 2: return
+  if fp == nil or fp.kind != nkFormalParams or fp.len < 1: return
+  if fp.len < 2:
+    ## A static member taking nothing (`Enumerable.Empty<T>()`): no receiver to file
+    ## it under, so it waits for `applyStatics` to file it under its qualifier.
+    let q = nsStaticOf(n)
+    if q.len == 0: return
+    var gps: seq[string] = @[]
+    for k in constraints.keys: gps.add k
+    let ret0 = headSpelling(fp[0])
+    s.members.mgetOrPut("#static", @[]).add NsBclMember(name: name, path: module,
+      recv: "", ret: ret0, retIsParam: ret0.len > 0 and constraints.hasKey(ret0),
+      genParams: gps, qualifier: q,
+      retType: (if fp[0].kind == nkEmpty: nil else: fp[0]))
+    if (typ: q, member: name, module: module) notin s.staticDecls:
+      s.staticDecls.add (typ: q, member: name, module: module)
+    return
   let ret = headSpelling(fp[0])
   let p0 = fp[1]
   if p0 == nil or p0.kind != nkIdentDefs or p0.len < 2: return
@@ -471,6 +540,8 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
   s.noteMember NsBclMember(name: name, path: module, recv: typeClassKeyOf(recv),
                            ret: ret, isStatic: isStatic,
                            retIsParam: ret.len > 0 and constraints.hasKey(ret),
+                           retNumeric: ret.len > 0 and constraints.getOrDefault(ret) in
+                             ["SomeNumber", "SomeInteger", "SomeFloat", "SomeSignedInt"],
                            isVirtual: n.kind == nkMethodDef,
                            genParams: gps, paramTypes: ptypes,
                            qualifier: nsStaticOf(n),
@@ -601,6 +672,44 @@ var surfaceCache: Table[string, NsBclSurface]
   ## One surface per library path; the prelude cannot change under a running
   ## compiler, so it is read once.
 
+var nsLibraryTypes*: Table[string, NsBclType]
+  ## The prelude's types, for the type unification that has no surface at hand
+  ## (`lambdas.unifyNim` binding a declaration's type parameters).
+
+proc applyUnions(s: var NsBclSurface) =
+  ## A member declared over a type class (`NsEnumerable[T]`, every collection C#
+  ## calls an `IEnumerable<T>`) is a member of each of its alternatives, as a C#
+  ## extension method of an interface is a member of each type implementing it.
+  proc leaves(s: NsBclSurface; name: string; into: var seq[string]; depth = 0) =
+    ## A type class's alternatives, a type class among them by its own.
+    if depth > 8: return
+    for alt in s.types[name].union:
+      let head = headSpelling(alt)
+      if head.len == 0 or head == name or head in into: continue
+      if s.types.hasKey(head) and s.types[head].union.len > 0: s.leaves(head, into, depth + 1)
+      else: into.add head
+  for name, t in s.types:
+    if t.union.len == 0 or not s.members.hasKey(name): continue
+    let ms = s.members[name]
+    var heads: seq[string] = @[]
+    s.leaves(name, heads)
+    for head in heads:
+      var into = s.members.getOrDefault(head)
+      for m in ms:
+        var dup = false
+        for o in into:
+          if sameDecl(o, m): dup = true
+        if not dup:
+          var e = m
+          e.viaUnion = true
+          into.add e
+      s.members[head] = into
+
+proc unionOf*(s: NsBclSurface; name: string): NsBclType =
+  ## The type class a name declares, when it is one.
+  if s.types.hasKey(name) and s.types[name].union.len > 0: s.types[name]
+  else: NsBclType()
+
 proc bclSurface*(config: ConfigRef): NsBclSurface =
   ## The prelude's surface, read once and then answered from memory.
   let key = preludeRoot(config)
@@ -611,6 +720,8 @@ proc bclSurface*(config: ConfigRef): NsBclSurface =
   s.loadPrelude(config)
   ## Resolved here rather than per file: the type may be in another module.
   s.applyStatics(config)
+  s.applyUnions()
+  nsLibraryTypes = s.types
   surfaceCache[key] = s
   s
 

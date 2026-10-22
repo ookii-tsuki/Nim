@@ -93,10 +93,21 @@ proc csSpelling(t: NsNode): string =
       result.add csSpelling(a)
     result.add ">"
 
+var callArity = -1
+  ## The argument count of the call whose callee is being visited, else -1.
+
 proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
           facts: var seq[string]; usings: var seq[string]) =
   ## Visits every node once, collecting the projected facts.
   if n == nil: return
+  let arity = callArity
+  callArity = -1
+  if n.kind == nsnCall and n.body != nil and n.body.kind == nsnMember:
+    callArity = n.sons.len
+    walk(n.body, surface, scope, facts, usings)
+    callArity = -1
+    for s in n.sons: walk(s, surface, scope, facts, usings)
+    return
   case n.kind
   of nsnUsing:
     if n.strVal == "static": discard
@@ -152,12 +163,22 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
       ## An instance member: a static overload of the name (`string.Equals(a, b)`)
       ## is not this one.
       var m = NsBclMember()
-      for o in surface.overloads(recv, rk, n.name):
-        if not o.isStatic:
-          m = o
-          break
+      ## An array is filed under the library's array type, by its C# name (`int[]`).
+      let lookup = (if recv == "array": n.body.typeName else: recv)
+      ## The first instance overload taking the call's arguments, when it is a call.
+      for pass in 0 .. 1:
+        for o in surface.overloads(lookup, rk, n.name):
+          if not o.isStatic and (pass == 1 or arity < 0 or o.paramTypes.len == arity + 1):
+            m = o
+            break
+        if m.name.len > 0: break
       if m.name.len > 0 and recv.len > 0 and not m.isStatic:
-        let tok = retTokenFor(surface, m, rk)
+        ## The overload the receiver selected, where sema chose one (`Sum` of a
+        ## `double[]`); the declaration's result otherwise.
+        let tok = (if (not m.retIsParam or m.retNumeric) and n.rtype != nil and
+                      n.rtype.kind == nsnTypeName:
+                     tokenOf(surface.kindOfName(n.rtype.name))
+                   else: retTokenFor(surface, m, rk))
         if isProjected(tok):
           facts.add "member " & recv & "." & n.name & " = " &
                     nsOf(m.path) & " | " & tok

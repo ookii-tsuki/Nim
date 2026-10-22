@@ -1,0 +1,9 @@
+Oslo: Ann,Dee (2, avg 25.0)
+Rome: Bob,Cid (2, avg 28.0)
+Kyiv: Eve (1, avg 25.0)
+31 -> Ann/Cid
+25 -> Bob/Eve
+19 -> Dee
+Ann5,Bob3,Cid8,Dee1,Eve9
+A,n,n,B,o
+Rome 25 6

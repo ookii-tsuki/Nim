@@ -1,0 +1,10 @@
+// An extension method is a member only where its namespace is imported: LINQ's
+// Where on a List<T> without `using System.Linq;` is CS1061, as in C#.
+using System;
+using System.Collections.Generic;
+class Program {
+    static void Main() {
+        var xs = new List<int> { 1, 2, 3 };
+        Console.WriteLine(xs.Where(x => x > 1).Count());
+    }
+}

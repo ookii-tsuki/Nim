@@ -1,0 +1,38 @@
+// GroupBy (keys in first-seen order, element selectors, the group's own
+// operators), Zip, SelectMany, and ToDictionary/ToHashSet.
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Demo
+{
+    class Person
+    {
+        public string Name;
+        public int Age;
+        public string City;
+        public Person(string n, int a, string c) { Name = n; Age = a; City = c; }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var people = new List<Person> {
+                new Person("Ann", 31, "Oslo"), new Person("Bob", 25, "Rome"),
+                new Person("Cid", 31, "Rome"), new Person("Dee", 19, "Oslo"),
+                new Person("Eve", 25, "Kyiv") };
+            int[] nums = { 5, 3, 8, 1, 9, 2, 8 };
+            foreach (var g in people.GroupBy(p => p.City))
+                Console.WriteLine(g.Key + ": " + string.Join(",", g.Select(p => p.Name)) + " (" + g.Count() + ", avg " + g.Average(p => p.Age) + ")");
+            foreach (var g in people.GroupBy(p => p.Age, p => p.Name))
+                Console.WriteLine(g.Key + " -> " + string.Join("/", g));
+            Console.WriteLine(string.Join(",", nums.Zip(people, (n, p) => p.Name + n)));
+            Console.WriteLine(string.Join(",", people.SelectMany(p => p.Name.ToCharArray()).Take(5)));
+
+            var byName = people.ToDictionary(p => p.Name);
+            var ages = people.ToDictionary(p => p.Name, p => p.Age);
+            Console.WriteLine(byName["Cid"].City + " " + ages["Eve"] + " " + nums.ToHashSet().Count);
+        }
+    }
+}

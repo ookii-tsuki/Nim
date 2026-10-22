@@ -1367,8 +1367,10 @@ proc exactLibraryResult(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]):
       if not exact: break
     if not exact: continue
     var nb: seq[NsNode] = @[]
-    for g in m.genParams:
-      nb.add (if bound.hasKey("$" & g): bound["$" & g] else: nsnTypeName("$" & g, callee.info))
+    for k, g in m.genParams:
+      nb.add (if bound.hasKey("$" & g): bound["$" & g]
+              elif callee.typeArgs.len == m.genParams.len: callee.typeArgs[k]
+              else: nsnTypeName("$" & g, callee.info))
     let rt = nimToCs(m.retType, m.genParams, nb, callee)
     if rt == nil or (rt.kind == nsnTypeName and rt.name.startsWith("$")): return nil
     return rt
@@ -2068,8 +2070,11 @@ proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
        (recv.rtype == nil or recv.rtype.kind != nsnArrayType) and
        ctx.surface.types.hasKey(ctx.surface.nimSpellingOf(cn)):
     ## A library class the prelude declares: what it does not declare, no
-    ## receiver of it has (CS1061).
-    if not ctx.libraryHas(cn, rk, n.name) and not ctx.libraryHas("object", tkClass, n.name):
+    ## receiver of it has (CS1061). An extension method (LINQ's) is its member only
+    ## where its namespace is imported.
+    let ext = ctx.surface.extensionModule(cn, rk, n.name)
+    if (not ctx.libraryHas(cn, rk, n.name) and not ctx.libraryHas("object", tkClass, n.name)) or
+       (ext.len > 0 and ext.replace('/', '.') notin ctx.scope.usings):
       nsError(ctx.config, n.info, ndNoMember,
               (if recv.rtype != nil: typeSpelling(recv.rtype) else: cn), n.name)
 
@@ -2383,6 +2388,26 @@ proc isExtensionCall(ctx: NsCheckContext; callee: NsNode; owner: string): bool =
   let recv = callee.body
   ctx.surface.member(recv.typeName, recv.typeKind, callee.name).name.len == 0
 
+proc chooseLibraryOverload(ctx: NsCheckContext; n: NsNode; kind: var NsTypeKind;
+                           tn: var string) =
+  ## A library call whose overloads differ by their source's element type (LINQ's
+  ## `Sum`): the result of the one the receiver selects, as C# picks it. The callee
+  ## records it, for the semantic projection.
+  let callee = n.body
+  if callee == nil or callee.body == nil: return
+  let recvName = (if callee.body.rtype != nil and callee.body.rtype.kind == nsnArrayType: "[]"
+                  else: callee.body.typeName)
+  if ctx.surface.resultAgrees(recvName, callee.body.typeKind, callee.name): return
+  let (rt, isParam) = libInstanceResult(ctx.surface, callee.body, callee.name, n.sons.len,
+                                       n.sons)
+  if rt == nil: return
+  let k = ctx.classifyType(rt)
+  if k == tkUnknown: return
+  kind = k
+  tn = declTypeName(rt)
+  n.rtype = rt
+  if not isParam: callee.rtype = rt
+
 proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   var kind = tkUnknown
   var cands: seq[seq[NsNode]] = @[]
@@ -2447,6 +2472,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ## The result the prelude declares (`s.IndexOf(c)` is an `int`), so a member
       ## of it, or arithmetic on it, is typed too.
       kind = ctx.memberKindOfSurface(rk, callee.body.typeName, callee.name, tn)
+      ctx.chooseLibraryOverload(n, kind, tn)
       if n.rtype == nil and kind != tkUnknown:
         n.rtype = libGenericResult(ctx.surface, callee.body, callee.name, n.sons.len)
     elif rk == tkClass:
@@ -2466,6 +2492,8 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       if kind == tkUnknown:
         ## Likewise, a member of a class the prelude declares (`Queue.Dequeue`).
         kind = ctx.memberKindOfSurface(rk, owner, callee.name, tn)
+        if not ctx.scope.classes.hasKey(canonicalTypeName(owner)):
+          ctx.chooseLibraryOverload(n, kind, tn)
       if n.rtype == nil:
         ## A result of a generic library type (`xs.Where(f)`), bound by the receiver.
         n.rtype = libGenericResult(ctx.surface, callee.body, callee.name, n.sons.len)
@@ -2550,10 +2578,11 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if callee != nil and callee.kind == nsnMember and cands.len == 0 and callee.body != nil:
     ctx.checkLibraryCall(callee, n.sons)
     let owner = unqualified(callee.body.typeName)
+    let first = ctx.surface.member(owner, ctx.surface.kindOfName(owner), callee.name)
     if callee.body.typeKind == tkType and
        (kind == tkUnknown or
         not ctx.surface.resultAgrees(owner, ctx.surface.kindOfName(owner), callee.name) or
-        ctx.surface.member(owner, ctx.surface.kindOfName(owner), callee.name).retIsParam):
+        first.retIsParam or first.retIsInstance):
       ## Overloads that differ in their result, or one whose result is a type
       ## parameter: the one the arguments select.
       let rt = ctx.exactLibraryResult(callee, n.sons)
@@ -2599,6 +2628,39 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         if pt != nil: ctx.coerce(v, declTypeName(pt), v.info, pt)
         continue
       discard ctx.walkExpr(a)
+  if callee != nil and callee.kind == nsnMember and cands.len == 0 and
+     callee.body != nil and callee.body.typeKind != tkType and
+     not ctx.scope.classes.hasKey(canonicalTypeName(callee.body.typeName)):
+    ## The overload the typed lambdas select (`people.Sum(p => p.Age)` is the
+    ## `int` one's).
+    var tn2 = ""
+    var k2 = kind
+    ctx.chooseLibraryOverload(n, k2, tn2)
+    let recvName = (if callee.body.rtype != nil and callee.body.rtype.kind == nsnArrayType: "[]"
+                    else: callee.body.typeName)
+    if not ctx.surface.resultAgrees(recvName, callee.body.typeKind, callee.name):
+      ## A lambda whose result the overloads tell apart says it, so Nim, which
+      ## would fit an `auto` one to several, takes the one C# does.
+      for a in n.sons:
+        let v = argValue(a)
+        if v != nil and v.kind == nsnLambda and v.typ == nil:
+          let lr = lambdaResult(v)
+          if lr != nil and lr.kind == nsnTypeName and isNumericName(canonicalTypeName(lr.name)):
+            v.typ = copyNsTree(lr)
+    if n.rtype != nil and k2 != kind:
+      kind = k2
+      n.setType(kind, tn2)
+  if callee != nil and callee.kind == nsnMember and cands.len == 0 and
+     callee.body != nil and callee.body.typeKind != tkType and n.rtype == nil:
+    ## A library result that only the lambdas bind (`xs.Select(x => "n" + x)` is an
+    ## `IEnumerable<string>`), now that they are typed.
+    let rt = libGenericResult(ctx.surface, callee.body, callee.name, n.sons.len, n.sons)
+    if rt != nil:
+      n.rtype = rt
+      let k = ctx.classifyType(rt)
+      if k != tkUnknown:
+        kind = k
+        n.setType(kind, declTypeName(rt))
   if callee != nil and callee.kind == nsnMember and cands.len == 0:
     ctx.libraryOutTypes(callee, n.sons)
   for a in n.sons:

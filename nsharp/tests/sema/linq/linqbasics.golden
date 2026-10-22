@@ -1,0 +1,43 @@
+using System
+using System.Collections.Generic
+using System.Linq
+member Console.Write = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.ToLower = System | string

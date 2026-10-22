@@ -12,7 +12,7 @@
 # back into C# type nodes; a library member's parameter types are Nim as well, and
 # their generic parameters are bound by unifying with the receiver's type.
 
-import std/tables
+import std/[tables, strutils]
 import ../ast as nimast
 import ast, bcl, numeric, symbols
 
@@ -100,6 +100,60 @@ proc unify(pt, at: NsNode; tps: seq[string]; binding: var seq[NsNode]) =
   elif pt.kind == nsnArrayType and at.kind == nsnArrayType:
     unify(pt.typ, at.typ, tps, binding)
 
+proc sameShape(a, b: PNode): bool =
+  ## Whether two written types are the same text: kinds and identifiers alike.
+  if a == nil or b == nil: return a == b
+  if a.kind != b.kind or a.safeLen != b.safeLen: return false
+  if a.kind == nkIdent: return a.ident.s == b.ident.s
+  for i in 0 ..< a.safeLen:
+    if not sameShape(a[i], b[i]): return false
+  true
+
+proc substNim(t: PNode; names: seq[string]; by: seq[PNode]): PNode =
+  ## `t` with the identifiers in `names` replaced by `by`'s types.
+  if t == nil: return nil
+  if t.kind == nkIdent:
+    let k = names.find(t.ident.s)
+    if k >= 0 and k < by.len: return copyTree(by[k])
+    return t
+  result = copyNode(t)
+  for i in 0 ..< t.safeLen: result.add substNim(t[i], names, by)
+
+proc unifyNim(pt: PNode; at: NsNode; names: seq[string]; binding: var seq[NsNode])
+
+proc unifyThroughLibrary(pt: PNode; at: NsNode; names: seq[string];
+                         binding: var seq[NsNode]): bool =
+  ## `NsEnumerable[T]` against `List<int>`: through the alternative of the type
+  ## class that `at` is; `List<T>`'s declared base, when `pt` names that. True when
+  ## one of them applied.
+  let head = pt[0].ident.s
+  if nsLibraryTypes.hasKey(head) and nsLibraryTypes[head].union.len > 0:
+    let u = nsLibraryTypes[head]
+    var args: seq[PNode] = @[]
+    for i in 1 ..< pt.len: args.add pt[i]
+    for alt in u.union:
+      let a = substNim(alt, u.genParams, args)
+      if a.kind == nkBracketExpr and a[0].kind == nkIdent and
+         (at.kind == nsnArrayType and a[0].ident.s in ["seq", "NsArray"] or
+          at.kind == nsnTypeName and a[0].ident.s == nimTypeName(at.name)):
+        unifyNim(a, at, names, binding)
+        return true
+      if a.kind == nkBracketExpr and a[0].kind == nkIdent and a[0].ident.s != head and
+         nsLibraryTypes.hasKey(a[0].ident.s) and nsLibraryTypes[a[0].ident.s].union.len > 0 and
+         unifyThroughLibrary(a, at, names, binding):
+        ## A type class among the alternatives (`NsEnumerable[T]`).
+        return true
+  ## `at` is a library type deriving the one `pt` names (`IGrouping<K, T>` is an
+  ## `IGroupingBase<T>`): its base, with its own type arguments put in.
+  if at.kind == nsnTypeName and nsLibraryTypes.hasKey(nimTypeName(at.name)):
+    let t = nsLibraryTypes[nimTypeName(at.name)]
+    if t.baseNode != nil and t.genParams.len == at.sons.len:
+      let b = nimToCs(t.baseNode, t.genParams, at.sons, at)
+      if b != nil and b.kind == nsnTypeName and b.name != at.name:
+        unifyNim(pt, b, names, binding)
+        return true
+  false
+
 proc unifyNim(pt: PNode; at: NsNode; names: seq[string]; binding: var seq[NsNode]) =
   ## The same, for a library declaration's Nim parameter type.
   if pt != nil and pt.kind in {nkCommand, nkBracketExpr, nkPrefix} and pt.len == 2 and
@@ -120,6 +174,8 @@ proc unifyNim(pt: PNode; at: NsNode; names: seq[string]; binding: var seq[NsNode
     elif at.kind == nsnArrayType and pt[0].kind == nkIdent and
          pt[0].ident.s in ["seq", "openArray", "varargs", "NsArray"] and pt.len == 2:
       unifyNim(pt[1], at.typ, names, binding)
+    elif pt[0].kind == nkIdent:
+      discard unifyThroughLibrary(pt, at, names, binding)
   else: discard
 
 proc valueType*(v: NsNode): NsNode =
@@ -224,7 +280,7 @@ proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
   let rk = recv.typeKind
   var keys: seq[string] = @[]
   let nimName = surface.nimSpellingOf(recv.typeName)
-  if nimName.len > 0: keys.add nimName
+  if nimName.len > 0: keys.add surface.withBases(nimName)
   let kk = kindKey(rk)
   if kk.len > 0: keys.add kk
   for key in keys:
@@ -236,18 +292,44 @@ proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
       for j, a in call.sons:
         if not isLambda(a): unifyNim(m.paramTypes[j + 1], valueType(argOf(a)),
                                      m.genParams, nb)
-      var ok = true
-      for b in nb:
-        if b == nil: ok = false
-      if not ok: continue
+      ## A parameter only a lambda's result binds (`Select<T, R>`'s `R`) is left
+      ## open: the lambda's parameters are what it needs, and its body says the rest.
+      var bound = nb
+      for k in 0 ..< bound.len:
+        if bound[k] == nil: bound[k] = nsnTypeName("$" & m.genParams[k], callee.info)
+      var typed = false
+      var fits = true
+      var sigs = newSeq[NsSig](call.sons.len)
       for j, a in call.sons:
         if isLambda(a):
-          let pt = nimToCs(m.paramTypes[j + 1], m.genParams, nb, a)
+          let pt = nimToCs(m.paramTypes[j + 1], m.genParams, bound, a)
           if pt != nil and pt.kind == nsnTypeName:
-            let head = pt.name
-            var args = pt.sons
-            result[j] = libSig(surface, head, args, a)
-      return
+            var sig = libSig(surface, pt.name, pt.sons, a)
+            let lam = argOf(a)
+            if sig.known and lam.strVal != "anyParams" and lam.params.len != sig.params.len:
+              ## `(n, i) => ...` is the overload whose delegate takes two.
+              fits = false
+              break
+            var open = false
+            for p in sig.params:
+              if p == nil or (p.kind == nsnTypeName and p.name.startsWith("$")): open = true
+            if open: sig.known = false
+            elif sig.ret != nil and sig.ret.kind == nsnTypeName and sig.ret.name.startsWith("$"):
+              sig.ret = nil
+            else:
+              ## Overloads of this arity whose delegates differ (`Sum`'s `Func<T, int>`
+              ## and `Func<T, double>`): the lambda's body says which, not the first.
+              for o in surface.members.getOrDefault(key):
+                if o.name == m.name and o.paramTypes.len == m.paramTypes.len and
+                   not sameShape(o.paramTypes[j + 1], m.paramTypes[j + 1]):
+                  sig.ret = nil
+                  break
+            sigs[j] = sig
+            typed = typed or sig.known
+      if not fits: continue
+      for j in 0 ..< sigs.len:
+        if sigs[j].known: result[j] = sigs[j]
+      if typed: return
 
 proc applySig*(lam: NsNode; sig: NsSig) =
   ## Writes a signature on a lambda's untyped parameters and its result.
@@ -281,25 +363,148 @@ proc libResultType*(surface: NsBclSurface; recv: NsNode; name: string;
     return nil
   nil
 
+proc libIterElement*(surface: NsBclSurface; coll: NsNode): NsNode
+proc lambdaResult*(lam: NsNode): NsNode
+proc unifyDelegateResult(surface: NsBclSurface; pt: PNode; lam: NsNode;
+                         names: seq[string]; binding: var seq[NsNode])
+
+proc delegateResultFits(surface: NsBclSurface; pt: PNode; lam: NsNode;
+                        genParams: seq[string]): bool =
+  ## Whether a lambda fits a delegate parameter's declared result: any when that is
+  ## one of the declaration's parameters, else the same type (`Func<T, int>`).
+  if pt == nil or pt.kind != nkBracketExpr or pt[0].kind != nkIdent: return true
+  let head = pt[0].ident.s
+  if not surface.types.hasKey(head) or surface.types[head].sig == nil: return true
+  let t = surface.types[head]
+  let ret = t.sig[0]
+  if ret == nil or ret.kind != nkIdent: return true
+  let k = t.genParams.find(ret.ident.s)
+  if k < 0 or k + 1 >= pt.len: return true
+  let want = pt[k + 1]
+  if want.kind == nkIdent and genParams.find(want.ident.s) >= 0: return true
+  let lr = lambdaResult(lam)
+  if lr == nil or lr.kind != nsnTypeName: return false
+  let cs = nimToCs(want, genParams, @[], lam)
+  cs != nil and cs.kind == nsnTypeName and canonicalTypeName(cs.name) == canonicalTypeName(lr.name)
+
+proc libInstanceResult*(surface: NsBclSurface; recv: NsNode; name: string;
+                        nargs: int; args: seq[NsNode] = @[]): tuple[typ: NsNode, isParam: bool] =
+  ## The result of the library overload a call on `recv` takes when its overloads
+  ## differ by their source's element type (`Sum` of an `int[]` is `int Sum(
+  ## IEnumerable<int>)`'s, of a `double[]` the `double` one's): of those taking this
+  ## many arguments, the first whose source's element type is the receiver's, a
+  ## generic one taking any. `isParam` says the result is a type parameter's.
+  result = (typ: nil, isParam: false)
+  if recv == nil or recv.rtype == nil: return
+  let rt = recv.rtype
+  let elem = (if rt.kind == nsnArrayType: rt.typ else: libIterElement(surface, recv))
+  if elem == nil or elem.kind != nsnTypeName: return
+  let nimName = (if rt.kind == nsnArrayType: surface.nimSpellingOf("[]")
+                 elif rt.kind == nsnTypeName: surface.nimSpellingOf(rt.name) else: "")
+  if nimName.len == 0: return
+  var generic: NsBclMember
+  var exact: NsBclMember
+  for key in surface.withBases(nimName):
+    for m in surface.members.getOrDefault(key):
+      ## A member of the receiver's own type wins over an extension method, as in
+      ## C# (`list.Reverse()` is `List<T>.Reverse`).
+      if m.name == name and m.paramTypes.len == nargs + 1 and not m.viaUnion: return
+  for key in surface.withBases(nimName):
+    for m in surface.members.getOrDefault(key):
+      if m.name != name or m.paramTypes.len != nargs + 1 or m.retType == nil: continue
+      var lambdasFit = true
+      for j, a in args:
+        let v = argOf(a)
+        if v != nil and v.kind == nsnLambda and j + 1 < m.paramTypes.len and
+           not delegateResultFits(surface, m.paramTypes[j + 1], v, m.genParams):
+          lambdasFit = false
+      if not lambdasFit: continue
+      let p0 = m.paramTypes[0]
+      if p0.kind != nkBracketExpr or p0.len != 2: continue
+      let pe = p0[1]
+      if pe.kind == nkIdent and m.genParams.find(pe.ident.s) >= 0:
+        if generic.name.len == 0: generic = m
+      else:
+        let cs = nimToCs(pe, m.genParams, @[], recv)
+        if cs != nil and cs.kind == nsnTypeName and
+           canonicalTypeName(cs.name) == canonicalTypeName(elem.name) and exact.name.len == 0:
+          exact = m
+  let m = (if exact.name.len > 0: exact else: generic)
+  if m.name.len == 0: return
+  var nb = newSeq[NsNode](m.genParams.len)
+  unifyNim(m.paramTypes[0], rt, m.genParams, nb)
+  for j, a in args:
+    let v = argOf(a)
+    if v != nil and v.kind == nsnLambda and j + 1 < m.paramTypes.len:
+      unifyDelegateResult(surface, m.paramTypes[j + 1], v, m.genParams, nb)
+  let isParam = m.retType.kind == nkIdent and m.genParams.find(m.retType.ident.s) >= 0
+  for b in nb:
+    if b == nil and isParam: return
+  let t = nimToCs(m.retType, m.genParams, nb, recv)
+  if t != nil and not (t.kind == nsnTypeName and t.name.startsWith("$")):
+    ## A number-constrained result is a concrete overload's, of a number only.
+    if m.retNumeric and not (t.kind == nsnTypeName and isNumericName(canonicalTypeName(t.name))):
+      return
+    result = (typ: t, isParam: isParam and not m.retNumeric)
+
+proc lambdaResult*(lam: NsNode): NsNode =
+  ## The type a lambda's body yields, when the frontend knows it: its declared
+  ## result, or an expression body's type.
+  if lam == nil or lam.kind != nsnLambda: return nil
+  if lam.typ != nil and lam.typ.kind == nsnTypeName: return lam.typ
+  let b = lam.body
+  if b != nil and b.strVal == "expr" and b.sons.len == 1: return valueType(b.sons[0])
+  nil
+
+proc unifyDelegateResult(surface: NsBclSurface; pt: PNode; lam: NsNode;
+                         names: seq[string]; binding: var seq[NsNode]) =
+  ## Binds the parameter a delegate parameter's result names (`R` of `Func<T, R>`)
+  ## to what the lambda passed for it yields.
+  if pt == nil or pt.kind != nkBracketExpr or pt[0].kind != nkIdent: return
+  let lr = lambdaResult(lam)
+  if lr == nil: return
+  let head = pt[0].ident.s
+  if not surface.types.hasKey(head) or surface.types[head].sig == nil: return
+  let t = surface.types[head]
+  let ret = t.sig[0]
+  if ret == nil or ret.kind != nkIdent: return
+  let k = t.genParams.find(ret.ident.s)
+  if k >= 0 and k + 1 < pt.len: unifyNim(pt[k + 1], lr, names, binding)
+
 proc libGenericResult*(surface: NsBclSurface; recv: NsNode; name: string;
-                       nargs: int): NsNode =
+                       nargs: int; args: seq[NsNode] = @[]): NsNode =
   ## The result type of a library member that is itself a generic type
   ## (`d.Keys` is a `KeyCollection<K, V>`, `xs.Where(f)` an `IEnumerable<T>`), its
-  ## parameters bound by the receiver's type arguments; nil when any stays open.
-  if recv == nil or recv.rtype == nil or recv.rtype.kind != nsnTypeName: return nil
+  ## parameters bound by the receiver's type arguments, and by the arguments when
+  ## they are given (`xs.Select(x => "n" + x)` is an `IEnumerable<string>`); nil
+  ## when any stays open.
+  if recv == nil or recv.rtype == nil or recv.rtype.kind notin {nsnTypeName, nsnArrayType}:
+    return nil
   let rt = recv.rtype
-  let nimName = surface.nimSpellingOf(rt.name)
+  let nimName = (if rt.kind == nsnArrayType: surface.nimSpellingOf("[]")
+                 else: surface.nimSpellingOf(rt.name))
   if nimName.len == 0: return nil
-  for m in surface.members.getOrDefault(nimName):
-    if m.name != name or m.paramTypes.len != nargs + 1 or m.retType == nil: continue
-    if m.retType.kind != nkBracketExpr: continue
-    var nb = newSeq[NsNode](m.genParams.len)
-    unifyNim(m.paramTypes[0], rt, m.genParams, nb)
-    var ok = true
-    for b in nb:
-      if b == nil: ok = false
-    if not ok: continue
-    return nimToCs(m.retType, m.genParams, nb, recv)
+  for key in surface.withBases(nimName):
+    for m in surface.members.getOrDefault(key):
+      if m.name != name or m.paramTypes.len != nargs + 1 or m.retType == nil: continue
+      ## A generic type (`IEnumerable[T]`), or one of the parameters (`Max(): T`).
+      if m.retType.kind != nkBracketExpr and
+         not (m.retType.kind == nkIdent and m.genParams.find(m.retType.ident.s) >= 0):
+        continue
+      var nb = newSeq[NsNode](m.genParams.len)
+      unifyNim(m.paramTypes[0], rt, m.genParams, nb)
+      for j, a in args:
+        if j + 1 >= m.paramTypes.len: break
+        let v = argOf(a)
+        if v != nil and v.kind == nsnLambda:
+          unifyDelegateResult(surface, m.paramTypes[j + 1], v, m.genParams, nb)
+        else:
+          unifyNim(m.paramTypes[j + 1], valueType(v), m.genParams, nb)
+      var ok = true
+      for b in nb:
+        if b == nil: ok = false
+      if not ok: continue
+      return nimToCs(m.retType, m.genParams, nb, recv)
   nil
 
 proc libIterElement*(surface: NsBclSurface; coll: NsNode): NsNode =

@@ -924,7 +924,7 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | `Equals` / `GetHashCode` of a value | ✅ v1 | the intrinsics: .NET's definitions for the built-in types (NaN equals NaN; a `long` folds its halves); a struct's over its fields; a string's hash is stable only within a run, as .NET's |
 | `Convert.*` | ✅ v1 | `lib` |
 | `IEnumerable<T>` / `ICollection<T>` / `IList<T>` / `IReadOnlyCollection<T>` / `IReadOnlyList<T>` / `ISet<T>` / `IReadOnlySet<T>` / `IDictionary<K,V>` / `IReadOnlyDictionary<K,V>` | ✅ v1 | values (SS15.1): `List`, arrays, `Dictionary`, `HashSet`, `Queue`, `Stack`, `LinkedList` and a dictionary's `Keys`/`Values` implement the ones .NET's do |
-| LINQ (method syntax) | 🔜 later | iterator adapters |
+| LINQ (method syntax) | ✅ v1 | `lib/pure/ns/System/Linq.nim`: procs over `NsEnumerable[T]`, the type class of every C# `IEnumerable<T>` (an array, any collection, a query, a group), which the surface files under each alternative as a C# extension method is a member of each implementing type, seen only with `using System.Linq;` (§15.3) |
 | `File` / `Directory` / streams | 🔜 later | `std/os`, `std/streams` |
 | `Regex` | 🔜 later | `std/re` |
 | `GC.*` | 🚫 out | Nim manages memory |
@@ -1045,6 +1045,28 @@ Deliberately absent: `StringBuilder.Capacity`/`EnsureCapacity`/`CopyTo`; `Random
 `Shared`, `NextInt64`, `NextBytes`, `NextSingle`; `MidpointRounding`; `Math.BigMul`,
 `DivRem`, `FusedMultiplyAdd`; a culture other than en-US; `char`'s Unicode
 categories beyond ASCII.
+
+### 15.3 System.Linq - pinned member surface
+
+| Group | Members |
+|---|---|
+| filtering, projecting | `Where` (with an index too) `Select` (with an index too) `SelectMany` |
+| ordering | `OrderBy` `OrderByDescending` `ThenBy` `ThenByDescending` `Order` `OrderDescending` `Reverse` -- stable, keys by `CompareTo` |
+| partitioning | `Skip` `Take` `SkipWhile` `TakeWhile` `SkipLast` `TakeLast` `Chunk` |
+| sets, concatenation | `Distinct` `DistinctBy` `Union` `Intersect` `Except` `Concat` `Append` `Prepend` |
+| grouping, zipping | `GroupBy` (key, and element selector; `IGrouping<K, T>.Key`, keys in first-seen order) `Zip` (with a result selector) |
+| elements | `First` `FirstOrDefault` `Last` `LastOrDefault` `Single` `SingleOrDefault` `ElementAt` `ElementAtOrDefault` `DefaultIfEmpty` |
+| quantifiers | `Any` `All` `Contains` `SequenceEqual` |
+| aggregates | `Count` `LongCount` `Sum` `Min` `Max` (with a selector too) `MinBy` `MaxBy` `Average` `Aggregate` (with a seed too) |
+| conversions | `ToList` `ToArray` `ToDictionary` `ToHashSet` `AsEnumerable` |
+| generators | `Enumerable.Range` `Enumerable.Repeat` `Enumerable.Empty<T>` |
+
+An operator returning a sequence is deferred, as .NET's: it runs at each
+enumeration and sees the source as it is then; an integer `Sum` overflows with
+`OverflowException`; an empty or unmatched sequence throws .NET's
+`InvalidOperationException` text. Deliberately absent: query syntax, a
+dictionary or a string as a source, the comparer overloads, `Join`, `GroupJoin`,
+`ToLookup`, `OfType`/`Cast`, the nullable-element aggregates, `Zip` into tuples.
 
 ## 16. N# extensions (beyond C#)
 

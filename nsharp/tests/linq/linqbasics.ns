@@ -1,0 +1,53 @@
+// LINQ's filtering, projecting, ordering (stable, by several keys), partitioning
+// and set operators over arrays and lists; the library's Where agrees with the
+// same iterator written in C#.
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Demo
+{
+    class Person
+    {
+        public string Name;
+        public int Age;
+        public string City;
+        public Person(string n, int a, string c) { Name = n; Age = a; City = c; }
+    }
+
+    class Program
+    {
+        static IEnumerable<int> MyWhere(IEnumerable<int> xs, Func<int, bool> f)
+        {
+            // The library's Where, written as a user would: a lazy iterator.
+            foreach (var x in xs)
+                if (f(x)) yield return x;
+        }
+
+        static void Main()
+        {
+            var people = new List<Person> {
+                new Person("Ann", 31, "Oslo"), new Person("Bob", 25, "Rome"),
+                new Person("Cid", 31, "Rome"), new Person("Dee", 19, "Oslo"),
+                new Person("Eve", 25, "Kyiv") };
+            int[] nums = { 5, 3, 8, 1, 9, 2, 8 };
+            Console.WriteLine(string.Join(",", nums.Where(n => n > 3)));
+            Console.WriteLine(string.Join(",", nums.Where((n, i) => i % 2 == 0)));
+            Console.WriteLine(string.Join(",", nums.Select((n, i) => n * i)));
+            Console.WriteLine(string.Join(",", people.Select(p => p.Name.ToLower())));
+            Console.WriteLine(string.Join(",", people.OrderBy(p => p.Age).ThenBy(p => p.Name).Select(p => p.Name)));
+            Console.WriteLine(string.Join(",", people.OrderByDescending(p => p.Age).ThenByDescending(p => p.City).Select(p => p.Name)));
+            Console.WriteLine(string.Join(",", nums.Order()) + " | " + string.Join(",", nums.OrderDescending()));
+            Console.WriteLine(string.Join(",", nums.Reverse()) + " | " + string.Join(",", nums.Distinct()));
+            Console.WriteLine(string.Join(",", nums.Skip(2).Take(3)) + " | " + string.Join(",", nums.SkipWhile(n => n < 8)) + " | " + string.Join(",", nums.TakeWhile(n => n != 1)));
+            Console.WriteLine(string.Join(",", nums.SkipLast(2)) + " | " + string.Join(",", nums.TakeLast(2)));
+            foreach (var chunk in nums.Chunk(3)) Console.Write("[" + string.Join(",", chunk) + "]");
+            Console.WriteLine();
+            Console.WriteLine(string.Join(",", nums.Union(new[] { 1, 4 })) + " | " + string.Join(",", nums.Intersect(new List<int> { 8, 1, 7 })) + " | " + string.Join(",", nums.Except(new[] { 8, 9 })));
+            Console.WriteLine(string.Join(",", nums.Concat(new[] { 0 }).Append(10).Prepend(-1)));
+            Console.WriteLine(string.Join(",", people.DistinctBy(p => p.Age).Select(p => p.Name)));
+
+            Console.WriteLine(string.Join(",", MyWhere(nums, n => n > 3)) + " = " + string.Join(",", nums.Where(n => n > 3)));
+        }
+    }
+}

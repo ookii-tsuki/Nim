@@ -290,10 +290,31 @@ type
   EqualityComparer*[T] = ref object of NsCollectionBase
     ## C#'s `EqualityComparer<T>`: `EqualityComparer<T>.Default`.
     discard
-  Enumerable[T] = NsArray[T] | seq[T] | List[T] | HashSet[T] | SortedSet[T] | Queue[T] |
+  IOrderedEnumerable*[T] = ref object
+    ## `System.Linq`'s ordered query (`OrderBy`): its source, and the comparisons
+    ## `ThenBy` adds, applied when it is enumerated. Declared here, so it is an
+    ## `IEnumerable<T>` as every collection is.
+    nsSource*: IEnumerable[T]
+    nsOrder*: seq[proc (a, b: T): int]
+  IGroupingBase*[T] = ref object of RootObj
+    ## A group's elements, which a grouping enumerates.
+    nsElems*: seq[T]
+  IGrouping*[K, T] = ref object of IGroupingBase[T]
+    ## `System.Linq`'s `IGrouping<TKey, TElement>`: a group of `GroupBy`, with its
+    ## `Key`.
+    nsKey*: K
+  NsEnumerable*[T] = NsArray[T] | seq[T] | List[T] | HashSet[T] | SortedSet[T] | Queue[T] |
                   Stack[T] | LinkedList[T] | IEnumerable[T] | IList[T] | ICollection[T] |
-                  IReadOnlyList[T] | IReadOnlyCollection[T] | ISet[T] | IReadOnlySet[T]
-    ## What a C# `IEnumerable<T>` parameter takes here: an array or a collection.
+                  IReadOnlyList[T] | IReadOnlyCollection[T] | ISet[T] | IReadOnlySet[T] |
+                  IOrderedEnumerable[T] | IGroupingBase[T]
+    ## What a C# `IEnumerable<T>` parameter takes here: an array, a collection or a
+    ## query.
+  NsEnumerable2*[T] = NsArray[T] | seq[T] | List[T] | HashSet[T] | SortedSet[T] | Queue[T] |
+                   Stack[T] | LinkedList[T] | IEnumerable[T] | IList[T] | ICollection[T] |
+                   IReadOnlyList[T] | IReadOnlyCollection[T] | ISet[T] | IReadOnlySet[T] |
+                   IOrderedEnumerable[T] | IGroupingBase[T]
+    ## The same, for a second sequence of one signature (`Concat(first, second)`):
+    ## Nim binds a type class to one type per signature, and the two may differ.
 
 const
   modifiedMsg = "Collection was modified; enumeration operation may not execute."
@@ -325,7 +346,7 @@ proc keyDuplicate[K](k: K): ref ArgumentException =
   newException(ArgumentException,
                "An item with the same key has already been added. Key: " & $k)
 
-proc snapshot[T](collection: Enumerable[T]): seq[T]
+proc snapshot[T](collection: NsEnumerable[T]): seq[T]
   ## The elements of any collection (C#'s `IEnumerable<T>`), copied first, so a
   ## member may be handed its own receiver. Defined at the end of the module, where
   ## every collection's `items` is declared: a call site's module may not see them.
@@ -393,7 +414,7 @@ proc newHashSet*[T](comparer: IEqualityComparer[T]): HashSet[T] =
   result = HashSet[T](data: initNsHashMap[T, bool]())
   result.data.nsUseComparer(comparer)
   if not nsIsDefaultComparer(comparer): result.comparer = comparer
-proc newHashSet*[T](collection: Enumerable[T]; comparer: IEqualityComparer[T]): HashSet[T] =
+proc newHashSet*[T](collection: NsEnumerable[T]; comparer: IEqualityComparer[T]): HashSet[T] =
   result = HashSet[T](data: initNsHashMap[T, bool]())
   result.data.nsUseComparer(comparer)
   if not nsIsDefaultComparer(comparer): result.comparer = comparer
@@ -497,7 +518,7 @@ iterator items*[T](l: List[T]): T =
 proc Add*[T](l: List[T]; x: sink T) =
   l.data.add x
   touch l
-proc AddRange*[T](l: List[T]; collection: Enumerable[T]) =
+proc AddRange*[T](l: List[T]; collection: NsEnumerable[T]) =
   l.data.add snapshot(collection)
   touch l
 proc Clear*[T](l: List[T]) =
@@ -520,7 +541,7 @@ proc Insert*[T](l: List[T]; i: int; x: T) =
     raise newException(ArgumentOutOfRangeException, indexMsg)
   l.data.insert(x, i)
   touch l
-proc InsertRange*[T](l: List[T]; i: int; collection: Enumerable[T]) =
+proc InsertRange*[T](l: List[T]; i: int; collection: NsEnumerable[T]) =
   if i < 0 or i > l.data.len:
     raise newException(ArgumentOutOfRangeException, indexMsg)
   l.data.insert(snapshot(collection), i)
@@ -717,10 +738,10 @@ proc ToArray*[T](s: HashSet[T]): NsArray[T] =
   var xs: seq[T] = @[]
   for x in nshash.keys(s.data): xs.add x
   nsArrayOf(xs)
-proc UnionWith*[T](s: HashSet[T]; other: Enumerable[T]) =
+proc UnionWith*[T](s: HashSet[T]; other: NsEnumerable[T]) =
   for x in snapshot(other): discard s.data.put(x, true, false)
   touch s
-proc IntersectWith*[T](s: HashSet[T]; other: Enumerable[T]) =
+proc IntersectWith*[T](s: HashSet[T]; other: NsEnumerable[T]) =
   if nshash.len(s.data) == 0: return
   var keep = s.data.initLike(bool)
   for x in snapshot(other): discard keep.put(x, true, false)
@@ -734,7 +755,7 @@ proc IntersectWith*[T](s: HashSet[T]; other: Enumerable[T]) =
     if not nshash.contains(keep, x): gone.add x
   for x in gone: discard s.data.remove(x)
   touch s
-proc ExceptWith*[T](s: HashSet[T]; other: Enumerable[T]) =
+proc ExceptWith*[T](s: HashSet[T]; other: NsEnumerable[T]) =
   when other is HashSet[T]:
     if other == s:
       nshash.clear(s.data)
@@ -749,7 +770,7 @@ proc nsSameComparer[T](a, b: HashSet[T]): bool =
     a.comparer.nsObj == nil and b.comparer.nsObj == nil
   else: a.comparer.nsObj == b.comparer.nsObj or a.comparer.nsObj.Equals(b.comparer.nsObj)
 
-proc nsAsHashSet[T](other: Enumerable[T]): HashSet[T] =
+proc nsAsHashSet[T](other: NsEnumerable[T]): HashSet[T] =
   ## The `HashSet<T>` behind `other`, as .NET's `other is HashSet<T>` finds it, or nil.
   when other is HashSet[T]: other
   elif compiles(other.nsObj):
@@ -766,7 +787,7 @@ proc nsSymmetricExceptWithSet[T](s, other: HashSet[T]) =
       if not s.data.remove(x): discard s.data.put(x, true, false)
   touch s
 
-proc SymmetricExceptWith*[T](s: HashSet[T]; other: Enumerable[T]) =
+proc SymmetricExceptWith*[T](s: HashSet[T]; other: NsEnumerable[T]) =
   let os = nsAsHashSet(other)
   if os != nil and nsSameComparer(s, os):
     nsSymmetricExceptWithSet(s, os)
@@ -784,42 +805,42 @@ proc SymmetricExceptWith*[T](s: HashSet[T]; other: Enumerable[T]) =
   for x in gone: discard s.data.remove(x)
   touch s
 
-proc plainSet[T](other: Enumerable[T]): NsHashMap[T, bool] =
+proc plainSet[T](other: NsEnumerable[T]): NsHashMap[T, bool] =
   ## `other` as a set by its elements' own equality.
   result = initNsHashMap[T, bool]()
   for x in snapshot(other): discard result.put(x, true, false)
 
 # The set comparisons read `other` as a set, by the set's own comparer: duplicates
 # in it do not count.
-proc otherSet[T](s: HashSet[T]; other: Enumerable[T]): NsHashMap[T, bool] =
+proc otherSet[T](s: HashSet[T]; other: NsEnumerable[T]): NsHashMap[T, bool] =
   result = s.data.initLike(bool)
   for x in snapshot(other): discard result.put(x, true, false)
 
-proc IsSubsetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
+proc IsSubsetOf*[T](s: HashSet[T]; other: NsEnumerable[T]): bool =
   let o = s.otherSet(other)
   for x in nshash.keys(s.data):
     if not nshash.contains(o, x): return false
   true
-proc IsProperSubsetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
+proc IsProperSubsetOf*[T](s: HashSet[T]; other: NsEnumerable[T]): bool =
   let o = s.otherSet(other)
   if nshash.len(o) <= nshash.len(s.data): return false
   for x in nshash.keys(s.data):
     if not nshash.contains(o, x): return false
   true
-proc IsSupersetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
+proc IsSupersetOf*[T](s: HashSet[T]; other: NsEnumerable[T]): bool =
   for x in snapshot(other):
     if not nshash.contains(s.data, x): return false
   true
-proc IsProperSupersetOf*[T](s: HashSet[T]; other: Enumerable[T]): bool =
+proc IsProperSupersetOf*[T](s: HashSet[T]; other: NsEnumerable[T]): bool =
   let o = s.otherSet(other)
   if nshash.len(o) >= nshash.len(s.data): return false
   for x in nshash.keys(o):
     if not nshash.contains(s.data, x): return false
   true
-proc Overlaps*[T](s: HashSet[T]; other: Enumerable[T]): bool =
+proc Overlaps*[T](s: HashSet[T]; other: NsEnumerable[T]): bool =
   for x in snapshot(other):
     if nshash.contains(s.data, x): return true
-proc SetEquals*[T](s: HashSet[T]; other: Enumerable[T]): bool =
+proc SetEquals*[T](s: HashSet[T]; other: NsEnumerable[T]): bool =
   let o = s.otherSet(other)
   if nshash.len(o) != nshash.len(s.data): return false
   for x in nshash.keys(o):
@@ -873,48 +894,48 @@ proc Reverse*[T](s: SortedSet[T]): List[T] =
   result = List[T]()
   for i in countdown(s.data.high, 0): result.data.add s.data[i]
 proc ToArray*[T](s: SortedSet[T]): NsArray[T] = nsArrayOf(s.data)
-proc UnionWith*[T](s: SortedSet[T]; other: Enumerable[T]) =
+proc UnionWith*[T](s: SortedSet[T]; other: NsEnumerable[T]) =
   for x in snapshot(other): discard s.Add(x)
   touch s
-proc IntersectWith*[T](s: SortedSet[T]; other: Enumerable[T]) =
+proc IntersectWith*[T](s: SortedSet[T]; other: NsEnumerable[T]) =
   let o = plainSet(other)
   var kept: seq[T] = @[]
   for x in s.data:
     if nshash.contains(o, x): kept.add x
   s.data = kept
   touch s
-proc ExceptWith*[T](s: SortedSet[T]; other: Enumerable[T]) =
+proc ExceptWith*[T](s: SortedSet[T]; other: NsEnumerable[T]) =
   for x in snapshot(other): discard s.Remove(x)
   touch s
-proc SymmetricExceptWith*[T](s: SortedSet[T]; other: Enumerable[T]) =
+proc SymmetricExceptWith*[T](s: SortedSet[T]; other: NsEnumerable[T]) =
   for x in nshash.keys(plainSet(other)):
     if not s.Remove(x): discard s.Add(x)
   touch s
-proc IsSubsetOf*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
+proc IsSubsetOf*[T](s: SortedSet[T]; other: NsEnumerable[T]): bool =
   let o = plainSet(other)
   for x in s.data:
     if not nshash.contains(o, x): return false
   true
-proc IsProperSubsetOf*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
+proc IsProperSubsetOf*[T](s: SortedSet[T]; other: NsEnumerable[T]): bool =
   let o = plainSet(other)
   if nshash.len(o) <= s.data.len: return false
   for x in s.data:
     if not nshash.contains(o, x): return false
   true
-proc IsSupersetOf*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
+proc IsSupersetOf*[T](s: SortedSet[T]; other: NsEnumerable[T]): bool =
   for x in snapshot(other):
     if not s.Contains(x): return false
   true
-proc IsProperSupersetOf*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
+proc IsProperSupersetOf*[T](s: SortedSet[T]; other: NsEnumerable[T]): bool =
   let o = plainSet(other)
   if nshash.len(o) >= s.data.len: return false
   for x in nshash.keys(o):
     if not s.Contains(x): return false
   true
-proc Overlaps*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
+proc Overlaps*[T](s: SortedSet[T]; other: NsEnumerable[T]): bool =
   for x in snapshot(other):
     if s.Contains(x): return true
-proc SetEquals*[T](s: SortedSet[T]; other: Enumerable[T]): bool =
+proc SetEquals*[T](s: SortedSet[T]; other: NsEnumerable[T]): bool =
   let o = plainSet(other)
   if nshash.len(o) != s.data.len: return false
   for x in nshash.keys(o):
@@ -1074,9 +1095,9 @@ template joinAll(separator, xs: untyped): string =
     r.add $x
   r
 
-proc Join*[T](separator: string; values: Enumerable[T]): string {.nsStatic: "String".} =
+proc Join*[T](separator: string; values: NsEnumerable[T]): string {.nsStatic: "String".} =
   joinAll(separator, snapshot(values))
-proc Join*[T](separator: char; values: Enumerable[T]): string {.nsStatic: "String".} =
+proc Join*[T](separator: char; values: NsEnumerable[T]): string {.nsStatic: "String".} =
   joinAll(separator, snapshot(values))
 proc Join*[K, V](separator: string; values: KeyCollection[K, V]): string {.nsStatic: "String".} =
   joinAll(separator, values)
@@ -1406,6 +1427,27 @@ proc nsDisposeEnumerator*[T](e: IEnumerator[T]) =
     if e.disp != nil: nsDisposeRun(e.disp)
 
 proc GetEnumerator*[T](s: IEnumerable[T]): IEnumerator[T] = s.make()
+
+proc nsSorted[T](o: IOrderedEnumerable[T]): seq[T] =
+  ## The source, sorted stably by every comparison in turn. A proc of its own: the
+  ## comparison is a closure, which an inline iterator inlined into a query's
+  ## closure iterator would not compile.
+  for x in items(o.nsSource): result.add x
+  let order = o.nsOrder
+  algorithm.sort(result, proc (a, b: T): int =
+    for c in order:
+      let r = c(a, b)
+      if r != 0: return r
+    0)
+
+iterator items*[T](o: IOrderedEnumerable[T]): T =
+  for x in nsSorted(o): yield x
+
+iterator items*[T](g: IGroupingBase[T]): T =
+  for x in g.nsElems: yield x
+
+proc Key*[K, T](g: IGrouping[K, T]): K = g.nsKey
+  ## The key the group's elements share.
 
 iterator items*[T](s: IEnumerable[T]): T =
   ## `foreach` disposes the enumerator however the loop is left (13.9.5).
@@ -1786,17 +1828,17 @@ proc ToString*[T](v: ISet[T]): string = $v.nsObj
 proc nsToIEnumerable*[T](v: ISet[T]): IEnumerable[T] =
   if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
 proc Contains*[T](v: ISet[T]; x: T): bool = v.nsVt.fContains(nsIfaceObj(v), x)
-proc IsSubsetOf*[T](v: ISet[T]; other: Enumerable[T]): bool =
+proc IsSubsetOf*[T](v: ISet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fIsSubsetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc IsSupersetOf*[T](v: ISet[T]; other: Enumerable[T]): bool =
+proc IsSupersetOf*[T](v: ISet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fIsSupersetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc IsProperSubsetOf*[T](v: ISet[T]; other: Enumerable[T]): bool =
+proc IsProperSubsetOf*[T](v: ISet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fIsProperSubsetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc IsProperSupersetOf*[T](v: ISet[T]; other: Enumerable[T]): bool =
+proc IsProperSupersetOf*[T](v: ISet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fIsProperSupersetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc Overlaps*[T](v: ISet[T]; other: Enumerable[T]): bool =
+proc Overlaps*[T](v: ISet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fOverlaps(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc SetEquals*[T](v: ISet[T]; other: Enumerable[T]): bool =
+proc SetEquals*[T](v: ISet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fSetEquals(nsIfaceObj(v), nsArrayOf(snapshot(other)))
 proc Count*[T](v: IReadOnlySet[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
 iterator items*[T](v: IReadOnlySet[T]): T =
@@ -1807,17 +1849,17 @@ proc ToString*[T](v: IReadOnlySet[T]): string = $v.nsObj
 proc nsToIEnumerable*[T](v: IReadOnlySet[T]): IEnumerable[T] =
   if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
 proc Contains*[T](v: IReadOnlySet[T]; x: T): bool = v.nsVt.fContains(nsIfaceObj(v), x)
-proc IsSubsetOf*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+proc IsSubsetOf*[T](v: IReadOnlySet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fIsSubsetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc IsSupersetOf*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+proc IsSupersetOf*[T](v: IReadOnlySet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fIsSupersetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc IsProperSubsetOf*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+proc IsProperSubsetOf*[T](v: IReadOnlySet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fIsProperSubsetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc IsProperSupersetOf*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+proc IsProperSupersetOf*[T](v: IReadOnlySet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fIsProperSupersetOf(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc Overlaps*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+proc Overlaps*[T](v: IReadOnlySet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fOverlaps(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc SetEquals*[T](v: IReadOnlySet[T]; other: Enumerable[T]): bool =
+proc SetEquals*[T](v: IReadOnlySet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fSetEquals(nsIfaceObj(v), nsArrayOf(snapshot(other)))
 proc IsReadOnly*[T](v: ISet[T]): bool =
   discard nsIfaceObj(v)
@@ -1827,13 +1869,13 @@ proc Clear*[T](v: ISet[T]) = v.nsVt.fClear(nsIfaceObj(v))
 proc CopyTo*[T](v: ISet[T]; arr: NsArray[T]; arrayIndex: int32) =
   v.nsVt.fCopyTo(nsIfaceObj(v), arr, arrayIndex)
 proc Remove*[T](v: ISet[T]; x: T): bool = v.nsVt.fRemove(nsIfaceObj(v), x)
-proc UnionWith*[T](v: ISet[T]; other: Enumerable[T]) =
+proc UnionWith*[T](v: ISet[T]; other: NsEnumerable[T]) =
   v.nsVt.fUnionWith(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc IntersectWith*[T](v: ISet[T]; other: Enumerable[T]) =
+proc IntersectWith*[T](v: ISet[T]; other: NsEnumerable[T]) =
   v.nsVt.fIntersectWith(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc ExceptWith*[T](v: ISet[T]; other: Enumerable[T]) =
+proc ExceptWith*[T](v: ISet[T]; other: NsEnumerable[T]) =
   v.nsVt.fExceptWith(nsIfaceObj(v), nsArrayOf(snapshot(other)))
-proc SymmetricExceptWith*[T](v: ISet[T]; other: Enumerable[T]) =
+proc SymmetricExceptWith*[T](v: ISet[T]; other: NsEnumerable[T]) =
   v.nsVt.fSymmetricExceptWith(nsIfaceObj(v), nsArrayOf(snapshot(other)), nsAsHashSet(other))
 proc Count*[K, V](v: IReadOnlyDictionary[K, V]): int32 = v.nsVt.fCount(nsIfaceObj(v))
 iterator items*[K, V](v: IReadOnlyDictionary[K, V]): KeyValuePair[K, V] =
@@ -2144,5 +2186,5 @@ proc nsLibAs*(o: RootRef; t: typedesc[IComparer[string]]): IComparer[string] =
 proc nsLibAs*(o: RootRef; t: typedesc[IEqualityComparer[string]]): IEqualityComparer[string] =
   if o of StringComparer: result = nsToIEqualityComparer(StringComparer(o))
 
-proc snapshot[T](collection: Enumerable[T]): seq[T] =
+proc snapshot[T](collection: NsEnumerable[T]): seq[T] =
   for x in items(collection): result.add x

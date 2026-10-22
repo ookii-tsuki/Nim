@@ -1,0 +1,9 @@
+IEnumerable.Take = type-parameter
+IGrouping.Key = type-parameter
+IGrouping.Select = type-parameter
+List.GroupBy = type-parameter
+List.SelectMany = type-parameter
+List.ToDictionary = type-parameter
+array.ToHashSet = type-parameter
+array.Zip = type-parameter
+string.ToCharArray = result:other
