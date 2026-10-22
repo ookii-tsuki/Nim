@@ -85,9 +85,18 @@ bootstrap (system Nim 2.2.4 fails in `icbif.nim`). Build via `csources_v3`:
 git clone --depth 1 -b master https://github.com/nim-lang/csources_v3.git
 git -C csources_v3 checkout eeab3ac46e93f10efda8e58c4db02b9438319d71
 make -C csources_v3 -j10                       # -> bin/nim (bootstrap compiler)
-bin/nim c --skipUserCfg --skipParentCfg -d:nimKochBootstrap -d:nsharp -o:bin/nim1 compiler/nim.nim
+bin/nim c --skipUserCfg --skipParentCfg -d:nimKochBootstrap -o:bin/nim0 compiler/nim.nim
+bin/nim0 c --skipUserCfg --skipParentCfg -d:nsharp -o:bin/nim1 compiler/nim.nim
 bin/nim1 c --skipUserCfg --skipParentCfg -d:nsharp -o:bin/nim compiler/nim.nim
 ```
+
+The csources compiler is too old for the N# sources themselves (it cannot tell
+the enum value `nsnIdent` from the proc of that name in a set literal), so it
+builds a plain devel compiler first. `compiler/nim.cfg` makes `Uninit` and
+`ProveInit` errors under `nimUseStrictDefs`, which every devel compiler defines:
+the frontend initialises every `result` explicitly. The test gates take the
+compiler under test from `NIM` and, for the dump tools and the diagnostics gate,
+`NIM1`; point both at a compiler built from the working tree.
 
 (`dist/checksums` and `dist/nimony` must be present - `koch installdeps` caches them.)
 

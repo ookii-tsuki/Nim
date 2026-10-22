@@ -140,6 +140,7 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
 
 proc nativeOf*(n: NsNode): NsNative =
   ## A declaration's `[Native("Ns::T", Header = .., Handle = .., SelfHandle = ..)]`.
+  result = NsNative()
   let a = n.attributeNamed("Native")
   if a == nil: return
   for x in a.sons:

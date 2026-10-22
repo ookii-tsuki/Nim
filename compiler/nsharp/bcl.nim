@@ -303,6 +303,7 @@ proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
 proc overloads*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
                 name: string): seq[NsBclMember] =
   ## Every declaration of a member on a receiver, its prelude bases' included.
+  result = @[]
   var keys: seq[string] = @[]
   let nim = s.nimSpellingOf(recvName)
   if nim.len > 0: keys.add nim

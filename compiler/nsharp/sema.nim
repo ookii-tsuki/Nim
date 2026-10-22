@@ -323,6 +323,7 @@ proc needConv(n: NsNode; to: string) =
 proc variantArgs(ctx: NsCheckContext; name: string): seq[string] =
   ## The variance of each type parameter of a generic interface or delegate, ""
   ## for an invariant one; `Func`'s and `Action`'s are .NET's.
+  result = @[]
   let n = unqualified(name)
   if ctx.scope.classes.hasKey(n) and ctx.scope.classes[n].decl != nil:
     for t in ctx.scope.classes[n].decl.typeParams: result.add t.strVal
@@ -1360,7 +1361,7 @@ proc checkLibraryCall(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]) =
       return
   let ovs = ctx.surface.overloads(recvName, recvKind, callee.name)
   if ovs.len == 0: return
-  var bad: tuple[found: bool, idx: int, pt: NsNode]
+  var bad: tuple[found: bool, idx: int, pt: NsNode] = (found: false, idx: 0, pt: nil)
   for m in ovs:
     if m.isStatic != staticCall and not staticCall: continue
     let (ps, variadic) = libParams(m, recv, staticCall, callee)
@@ -4716,7 +4717,7 @@ proc checkInterfaces(ctx: NsCheckContext; cls: NsNode) =
     for im in ctx.scope.classes[i].members:
       if im.hasBody: continue
       var found = false
-      var impl: NsMemberSymbol
+      var impl = NsMemberSymbol()
       for c in ctx.scope.chain(cls.name):
         for m in ctx.scope.classes[c].members:
           ## A static abstract member is implemented by a static one.
@@ -4897,6 +4898,7 @@ proc markOverlappingDefaults(scope: NsModuleScope) =
   ## take an argument count another overload of the same name takes, its defaulted
   ## parameters are declared without them and each call passes them (`noDefault`).
   proc arity(ps: seq[NsNode]): tuple[req, total: int, open: bool] =
+    result = (req: 0, total: 0, open: false)
     for p in ps:
       if p == nil: continue
       if p.paramMod == "params": result.open = true

@@ -1405,6 +1405,7 @@ proc parseInitializer(p: var NsParser; declared: NsNode): NsNode =
 
 proc matchingParen(p: NsParser; start: int): int =
   ## The offset of the `)` closing the `(` at `start`, or -1.
+  result = 0
   var depth = 0
   var i = start
   while true:

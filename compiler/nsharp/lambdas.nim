@@ -324,6 +324,7 @@ proc libParams*(m: NsBclMember; recv: NsNode; staticCall: bool; info: NsNode):
   ## The C# parameter types of a library overload after its receiver, its generic
   ## parameters bound from the receiver's type arguments; a parameter whose type
   ## stays unbound is nil, which a check takes as accepting anything.
+  result = (params: newSeq[NsNode](), variadic: false)
   var nb = newSeq[NsNode](m.genParams.len)
   var start = 0
   if m.paramTypes.len > 0:

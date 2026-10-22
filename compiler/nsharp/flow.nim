@@ -31,6 +31,7 @@ proc isAssigned(s: DaState; name: string): bool =
 
 proc merge(a, b: DaState): DaState =
   ## The state where two paths meet: what both assigned.
+  result = DaState()
   if a.unreachable: return b
   if b.unreachable: return a
   result.assigned = a.assigned * b.assigned

@@ -3622,6 +3622,7 @@ proc lowerStaticField(l: Lowerer; cls: NsNode; m: NsNode; inits: var seq[PNode];
 proc lowerEventAccessors(l: Lowerer; cls, m: NsNode; isException: bool): seq[PNode] =
   ## `event D E { add { ... } remove { ... } }`: procs `nsAdd_E`/`nsRemove_E` over
   ## the receiver (a `typedesc` for a static event) and the handler, `value`.
+  result = @[]
   let recvDefs =
     if m.attrs.isStatic: l.typedescDefs(cls.name, m.info)
     else: l.selfDefs(cls.name, isException, m.info)
