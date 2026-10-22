@@ -1,0 +1,25 @@
+// Equals and GetHashCode of the built-in value types and strings, as .NET defines
+// them (NaN equals NaN, a long folds its halves), a struct's by its fields, and
+// members of a built-in type's static fields (`double.NaN.Equals`, `Math.PI`).
+using System;
+
+namespace Demo
+{
+    struct Pt { public int X; public int Y; }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(3.Equals(3) + " " + 3.Equals(4) + " " + double.NaN.Equals(double.NaN) + " " + 'a'.Equals('a') + " " + "x".Equals("x") + " " + "x".Equals("y") + " " + string.Equals("p", "p") + " " + true.Equals(false));
+            Console.WriteLine(1.5.GetHashCode() + " " + 7L.GetHashCode() + " " + (-7L).GetHashCode() + " " + 'a'.GetHashCode() + " " + true.GetHashCode() + " " + (-3).GetHashCode() + " " + 3u.GetHashCode() + " " + ((short)-2).GetHashCode() + " " + 2.5f.GetHashCode() + " " + ((byte)7).GetHashCode() + " " + 0.0.GetHashCode() + " " + (-0.0).GetHashCode());
+            var p = new Pt { X = 1, Y = 2 };
+            var q = new Pt { X = 1, Y = 2 };
+            var w = new Pt { X = 2, Y = 1 };
+            Console.WriteLine(p.Equals(q) + " " + p.Equals(w) + " " + (p.GetHashCode() == q.GetHashCode()) + " " + "abc".GetHashCode().Equals("abc".GetHashCode()));
+            Console.WriteLine(5.CompareTo(3) + " " + "a".CompareTo("b") + " " + 2.5.CompareTo(2.5));
+
+            Console.WriteLine(double.NaN.Equals(double.NaN) + " " + Math.PI.ToString() + " " + int.MaxValue.ToString());
+        }
+    }
+}

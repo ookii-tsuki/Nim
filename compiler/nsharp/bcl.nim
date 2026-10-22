@@ -81,11 +81,11 @@ const
   ]
 
   ## Nim types the prelude builds on, and how N# classifies them.
-  NsNimKinds*: array[38, NsTypeEntry] = [
+  NsNimKinds*: array[39, NsTypeEntry] = [
     ("int8", tkInt), ("int16", tkInt), ("int32", tkInt), ("int64", tkInt),
     ("uint8", tkInt), ("uint16", tkInt), ("uint32", tkInt), ("uint64", tkInt),
     ("int", tkInt), ("uint", tkInt),
-    ("float32", tkFloat), ("float64", tkFloat),
+    ("float32", tkFloat), ("float64", tkFloat), ("float", tkFloat),
     ("bool", tkBool), ("char", tkChar), ("string", tkString),
     ("seq", tkSequence), ("NsArray", tkSequence), ("openArray", tkSequence), ("array", tkSequence),
     ("Table", tkSequence), ("OrderedTable", tkSequence), ("HashSet", tkSequence),
@@ -335,7 +335,9 @@ proc resultAgrees*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
                    name: string): bool =
   ## Whether every overload of a library member yields the same type, so the result
   ## is known without choosing one (`Math.Abs` has one per numeric type; which one a
-  ## call takes is left to Nim).
+  ## call takes is left to Nim). Overloads declared for the receiver's own type are
+  ## the ones it takes, so its type class's are not asked then (`double.NaN` is the
+  ## `float64` one, whatever `float32`'s is).
   var keys: seq[string] = @[]
   let nim = s.nimSpellingOf(recvName)
   if nim.len > 0: keys.add nim
@@ -344,6 +346,7 @@ proc resultAgrees*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
   var ret = ""
   var seen = false
   for key in keys:
+    if seen: break
     for m in s.members.getOrDefault(key):
       if m.name != name: continue
       if seen and m.ret != ret: return false

@@ -243,7 +243,11 @@ proc memberKindOfSurface(ctx: NsCheckContext; rk: NsTypeKind; recv, name: string
   if m.name.len == 0: return tkUnknown
   if not ctx.surface.resultAgrees(recv, rk, name): return tkUnknown
   if not m.retIsParam:
-    tname = m.ret
+    ## The C# name of a declared number (`float` is Nim's, a `double`).
+    tname = (if m.ret == "float": "double"
+             elif numericOfSpelling(m.ret).len > 0 and not isNumericName(m.ret):
+               numericOfSpelling(m.ret)
+             else: m.ret)
     return ctx.surface.kindOfSpelling(m.ret)
   if rk == tkNullable: return ctx.classifyName(recv)
   if m.isStatic: return rk
@@ -1323,6 +1327,53 @@ proc checkExplicitTypeArgs(ctx: NsCheckContext; owner: string; callee: NsNode;
                 $(j + 1), valueSpelling(v), typeSpelling(pt))
         return
 
+proc exactLibraryResult(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]): NsNode =
+  ## The result type of the static library overload whose parameters are exactly
+  ## the arguments' types (`Math.Abs(2.5f)` is `Abs(float)`'s, a `float`), as C#'s
+  ## overload resolution picks it; nil when none is, or a type is not known. Nim
+  ## makes the call either way: this is what the frontend knows of its result.
+  let recv = callee.body
+  if recv == nil or recv.typeKind != tkType: return nil
+  let recvName = unqualified(recv.typeName)
+  if ctx.scope.classes.hasKey(recvName): return nil
+  var argTypes: seq[string] = @[]
+  for a in args:
+    if a == nil or a.kind in {nsnNamedArg, nsnRefArg, nsnOutDecl, nsnLambda}: return nil
+    let vt = valueType(a)
+    if vt != nil and vt.kind == nsnTypeName: argTypes.add canonicalTypeName(vt.name)
+    else:
+      ## A value without a type name (`-2.5`): C#'s type for its kind.
+      case a.typeKind
+      of tkInt: argTypes.add "int"
+      of tkFloat: argTypes.add "double"
+      of tkBool: argTypes.add "bool"
+      of tkChar: argTypes.add "char"
+      of tkString: argTypes.add "string"
+      else: return nil
+  for m in ctx.surface.overloads(recvName, ctx.surface.kindOfName(recvName), callee.name):
+    let (ps, variadic) = libParams(m, recv, true, callee)
+    if variadic or ps.len != args.len: continue
+    var bound = initTable[string, NsNode]()
+    var exact = true
+    for j, pt in ps:
+      if pt == nil or pt.kind != nsnTypeName:
+        exact = false
+        break
+      if pt.name.startsWith("$"):
+        if bound.hasKey(pt.name):
+          if canonicalTypeName(bound[pt.name].name) != argTypes[j]: exact = false
+        else: bound[pt.name] = nsnTypeName(argTypes[j], pt.info)
+      elif canonicalTypeName(pt.name) != argTypes[j]: exact = false
+      if not exact: break
+    if not exact: continue
+    var nb: seq[NsNode] = @[]
+    for g in m.genParams:
+      nb.add (if bound.hasKey("$" & g): bound["$" & g] else: nsnTypeName("$" & g, callee.info))
+    let rt = nimToCs(m.retType, m.genParams, nb, callee)
+    if rt == nil or (rt.kind == nsnTypeName and rt.name.startsWith("$")): return nil
+    return rt
+  nil
+
 proc checkLibraryCall(ctx: NsCheckContext; callee: NsNode; args: seq[NsNode]) =
   ## A call of a library member no overload of which takes these arguments:
   ## CS1503 when one takes this many, CS1501 when none does. Generic parameters
@@ -2393,6 +2444,11 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
           break
     elif rk in {tkString, tkSequence, tkInt, tkFloat, tkBool, tkChar}:
       ctx.checkMemberUse(callee)
+      ## The result the prelude declares (`s.IndexOf(c)` is an `int`), so a member
+      ## of it, or arithmetic on it, is typed too.
+      kind = ctx.memberKindOfSurface(rk, callee.body.typeName, callee.name, tn)
+      if n.rtype == nil and kind != tkUnknown:
+        n.rtype = libGenericResult(ctx.surface, callee.body, callee.name, n.sons.len)
     elif rk == tkClass:
       ctx.checkMemberUse(callee)
       ctx.warnEarlyNative(callee)
@@ -2493,6 +2549,21 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     if not isLambdaArg(a): discard ctx.walkExpr(a)
   if callee != nil and callee.kind == nsnMember and cands.len == 0 and callee.body != nil:
     ctx.checkLibraryCall(callee, n.sons)
+    let owner = unqualified(callee.body.typeName)
+    if callee.body.typeKind == tkType and
+       (kind == tkUnknown or
+        not ctx.surface.resultAgrees(owner, ctx.surface.kindOfName(owner), callee.name) or
+        ctx.surface.member(owner, ctx.surface.kindOfName(owner), callee.name).retIsParam):
+      ## Overloads that differ in their result, or one whose result is a type
+      ## parameter: the one the arguments select.
+      let rt = ctx.exactLibraryResult(callee, n.sons)
+      if rt != nil:
+        callee.rtype = rt
+        let k = ctx.classifyType(rt)
+        if k != tkUnknown:
+          kind = k
+          tn = declTypeName(rt)
+          n.rtype = rt
   n.setType(kind, tn)
   if callee != nil and callee.typeArgs.len > 0 and owner.len > 0 and
      ctx.scope.classes.hasKey(owner):

@@ -1,0 +1,24 @@
+using System
+member ArgumentOutOfRangeException.Message = System | string
+member ArgumentOutOfRangeException.Message = System | string
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Random.Next = System | int
+member Random.Next = System | int
+member Random.Next = System | int
+member Random.Next = System | int
+member Random.Next = System | int
+member Random.Next = System | int
+member Random.Next = System | int
+member Random.Next = System | int
+member Random.Next = System | int
+member Random.Next = System | int
+member Random.NextDouble = System | float
+member Random.NextDouble = System | float
+member Random.ToString = System | string
+member int.MaxValue = System | int
+member int.MinValue = System | int
+member int.MinValue = System | int

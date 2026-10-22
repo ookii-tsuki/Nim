@@ -36,7 +36,8 @@ proc nimToCs*(t: PNode; names: seq[string]; args: seq[NsNode];
     let s = t.ident.s
     let k = names.find(s)
     if k >= 0 and k < args.len: return args[k]
-    let num = numericOfSpelling(s)
+    ## A declaration's `float` is Nim's, 64 bits: C#'s `double`.
+    let num = (if s == "float": "double" else: numericOfSpelling(s))
     result = nsnTypeName((if num.len > 0: num else: s), info.info)
   of nkBracketExpr:
     if t[0].kind != nkIdent: return nil

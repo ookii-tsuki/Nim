@@ -901,10 +901,11 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 |---|---|---|
 | `Console.WriteLine/Write/ReadLine` | ✅ v1 | `stdout.writeLine`/`readLine` |
 | `string` members `.Length`, `.Substring`, `.IndexOf`, `.ToUpper/Lower`, `.Split`, `.Trim`, `.Contains`, `.Replace`, `.StartsWith`… | ✅ v1 | `lib` wrappers on Nim `string` |
-| `string.Format`, `Join`, `IsNullOrEmpty` | ✅ v1 | `lib`; `Join` over an array, any collection or a dictionary's `Keys`/`Values`, with a `string` or `char` separator, each element as string concatenation renders it |
+| `string.Format`, `Join`, `IsNullOrEmpty` | ✅ v1 | `lib`; `Format` (and `Console.WriteLine(format, args)`, `StringBuilder.AppendFormat`) is .NET's composite format -- `{index[,alignment][:format]}`, `{{`/`}}`, each argument boxed (`varargs[RootRef, nsBox]`) and formatted as an interpolation hole, a malformed format throwing .NET's `FormatException` text; `Join` takes `params string[]`, an array of any element type, any collection or a dictionary's `Keys`/`Values`, with a `string` or `char` separator, each element as string concatenation renders it |
 | `string.RuneCount` / `.Runes` (char count) | ✅ v1 | `lib` (N# helper; `.Length` is bytes, §4.4) |
 | `T.Parse(s)`, `T.TryParse(s, out x)` on every integer type, `float`/`double`, `bool`, `char`; `double.IsNaN`/`IsInfinity`/`IsPositiveInfinity`/`IsNegativeInfinity`/`IsFinite` | ✅ v1 | `lib/pure/ns/System.nim`, over `typedesc[T]`; .NET's rules under en-US, the culture N# follows: an integer is white space, a sign and digits, a floating-point number also takes a point, an exponent, `,` group separators and `NaN`/`∞`, one too large becoming an infinity; `FormatException` / `OverflowException` with .NET's messages. A library member over a `typedesc` keeps its qualifier (`Parse(int32, s)`), and a member the library does not declare on a built-in type is CS0117 |
-| `Math.*` | ✅ v1 | `lib` (Nim `math`) |
+| `Math.*` | ✅ v1 | `lib` (Nim `math`); the members listed in §15.2 |
+| `char.Is*`, `char.ToUpper`/`ToLower` | ✅ v1 | `lib`; ASCII's classification, since a `char` is a byte of UTF-8 text (§4.4) |
 | `List<T>` | ✅ v1 | class over `seq[T]` (SS15.1) |
 | `Dictionary<K,V>`, `KeyValuePair<K,V>` | ✅ v1 | class over `NsHashMap[K,V]` (`lib/pure/nsharp/hashmap.nim`, .NET's own hash table: entries in an array with a free list, prime-sized buckets, `FastMod`, an integer key its own hash); struct (SS15.1) |
 | `HashSet<T>` | ✅ v1 | class over `NsHashMap[T, bool]`, the table `Dictionary` uses (SS15.1) |
@@ -913,13 +914,14 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | `LinkedList<T>`, `LinkedListNode<T>` | ✅ v1 | doubly-linked `ref object` nodes (SS15.1) |
 | `PriorityQueue<TElement,TPriority>` | ✅ v1 | .NET's 4-ary min-heap (SS15.1) |
 | `Predicate<T>`, `Comparison<T>`, `Converter<T,U>`, `Action<T>` | ✅ v1 | `proc` types in `System` |
-| `Array` / `Sort` / `Reverse` | ✅ v1 | `lib` (`algorithm`) |
-| `StringBuilder` | ✅ v1 | `lib` (`strutils`) |
+| `Array` / `Sort` / `Reverse` | ✅ v1 | `lib` (`algorithm`); the static helpers listed in §15.2 |
+| `StringBuilder` | ✅ v1 | `lib/pure/ns/System/Text.nim`: a class over a `string` (§15.2) |
 | `Tuple<...>` | ✅ v1 | Nim tuple |
 | `Nullable<T>` | ✅ v1 | `Option[T]` |
 | `Exception` hierarchy | ✅ v1 | `lib` |
 | `DateTime`, `TimeSpan` | 🔜 later | `std/times` |
-| `Random` | ✅ v1 | `std/random` |
+| `Random` | ✅ v1 | `lib`: .NET's subtractive generator, so a seeded one gives .NET's sequence (§15.2) |
+| `Equals` / `GetHashCode` of a value | ✅ v1 | the intrinsics: .NET's definitions for the built-in types (NaN equals NaN; a `long` folds its halves); a struct's over its fields; a string's hash is stable only within a run, as .NET's |
 | `Convert.*` | ✅ v1 | `lib` |
 | `IEnumerable<T>` / `ICollection<T>` / `IList<T>` / `IReadOnlyCollection<T>` / `IReadOnlyList<T>` / `ISet<T>` / `IReadOnlySet<T>` / `IDictionary<K,V>` / `IReadOnlyDictionary<K,V>` | ✅ v1 | values (SS15.1): `List`, arrays, `Dictionary`, `HashSet`, `Queue`, `Stack`, `LinkedList` and a dictionary's `Keys`/`Values` implement the ones .NET's do |
 | LINQ (method syntax) | 🔜 later | iterator adapters |
@@ -1024,6 +1026,25 @@ Deliberately deferred, with the reason recorded:
   SS19.
 
 ---
+
+
+### 15.2 System and System.Text - pinned member surface
+
+| Type | Members |
+|---|---|
+| `StringBuilder` | constructors `()`, `(string)`, `(int capacity)`; `Append` (`string`, `char`, `char` repeated, any value) `AppendFormat` `AppendJoin` `AppendLine` `Clear` `Insert` `Length` (get and set) `Remove` `Replace` (`string`, `char`) `ToString` (whole, range), `[]`, `[]=`; each mutator returns the builder |
+| `string` (static) | `Format` `Join` `Concat` `Compare` `CompareOrdinal` `IsNullOrEmpty` `IsNullOrWhiteSpace` |
+| `Console` | `Write` `WriteLine` (a value, or a composite format with arguments) `ReadLine` |
+| `char` (static) | `IsDigit` `IsLetter` `IsLetterOrDigit` `IsUpper` `IsLower` `IsWhiteSpace` `IsPunctuation` `IsSymbol` `IsControl` `IsNumber` `ToUpper` `ToLower` `GetNumericValue` |
+| `Math` | `Abs` `Max` `Min` `Sign` `Clamp` `Sqrt` `Cbrt` `Pow` `Exp` `Log` (natural, any base) `Log10` `Log2` `Floor` `Ceiling` `Round` (to even, to digits) `Truncate` `Sin` `Cos` `Tan` `Asin` `Acos` `Atan` `Atan2` `Sinh` `Cosh` `Tanh`, `PI` `E` `Tau` |
+| `Random` | constructors `()`, `(int seed)`; `Next` (`()`, `(max)`, `(min, max)`) `NextDouble` |
+| `Array` (static) | `Copy` `Fill` `Clear` `Resize` `Reverse` `IndexOf` `LastIndexOf` `Exists` `TrueForAll` `Find` `FindLast` `FindIndex` `ForEach` `Sort` |
+| every value | `Equals` `GetHashCode` `ToString` `GetType`, and `CompareTo` on numbers, `char`, `bool` and `string` |
+
+Deliberately absent: `StringBuilder.Capacity`/`EnsureCapacity`/`CopyTo`; `Random`'s
+`Shared`, `NextInt64`, `NextBytes`, `NextSingle`; `MidpointRounding`; `Math.BigMul`,
+`DivRem`, `FusedMultiplyAdd`; a culture other than en-US; `char`'s Unicode
+categories beyond ASCII.
 
 ## 16. N# extensions (beyond C#)
 

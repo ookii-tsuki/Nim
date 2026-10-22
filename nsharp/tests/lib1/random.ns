@@ -1,0 +1,24 @@
+// System.Random: a seeded one gives .NET's sequence (the same subtractive
+// generator), an unseeded one stays in range, and bad bounds throw .NET's message.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var r = new Random(42);
+            Console.WriteLine(r.Next() + " " + r.Next(100) + " " + r.Next(-50, 50) + " " + r.NextDouble() + " " + r.Next(int.MinValue, int.MaxValue));
+            var r2 = new Random(7);
+            int sum = 0;
+            for (int i = 0; i < 1000; i++) sum += r2.Next(10);
+            Console.WriteLine(sum + " " + new Random(-3).Next(1000) + " " + new Random(int.MinValue).Next() + " " + r.ToString());
+            var any = new Random();
+            int v = any.Next(5, 6);
+            Console.WriteLine(v + " " + (any.NextDouble() < 1.0));
+            try { r.Next(-1); } catch (ArgumentOutOfRangeException e) { Console.WriteLine(e.Message); }
+            try { r.Next(5, 2); } catch (ArgumentOutOfRangeException e) { Console.WriteLine(e.Message); }
+        }
+    }
+}

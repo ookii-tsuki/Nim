@@ -3,13 +3,13 @@
 # Members are ordinary Nim procs: an instance member is reached by Nim's
 # dot-call, a static one through the qualifier the frontend drops.
 
-import std/[syncio, strutils, math, hashes, algorithm]
+import std/[syncio, strutils, math, hashes, algorithm, times]
 from std/unicode import nil
 # `System.Collections.Generic` builds on this namespace, and this one names its
 # interfaces (`Array.Sort` takes an `IComparer<T>`), as .NET's namespaces may.
 import System/Collections/Generic {.cyclic.}
 from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, Equals, GetHashCode, NsArray, nsArrayOf, len,
-  items, `[]`, `[]=`, nsNoValue, nsExceptionName, nsStamped, nsAdoptException
+  items, `[]`, `[]=`, nsFormatValue, nsAlign, nsBox, nsNoValue, nsExceptionName, ToString, nsTypeName, nsStamped, nsAdoptException
 
 # `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
 from ../nsharp/pragmas import nsStatic, nsInterface
@@ -567,11 +567,89 @@ proc IsNullOrEmpty*(s: string): bool {.nsStatic: "String".} = s.len == 0
 proc IsNullOrWhiteSpace*(s: string): bool {.nsStatic: "String".} =
   s.len == 0 or s.allCharsInSet({' ', '\t', '\n', '\r', '\v', '\f'})
 proc Concat*(a, b: string): string {.nsStatic: "String".} = a & b
-proc Join*(separator: string; values: openArray[string]): string {.nsStatic: "String".} =
+proc Join*(separator: string; values: varargs[string]): string {.nsStatic: "String".} =
   values.join(separator)
 proc Join*(separator: string; values: NsArray[string]): string {.nsStatic: "String".} =
   values.nsData.join(separator)
+proc Join*[T](separator: string; values: NsArray[T]): string {.nsStatic: "String".} =
+  ## `Join<T>(string, IEnumerable<T>)` over an array, each element as `ToString()`
+  ## renders it; any other collection is `System.Collections.Generic`'s.
+  mixin `$`
+  for i, x in values.nsData:
+    if i > 0: result.add separator
+    result.add $x
 proc Compare*(a, b: string): int32 {.nsStatic: "String".} = nsCompareText(a, b)
+proc Equals*(t: typedesc[string]; a, b: string): bool = a == b
+  ## `string.Equals(a, b)`; `a.Equals(b)` is the intrinsics'.
+
+# `string.Format`: .NET's composite format. A hole is `{index[,alignment][:format]}`,
+# `{{` and `}}` are braces, and an argument formats as an interpolation hole does
+# (`nsFormatValue`). A malformed format throws `FormatException` with .NET's text.
+
+proc nsFormatFail(offset: int; reason: string) {.noinline, noreturn.} =
+  raise nsNewException(FormatException, "Input string was not in a correct format. " &
+    "Failure to parse near offset " & $offset & ". " & reason)
+
+proc nsComposite*(format: string; args: openArray[RootRef]): string =
+  ## The composite format, which `string.Format`, `Console.WriteLine` and
+  ## `StringBuilder.AppendFormat` share.
+  result = newStringOfCap(format.len + 8 * args.len)
+  var i = 0
+  let n = format.len
+  while i < n:
+    let c = format[i]
+    if c == '{':
+      if i + 1 < n and format[i + 1] == '{':
+        result.add '{'
+        i += 2
+        continue
+      var j = i + 1
+      if j >= n: nsFormatFail(j, "Format item ends prematurely.")
+      if format[j] notin {'0'..'9'}: nsFormatFail(j, "Expected an ASCII digit.")
+      var index = 0
+      while j < n and format[j] in {'0'..'9'}:
+        index = index * 10 + (ord(format[j]) - ord('0'))
+        inc j
+      while j < n and format[j] == ' ': inc j
+      var width = 0
+      if j < n and format[j] == ',':
+        inc j
+        while j < n and format[j] == ' ': inc j
+        var negative = false
+        if j < n and format[j] == '-':
+          negative = true
+          inc j
+        if j >= n: nsFormatFail(j, "Format item ends prematurely.")
+        if format[j] notin {'0'..'9'}: nsFormatFail(j, "Expected an ASCII digit.")
+        while j < n and format[j] in {'0'..'9'}:
+          width = width * 10 + (ord(format[j]) - ord('0'))
+          inc j
+        if negative: width = -width
+        while j < n and format[j] == ' ': inc j
+      var spec = ""
+      if j < n and format[j] == ':':
+        inc j
+        while j < n and format[j] != '}':
+          spec.add format[j]
+          inc j
+      if j >= n or format[j] != '}': nsFormatFail(j, "Format item ends prematurely.")
+      if index >= args.len:
+        raise nsNewException(FormatException, "Index (zero based) must be greater than " &
+          "or equal to zero and less than the size of the argument list.")
+      result.add nsAlign(nsFormatValue(args[index], spec), width)
+      i = j + 1
+    elif c == '}':
+      if i + 1 < n and format[i + 1] == '}':
+        result.add '}'
+        i += 2
+      else:
+        nsFormatFail(i + 1, "Unexpected closing brace without a corresponding opening brace.")
+    else:
+      result.add c
+      inc i
+
+proc Format*(format: string; args: varargs[RootRef, nsBox]): string {.nsStatic: "String".} =
+  nsComposite(format, args)
 
 # --- System.Array -----------------------------------------------------------
 #
@@ -624,6 +702,13 @@ proc Sort*[T](a: NsArray[T]; comparer: IComparer[T]) {.nsStatic: "Array".} =
 proc WriteLine*[T](x: T) {.nsStatic: "Console".} = echo x
 proc WriteLine*() {.nsStatic: "Console".} = echo ""
 proc Write*[T](x: T) {.nsStatic: "Console".} = stdout.write x
+proc WriteLine*[A](format: string; arg0: A; args: varargs[RootRef, nsBox]) {.nsStatic: "Console".} =
+  ## `Console.WriteLine("{0} {1}", a, b)`: a composite format (see `string.Format`).
+  ## It takes at least one argument after the format, so a lone string is printed
+  ## as it is, by the overload above.
+  echo nsComposite(format, @[nsBox(arg0)] & @args)
+proc Write*[A](format: string; arg0: A; args: varargs[RootRef, nsBox]) {.nsStatic: "Console".} =
+  stdout.write nsComposite(format, @[nsBox(arg0)] & @args)
 proc ReadLine*(): string = stdin.readLine
 
 # --- System.Math ------------------------------------------------------------
@@ -660,6 +745,239 @@ proc Round*(x: float): float {.nsStatic: "Math".} =
   result = round(x)
   if abs(x - trunc(x)) == 0.5 and floorMod(result, 2.0) != 0.0:
     result = result - copySign(1.0, x)
+proc Round*(x: float; digits: int32): float {.nsStatic: "Math".} =
+  ## To `digits` decimals, a midpoint to even, as .NET computes it: scaled, rounded
+  ## and scaled back, so `Round(2.675, 2)` is 2.68 (`267.5` is the nearest double).
+  if digits < 0 or digits > 15:
+    raise nsNewException(ArgumentOutOfRangeException, "digits",
+                         "Rounding digits must be between 0 and 15, inclusive.")
+  if abs(x) >= 1e16: return x
+  let scale = pow(10.0, float(digits))
+  Round(x * scale) / scale
+proc Truncate*(x: float): float {.nsStatic: "Math".} = trunc(x)
+proc Abs*[T: SomeFloat](x: T): T {.nsStatic: "Math".} = abs(x)
+proc Sign*[T: SomeSignedInt](x: T): int32 {.nsStatic: "Math".} = int32(cmp(x, T(0)))
+proc Clamp*[T: SomeNumber](value, min, max: T): T {.nsStatic: "Math".} =
+  ## `value` held to `[min, max]`; `min > max` throws, as .NET does.
+  if min > max:
+    raise nsNewException(ArgumentException,
+                         "'" & $min & "' cannot be greater than " & $max & ".")
+  if value < min: min elif value > max: max else: value
+proc Exp*(x: float): float {.nsStatic: "Math".} = exp(x)
+proc Log*(x: float): float {.nsStatic: "Math".} = ln(x)
+proc Log*(x, newBase: float): float {.nsStatic: "Math".} = ln(x) / ln(newBase)
+proc Log10*(x: float): float {.nsStatic: "Math".} = log10(x)
+proc Log2*(x: float): float {.nsStatic: "Math".} = log2(x)
+proc Cbrt*(x: float): float {.nsStatic: "Math".} = cbrt(x)
+proc Sin*(x: float): float {.nsStatic: "Math".} = sin(x)
+proc Cos*(x: float): float {.nsStatic: "Math".} = cos(x)
+proc Tan*(x: float): float {.nsStatic: "Math".} = tan(x)
+proc Asin*(x: float): float {.nsStatic: "Math".} = arcsin(x)
+proc Acos*(x: float): float {.nsStatic: "Math".} = arccos(x)
+proc Atan*(x: float): float {.nsStatic: "Math".} = arctan(x)
+proc Atan2*(y, x: float): float {.nsStatic: "Math".} = arctan2(y, x)
+proc Sinh*(x: float): float {.nsStatic: "Math".} = sinh(x)
+proc Cosh*(x: float): float {.nsStatic: "Math".} = cosh(x)
+proc Tanh*(x: float): float {.nsStatic: "Math".} = tanh(x)
+template PI*(t: typedesc[Math]): float = 3.141592653589793
+template E*(t: typedesc[Math]): float = 2.718281828459045
+template Tau*(t: typedesc[Math]): float = 6.283185307179586
+
+# --- System.Char --------------------------------------------------------------
+#
+# A `char` here is a byte of UTF-8 text, so the classification is ASCII's: a
+# character beyond it is not a `char` N# can hold.
+
+proc IsDigit*(c: char): bool {.nsStatic: "Char".} = c in {'0'..'9'}
+proc IsLetter*(c: char): bool {.nsStatic: "Char".} = c in {'a'..'z', 'A'..'Z'}
+proc IsLetterOrDigit*(c: char): bool {.nsStatic: "Char".} =
+  c in {'a'..'z', 'A'..'Z', '0'..'9'}
+proc IsUpper*(c: char): bool {.nsStatic: "Char".} = c in {'A'..'Z'}
+proc IsLower*(c: char): bool {.nsStatic: "Char".} = c in {'a'..'z'}
+proc IsWhiteSpace*(c: char): bool {.nsStatic: "Char".} =
+  c in {' ', '\t', '\n', '\v', '\f', '\r'}
+proc IsPunctuation*(c: char): bool {.nsStatic: "Char".} =
+  c in {'!', '"', '#', '%', '&', '\'', '(', ')', '*', ',', '-', '.', '/', ':', ';',
+        '?', '@', '[', '\\', ']', '_', '{', '}'}
+proc IsSymbol*(c: char): bool {.nsStatic: "Char".} =
+  c in {'$', '+', '<', '=', '>', '^', '`', '|', '~'}
+proc IsControl*(c: char): bool {.nsStatic: "Char".} = ord(c) < 32 or ord(c) == 127
+proc IsNumber*(c: char): bool {.nsStatic: "Char".} = c in {'0'..'9'}
+proc ToUpper*(c: char): char {.nsStatic: "Char".} = strutils.toUpperAscii(c)
+proc ToLower*(c: char): char {.nsStatic: "Char".} = strutils.toLowerAscii(c)
+proc GetNumericValue*(c: char): float {.nsStatic: "Char".} =
+  if c in {'0'..'9'}: float(ord(c) - ord('0')) else: -1.0
+
+# --- System.Random ------------------------------------------------------------
+#
+# A seeded `Random` is .NET's: the same subtractive generator (Knuth's, as .NET
+# keeps it for a seed), so `new Random(42)` gives the numbers .NET gives. An
+# unseeded one starts from the clock.
+
+type
+  Random* = ref object of RootObj
+    ## `System.Random`.
+    nsSeeds: array[56, int32]
+    nsNext, nsNextP: int
+
+method ToString*(r: Random): string = "System.Random"
+method nsTypeName*(r: Random): string = "System.Random"
+
+proc nsActualValue*(param, value, rule: string): ref ArgumentOutOfRangeException =
+  ## .NET's message for an argument out of range that it names with its value:
+  ## `maxValue ('-1') must be a non-negative value. (Parameter 'maxValue')`, then
+  ## `Actual value was -1.`
+  result = nsNewException(ArgumentOutOfRangeException)
+  result.msg = param & " ('" & value & "') " & rule & " (Parameter '" & param &
+               "')\nActual value was " & value & "."
+
+
+proc nsSeed(r: Random; seed: int32) =
+  const mBig = high(int32)
+  var mj = 161803398'i32 - (if seed == low(int32): high(int32) else: abs(seed))
+  r.nsSeeds[55] = mj
+  var mk = 1'i32
+  var ii = 0
+  for i in 1 ..< 55:
+    ii += 21
+    if ii >= 55: ii -= 55
+    r.nsSeeds[ii] = mk
+    mk = mj - mk
+    if mk < 0: mk += mBig
+    mj = r.nsSeeds[ii]
+  for k in 1 ..< 5:
+    for i in 1 ..< 56:
+      var n = i + 30
+      if n >= 55: n -= 55
+      r.nsSeeds[i] -= r.nsSeeds[1 + n]
+      if r.nsSeeds[i] < 0: r.nsSeeds[i] += mBig
+  r.nsNext = 0
+  r.nsNextP = 21
+
+proc newRandom*(seed: int32): Random =
+  new(result)
+  result.nsSeed(seed)
+
+proc newRandom*(): Random =
+  new(result)
+  let t = getTime()
+  result.nsSeed(cast[int32](t.toUnix xor t.nanosecond))
+
+proc nsSample(r: Random): int32 =
+  var a = r.nsNext + 1
+  if a >= 56: a = 1
+  var b = r.nsNextP + 1
+  if b >= 56: b = 1
+  var v = r.nsSeeds[a] - r.nsSeeds[b]
+  if v == high(int32): dec v
+  if v < 0: v += high(int32)
+  r.nsSeeds[a] = v
+  r.nsNext = a
+  r.nsNextP = b
+  v
+
+proc nsUnit(r: Random): float = float(r.nsSample) * (1.0 / float(high(int32)))
+
+proc Next*(r: Random): int32 = r.nsSample
+  ## A value in `[0, int.MaxValue)`.
+proc Next*(r: Random; maxValue: int32): int32 =
+  ## A value in `[0, maxValue)`.
+  if maxValue < 0:
+    raise nsActualValue("maxValue", $maxValue, "must be a non-negative value.")
+  int32(r.nsUnit * float(maxValue))
+proc Next*(r: Random; minValue, maxValue: int32): int32 =
+  ## A value in `[minValue, maxValue)`; a range wider than `int` takes two samples,
+  ## as .NET's does.
+  if minValue > maxValue:
+    raise nsNewException(ArgumentOutOfRangeException, "minValue",
+                         "'minValue' cannot be greater than maxValue.")
+  let range = int64(maxValue) - int64(minValue)
+  if range <= int64(high(int32)):
+    return int32(int64(r.nsUnit * float(range)) + int64(minValue))
+  var v = r.nsSample
+  if r.nsSample mod 2 == 0: v = -v
+  var d = float(v) + float(high(int32) - 1)
+  d /= float(2'u32 * uint32(high(int32)) - 1)
+  int32(int64(d * float(range)) + int64(minValue))
+proc NextDouble*(r: Random): float = r.nsUnit
+  ## A value in `[0, 1)`.
+
+# --- System.Array: copying, filling and searching -----------------------------
+
+proc nsRangeFail(param, message: string) {.noinline, noreturn.} =
+  raise nsNewException(ArgumentOutOfRangeException, param, message)
+
+proc Copy*[T](sourceArray: NsArray[T]; sourceIndex: int32; destinationArray: NsArray[T];
+              destinationIndex, length: int32) {.nsStatic: "Array".} =
+  ## Overlapping ranges of one array copy as if through a temporary, as .NET's do.
+  if sourceArray == nil or destinationArray == nil:
+    raise nsNewException(ArgumentNullException,
+                         (if sourceArray == nil: "sourceArray" else: "destinationArray"))
+  if length < 0: nsRangeFail("length", "Non-negative number required.")
+  if sourceIndex < 0: nsRangeFail("sourceIndex", "Non-negative number required.")
+  if destinationIndex < 0: nsRangeFail("destinationIndex", "Non-negative number required.")
+  if int(sourceIndex) + int(length) > sourceArray.len:
+    raise nsNewException(ArgumentException, "Source array was not long enough. Check " &
+      "the source index, length, and the array's lower bounds.", "sourceArray")
+  if int(destinationIndex) + int(length) > destinationArray.len:
+    raise nsNewException(ArgumentException, "Destination array was not long enough. " &
+      "Check the destination index, length, and the array's lower bounds.",
+      "destinationArray")
+  if sourceArray == destinationArray and destinationIndex > sourceIndex:
+    for k in countdown(int(length) - 1, 0):
+      destinationArray.nsData[int(destinationIndex) + k] = sourceArray.nsData[int(sourceIndex) + k]
+  else:
+    for k in 0 ..< int(length):
+      destinationArray.nsData[int(destinationIndex) + k] = sourceArray.nsData[int(sourceIndex) + k]
+proc Copy*[T](sourceArray, destinationArray: NsArray[T]; length: int32) {.nsStatic: "Array".} =
+  Copy(sourceArray, 0, destinationArray, 0, length)
+proc Fill*[T](a: NsArray[T]; value: T) {.nsStatic: "Array".} =
+  for x in a.nsData.mitems: x = value
+proc Clear*[T](a: NsArray[T]) {.nsStatic: "Array".} =
+  for x in a.nsData.mitems: x = default(T)
+proc Clear*[T](a: NsArray[T]; index, length: int32) {.nsStatic: "Array".} =
+  if index < 0 or length < 0 or int(index) + int(length) > a.len:
+    raise nsNewException(IndexOutOfRangeException)
+  for k in int(index) ..< int(index) + int(length): a.nsData[k] = default(T)
+proc Resize*[T](a: var NsArray[T]; newSize: int32) {.nsStatic: "Array".} =
+  ## A new array of `newSize` elements, the old ones first; a null one is made.
+  if newSize < 0: nsRangeFail("newSize", "Non-negative number required.")
+  var data = newSeq[T](int(newSize))
+  if a != nil:
+    for k in 0 ..< min(a.len, int(newSize)): data[k] = a.nsData[k]
+  a = nsArrayOf(data)
+proc Reverse*[T](a: NsArray[T]) {.nsStatic: "Array".} = algorithm.reverse(a.nsData)
+proc Reverse*[T](a: NsArray[T]; index, length: int32) {.nsStatic: "Array".} =
+  if index < 0: nsRangeFail("index", "Non-negative number required.")
+  if length < 0: nsRangeFail("length", "Non-negative number required.")
+  if int(index) + int(length) > a.len:
+    raise nsNewException(ArgumentException, "Offset and length were out of bounds for " &
+      "the array or count is greater than the number of elements from index to the " &
+      "end of the source collection.")
+  if length > 0: algorithm.reverse(a.nsData, int(index), int(index) + int(length) - 1)
+proc LastIndexOf*[T](a: NsArray[T]; value: T): int32 {.nsStatic: "Array".} =
+  result = -1
+  for i in countdown(a.len - 1, 0):
+    if a.nsData[i] == value: return int32(i)
+proc Exists*[T](a: NsArray[T]; match: Predicate[T]): bool {.nsStatic: "Array".} =
+  for x in a.nsData:
+    if match(x): return true
+proc TrueForAll*[T](a: NsArray[T]; match: Predicate[T]): bool {.nsStatic: "Array".} =
+  for x in a.nsData:
+    if not match(x): return false
+  true
+proc Find*[T](a: NsArray[T]; match: Predicate[T]): T {.nsStatic: "Array".} =
+  for x in a.nsData:
+    if match(x): return x
+proc FindLast*[T](a: NsArray[T]; match: Predicate[T]): T {.nsStatic: "Array".} =
+  for i in countdown(a.len - 1, 0):
+    if match(a.nsData[i]): return a.nsData[i]
+proc FindIndex*[T](a: NsArray[T]; match: Predicate[T]): int32 {.nsStatic: "Array".} =
+  result = -1
+  for i in 0 ..< a.len:
+    if match(a.nsData[i]): return int32(i)
+proc ForEach*[T](a: NsArray[T]; action: Action[T]) {.nsStatic: "Array".} =
+  for x in a.nsData: action(x)
 
 {.pop.}
 

@@ -1,0 +1,15 @@
+using System
+member Console.Write = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member FormatException.Message = System | string
+member string.Format = System | string
+member string.Format = System | string
+member string.Format = System | string
+member string.Join = System | string
+member string.Join = System | string

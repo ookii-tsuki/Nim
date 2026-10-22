@@ -666,21 +666,81 @@ type
     nsStr: proc (b: NsBoxed): string {.nimcall.}
     nsEq: proc (a: NsBoxed; b: RootRef): bool {.nimcall.}
     nsHash: proc (b: NsBoxed): int32 {.nimcall.}
+    nsFmt: proc (b: NsBoxed; spec: string): string {.nimcall.}
     nsType: string
   NsBox*[T] = ref object of NsBoxed
     v*: T
 
+# `Equals` and `GetHashCode` of a value, as .NET defines them for its built-in types:
+# a `double` equals itself when NaN, and hashes its bits with every NaN alike and
+# `-0.0` as `0.0`; a `long` folds its halves, a `char` repeats itself in the upper
+# half. A struct compares and hashes its fields. A string's hash is .NET's only in
+# being stable for one run.
+
+# One overload per kind of type, as `CompareTo` is declared, so each type's members
+# are found under it.
+
+proc Equals*[T: SomeInteger](a, b: T): bool {.discardable.} = a == b
+proc Equals*[T: SomeFloat](a, b: T): bool {.discardable.} = a == b or (a != a and b != b)
+proc Equals*(a, b: char): bool {.discardable.} = a == b
+proc Equals*(a, b: bool): bool {.discardable.} = a == b
+proc Equals*(a, b: string): bool {.discardable.} = a == b
+proc Equals*[T: object | tuple | enum](a, b: T): bool {.discardable.} = a == b
+  ## A struct's: its fields' (C#'s `ValueType.Equals`); an enum's value.
+
+proc GetHashCode*[T: SomeInteger](x: T): int32 {.discardable.} =
+  ## Nim's `int` is an untyped C# `int` literal, so it hashes as an `int` does.
+  when T is int64 | uint64:
+    cast[int32](x) xor cast[int32](cast[uint64](x) shr 32)
+  elif T is uint32: cast[int32](x)
+  else: int32(x)
+proc GetHashCode*[T: SomeFloat](x: T): int32 {.discardable.} =
+  when T is float64:
+    var bits = cast[uint64](x)
+    if ((bits - 1) and 0x7FFF_FFFF_FFFF_FFFF'u64) >= 0x7FF0_0000_0000_0000'u64:
+      bits = bits and 0x7FF0_0000_0000_0000'u64
+    cast[int32](bits) xor cast[int32](bits shr 32)
+  else:
+    var bits = cast[uint32](x)
+    if ((bits - 1) and 0x7FFF_FFFF'u32) >= 0x7F80_0000'u32: bits = bits and 0x7F80_0000'u32
+    cast[int32](bits)
+proc GetHashCode*(x: char): int32 {.discardable.} = int32(ord(x)) or (int32(ord(x)) shl 16)
+proc GetHashCode*(x: bool): int32 {.discardable.} = (if x: 1'i32 else: 0'i32)
+proc GetHashCode*(x: string): int32 {.discardable.} = cast[int32](hash(x))
+proc GetHashCode*[T: object | tuple | enum](x: T): int32 {.discardable.} =
+  when T is enum: int32(ord(x))
+  else:
+    var h: Hash = 0
+    for f in fields(x):
+      when compiles(GetHashCode(f)): h = h !& int(GetHashCode(f))
+      else: h = h !& hash(f)
+    cast[int32](!$h)
+
 proc nsBoxStr[T](b: NsBoxed): string = $NsBox[T](b).v
+proc nsBoxFmt[T](b: NsBoxed; spec: string): string = nsFmt(NsBox[T](b).v, spec)
 proc nsBoxEq[T](a: NsBoxed; b: RootRef): bool =
   ## Two boxes are equal when they hold equal values of one type.
-  b != nil and b of NsBox[T] and NsBox[T](a).v == NsBox[T](b).v
-proc nsBoxHash[T](b: NsBoxed): int32 = int32(hash(NsBox[T](b).v) and 0x7fffffff)
+  if b == nil or not (b of NsBox[T]): return false
+  when compiles(Equals(NsBox[T](a).v, NsBox[T](b).v)): Equals(NsBox[T](a).v, NsBox[T](b).v)
+  else: NsBox[T](a).v == NsBox[T](b).v
+proc nsBoxHash[T](b: NsBoxed): int32 =
+  when compiles(GetHashCode(NsBox[T](b).v)): GetHashCode(NsBox[T](b).v)
+  else: int32(hash(NsBox[T](b).v) and 0x7fffffff)
 
 proc nsBoxOf[T](x: T): RootRef =
   var name = ""
   when compiles(nsTypeOf(T)): name = nsTypeOf(T).nsFull
   NsBox[T](v: x, nsStr: nsBoxStr[T], nsEq: nsBoxEq[T], nsHash: nsBoxHash[T],
-           nsType: name)
+           nsFmt: nsBoxFmt[T], nsType: name)
+
+proc nsFormatValue*(o: RootRef; spec: string): string =
+  ## One hole of a composite format (`string.Format`) holding an `object`: a boxed
+  ## value takes the spec as an interpolation hole does, null is empty, and any
+  ## other object is its `ToString()`.
+  mixin ToString
+  if o == nil: ""
+  elif o of NsBoxed: NsBoxed(o).nsFmt(NsBoxed(o), spec)
+  else: o.ToString()
 
 proc nsBox*(x: RootRef): RootRef {.inline.} = x
   ## A reference is already an object.

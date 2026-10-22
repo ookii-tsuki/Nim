@@ -1,0 +1,9 @@
+StringBuilder.Append = result:other
+StringBuilder.AppendFormat = result:other
+StringBuilder.AppendJoin = result:other
+StringBuilder.AppendLine = result:other
+StringBuilder.Clear = result:other
+StringBuilder.GetType = result:other
+StringBuilder.Insert = result:other
+StringBuilder.Remove = result:other
+StringBuilder.Replace = result:other

@@ -1,0 +1,9 @@
+[   42|ab   |3.14|00FF|{x}|42]
+one and c
+a,b,c x-y
+1-two
+5!
+Index (zero based) must be greater than or equal to zero and less than the size of the argument list.
+Input string was not in a correct format. Failure to parse near offset 2. Format item ends prematurely.
+Input string was not in a correct format. Failure to parse near offset 1. Expected an ASCII digit.
+Input string was not in a correct format. Failure to parse near offset 3. Unexpected closing brace without a corresponding opening brace.

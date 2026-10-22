@@ -67,7 +67,7 @@ proc recvSpelling(n: NsNode): string =
   if n.typeName.len > 0: return n.typeName
   case n.typeKind
   of tkInt: "int"
-  of tkFloat: "float"
+  of tkFloat: "double"      ## C#'s floating value without a suffix
   of tkBool: "bool"
   of tkChar: "char"
   of tkString: "string"
@@ -115,7 +115,11 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
       let kind = surface.kindOfName(recv)
       let m = surface.member(recv, kind, n.name)
       if m.name.len > 0 and recv.len > 0 and m.isStatic:
-        let tok = retTokenFor(surface, m, kind)
+        ## The overload the arguments selected, where sema chose one (`Math.Abs` of
+        ## a `float`); the first declaration otherwise.
+        let tok = (if n.rtype != nil and n.rtype.kind == nsnTypeName:
+                     tokenOf(surface.kindOfName(n.rtype.name))
+                   else: retTokenFor(surface, m, kind))
         if isProjected(tok):
           facts.add "member " & recv & "." & n.name & " = " &
                     nsOf(m.path) & " | " & tok
@@ -145,7 +149,13 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
             break
     elif isValueKind(rk):
       let recv = recvSpelling(n.body)
-      let m = surface.member(recv, rk, n.name)
+      ## An instance member: a static overload of the name (`string.Equals(a, b)`)
+      ## is not this one.
+      var m = NsBclMember()
+      for o in surface.overloads(recv, rk, n.name):
+        if not o.isStatic:
+          m = o
+          break
       if m.name.len > 0 and recv.len > 0 and not m.isStatic:
         let tok = retTokenFor(surface, m, rk)
         if isProjected(tok):

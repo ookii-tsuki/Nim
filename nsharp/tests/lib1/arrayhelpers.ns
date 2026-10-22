@@ -1,0 +1,38 @@
+// System.Array's static helpers: Copy (overlapping too), Fill, Clear, Resize,
+// Reverse, LastIndexOf, and the predicate searches.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            int[] a = { 5, 3, 8, 3, 1 };
+            int[] b = new int[7];
+            Array.Copy(a, b, 5);
+            Array.Copy(a, 1, b, 5, 2);
+            Console.WriteLine(string.Join(",", b));
+            Array.Copy(a, 0, a, 1, 4);
+            Console.WriteLine(string.Join(",", a));
+            Array.Fill(b, 9);
+            Array.Clear(b, 1, 2);
+            Console.WriteLine(string.Join(",", b));
+            Array.Resize(ref a, 7);
+            Console.WriteLine(a.Length + " " + string.Join(",", a));
+            Array.Resize(ref a, 2);
+            Array.Reverse(b);
+            Array.Reverse(b, 0, 3);
+            Console.WriteLine(string.Join(",", a) + " / " + string.Join(",", b));
+            int[] c = { 4, 9, 2, 9, 7 };
+            Console.WriteLine(Array.LastIndexOf(c, 9) + " " + Array.IndexOf(c, 9) + " " + Array.Exists(c, x => x > 8) + " " + Array.TrueForAll(c, x => x > 1) +
+                " " + Array.Find(c, x => x > 4) + " " + Array.FindLast(c, x => x < 9) + " " + Array.FindIndex(c, x => x == 2) + " " + Array.Find(c, x => x > 100));
+            Array.ForEach(c, x => Console.Write(x + ";"));
+            Console.WriteLine();
+            Array.Clear(c);
+            Console.WriteLine(string.Join(",", c));
+            try { Array.Copy(a, 0, a, 2, 5); } catch (ArgumentException e) { Console.WriteLine(e.Message); }
+            try { Array.Resize(ref a, -1); } catch (ArgumentOutOfRangeException e) { Console.WriteLine(e.Message); }
+        }
+    }
+}

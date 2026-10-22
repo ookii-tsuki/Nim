@@ -1,0 +1,6 @@
+1434747710 14 -38 0.5227642760252413 -361709744
+4289 293 1559595546 System.Random
+5 True
+maxValue ('-1') must be a non-negative value. (Parameter 'maxValue')
+Actual value was -1.
+'minValue' cannot be greater than maxValue. (Parameter 'minValue')
