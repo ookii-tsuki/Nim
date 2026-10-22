@@ -1,0 +1,30 @@
+// A variable, field, property, parameter, result or collection element of an
+// exception type holds a reference: it may be null, and keeps the exception's
+// dynamic type through is, as, casts and a rethrow.
+using System;
+using System.Collections.Generic;
+class MyEx : Exception { public int Code; public MyEx(string m, int c) : base(m) { Code = c; } }
+class Box { public Exception Err { get; set; } public Exception Field; }
+class Program {
+    static Exception last;
+    static Exception Wrap(Exception inner) { return inner; }
+    static void Main() {
+        var b = new Box();
+        Console.WriteLine(b.Err == null);
+        Console.WriteLine(b.Field == null);
+        Exception e = null;
+        Console.WriteLine(e == null);
+        try { throw new InvalidOperationException("x"); } catch (Exception c) { e = c; last = c; }
+        Console.WriteLine(e.Message + " " + (last != null) + " " + (e is InvalidOperationException));
+        b.Err = new ArgumentException("arg"); Console.WriteLine(b.Err.Message);
+        var errs = new List<Exception> { new MyEx("mine", 7), new InvalidOperationException("io") };
+        foreach (var x in errs) {
+            if (x is MyEx m) Console.WriteLine("MyEx " + m.Code);
+            else Console.WriteLine("other " + x.Message);
+        }
+        MyEx my = errs[0] as MyEx; Console.WriteLine(my.Code + " " + ((MyEx)errs[0]).Message);
+        try { throw Wrap(new MyEx("wrapped", 9)); } catch (MyEx w) { Console.WriteLine(w.Message + w.Code); }
+        Exception saved = new MyEx("s", 1);
+        try { throw saved; } catch (Exception z) { Console.WriteLine(z == saved); }
+    }
+}

@@ -301,6 +301,18 @@ proc isConcreteType(l: Lowerer; n: PNode): bool =
       if not l.isConcreteType(n[i]): return false
     true
 
+proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode
+proc objTypeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
+  ## A type as an object type: what `of`, `except` and a base clause name, where
+  ## an exception class is not its `ref`.
+  var ol = l
+  ol.objTypes = true
+  ol.typeToNim(t, info)
+
+proc convCallee(t: PNode): PNode =
+  ## A type used as a conversion: `(ref T)(x)` needs the parentheses.
+  if t.kind == nkRefTy: newTree(nkPar, t.info, t) else: t
+
 proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   ## C# type reference to Nim type expression. `nsnEmpty`/`nsnVoidType` become
   ## `nkEmpty`, which is how "no type" is spelled in a Nim parameter list.
@@ -352,6 +364,12 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
         ## A handle class is held through its handle: `NsH_Node[Ball]`.
         return newTree(nkBracketExpr, info, l.id("NsH_" & root, info), l.id(name, info))
     result = l.id(name, info)
+    if t.sons.len == 0 and not l.objTypes and
+       l.surface.isExceptionType(name, l.scope.baseChain(name)):
+      ## An exception class is a value object raised as a `ref`: a variable, field,
+      ## parameter or result of one holds the reference, so it may be null and keeps
+      ## the object's dynamic type (`Exception e = caught;`).
+      return newTree(nkRefTy, info, result)
     if t.sons.len > 0:
       let be = newNodeI(nkBracketExpr, info)
       be.add result
@@ -742,6 +760,15 @@ proc newWithInits(l: Lowerer; n: NsNode): PNode =
 proc newToNim(l: Lowerer; n: NsNode): PNode =
   ## `new T(args)` becomes `newT(args)`, carrying generic arguments over.
   if n.inits.len > 0 and n.strVal.len > 0: return l.newWithInits(n)
+  if n.typ != nil and n.typ.kind == nsnTypeName and n.typ.sons.len == 0 and
+     not l.scope.classes.hasKey(canonicalTypeName(n.typ.name)) and
+     l.surface.isExceptionType(nimTypeName(n.typ.name)):
+    ## `new InvalidOperationException(msg)` of the library: `newException(T, msg)`,
+    ## a `ref`, as `throw` makes it.
+    let q = l.qualifiedName(n.typ.name, n.info, 0)
+    return newTree(nkCall, n.info, l.id("newException", n.info),
+                   (if q != nil: q else: l.id(nimTypeName(n.typ.name), n.info)),
+                   (if n.sons.len > 0: l.expr(n.sons[0]) else: newAtom(nkStrLit, "", n.info)))
   if n.typ != nil and n.typ.kind == nsnTypeName and n.typ.name in l.procTypeParams:
     ## `new T()` on a type parameter (`where T : new()`): every class declares
     ## `nsCreate` over its typedesc, and the intrinsics do for value types.
@@ -1073,7 +1100,7 @@ proc castToNim(l: Lowerer; n: NsNode): PNode =
     return l.someCall(newTree(nkCall, n.info, l.typeToNim(n.typ.typ, n.info), l.expr(n.body)),
                       n.typ.typ, n.info)
   result = newNodeI(nkCall, n.info)
-  result.add l.typeToNim(n.typ, n.info)
+  result.add convCallee(l.typeToNim(n.typ, n.info))
   if n.body != nil and n.body.typeKind == tkNullable:
     result.add l.presentOf(n.body, n.info)
   else:
@@ -1094,9 +1121,9 @@ proc asToNim(l: Lowerer; n: NsNode): PNode =
   let cond = newNodeI(nkInfix, n.info)
   cond.add l.id("of", n.info)
   cond.add l.id("nsAs", n.info)
-  cond.add l.typeToNim(n.typ, n.info)
+  cond.add l.objTypeToNim(n.typ, n.info)
   let conv = newNodeI(nkCall, n.info)
-  conv.add l.typeToNim(n.typ, n.info)
+  conv.add convCallee(l.typeToNim(n.typ, n.info))
   conv.add l.id("nsAs", n.info)
   let inner = newNodeI(nkStmtList, n.info)
   inner.add newTree(nkLetSection, n.info, defs)
@@ -1542,7 +1569,7 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       else:
         var v = l.expr(e)
         if et.kind == nsnTypeName and e.kind != nsnNull:
-          v = newTree(nkCall, e.info, l.typeToNim(et, e.info), v)
+          v = newTree(nkCall, e.info, convCallee(l.typeToNim(et, e.info)), v)
         sl.add newTree(nkCall, info, l.id("add", info), l.id(t, info), v)
     sl.add newTree(nkCall, info, l.id("nsArrayOf", info), l.id(t, info))
     result = newTree(nkBlockExpr, info, empty(info), sl)
@@ -1556,7 +1583,7 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     let br = newNodeI(nkBracket, n.info)
     for e in n.sons:
       if n.typ != nil and n.typ.kind == nsnTypeName and e.kind != nsnNull:
-        br.add newTree(nkCall, e.info, l.typeToNim(n.typ, e.info), l.expr(e))
+        br.add newTree(nkCall, e.info, convCallee(l.typeToNim(n.typ, e.info)), l.expr(e))
       else:
         br.add l.expr(e)
     result = newTree(nkPrefix, n.info, l.id("@", n.info), br)
@@ -1597,7 +1624,7 @@ proc expr(l: Lowerer; n: NsNode): PNode =
                        l.typeToNim(n.typ, n.info))
     elif n.kind == nsnIs:
       result = newTree(nkInfix, n.info, l.id(n.name, n.info), l.expr(n.body),
-                       l.typeToNim(n.typ, n.info))
+                       l.objTypeToNim(n.typ, n.info))
     elif n.kind == nsnAs: result = l.asToNim(n)
     else:
       result = l.castToNim(n)
@@ -1963,13 +1990,14 @@ proc typeTest(l: Lowerer; subj: PNode; pat: NsNode; target: NsNode;
      l.surface.kindOfName(tname) notin {tkInt, tkFloat, tkBool, tkChar, tkString}:
     ## A reference: the object's dynamic type decides; null is never a `T`.
     let ofT = (if targetIsStruct: l.id("nsBox_" & tname, info)
-               else: l.typeToNim(target, info))
+               else: l.objTypeToNim(target, info))
     result = newTree(nkInfix, info, l.id("of", info), copyTree(obj), ofT)
     if bindName.len > 0:
       let conv = (if targetIsStruct:
                     newTree(nkDotExpr, info, newTree(nkCall, info, copyTree(ofT),
                                                      copyTree(obj)), l.id("v", info))
-                  else: newTree(nkCall, info, l.typeToNim(target, info), copyTree(obj)))
+                  else: newTree(nkCall, info, convCallee(l.typeToNim(target, info)),
+                                copyTree(obj)))
       result = newTree(nkInfix, info, l.id("and", info), result,
                        l.assignTrue(bindName, conv, info))
     return
@@ -2391,14 +2419,14 @@ proc forToNim(l: Lowerer; n: NsNode): PNode =
 proc catchMatch(l: Lowerer; c: NsNode; exc: PNode): PNode =
   ## Whether the current exception is one a `catch` clause takes.
   if c.typ == nil or c.typ.kind in {nsnEmpty, nsnVoidType}: return l.id("true", c.info)
-  newTree(nkInfix, c.info, l.id("of", c.info), exc, l.typeToNim(c.typ, c.info))
+  newTree(nkInfix, c.info, l.id("of", c.info), exc, l.objTypeToNim(c.typ, c.info))
 
 proc catchVar(l: Lowerer; c: NsNode; exc: PNode): PNode =
   ## `let e = (ref T)(exc)`: the clause's variable, when it names one.
   if c.typ == nil or c.typ.kind in {nsnEmpty, nsnVoidType}: return empty(c.info)
   newTree(nkLetSection, c.info, newTree(nkIdentDefs, c.info, l.id(c.name, c.info),
     empty(c.info), newTree(nkCall, c.info,
-      newTree(nkPar, c.info, newTree(nkRefTy, c.info, l.typeToNim(c.typ, c.info))),
+      newTree(nkPar, c.info, newTree(nkRefTy, c.info, l.objTypeToNim(c.typ, c.info))),
       exc)))
 
 proc anyException(l: Lowerer; info: TLineInfo): PNode =
@@ -2532,7 +2560,7 @@ proc tryToNim(l: Lowerer; n: NsNode): PNode =
         ## `except T as e`
         let asNode = newNodeI(nkInfix, c.info)
         asNode.add l.id("as", c.info)
-        asNode.add l.typeToNim(c.typ, c.info)
+        asNode.add l.objTypeToNim(c.typ, c.info)
         asNode.add l.id(c.name, c.info)
         br.add asNode
       else:
@@ -5707,7 +5735,7 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let objTy = newNodeI(nkObjectTy, n.info)
   objTy.add empty(n.info)
   if n.typ != nil:
-    objTy.add newTree(nkOfInherit, n.info, l.typeToNim(n.typ, n.info))
+    objTy.add newTree(nkOfInherit, n.info, l.objTypeToNim(n.typ, n.info))
   else:
     # A base-less class is a `ref object`, a base-less struct a value `object`,
     # but both are a System.Object in C#, so both derive from the root.
