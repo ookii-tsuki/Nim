@@ -881,6 +881,9 @@ proc nsActualValue*(param, value, rule: string): ref ArgumentOutOfRangeException
                "')\nActual value was " & value & "."
 
 
+{.push overflowChecks: off.}
+# The generator's arithmetic is unchecked, as .NET's is: a seed of
+# `int.MinValue` takes intermediate values that wrap.
 proc nsSeed(r: Random; seed: int32) =
   const mBig = high(int32)
   var mj = 161803398'i32 - (if seed == low(int32): high(int32) else: abs(seed))
@@ -924,6 +927,7 @@ proc nsSample(r: Random): int32 =
   r.nsNext = a
   r.nsNextP = b
   v
+{.pop.}
 
 proc nsUnit(r: Random): float = float(r.nsSample) * (1.0 / float(high(int32)))
 
