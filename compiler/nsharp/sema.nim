@@ -1979,7 +1979,8 @@ proc libraryHas(ctx: NsCheckContext; recv: string; kind: NsTypeKind; name: strin
   var hops = 0
   while cur.len > 0 and ctx.surface.types.hasKey(cur) and hops < 16:
     ## A field of the library's object type reads as a C# property.
-    if name in ctx.surface.types[cur].fields: return true
+    if name in ctx.surface.types[cur].fields and
+       name notin ctx.surface.types[cur].hiddenFields: return true
     cur = ctx.surface.types[cur].base
     inc hops
   for m in ctx.surface.members.getOrDefault(NsParamKey):
@@ -2026,6 +2027,13 @@ proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
   let cn = canonicalTypeName(recv.typeName)
   if rk == tkClass and ctx.scope.classes.hasKey(cn):
     if not ctx.chainInScope(cn) and ctx.scope.classes[cn].classKind != ckInterface:
+      ## A class deriving from an exception: what it does not declare, the
+      ## library's exception root must (`Message`), as a visible member.
+      if ctx.surface.isExceptionType(cn, ctx.scope.baseChain(cn)) and
+         ctx.scope.findMemberInfo(cn, n.name).name.len == 0 and
+         not ctx.libraryHas("Exception", tkException, n.name) and
+         not ctx.libraryHas("object", tkClass, n.name):
+        nsError(ctx.config, n.info, ndNoMember, cn, n.name)
       return
     let m = ctx.scope.findMemberInfo(cn, n.name)
     if m.name.len == 0:
@@ -2080,6 +2088,25 @@ proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
     let spelled = (if recv.typeName.len > 0: recv.typeName else: kindSpelling(recv))
     if not ctx.libraryHas(spelled, rk, n.name) and not ctx.libraryHas("object", tkClass, n.name):
       nsError(ctx.config, n.info, ndNoMember, spelled, n.name)
+  elif rk == tkException:
+    ## A library exception (`ArgumentException`), or a class deriving from one:
+    ## its own members, or the library's.
+    if ctx.scope.classes.hasKey(cn) and ctx.scope.findMemberInfo(cn, n.name).name.len > 0:
+      discard
+    elif not ctx.libraryHas(cn, rk, n.name) and
+       not ctx.libraryHas("Exception", tkException, n.name) and
+       not ctx.libraryHas("object", tkClass, n.name):
+      nsError(ctx.config, n.info, ndNoMember, cn, n.name)
+  elif recv.rtype != nil and recv.rtype.kind == nsnArrayType:
+    ## An array is the library's `NsArray` (`NsMdArray` with more than one
+    ## dimension): `Length`, `Clone`, and LINQ's extensions where `System.Linq`
+    ## is imported.
+    let ext = ctx.surface.extensionModule("NsArray", tkClass, n.name)
+    if (not ctx.libraryHas("NsArray", tkClass, n.name) and
+        not ctx.libraryHas("NsMdArray", tkClass, n.name) and
+        not ctx.libraryHas("object", tkClass, n.name)) or
+       (ext.len > 0 and ext.replace('/', '.') notin ctx.scope.usings):
+      nsError(ctx.config, n.info, ndNoMember, typeSpelling(recv.rtype), n.name)
   elif rk == tkString and cn in ["string", "String", ""]:
     if not ctx.libraryHas("string", tkString, n.name):
       nsError(ctx.config, n.info, ndNoMember, "string", n.name)
@@ -2106,6 +2133,18 @@ proc checkStaticMember(ctx: NsCheckContext; cls, name: string; info: TLineInfo) 
     if k in {tkInt, tkFloat, tkBool, tkChar, tkString} and
        not ctx.libraryHas(c, k, name) and not ctx.libraryHas("object", tkClass, name):
       nsError(ctx.config, info, ndNoStaticMember, cls, name)
+      return
+    ## A library type or static qualifier (`Stopwatch`, `Console`, `Math`): its
+    ## visible members only, so a helper (`Stopwatch.newStopwatch`) is not one (an
+    ## enum's values are members too); a nested type is a type.
+    let nim = ctx.surface.nimSpellingOf(c)
+    let libType = nim.len > 0 and ctx.surface.types.hasKey(nim)
+    if (libType or ctx.surface.members.hasKey(c)) and
+       not ctx.isTypeName(name) and not ctx.isTypeName(c & "." & name):
+      var found = ctx.libraryHas(c, k, name) or ctx.libraryHas("object", tkClass, name)
+      for m in ctx.surface.members.getOrDefault(c):
+        if m.name == name and not m.hidden: found = true
+      if not found: nsError(ctx.config, info, ndNoStaticMember, cls, name)
     return
   if not ctx.chainInScope(c): return
   if ctx.scope.enums.contains(c) or ctx.scope.classes.hasKey(name): return
@@ -2329,7 +2368,7 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
             n.rtype = e.typ
           break
   of tkSequence, tkString, tkException, tkNullable:
-    if rk in {tkString, tkSequence}: ctx.checkMemberUse(n)
+    if rk in {tkString, tkSequence, tkException}: ctx.checkMemberUse(n)
     kind = ctx.memberKindOfSurface(rk, n.body.typeName, n.name, tname)
     if n.rtype == nil: n.rtype = libGenericResult(ctx.surface, n.body, n.name, 0)
   of tkType:
@@ -2498,7 +2537,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
           tn = m.ret
           n.rtype = nsnTypeName(m.ret, n.info)
           break
-    elif rk in {tkString, tkSequence, tkInt, tkFloat, tkBool, tkChar}:
+    elif rk in {tkString, tkSequence, tkInt, tkFloat, tkBool, tkChar, tkException}:
       ctx.checkMemberUse(callee)
       ## The result the prelude declares (`s.IndexOf(c)` is an `int`), so a member
       ## of it, or arithmetic on it, is typed too.

@@ -870,7 +870,7 @@ type
     nsFmt: proc (b: NsBoxed; spec: string): string {.nimcall.}
     nsType: string
   NsBox*[T] = ref object of NsBoxed
-    v*: T
+    v* {.nsHidden.}: T
 
 method nsValueText*[T](b: NsBox[T]): string {.nsHidden.} = nsFieldValue(b.v)
 
@@ -1114,7 +1114,7 @@ type
   NsArrayBase* = ref object of RootObj
     nsName: proc (): string {.nimcall.}  ## `System.Int32[]`, the type's name
   NsArray*[T] = ref object of NsArrayBase
-    nsData*: seq[T]
+    nsData* {.nsHidden.}: seq[T]
 
 proc nsArrayName[T](): string {.nimcall.} =
   mixin nsTypeOf
@@ -1369,7 +1369,7 @@ when defined(cpp):
     NsOwner* {.importcpp: "NsOwner", header: "pure/nsharp/nsobj.hpp".} = object
       ## The box of an object of an N# class deriving a native one, which `this`
       ## keeps alive; a copy C++ makes has none.
-      box*: pointer
+      box* {.nsHidden.}: pointer
     NsPass*[R] {.importcpp: "NsPass<'0>", header: "pure/nsharp/nsobj.hpp".} = object
       ## An N# reference passed to C++, which becomes the pointer or reference the
       ## parameter is.
@@ -1391,7 +1391,7 @@ when defined(cpp):
   type NsHeapBox*[T] = object of NsBoxBase
     ## An object C++ made with `new` and handed over (`[return: Owned]`), which N#
     ## deletes when the last reference goes.
-    p*: ptr T
+    p* {.nsHidden.}: ptr T
   proc nsDelete[T](p: ptr T) {.importcpp: "delete #".}
   proc `=destroy`*[T](b: NsHeapBox[T]) =
     if b.p != nil: nsDelete(b.p)

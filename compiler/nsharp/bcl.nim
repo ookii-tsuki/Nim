@@ -25,6 +25,7 @@ type
     genParams*: seq[string] ## its generic parameters
     sig*: PNode           ## a delegate (proc type): its formal parameters
     fields*: seq[string]  ## an object type's fields, which C# reads as properties
+    hiddenFields*: seq[string] ## those marked `{.nsHidden.}`, which it does not
     union*: seq[PNode]    ## a type class `A[T] | B[T]`: its alternatives
     baseNode*: PNode      ## the declared base as written, with its type arguments
 
@@ -420,6 +421,14 @@ proc collectNimFiles(root: string; into: var seq[string]) =
     if kind == pcDir: collectNimFiles(path, into)
     elif kind == pcFile and splitFile(path).ext == ".nim": into.add path
 
+proc hasPragma(n: PNode; name: string): bool =
+  ## Whether a declaration's pragmas name `name` (`{.nsHidden.}`, `{.nsHidden, inline.}`).
+  for i in 0 ..< n.len:
+    let p = n[i]
+    if p == nil or p.kind != nkPragma: continue
+    for j in 0 ..< p.len:
+      if p[j] != nil and declaredName(p[j]) == name: return true
+
 proc isDefinition(n: PNode): bool =
   ## The nodes that declare something callable.
   n.kind in {nkProcDef, nkFuncDef, nkMethodDef, nkIteratorDef, nkConverterDef,
@@ -461,7 +470,17 @@ proc loadTypes(s: var NsBclSurface; n: PNode; module = "") =
         if obj != nil and obj.len > 2 and obj[2] != nil and obj[2].kind == nkRecList:
           for f in obj[2]:
             if f.kind == nkIdentDefs:
-              for k in 0 ..< f.len - 2: t.fields.add declaredName(f[k])
+              for k in 0 ..< f.len - 2:
+                ## `nsObj* {.nsHidden.}: RootRef`: the name inside the pragma. A
+                ## field the module does not export is no property either.
+                var fname = f[k]
+                var hidden = false
+                if fname.kind == nkPragmaExpr and fname.len > 0:
+                  hidden = fname.hasPragma("nsHidden")
+                  fname = fname[0]
+                if fname.kind != nkPostfix: hidden = true
+                t.fields.add declaredName(fname)
+                if hidden: t.hiddenFields.add declaredName(fname)
       of nkProcTy, nkIteratorTy: t.kind = tkDelegate
       of nkInfix:
         ## `A[T] | B[T] | ...`: a member declared over it is each alternative's.
@@ -492,14 +511,6 @@ proc nsStaticOf(n: PNode): string =
          e[1] != nil and e[1].kind in {nkStrLit..nkTripleStrLit}:
         return e[1].strVal
   ""
-
-proc hasPragma(n: PNode; name: string): bool =
-  ## Whether a declaration's pragmas name `name` (`{.nsHidden.}`, `{.nsHidden, inline.}`).
-  for i in 0 ..< n.len:
-    let p = n[i]
-    if p == nil or p.kind != nkPragma: continue
-    for j in 0 ..< p.len:
-      if p[j] != nil and declaredName(p[j]) == name: return true
 
 proc loadMembers(s: var NsBclSurface; n: PNode; module: string; hidden: bool) =
   ## One declaration as a member: the receiver is its first parameter, and a type

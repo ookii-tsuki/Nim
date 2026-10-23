@@ -160,132 +160,132 @@ type
     make: proc(): IEnumerator[T]
     show: proc(): string  ## a view of a collection prints it; a query has none
   nsVT_IReadOnlyCollection*[T] = object
-    fCount*: proc (o: RootRef): int32 {.nimcall.}
-    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fCount* {.nsHidden.}: proc (o: RootRef): int32 {.nimcall.}
+    fEnum* {.nsHidden.}: proc (o: RootRef): IEnumerable[T] {.nimcall.}
   IReadOnlyCollection*[T] {.nsInterface.} = object
     ## C#'s `IReadOnlyCollection<T>`: `Count`, and enumerable.
-    nsObj*: RootRef
-    nsVt*: ptr nsVT_IReadOnlyCollection[T]
+    nsObj* {.nsHidden.}: RootRef
+    nsVt* {.nsHidden.}: ptr nsVT_IReadOnlyCollection[T]
   nsVT_IReadOnlyList*[T] = object
-    fCount*: proc (o: RootRef): int32 {.nimcall.}
-    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
-    fGet*: proc (o: RootRef; i: int32): T {.nimcall.}
+    fCount* {.nsHidden.}: proc (o: RootRef): int32 {.nimcall.}
+    fEnum* {.nsHidden.}: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fGet* {.nsHidden.}: proc (o: RootRef; i: int32): T {.nimcall.}
   IReadOnlyList*[T] {.nsInterface.} = object
     ## C#'s `IReadOnlyList<T>`: an `IReadOnlyCollection<T>` with an indexer to read.
-    nsObj*: RootRef
-    nsVt*: ptr nsVT_IReadOnlyList[T]
+    nsObj* {.nsHidden.}: RootRef
+    nsVt* {.nsHidden.}: ptr nsVT_IReadOnlyList[T]
   nsVT_ICollection*[T] = object
-    fCount*: proc (o: RootRef): int32 {.nimcall.}
-    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
-    fIsReadOnly*: bool
-    fAdd*: proc (o: RootRef; x: T) {.nimcall.}
-    fClear*: proc (o: RootRef) {.nimcall.}
-    fContains*: proc (o: RootRef; x: T): bool {.nimcall.}
-    fCopyTo*: proc (o: RootRef; arr: NsArray[T]; index: int32) {.nimcall.}
-    fRemove*: proc (o: RootRef; x: T): bool {.nimcall.}
+    fCount* {.nsHidden.}: proc (o: RootRef): int32 {.nimcall.}
+    fEnum* {.nsHidden.}: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fIsReadOnly* {.nsHidden.}: bool
+    fAdd* {.nsHidden.}: proc (o: RootRef; x: T) {.nimcall.}
+    fClear* {.nsHidden.}: proc (o: RootRef) {.nimcall.}
+    fContains* {.nsHidden.}: proc (o: RootRef; x: T): bool {.nimcall.}
+    fCopyTo* {.nsHidden.}: proc (o: RootRef; arr: NsArray[T]; index: int32) {.nimcall.}
+    fRemove* {.nsHidden.}: proc (o: RootRef; x: T): bool {.nimcall.}
   ICollection*[T] {.nsInterface.} = object
     ## C#'s `ICollection<T>`.
-    nsObj*: RootRef
-    nsVt*: ptr nsVT_ICollection[T]
+    nsObj* {.nsHidden.}: RootRef
+    nsVt* {.nsHidden.}: ptr nsVT_ICollection[T]
   nsVT_IList*[T] = object
-    fCount*: proc (o: RootRef): int32 {.nimcall.}
-    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
-    fIsReadOnly*: bool
-    fAdd*: proc (o: RootRef; x: T) {.nimcall.}
-    fClear*: proc (o: RootRef) {.nimcall.}
-    fContains*: proc (o: RootRef; x: T): bool {.nimcall.}
-    fCopyTo*: proc (o: RootRef; arr: NsArray[T]; index: int32) {.nimcall.}
-    fRemove*: proc (o: RootRef; x: T): bool {.nimcall.}
-    fGet*: proc (o: RootRef; i: int32): T {.nimcall.}
-    fSet*: proc (o: RootRef; i: int32; x: T) {.nimcall.}
-    fIndexOf*: proc (o: RootRef; x: T): int32 {.nimcall.}
-    fInsert*: proc (o: RootRef; i: int32; x: T) {.nimcall.}
-    fRemoveAt*: proc (o: RootRef; i: int32) {.nimcall.}
+    fCount* {.nsHidden.}: proc (o: RootRef): int32 {.nimcall.}
+    fEnum* {.nsHidden.}: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fIsReadOnly* {.nsHidden.}: bool
+    fAdd* {.nsHidden.}: proc (o: RootRef; x: T) {.nimcall.}
+    fClear* {.nsHidden.}: proc (o: RootRef) {.nimcall.}
+    fContains* {.nsHidden.}: proc (o: RootRef; x: T): bool {.nimcall.}
+    fCopyTo* {.nsHidden.}: proc (o: RootRef; arr: NsArray[T]; index: int32) {.nimcall.}
+    fRemove* {.nsHidden.}: proc (o: RootRef; x: T): bool {.nimcall.}
+    fGet* {.nsHidden.}: proc (o: RootRef; i: int32): T {.nimcall.}
+    fSet* {.nsHidden.}: proc (o: RootRef; i: int32; x: T) {.nimcall.}
+    fIndexOf* {.nsHidden.}: proc (o: RootRef; x: T): int32 {.nimcall.}
+    fInsert* {.nsHidden.}: proc (o: RootRef; i: int32; x: T) {.nimcall.}
+    fRemoveAt* {.nsHidden.}: proc (o: RootRef; i: int32) {.nimcall.}
   IList*[T] {.nsInterface.} = object
     ## C#'s `IList<T>`: an `ICollection<T>` with an index.
-    nsObj*: RootRef
-    nsVt*: ptr nsVT_IList[T]
+    nsObj* {.nsHidden.}: RootRef
+    nsVt* {.nsHidden.}: ptr nsVT_IList[T]
   nsVT_ISet*[T] = object
-    fCount*: proc (o: RootRef): int32 {.nimcall.}
-    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
-    fIsReadOnly*: bool
-    fAdd*: proc (o: RootRef; x: T) {.nimcall.}
-    fClear*: proc (o: RootRef) {.nimcall.}
-    fContains*: proc (o: RootRef; x: T): bool {.nimcall.}
-    fCopyTo*: proc (o: RootRef; arr: NsArray[T]; index: int32) {.nimcall.}
-    fRemove*: proc (o: RootRef; x: T): bool {.nimcall.}
-    fAddNew*: proc (o: RootRef; x: T): bool {.nimcall.}
-    fUnionWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
-    fIntersectWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
-    fExceptWith*: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
-    fSymmetricExceptWith*: proc (o: RootRef; other: NsArray[T]; otherSet: HashSet[T]) {.nimcall.}
+    fCount* {.nsHidden.}: proc (o: RootRef): int32 {.nimcall.}
+    fEnum* {.nsHidden.}: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fIsReadOnly* {.nsHidden.}: bool
+    fAdd* {.nsHidden.}: proc (o: RootRef; x: T) {.nimcall.}
+    fClear* {.nsHidden.}: proc (o: RootRef) {.nimcall.}
+    fContains* {.nsHidden.}: proc (o: RootRef; x: T): bool {.nimcall.}
+    fCopyTo* {.nsHidden.}: proc (o: RootRef; arr: NsArray[T]; index: int32) {.nimcall.}
+    fRemove* {.nsHidden.}: proc (o: RootRef; x: T): bool {.nimcall.}
+    fAddNew* {.nsHidden.}: proc (o: RootRef; x: T): bool {.nimcall.}
+    fUnionWith* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
+    fIntersectWith* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
+    fExceptWith* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]) {.nimcall.}
+    fSymmetricExceptWith* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]; otherSet: HashSet[T]) {.nimcall.}
       ## `otherSet` is the `HashSet<T>` behind `other` when there is one, which
       ## .NET's `HashSet<T>` treats apart.
-    fIsSubsetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
-    fIsSupersetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
-    fIsProperSubsetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
-    fIsProperSupersetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
-    fOverlaps*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
-    fSetEquals*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsSubsetOf* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsSupersetOf* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsProperSubsetOf* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsProperSupersetOf* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fOverlaps* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fSetEquals* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
   ISet*[T] {.nsInterface.} = object
     ## C#'s `ISet<T>`: an `ICollection<T>` with the set operations.
-    nsObj*: RootRef
-    nsVt*: ptr nsVT_ISet[T]
+    nsObj* {.nsHidden.}: RootRef
+    nsVt* {.nsHidden.}: ptr nsVT_ISet[T]
   nsVT_IReadOnlySet*[T] = object
-    fCount*: proc (o: RootRef): int32 {.nimcall.}
-    fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
-    fContains*: proc (o: RootRef; x: T): bool {.nimcall.}
-    fIsSubsetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
-    fIsSupersetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
-    fIsProperSubsetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
-    fIsProperSupersetOf*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
-    fOverlaps*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
-    fSetEquals*: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fCount* {.nsHidden.}: proc (o: RootRef): int32 {.nimcall.}
+    fEnum* {.nsHidden.}: proc (o: RootRef): IEnumerable[T] {.nimcall.}
+    fContains* {.nsHidden.}: proc (o: RootRef; x: T): bool {.nimcall.}
+    fIsSubsetOf* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsSupersetOf* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsProperSubsetOf* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fIsProperSupersetOf* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fOverlaps* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
+    fSetEquals* {.nsHidden.}: proc (o: RootRef; other: NsArray[T]): bool {.nimcall.}
   IReadOnlySet*[T] {.nsInterface.} = object
     ## C#'s `IReadOnlySet<T>`: `Contains` and the set comparisons.
-    nsObj*: RootRef
-    nsVt*: ptr nsVT_IReadOnlySet[T]
+    nsObj* {.nsHidden.}: RootRef
+    nsVt* {.nsHidden.}: ptr nsVT_IReadOnlySet[T]
   nsVT_IReadOnlyDictionary*[K, V] = object
-    fCount*: proc (o: RootRef): int32 {.nimcall.}
-    fEnum*: proc (o: RootRef): IEnumerable[KeyValuePair[K, V]] {.nimcall.}
-    fGet*: proc (o: RootRef; k: K): V {.nimcall.}
-    fContainsKey*: proc (o: RootRef; k: K): bool {.nimcall.}
-    fTryGetValue*: proc (o: RootRef; k: K; v: var V): bool {.nimcall.}
-    fKeys*: proc (o: RootRef): IEnumerable[K] {.nimcall.}
-    fValues*: proc (o: RootRef): IEnumerable[V] {.nimcall.}
+    fCount* {.nsHidden.}: proc (o: RootRef): int32 {.nimcall.}
+    fEnum* {.nsHidden.}: proc (o: RootRef): IEnumerable[KeyValuePair[K, V]] {.nimcall.}
+    fGet* {.nsHidden.}: proc (o: RootRef; k: K): V {.nimcall.}
+    fContainsKey* {.nsHidden.}: proc (o: RootRef; k: K): bool {.nimcall.}
+    fTryGetValue* {.nsHidden.}: proc (o: RootRef; k: K; v: var V): bool {.nimcall.}
+    fKeys* {.nsHidden.}: proc (o: RootRef): IEnumerable[K] {.nimcall.}
+    fValues* {.nsHidden.}: proc (o: RootRef): IEnumerable[V] {.nimcall.}
   IReadOnlyDictionary*[K, V] {.nsInterface.} = object
     ## C#'s `IReadOnlyDictionary<K,V>`.
-    nsObj*: RootRef
-    nsVt*: ptr nsVT_IReadOnlyDictionary[K, V]
+    nsObj* {.nsHidden.}: RootRef
+    nsVt* {.nsHidden.}: ptr nsVT_IReadOnlyDictionary[K, V]
   nsVT_IDictionary*[K, V] = object
-    fCount*: proc (o: RootRef): int32 {.nimcall.}
-    fEnum*: proc (o: RootRef): IEnumerable[KeyValuePair[K, V]] {.nimcall.}
-    fGet*: proc (o: RootRef; k: K): V {.nimcall.}
-    fSet*: proc (o: RootRef; k: K; v: V) {.nimcall.}
-    fContainsKey*: proc (o: RootRef; k: K): bool {.nimcall.}
-    fTryGetValue*: proc (o: RootRef; k: K; v: var V): bool {.nimcall.}
-    fAdd*: proc (o: RootRef; k: K; v: V) {.nimcall.}
-    fRemove*: proc (o: RootRef; k: K): bool {.nimcall.}
-    fClear*: proc (o: RootRef) {.nimcall.}
-    fKeys*: proc (o: RootRef): ICollection[K] {.nimcall.}
-    fValues*: proc (o: RootRef): ICollection[V] {.nimcall.}
+    fCount* {.nsHidden.}: proc (o: RootRef): int32 {.nimcall.}
+    fEnum* {.nsHidden.}: proc (o: RootRef): IEnumerable[KeyValuePair[K, V]] {.nimcall.}
+    fGet* {.nsHidden.}: proc (o: RootRef; k: K): V {.nimcall.}
+    fSet* {.nsHidden.}: proc (o: RootRef; k: K; v: V) {.nimcall.}
+    fContainsKey* {.nsHidden.}: proc (o: RootRef; k: K): bool {.nimcall.}
+    fTryGetValue* {.nsHidden.}: proc (o: RootRef; k: K; v: var V): bool {.nimcall.}
+    fAdd* {.nsHidden.}: proc (o: RootRef; k: K; v: V) {.nimcall.}
+    fRemove* {.nsHidden.}: proc (o: RootRef; k: K): bool {.nimcall.}
+    fClear* {.nsHidden.}: proc (o: RootRef) {.nimcall.}
+    fKeys* {.nsHidden.}: proc (o: RootRef): ICollection[K] {.nimcall.}
+    fValues* {.nsHidden.}: proc (o: RootRef): ICollection[V] {.nimcall.}
   IDictionary*[K, V] {.nsInterface.} = object
     ## C#'s `IDictionary<K,V>`.
-    nsObj*: RootRef
-    nsVt*: ptr nsVT_IDictionary[K, V]
+    nsObj* {.nsHidden.}: RootRef
+    nsVt* {.nsHidden.}: ptr nsVT_IDictionary[K, V]
   nsVT_IComparer*[T] = object
-    fCompare*: proc (o: RootRef; a, b: T): int32 {.nimcall.}
+    fCompare* {.nsHidden.}: proc (o: RootRef; a, b: T): int32 {.nimcall.}
   IComparer*[T] {.nsInterface.} = object
     ## C#'s `IComparer<T>`: `Compare(a, b)`.
-    nsObj*: RootRef
-    nsVt*: ptr nsVT_IComparer[T]
+    nsObj* {.nsHidden.}: RootRef
+    nsVt* {.nsHidden.}: ptr nsVT_IComparer[T]
   nsVT_IEqualityComparer*[T] = object
-    fEquals*: proc (o: RootRef; a, b: T): bool {.nimcall.}
-    fGetHashCode*: proc (o: RootRef; x: T): int32 {.nimcall.}
+    fEquals* {.nsHidden.}: proc (o: RootRef; a, b: T): bool {.nimcall.}
+    fGetHashCode* {.nsHidden.}: proc (o: RootRef; x: T): int32 {.nimcall.}
   IEqualityComparer*[T] {.nsInterface.} = object
     ## C#'s `IEqualityComparer<T>`: `Equals(a, b)` and `GetHashCode(x)`.
-    nsObj*: RootRef
-    nsVt*: ptr nsVT_IEqualityComparer[T]
+    nsObj* {.nsHidden.}: RootRef
+    nsVt* {.nsHidden.}: ptr nsVT_IEqualityComparer[T]
   Comparer*[T] = ref object of NsCollectionBase
     ## C#'s `Comparer<T>`: `Comparer<T>.Default`, or `Comparer<T>.Create(f)`.
     compare: proc (a, b: T): int32
@@ -297,15 +297,15 @@ type
     ## `ThenBy` adds, applied when it is enumerated. A level is handed the elements
     ## and computes each one's key once, as .NET does, giving a comparison of two
     ## positions. Declared here, so it is an `IEnumerable<T>` as every collection is.
-    nsSource*: IEnumerable[T]
-    nsOrder*: seq[proc (xs: seq[T]): proc (i, j: int): int]
+    nsSource* {.nsHidden.}: IEnumerable[T]
+    nsOrder* {.nsHidden.}: seq[proc (xs: seq[T]): proc (i, j: int): int]
   IGroupingBase*[T] = ref object of RootObj
     ## A group's elements, which a grouping enumerates.
-    nsElems*: seq[T]
+    nsElems* {.nsHidden.}: seq[T]
   IGrouping*[K, T] = ref object of IGroupingBase[T]
     ## `System.Linq`'s `IGrouping<TKey, TElement>`: a group of `GroupBy`, with its
     ## `Key`.
-    nsKey*: K
+    nsKey* {.nsHidden.}: K
   NsEnumerable*[T] = NsArray[T] | seq[T] | List[T] | HashSet[T] | SortedSet[T] | Queue[T] |
                   Stack[T] | LinkedList[T] | IEnumerable[T] | IList[T] | ICollection[T] |
                   IReadOnlyList[T] | IReadOnlyCollection[T] | ISet[T] | IReadOnlySet[T] |

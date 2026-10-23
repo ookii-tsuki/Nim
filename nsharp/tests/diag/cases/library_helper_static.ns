@@ -1,0 +1,14 @@
+// A helper the library exports ({.nsHidden.}) is not a static member either:
+// `Stopwatch.newStopwatch()` is CS0117, as in C#.
+using System;
+using System.Diagnostics;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var s = Stopwatch.newStopwatch();
+        }
+    }
+}

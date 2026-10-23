@@ -965,7 +965,12 @@ by the proc the prelude declares, and lowering reaches it through Nim's dot-call
 A helper the prelude exports only for the code N# generates (`nsBox`, the
 `new<Type>` constructors `new T()` lowers to, `items` for `foreach`) is marked
 `{.nsHidden.}` (or sits in a `{.push nsHidden.}` region), so it is not part of
-the surface: N# source cannot name it, and `x.nsBox()` is CS1061 as in C#.
+the surface: N# source cannot name it, and `x.nsBox()` is CS1061 as in C#. A
+field takes it too (`nsData* {.nsHidden.}: seq[T]`), and a field the module does
+not export is not a property; a static member of a library type or qualifier
+(`Stopwatch.newStopwatch()`, `Console.nsChars`) is CS0117 unless visible, and an
+exception's or an array's members are checked as a class's are (`e.msg`, the Nim
+field, is CS1061; `e.Message` is the member).
 
 ### 15.1 Collections - pinned member surface (3b)
 

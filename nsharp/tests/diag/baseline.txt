@@ -42,6 +42,7 @@ enumerable_to_iface CS0266 match
 error_directive CS1029 match
 event_raised_outside_type CS0070 match
 event_with_one_accessor CS0065 match
+exception_nim_field CS1061 match
 explicit_conversion_used_implicitly CS0266 match
 expr_statement CS0201 match
 extension_method_in_non_static_class CS1106 match
@@ -121,7 +122,9 @@ interface_instance CS0144 match
 invoke_event_with_accessors CS0079 match
 lambda_arity CS1593 match
 lambda_wrong_ret CS0029 match
+library_field_not_a_member CS1061 match
 library_helper_not_a_member CS1061 match
+library_helper_static CS0117 match
 list_add_wrong CS1503 match
 long_to_int CS0266 match
 math_wrong CS1503 match

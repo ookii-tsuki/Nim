@@ -1,0 +1,13 @@
+// An exception's Nim field (`msg`) is not a C# member; `Message` is (CS1061).
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var e = new ArgumentException("x");
+            Console.WriteLine(e.msg);
+        }
+    }
+}
