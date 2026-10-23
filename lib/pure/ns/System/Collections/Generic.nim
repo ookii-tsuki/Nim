@@ -292,11 +292,12 @@ type
     ## C#'s `EqualityComparer<T>`: `EqualityComparer<T>.Default`.
     discard
   IOrderedEnumerable*[T] = ref object
-    ## `System.Linq`'s ordered query (`OrderBy`): its source, and the comparisons
-    ## `ThenBy` adds, applied when it is enumerated. Declared here, so it is an
-    ## `IEnumerable<T>` as every collection is.
+    ## `System.Linq`'s ordered query (`OrderBy`): its source, and the levels
+    ## `ThenBy` adds, applied when it is enumerated. A level is handed the elements
+    ## and computes each one's key once, as .NET does, giving a comparison of two
+    ## positions. Declared here, so it is an `IEnumerable<T>` as every collection is.
     nsSource*: IEnumerable[T]
-    nsOrder*: seq[proc (a, b: T): int]
+    nsOrder*: seq[proc (xs: seq[T]): proc (i, j: int): int]
   IGroupingBase*[T] = ref object of RootObj
     ## A group's elements, which a grouping enumerates.
     nsElems*: seq[T]
@@ -679,8 +680,9 @@ proc GetValueOrDefault*[K, V](t: Dictionary[K, V]; k: K; defaultValue: V): V =
   let p = t.data.getPtr(k)
   if p != nil: p[] else: defaultValue
 proc Remove*[K, V](t: Dictionary[K, V]; k: K): bool =
-  result = t.data.remove(k)
-  if result: touch t
+  ## An enumeration in progress goes on, as since .NET Core 3.0: removing does not
+  ## count as a change.
+  t.data.remove(k)
 proc Remove*[K, V](t: Dictionary[K, V]; k: K; value: var V): bool =
   ## Removes the entry under `k`, handing back its value; the default when none.
   let p = t.data.getPtr(k)
@@ -689,7 +691,6 @@ proc Remove*[K, V](t: Dictionary[K, V]; k: K; value: var V): bool =
     return false
   value = p[]
   discard t.data.remove(k)
-  touch t
   true
 proc TryGetValue*[K, V](t: Dictionary[K, V]; k: K; value: var V): bool =
   ## The value under `k` when there is one; `value` is the default when not.
@@ -1489,13 +1490,19 @@ proc nsSorted[T](o: IOrderedEnumerable[T]): seq[T] =
   ## The source, sorted stably by every comparison in turn. A proc of its own: the
   ## comparison is a closure, which an inline iterator inlined into a query's
   ## closure iterator would not compile.
-  for x in items(o.nsSource): result.add x
-  let order = o.nsOrder
-  algorithm.sort(result, proc (a, b: T): int =
-    for c in order:
-      let r = c(a, b)
+  var xs: seq[T] = @[]
+  for x in items(o.nsSource): xs.add x
+  var levels: seq[proc (i, j: int): int] = @[]
+  for level in o.nsOrder: levels.add level(xs)
+  var at = newSeq[int](xs.len)
+  for i in 0 ..< xs.len: at[i] = i
+  algorithm.sort(at, proc (i, j: int): int =
+    for c in levels:
+      let r = c(i, j)
       if r != 0: return r
     0)
+  result = newSeqOfCap[T](xs.len)
+  for i in at: result.add xs[i]
 
 iterator items*[T](o: IOrderedEnumerable[T]): T =
   for x in nsSorted(o): yield x

@@ -1,0 +1,64 @@
+// Messages and edge cases a review found differing from .NET: Array, StringBuilder,
+// composite format, TimeSpan, Convert, DateTime and Math.Log.
+using System;
+using System.Text;
+using System.IO;
+namespace Demo {
+class Program {
+    static void T(Action f) { try { f(); } catch (Exception e) { Console.WriteLine(e.GetType().Name + ": " + e.Message.Replace("\n", "|")); } }
+    static void Main() {
+        int[] a = new int[3]; int[] b = new int[3];
+        T(() => Array.Copy(a, -1, b, 0, 1));
+        T(() => Array.Copy(a, 0, b, -1, 1));
+        T(() => Array.Copy(a, 0, b, 0, -1));
+        T(() => Array.Resize(ref a, -1));
+        T(() => Array.Reverse(a, -1, 1));
+        T(() => Array.Reverse(a, 0, -1));
+        T(() => Array.Clear(a, -1, 1));
+        T(() => Array.Clear(a, 2, 5));
+        var sb = new StringBuilder("abc");
+        T(() => { sb[9] = 'x'; });
+        T(() => Console.WriteLine(sb[9]));
+        T(() => sb.Append('c', -1));
+        T(() => sb.Remove(-1, 1));
+        T(() => sb.Remove(0, -1));
+        T(() => sb.Remove(2, 5));
+        T(() => sb.ToString(-1, 1));
+        T(() => sb.ToString(0, -1));
+        T(() => sb.ToString(3, 5));
+        T(() => new StringBuilder(-1));
+        T(() => sb.Replace("", "x"));
+        T(() => sb.Insert(9, "x"));
+        T(() => sb.Length = -1);
+        T(() => Console.WriteLine(string.Format("a}", 1)));
+        T(() => Console.WriteLine(string.Format("{0:a{b}", 42)));
+        T(() => Console.WriteLine(string.Format("{0:{}", 42)));
+        T(() => Console.WriteLine(string.Format("{0:x}}b}", 42)));
+        T(() => Console.WriteLine(string.Format("{0:x}}}", 42)));
+        T(() => Console.WriteLine(new TimeSpan(int.MaxValue, 0, 0)));
+        T(() => Console.WriteLine(new TimeSpan(int.MaxValue, 0, 0, 0)));
+        T(() => Console.WriteLine(new TimeSpan(0, 0, 0, 0, int.MaxValue)));
+        T(() => Console.WriteLine(TimeSpan.FromDays(20000000)));
+        T(() => Console.WriteLine(TimeSpan.FromSeconds(long.MaxValue)));
+        T(() => Console.WriteLine(TimeSpan.FromTicks(5).Divide(2.0).Ticks));
+        T(() => Console.WriteLine(TimeSpan.FromTicks(1).Multiply(0.5).Ticks));
+        T(() => Console.WriteLine((TimeSpan.FromTicks(7) * 0.5).Ticks));
+        T(() => Console.WriteLine(Convert.ToInt32("-5", 10)));
+        T(() => Console.WriteLine(Convert.ToInt32("-5", 16)));
+        T(() => Console.WriteLine(Convert.ToInt32("-2147483648", 10)));
+        T(() => Console.WriteLine(Convert.ToInt32("-2147483649", 10)));
+        T(() => Console.WriteLine(Convert.ToInt32("+5", 10)));
+        T(() => Console.WriteLine(Convert.ToInt64("-9223372036854775808", 10)));
+        T(() => Console.WriteLine(Convert.ToByte(1e10)));
+        T(() => Console.WriteLine(Convert.ToByte(300.0)));
+        T(() => Console.WriteLine(Convert.ToInt16(1e10)));
+        T(() => Console.WriteLine(new DateTime(2000, 1, 1).AddYears(8000)));
+        T(() => Console.WriteLine(new DateTime(2000, 1, 1).AddYears(20000)));
+        T(() => Console.WriteLine(new DateTime(2000, 1, 1).AddMonths(200000)));
+        T(() => Console.WriteLine(new DateTime(2024, 2, 29, 0, 5, 9).ToString("R")));
+        T(() => Console.WriteLine(new DateTime(2024, 2, 29, 0, 5, 9).ToString("r")));
+        T(() => Console.WriteLine(Math.Log(2, 1) + " " + Math.Log(2, 0) + " " + Math.Log(2, double.PositiveInfinity) + " " + Math.Log(1, 0) + " " + Math.Log(double.NaN, 1) + " " + Math.Log(8, 2)));
+        T(() => Console.WriteLine(Array.IndexOf(new[] { 1.0, double.NaN }, double.NaN) + " " + Array.LastIndexOf(new[] { double.NaN, 1.0 }, double.NaN)));
+    }
+}
+}

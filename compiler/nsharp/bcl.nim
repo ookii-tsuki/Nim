@@ -59,8 +59,9 @@ type
     staticDecls: seq[NsStaticDecl]
       ## Pending `{.nsStatic: "T".}` pragmas, resolved after every file is read.
     renamedMembers*: HashSet[string]
-      ## Members declared as `nsM_X` because a type is named `X` too (Nim gives a
-      ## name to one of them), as the lowering renames a user's own; filed as `X`.
+      ## `Recv.X` for a member declared as `nsM_X` because a type is named `X` too
+      ## (Nim gives a name to one of them), as the lowering renames a user's own;
+      ## filed as `X`.
 
 const
   ## The prelude's location in the library, and the module every N# module gets.
@@ -495,9 +496,8 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
   if n.len < 4: return
   var name = declaredName(n[0])
   if name.len == 0: return
-  if name.startsWith("nsM_") and name.len > 4:
-    name = name[4 .. ^1]
-    s.renamedMembers.incl name
+  let renamed = name.startsWith("nsM_") and name.len > 4
+  if renamed: name = name[4 .. ^1]
   var constraints = initTable[string, string]()
   if n[2] != nil and n[2].kind == nkGenericParams:
     for i in 0 ..< n[2].len:
@@ -535,6 +535,7 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
     isStatic = true
     sel = (if sel.len > 1: sel[1] else: nil)
   var recv = headSpelling(sel)
+  if renamed: s.renamedMembers.incl recv & "." & name
   if constraints.hasKey(recv):
     ## An unconstrained type parameter names no type; `nsStatic` gives it one.
     let c = constraints[recv]

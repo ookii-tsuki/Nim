@@ -152,7 +152,8 @@ proc memberIdent(l: Lowerer; name: string; recv: NsNode; info: TLineInfo): PNode
   ## (see `memberRenames`), the C# name otherwise.
   if l.imports != nil and name in l.imports.memberRenames and l.isUserReceiver(recv):
     l.id("nsM_" & name, info)
-  elif name in l.surface.renamedMembers and not l.isUserReceiver(recv):
+  elif recv != nil and not l.isUserReceiver(recv) and
+       canonicalTypeName(recv.typeName).split('<')[0] & "." & name in l.surface.renamedMembers:
     ## The library declares it under the same spelling, for the same reason.
     l.id("nsM_" & name, info)
   else: l.id(name, info)
@@ -170,7 +171,8 @@ proc noteMemberImport(l: Lowerer; n: NsNode) =
   let m = l.surface.member(recv, rk, n.name)
   if m.path == NsIntrinsicsPath: return
   if m.name.len > 0:
-    l.imports.note(m.path, (if m.name in l.surface.renamedMembers: "nsM_" & m.name else: m.name))
+    l.imports.note(m.path, (if m.recv & "." & m.name in l.surface.renamedMembers: "nsM_" & m.name
+                            else: m.name))
     return
   ## The library declares nothing of this shape, but the qualifier names one of its
   ## namespaces: the name belongs to that namespace's *module*, since the qualifier

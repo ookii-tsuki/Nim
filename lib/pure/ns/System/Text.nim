@@ -29,9 +29,11 @@ proc newStringBuilder*(): StringBuilder = StringBuilder()
 proc newStringBuilder*(value: string): StringBuilder = StringBuilder(nsText: value)
 proc newStringBuilder*(capacity: int32): StringBuilder =
   if capacity < 0:
-    raise nsNewException(ArgumentOutOfRangeException, "capacity",
-                         "'capacity' must be greater than zero.")
+    raise nsActualValue("capacity", $capacity, "must be a non-negative value.")
   StringBuilder(nsText: newStringOfCap(int(capacity)))
+
+proc nsNegative(param: string; value: int32) {.noinline, noreturn.} =
+  raise nsActualValue(param, $value, "must be a non-negative value.")
 
 proc nsIndexFail(param: string) {.noinline, noreturn.} =
   raise nsNewException(ArgumentOutOfRangeException, param, "Index was out of range. " &
@@ -50,7 +52,9 @@ proc `[]`*(sb: StringBuilder; index: int32): char =
   sb.nsText[int(index)]
 proc `[]=`*(sb: StringBuilder; index: int32; value: char) =
   if index < 0 or int(index) >= sb.nsText.len:
-    raise nsNewException(IndexOutOfRangeException)
+    ## Setting out of range is an argument out of range, where getting is an index.
+    raise nsNewException(ArgumentOutOfRangeException, "index", "Index was out of range. " &
+      "Must be non-negative and less than the size of the collection.")
   sb.nsText[int(index)] = value
 
 proc Append*(sb: StringBuilder; value: string): StringBuilder =
@@ -61,8 +65,7 @@ proc Append*(sb: StringBuilder; value: char): StringBuilder =
   sb
 proc Append*(sb: StringBuilder; value: char; repeatCount: int32): StringBuilder =
   if repeatCount < 0:
-    raise nsNewException(ArgumentOutOfRangeException, "repeatCount",
-      "Count cannot be less than zero.")
+    nsNegative("repeatCount", repeatCount)
   sb.nsText.add repeat(value, int(repeatCount))
   sb
 proc Append*[T](sb: StringBuilder; value: T): StringBuilder =
@@ -97,15 +100,15 @@ proc Insert*[T](sb: StringBuilder; index: int32; value: T): StringBuilder =
   Insert(sb, index, $value)
 
 proc Remove*(sb: StringBuilder; startIndex, length: int32): StringBuilder =
-  if length < 0: nsIndexFail("length")
-  if startIndex < 0: nsIndexFail("startIndex")
+  if length < 0: nsNegative("length", length)
+  if startIndex < 0: nsNegative("startIndex", startIndex)
   if int(startIndex) + int(length) > sb.nsText.len: nsIndexFail("length")
   sb.nsText.delete(int(startIndex) ..< int(startIndex) + int(length))
   sb
 
 proc Replace*(sb: StringBuilder; oldValue, newValue: string): StringBuilder =
   if oldValue.len == 0:
-    raise nsNewException(ArgumentException, "String cannot be of zero length.", "oldValue")
+    raise nsNewException(ArgumentException, "The value cannot be an empty string.", "oldValue")
   sb.nsText = sb.nsText.replace(oldValue, newValue)
   sb
 proc Replace*(sb: StringBuilder; oldChar, newChar: char): StringBuilder =
@@ -120,9 +123,11 @@ proc Clear*(sb: StringBuilder): StringBuilder =
 method ToString*(sb: StringBuilder): string = sb.nsText
 method nsTypeName*(sb: StringBuilder): string = "System.Text.StringBuilder"
 proc ToString*(sb: StringBuilder; startIndex, length: int32): string =
-  if startIndex < 0: nsIndexFail("startIndex")
-  if length < 0: nsIndexFail("length")
-  if int(startIndex) + int(length) > sb.nsText.len: nsIndexFail("length")
+  if startIndex < 0: nsNegative("startIndex", startIndex)
+  if length < 0: nsNegative("length", length)
+  if int(startIndex) + int(length) > sb.nsText.len:
+    raise nsNewException(ArgumentOutOfRangeException, "length",
+      "Index and length must refer to a location within the string.")
   sb.nsText[int(startIndex) ..< int(startIndex) + int(length)]
 
 {.pop.}

@@ -968,18 +968,18 @@ any of these collections. Only these members exist:
 | Type | Members (3b) |
 |---|---|
 | `List<T>` | `Add` `AddRange` `BinarySearch` `Clear` `Contains` `ConvertAll` `CopyTo` `Count` `Exists` `Find` `FindAll` `FindIndex` `FindLast` `FindLastIndex` `ForEach` `GetRange` `IndexOf` `Insert` `InsertRange` `LastIndexOf` `Remove` `RemoveAll` `RemoveAt` `RemoveRange` `Reverse` `Sort` `ToArray` `TrimExcess` `TrueForAll`, `[]`, `[]=` |
-| `Dictionary<K,V>` | `Add` `Clear` `ContainsKey` `ContainsValue` `Count` `GetValueOrDefault` `Keys` `Remove` `TryAdd` `Values`, `[]`, `[]=`, `foreach` over `KeyValuePair<K,V>` |
+| `Dictionary<K,V>` | `Add` `Clear` `ContainsKey` `ContainsValue` `Count` `GetValueOrDefault` `Keys` `Remove` (and with `out value`; allowed while enumerating, as since .NET Core 3.0) `TryAdd` `TryGetValue` `Values`, `[]`, `[]=`, `foreach` over `KeyValuePair<K,V>` |
 | `KeyValuePair<K,V>` | `Key` `Value` |
 | `KeyCollection`, `ValueCollection` (from `Keys`/`Values`) | `Count` `CopyTo`, `foreach`; live views of the dictionary |
 | `HashSet<T>` | `Add` `Clear` `Contains` `Count` `ExceptWith` `IntersectWith` `IsProperSubsetOf` `IsProperSupersetOf` `IsSubsetOf` `IsSupersetOf` `Overlaps` `Remove` `RemoveWhere` `SetEquals` `SymmetricExceptWith` `ToArray` `UnionWith` |
 | `SortedSet<T>` | the `HashSet<T>` members, plus `Max` `Min` `Reverse` |
 | `SortedDictionary<K,V>` | the `Dictionary<K,V>` members, in key order |
 | `SortedList<K,V>` | the `SortedDictionary<K,V>` members, plus `GetKeyAtIndex` `GetValueAtIndex` `IndexOfKey` `IndexOfValue` `RemoveAt` |
-| `Queue<T>` | `Clear` `Contains` `CopyTo` `Count` `Dequeue` `Enqueue` `Peek` `ToArray` `TrimExcess` |
-| `Stack<T>` | `Clear` `Contains` `CopyTo` `Count` `Peek` `Pop` `Push` `ToArray` `TrimExcess` |
+| `Queue<T>` | `Clear` `Contains` `CopyTo` `Count` `Dequeue` `Enqueue` `Peek` `ToArray` `TrimExcess` `TryDequeue` `TryPeek` |
+| `Stack<T>` | `Clear` `Contains` `CopyTo` `Count` `Peek` `Pop` `Push` `ToArray` `TrimExcess` `TryPeek` `TryPop` |
 | `LinkedList<T>` | `AddAfter` `AddBefore` `AddFirst` `AddLast` `Clear` `Contains` `CopyTo` `Count` `Find` `FindLast` `First` `Last` `Remove` `RemoveFirst` `RemoveLast` |
 | `LinkedListNode<T>` | `Next` `Previous` `Value` |
-| `PriorityQueue<E,P>` | `Clear` `Count` `Dequeue` `Enqueue` `EnqueueDequeue` `Peek` |
+| `PriorityQueue<E,P>` | `Clear` `Count` `Dequeue` `Enqueue` `EnqueueDequeue` `Peek` `TryDequeue` `TryPeek` |
 
 Deliberately deferred, with the reason recorded:
 
@@ -1066,7 +1066,7 @@ has is null, which N# spells as the empty string.
 A library member may be declared `nsM_X` where a type of the same name exists
 (`DateTime.DayOfWeek` returns a `DayOfWeek`): Nim gives a name to one of them,
 so the member is spelled as the lowering spells a user's own `Color Color`, and
-the surface files it as `X`.
+the surface files it as `X`, renamed back for a receiver of that declaring type.
 
 ### 15.3 System.Linq - pinned member surface
 
@@ -1084,7 +1084,9 @@ the surface files it as `X`.
 | generators | `Enumerable.Range` `Enumerable.Repeat` `Enumerable.Empty<T>` |
 
 An operator returning a sequence is deferred, as .NET's: it runs at each
-enumeration and sees the source as it is then; an integer `Sum` overflows with
+enumeration and sees the source as it is then; an ordering computes each
+element's key once per level; `Zip` reads its sequences in step; `Min`/`Max` of
+a reference type skip nulls and give null for an empty source; an integer `Sum` overflows with
 `OverflowException`; an empty or unmatched sequence throws .NET's
 `InvalidOperationException` text. Deliberately absent: query syntax, a
 dictionary or a string as a source, the comparer overloads, `Join`, `GroupJoin`,

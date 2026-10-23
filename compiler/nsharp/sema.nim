@@ -3436,13 +3436,24 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
        lhs.typeName.len > 0 and not ctx.scope.classes.hasKey(lhs.typeName):
       ## An operator the library declares on its own struct (`DateTime - DateTime`
       ## is a `TimeSpan`): the overload whose right operand is the right side's type.
-      let want = canonicalTypeName(rhs.typeName)
-      for o in ctx.surface.overloads(lhs.typeName, tkClass, n.name):
-        if o.paramTypes.len == 2 and o.ret.len > 0 and want.len > 0 and
-           headSpelling(o.paramTypes[1]) in [want, ctx.surface.nimSpellingOf(want)]:
-          result = ctx.surface.kindOfName(o.ret)
-          n.setType(result, o.ret)
-          break
+      ## Exactly first, then an integer widened to a floating-point parameter.
+      ## A literal has a kind and no name: `0.5` is a `double`, `2` an `int`.
+      let want = canonicalTypeName(if rhs.typeName.len > 0: rhs.typeName
+                                   elif rhs.typeKind == tkFloat: "double"
+                                   elif rhs.typeKind == tkInt: "int"
+                                   else: "")
+      var spellings = @[want, ctx.surface.nimSpellingOf(want)]
+      if "float64" in spellings: spellings.add "float"
+      block found:
+        for widen in [false, true]:
+          for o in ctx.surface.overloads(lhs.typeName, tkClass, n.name):
+            if o.paramTypes.len != 2 or o.ret.len == 0: continue
+            let p = headSpelling(o.paramTypes[1])
+            if (want.len > 0 and p in spellings) or
+               (widen and rhs.typeKind == tkInt and p in ["float", "float64"]):
+              result = ctx.surface.kindOfName(o.ret)
+              n.setType(result, o.ret)
+              break found
     if n.typeKind != tkClass or n.rtype == nil:
       ctx.checkOperands(n, lk0, rk0)
   of nsnNullDot:

@@ -65,6 +65,38 @@ Still open, recorded rather than fixed:
     `T<int>(...)` works.
   * `Func<object> f = () => 42;` (or a lambda passed for a `Func<object>`): the
     result is not boxed (`got 'int literal(42)' ... expected 'RootRef'`).
+  * `new[] { long.MaxValue, 1 }`: the implicitly typed array does not take the
+    best common type (`conversion from int64 to int32 is invalid`).
+  * `new[] { "b", null }`: `null` in an implicitly typed `string[]` (the null-string
+    rule is not applied there).
+  * `sb.AppendJoin(", ", ints)`: only `string` values are taken (.NET has
+    `AppendJoin<T>`); `Enum.TryParse("x", out var c)` is NS9999.
+  * `42.ToString("a")` / `{0:a}`: an invalid standard numeric format letter is
+    used as a custom format instead of throwing `FormatException`.
+  * `Math.Sign(double.NaN)` returns 0; .NET throws `ArithmeticException`, a type
+    N# does not declare because its overflow and division defects do not derive
+    from it.
+
+### Follow-up: a review of the library commits
+
+A reviewer agent checked `b82bfcb`, `5177cf4` and `6a21c02` against .NET; the
+fixes it led to are tested by `lib2/reviewmessages` and `lib2/reviewlinqio`:
+`SkipLast` with a negative count crashed; `TimeSpan * double` was typed as a
+`double`, and its constructors overflowed silently; `OrderBy` called the key
+selector in every comparison (now once per element per level, as .NET's); `Zip`
+read all of its second sequence first; `Min` ignored NaN; `Min`/`Max`/`MinBy`/
+`MaxBy` of a reference type threw on an empty source; integer `Average` never
+overflowed; `Average` of `float` did not compile; `Dictionary.Remove` during
+`foreach` threw (it does not since .NET Core 3.0); `Array.IndexOf`/`LastIndexOf`
+missed NaN; the exception texts of `Array.Copy`, `StringBuilder`, closed
+readers and writers, `File.Move`, `Convert.ToInt32(s, 10)` with a sign,
+`Convert.ToByte(double)`, `TimeSpan.From*(int)` and `DateTime.AddYears`; the
+composite format's `{` inside a format spec and a trailing `}`; `Math.Log` with a
+base of 0, 1 or infinity; `TimeSpan * / double` rounding midpoints away from
+zero; `DateTime.ToString("R")`. On the way: a block-bodied lambda's result type
+is now read from its `return`, so `xs.OrderBy(x => { ...; return x; }).ThenBy(...)`
+types the next lambda; and a library member renamed `nsM_X` is renamed for its
+own receiver type only.
 
 The original report follows unchanged.
 

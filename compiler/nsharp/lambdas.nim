@@ -447,14 +447,24 @@ proc libInstanceResult*(surface: NsBclSurface; recv: NsNode; name: string;
       return
     result = (typ: t, isParam: isParam and not m.retNumeric)
 
+proc returnedType(n: NsNode): NsNode =
+  ## The type of the first `return e` of a body whose type is known, not looking
+  ## into a nested lambda or local function, whose returns are their own.
+  if n == nil or n.kind in {nsnLambda, nsnLocalFunc}: return nil
+  if n.kind == nsnReturn: return (if n.body != nil: valueType(n.body) else: nil)
+  for s in n.sons:
+    let t = returnedType(s)
+    if t != nil: return t
+  returnedType(n.body)
+
 proc lambdaResult*(lam: NsNode): NsNode =
   ## The type a lambda's body yields, when the frontend knows it: its declared
-  ## result, or an expression body's type.
+  ## result, an expression body's type, or what a block body returns.
   if lam == nil or lam.kind != nsnLambda: return nil
   if lam.typ != nil and lam.typ.kind == nsnTypeName: return lam.typ
   let b = lam.body
   if b != nil and b.strVal == "expr" and b.sons.len == 1: return valueType(b.sons[0])
-  nil
+  returnedType(b)
 
 proc unifyDelegateResult(surface: NsBclSurface; pt: PNode; lam: NsNode;
                          names: seq[string]; binding: var seq[NsNode]) =

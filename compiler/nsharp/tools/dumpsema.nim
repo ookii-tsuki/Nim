@@ -16,7 +16,7 @@
 # Normally exercised through nsharp/tests/run_sema.sh.
 
 import std/[os, algorithm, strutils, syncio, sets, tables]
-import ../../idents, ../../lineinfos, ../../msgs, ../../options, ../../pathutils
+import ../../ast as nimast, ../../idents, ../../lineinfos, ../../msgs, ../../options, ../../pathutils
 import ../ast as nsast, ../parser, ../bcl, ../sema, ../nsgen, ../symbols
 
 # --- the shared vocabulary ---------------------------------------------------
@@ -79,6 +79,29 @@ proc nsOf(path: string): string =
   ## The C# namespace of a declaring module. The intrinsics hold `System.Object`'s
   ## members (`ToString`), which every N# module sees without a `using`.
   if path == NsIntrinsicsPath: "System" else: path.replace('/', '.')
+
+proc sameNumber(s: string): string =
+  ## Nim's `float` is `float64`, as C#'s `double` is.
+  if s == "float": "float64" else: s
+
+proc elementSpelling(typeName: string): string =
+  ## The Nim spelling of a sequence's element type: `string[]` and `List<string>`
+  ## are `string`; "" when it is not one, or the element is itself generic.
+  var e = ""
+  if typeName.endsWith("[]"): e = typeName[0 ..< ^2]
+  else:
+    let a = typeName.find('<')
+    if a > 0 and typeName.endsWith(">") and typeName.find(',') < 0:
+      e = typeName[a + 1 ..< ^1]
+  if e.len == 0 or '<' in e or '[' in e: return ""
+  sameNumber(nimTypeName(e))
+
+proc declaredElement(p: PNode; genParams: seq[string]): string =
+  ## The element type a declaration's receiver names (`NsEnumerable[int32]`), or ""
+  ## when it is a type parameter or not written that way.
+  if p == nil or p.kind != nkBracketExpr or p.len != 2: return ""
+  let e = headSpelling(p[1])
+  if e.len == 0 or e in genParams or p[1].kind != nkIdent: "" else: sameNumber(e)
 
 # --- walking ----------------------------------------------------------------
 
@@ -165,9 +188,15 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
       var m = NsBclMember()
       ## An array is filed under the library's array type, by its C# name (`int[]`).
       let lookup = (if recv == "array": n.body.typeName else: recv)
-      ## The first instance overload taking the call's arguments, when it is a call.
+      ## The first instance overload taking the call's arguments, when it is a call,
+      ## and not one over another element type (`Min` of an `int` sequence for a
+      ## `string[]`).
+      let elem = elementSpelling(n.body.typeName)
       for pass in 0 .. 1:
         for o in surface.overloads(lookup, rk, n.name):
+          if elem.len > 0 and o.paramTypes.len > 0:
+            let e = declaredElement(o.paramTypes[0], o.genParams)
+            if e.len > 0 and e != elem: continue
           if not o.isStatic and (pass == 1 or arity < 0 or o.paramTypes.len == arity + 1):
             m = o
             break

@@ -218,9 +218,12 @@ proc Copy*(t: typedesc[File]; sourceFileName, destFileName: string) =
   File.Copy(sourceFileName, destFileName, false)
 proc Move*(t: typedesc[File]; sourceFileName, destFileName: string) =
   if not fileExists(sourceFileName): nsMissing(sourceFileName)
-  if fileExists(destFileName) or dirExists(destFileName):
-    raise nsNewException(IOException, "Cannot create a file when that file already exists.")
-  moveFile(sourceFileName, destFileName)
+  let dest = nsFull(destFileName)
+  if fileExists(dest) or dirExists(dest):
+    raise nsNewException(IOException, "The file '" & dest & "' already exists.")
+  if not dirExists(parentDir(dest)):
+    raise nsNewException(DirectoryNotFoundException, "Could not find a part of the path '" & dest & "'.")
+  moveFile(sourceFileName, dest)
 
 # --- System.IO.Directory --------------------------------------------------------
 
@@ -301,7 +304,8 @@ proc newStreamReader*(path: string): StreamReader = StreamReader(nsText: nsReadA
 
 proc nsCheckOpen(r: StreamReader) =
   if r.nsClosed:
-    raise nsNewException(ObjectDisposedException, "Cannot read from a closed TextReader.")
+    raise nsNewException(ObjectDisposedException, "StreamReader",
+                         "Cannot read from a closed TextReader.")
 
 proc EndOfStream*(r: StreamReader): bool =
   r.nsCheckOpen
@@ -340,7 +344,8 @@ proc newStreamWriter*(path: string): StreamWriter = newStreamWriter(path, false)
 
 proc nsCheckOpen(w: StreamWriter) =
   if not w.nsOpen:
-    raise nsNewException(ObjectDisposedException, "Cannot write to a closed TextWriter.")
+    raise nsNewException(ObjectDisposedException, "StreamWriter",
+                         "Cannot write to a closed TextWriter.")
 
 proc Write*[T](w: StreamWriter; value: T) =
   w.nsCheckOpen

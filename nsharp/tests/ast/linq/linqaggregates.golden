@@ -1106,7 +1106,7 @@ nkStmtList
               nkEmpty
               nkEmpty
               nkFormalParams
-                nkIdent 'auto'
+                nkIdent 'int32'
                 nkIdentDefs
                   nkIdent 'p'
                   nkIdent 'Person'

@@ -66,9 +66,6 @@ proc nsToIEnumerable*[T](o: IOrderedEnumerable[T]): IEnumerable[T] = nsView(o)
   ## Where C# converts an ordered query to `IEnumerable<T>`.
 proc nsToIEnumerable*[T](g: IGroupingBase[T]): IEnumerable[T] = nsView(g)
 
-# A second sequence is an `NsEnumerable2`: Nim binds a type class to one type per
-# signature, and the two may be different collections.
-
 proc nsCompare[K](a, b: K): int =
   ## The default order of a key: its `CompareTo`, else the natural one.
   mixin CompareTo
@@ -117,27 +114,36 @@ proc SelectMany*[T, C](source: NsEnumerable[T]; selector: Func2[T, C]):
 
 # --- ordering -----------------------------------------------------------------
 
+proc nsLevel[T, K](keySelector: Func2[T, K]; descending: bool):
+    proc (xs: seq[T]): proc (i, j: int): int =
+  ## One ordering level: the keys of the elements, computed once each.
+  result = proc (xs: seq[T]): proc (i, j: int): int =
+    var keys = newSeq[K](xs.len)
+    for i, x in xs: keys[i] = keySelector(x)
+    let ks = keys
+    result = proc (i, j: int): int =
+      if descending: nsCompare(ks[j], ks[i]) else: nsCompare(ks[i], ks[j])
+proc nsSelf[T](x: T): T = x
+
 proc OrderBy*[T, K](source: NsEnumerable[T]; keySelector: Func2[T, K]): IOrderedEnumerable[T] =
-  IOrderedEnumerable[T](nsSource: nsView(source),
-    nsOrder: @[proc (a, b: T): int = nsCompare(keySelector(a), keySelector(b))])
+  IOrderedEnumerable[T](nsSource: nsView(source), nsOrder: @[nsLevel(keySelector, false)])
 proc OrderByDescending*[T, K](source: NsEnumerable[T]; keySelector: Func2[T, K]):
     IOrderedEnumerable[T] =
-  IOrderedEnumerable[T](nsSource: nsView(source),
-    nsOrder: @[proc (a, b: T): int = nsCompare(keySelector(b), keySelector(a))])
+  IOrderedEnumerable[T](nsSource: nsView(source), nsOrder: @[nsLevel(keySelector, true)])
 proc ThenBy*[T, K](source: IOrderedEnumerable[T]; keySelector: Func2[T, K]):
     IOrderedEnumerable[T] =
-  IOrderedEnumerable[T](nsSource: source.nsSource, nsOrder: source.nsOrder &
-    @[proc (a, b: T): int = nsCompare(keySelector(a), keySelector(b))])
+  IOrderedEnumerable[T](nsSource: source.nsSource,
+                        nsOrder: source.nsOrder & nsLevel(keySelector, false))
 proc ThenByDescending*[T, K](source: IOrderedEnumerable[T]; keySelector: Func2[T, K]):
     IOrderedEnumerable[T] =
-  IOrderedEnumerable[T](nsSource: source.nsSource, nsOrder: source.nsOrder &
-    @[proc (a, b: T): int = nsCompare(keySelector(b), keySelector(a))])
+  IOrderedEnumerable[T](nsSource: source.nsSource,
+                        nsOrder: source.nsOrder & nsLevel(keySelector, true))
 proc Order*[T](source: NsEnumerable[T]): IOrderedEnumerable[T] =
   IOrderedEnumerable[T](nsSource: nsView(source),
-                        nsOrder: @[proc (a, b: T): int {.closure.} = nsCompare(a, b)])
+                        nsOrder: @[nsLevel[T, T](nsSelf[T], false)])
 proc OrderDescending*[T](source: NsEnumerable[T]): IOrderedEnumerable[T] =
   IOrderedEnumerable[T](nsSource: nsView(source),
-                        nsOrder: @[proc (a, b: T): int {.closure.} = nsCompare(b, a)])
+                        nsOrder: @[nsLevel[T, T](nsSelf[T], true)])
 
 proc Reverse*[T](source: NsEnumerable[T]): IEnumerable[T] =
   let src = source
@@ -183,7 +189,7 @@ proc SkipLast*[T](source: NsEnumerable[T]; count: int32): IEnumerable[T] =
   nsEnumerable(T):
     var xs: seq[T] = @[]
     for x in items(src): xs.add x
-    for i in 0 ..< max(0, xs.len - int(count)): yield xs[i]
+    for i in 0 ..< clamp(xs.len - int(count), 0, xs.len): yield xs[i]
 proc TakeLast*[T](source: NsEnumerable[T]; count: int32): IEnumerable[T] =
   let src = source
   nsEnumerable(T):
@@ -219,6 +225,9 @@ proc DistinctBy*[T, K](source: NsEnumerable[T]; keySelector: Func2[T, K]): IEnum
     let seen = newHashSet[K]()
     for x in items(src):
       if seen.Add(keySelector(x)): yield x
+
+# A second sequence is an `NsEnumerable2`: Nim binds a type class to one type per
+# signature, and the two may be different collections.
 proc Union*[T](first: NsEnumerable[T]; second: NsEnumerable2[T]): IEnumerable[T] =
   let a = first
   let b = second
@@ -299,13 +308,14 @@ proc Zip*[T, U, R](first: NsEnumerable[T]; second: NsEnumerable2[U];
   let a = first
   let b = second
   nsEnumerable(R):
-    var ys: seq[U] = @[]
-    for y in items(b): ys.add y
-    var i = 0
-    for x in items(a):
-      if i >= ys.len: break
-      yield resultSelector(x, ys[i])
-      inc i
+    ## In step, as .NET's: the second is read one element per element of the first.
+    let e = nsView(b).GetEnumerator()
+    try:
+      for x in items(a):
+        if not e.MoveNext(): break
+        yield resultSelector(x, e.Current)
+    finally:
+      e.Dispose()
 
 # --- elements -------------------------------------------------------------------
 
@@ -449,38 +459,60 @@ proc Sum*[T; N: SomeNumber](source: NsEnumerable[T]; selector: Func2[T, N]): N =
   ## tell overloads apart by a delegate's result alone.
   for x in items(source): nsAddTo(result, selector(x))
 
+template nsTotal(total, x: untyped) =
+  ## An integer total is a `long`, checked, as .NET sums it.
+  when typeof(x) is SomeInteger: total = nsCkAdd(total, int64(x))
+  else: total += float(x)
 proc nsMean[N](source: NsEnumerable[N]): float =
   var n = 0
-  var total = 0.0
+  var total: (when N is SomeInteger: int64 else: float)
   for x in items(source):
-    total += float(x)
+    nsTotal(total, x)
     inc n
   if n == 0: nsLinqFail(noElements)
-  total / float(n)
+  float(total) / float(n)
 proc Average*(source: NsEnumerable[int32]): float = nsMean(source)
 proc Average*(source: NsEnumerable[int64]): float = nsMean(source)
 proc Average*(source: NsEnumerable[float]): float = nsMean(source)
+proc Average*(source: NsEnumerable[float32]): float32 =
+  ## A `float` source averages to a `float`, summed in `double`.
+  float32(nsMean(source))
 proc Average*[T; N: SomeNumber](source: NsEnumerable[T]; selector: Func2[T, N]): float =
   var n = 0
-  var total = 0.0
+  var total: (when N is SomeInteger: int64 else: float)
   for x in items(source):
-    total += float(selector(x))
+    nsTotal(total, selector(x))
     inc n
   if n == 0: nsLinqFail(noElements)
-  total / float(n)
+  float(total) / float(n)
+
+template nsNullable(T: typedesc): bool =
+  ## A result C# can answer null with: an empty source gives it, and null elements
+  ## are passed over, where a value type's empty source throws.
+  T is ref or T is string
+
+template nsSkipped[T](x: T): bool =
+  when T is ref: x.isNil else: false
 
 proc nsMinOf[T](source: NsEnumerable[T]): T =
+  ## The least; a NaN is the least of floating-point values, as in .NET.
   var first = true
   for x in items(source):
+    if nsSkipped(x): continue
+    when T is SomeFloat:
+      if x != x: return x
     if first or nsCompare(x, result) < 0: result = x
     first = false
-  if first: nsLinqFail(noElements)
+  when not nsNullable(T):
+    if first: nsLinqFail(noElements)
 proc nsMaxOf[T](source: NsEnumerable[T]): T =
   var first = true
   for x in items(source):
+    if nsSkipped(x): continue
     if first or nsCompare(x, result) > 0: result = x
     first = false
-  if first: nsLinqFail(noElements)
+  when not nsNullable(T):
+    if first: nsLinqFail(noElements)
 
 proc Min*(source: NsEnumerable[int32]): int32 = nsMinOf(source)
 proc Min*(source: NsEnumerable[int64]): int64 = nsMinOf(source)
@@ -494,16 +526,22 @@ proc nsMinBy[T, R](source: NsEnumerable[T]; selector: Func2[T, R]): R =
   var first = true
   for x in items(source):
     let v = selector(x)
+    if nsSkipped(v): continue
+    when R is SomeFloat:
+      if v != v: return v
     if first or nsCompare(v, result) < 0: result = v
     first = false
-  if first: nsLinqFail(noElements)
+  when not nsNullable(R):
+    if first: nsLinqFail(noElements)
 proc nsMaxBy[T, R](source: NsEnumerable[T]; selector: Func2[T, R]): R =
   var first = true
   for x in items(source):
     let v = selector(x)
+    if nsSkipped(v): continue
     if first or nsCompare(v, result) > 0: result = v
     first = false
-  if first: nsLinqFail(noElements)
+  when not nsNullable(R):
+    if first: nsLinqFail(noElements)
 proc Min*[T; N: SomeNumber](source: NsEnumerable[T]; selector: Func2[T, N]): N =
   ## .NET's per-type overloads, as for `Sum`; any other result is the generic one's.
   nsMinBy(source, selector)
@@ -513,25 +551,33 @@ proc Max*[T; N: SomeNumber](source: NsEnumerable[T]; selector: Func2[T, N]): N =
 proc Max*[T, R](source: NsEnumerable[T]; selector: Func2[T, R]): R = nsMaxBy(source, selector)
 
 proc MinBy*[T, K](source: NsEnumerable[T]; keySelector: Func2[T, K]): T =
+  ## An element whose key is null is passed over; an empty source of a reference
+  ## type gives null.
   var first = true
   var best: K
   for x in items(source):
     let k = keySelector(x)
+    if nsSkipped(k): continue
     if first or nsCompare(k, best) < 0:
       best = k
       result = x
     first = false
-  if first: nsLinqFail(noElements)
+  when not nsNullable(T):
+    if first: nsLinqFail(noElements)
 proc MaxBy*[T, K](source: NsEnumerable[T]; keySelector: Func2[T, K]): T =
+  ## An element whose key is null is passed over; an empty source of a reference
+  ## type gives null.
   var first = true
   var best: K
   for x in items(source):
     let k = keySelector(x)
+    if nsSkipped(k): continue
     if first or nsCompare(k, best) > 0:
       best = k
       result = x
     first = false
-  if first: nsLinqFail(noElements)
+  when not nsNullable(T):
+    if first: nsLinqFail(noElements)
 
 proc Aggregate*[T](source: NsEnumerable[T]; fn: Func3[T, T, T]): T =
   var first = true

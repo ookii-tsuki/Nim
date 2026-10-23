@@ -643,6 +643,7 @@ proc nsComposite*(format: string; args: openArray[RootRef]): string =
       if j < n and format[j] == ':':
         inc j
         while j < n and format[j] != '}':
+          if format[j] == '{': nsFormatFail(j, "Format item ends prematurely.")
           spec.add format[j]
           inc j
       if j >= n or format[j] != '}': nsFormatFail(j, "Format item ends prematurely.")
@@ -655,6 +656,8 @@ proc nsComposite*(format: string; args: openArray[RootRef]): string =
       if i + 1 < n and format[i + 1] == '}':
         result.add '}'
         i += 2
+      elif i + 1 >= n:
+        nsFormatFail(i + 1, "Format item ends prematurely.")
       else:
         nsFormatFail(i + 1, "Unexpected closing brace without a corresponding opening brace.")
     else:
@@ -679,7 +682,7 @@ proc GetLength*[T](a: NsArray[T]; dimension: int32): int32 =
 proc IndexOf*[T](a: NsArray[T]; value: T): int32 {.nsStatic: "Array".} =
   result = -1
   for i in 0 ..< a.len:
-    if a.nsData[i] == value: return int32(i)
+    if Equals(a.nsData[i], value): return int32(i)
 
 proc Length*[T](a: openArray[T]): int32 = int32(a.len)
 proc Clone*[T](a: openArray[T]): NsArray[T] = nsArrayOf(@a)
@@ -689,7 +692,7 @@ proc GetLength*[T](a: openArray[T]; dimension: int32): int32 =
 proc IndexOf*[T](a: openArray[T]; value: T): int32 {.nsStatic: "Array".} =
   result = -1
   for i in 0 ..< a.len:
-    if a[i] == value: return int32(i)
+    if Equals(a[i], value): return int32(i)
 
 # `Array.Sort`: in the elements' own order (`CompareTo`, else the natural one), by a
 # `Comparison<T>`, or by an `IComparer<T>`, where a null one means the default.
@@ -778,7 +781,14 @@ proc Clamp*[T: SomeNumber](value, min, max: T): T {.nsStatic: "Math".} =
   if value < min: min elif value > max: max else: value
 proc Exp*(x: float): float {.nsStatic: "Math".} = exp(x)
 proc Log*(x: float): float {.nsStatic: "Math".} = ln(x)
-proc Log*(x, newBase: float): float {.nsStatic: "Math".} = ln(x) / ln(newBase)
+proc Log*(x, newBase: float): float {.nsStatic: "Math".} =
+  ## With .NET's special cases: a base of 1 is NaN, as is 0 or +inf for any `x`
+  ## but 1.
+  if x != x: return x
+  if newBase != newBase: return newBase
+  if newBase == 1.0: return system.NaN
+  if x != 1.0 and (newBase == 0.0 or newBase == Inf): return system.NaN
+  ln(x) / ln(newBase)
 proc Log10*(x: float): float {.nsStatic: "Math".} = log10(x)
 proc Log2*(x: float): float {.nsStatic: "Math".} = log2(x)
 proc Cbrt*(x: float): float {.nsStatic: "Math".} = cbrt(x)
@@ -926,9 +936,12 @@ proc Copy*[T](sourceArray: NsArray[T]; sourceIndex: int32; destinationArray: NsA
   if sourceArray == nil or destinationArray == nil:
     raise nsNewException(ArgumentNullException,
                          (if sourceArray == nil: "sourceArray" else: "destinationArray"))
-  if length < 0: nsRangeFail("length", "Non-negative number required.")
-  if sourceIndex < 0: nsRangeFail("sourceIndex", "Non-negative number required.")
-  if destinationIndex < 0: nsRangeFail("destinationIndex", "Non-negative number required.")
+  if sourceIndex < 0:
+    raise nsActualValue("sourceIndex", $sourceIndex, "must be greater than or equal to '0'.")
+  if destinationIndex < 0:
+    raise nsActualValue("destinationIndex", $destinationIndex,
+                        "must be greater than or equal to '0'.")
+  if length < 0: raise nsActualValue("length", $length, "must be a non-negative value.")
   if int(sourceIndex) + int(length) > sourceArray.len:
     raise nsNewException(ArgumentException, "Source array was not long enough. Check " &
       "the source index, length, and the array's lower bounds.", "sourceArray")
@@ -970,8 +983,9 @@ proc Reverse*[T](a: NsArray[T]; index, length: int32) {.nsStatic: "Array".} =
   if length > 0: algorithm.reverse(a.nsData, int(index), int(index) + int(length) - 1)
 proc LastIndexOf*[T](a: NsArray[T]; value: T): int32 {.nsStatic: "Array".} =
   result = -1
+  ## `Equals`, as .NET's: a NaN finds a NaN.
   for i in countdown(a.len - 1, 0):
-    if a.nsData[i] == value: return int32(i)
+    if Equals(a.nsData[i], value): return int32(i)
 proc Exists*[T](a: NsArray[T]; match: Predicate[T]): bool {.nsStatic: "Array".} =
   for x in a.nsData:
     if match(x): return true
@@ -1025,20 +1039,30 @@ proc nsToInteger[T: SomeInteger; S: SomeInteger](x: S): T =
     if int64(x) < int64(low(T)) or int64(x) > int64(high(T)): nsConvFail(nsNetName(T))
   T(x)
 
-proc nsDigitsIn(s: string; base: int32; bits: int): uint64 =
+proc nsDigitsIn(s: string; base: int32; bits: int; neg: var bool): uint64 =
   ## `Convert.ToInt32(s, fromBase)`: digits of base 2, 8, 10 or 16 (`0x` allowed
-  ## before hexadecimal), whose bits are the value, so `ffffffff` is -1.
+  ## before hexadecimal), whose bits are the value, so `ffffffff` is -1; a sign
+  ## first, though a minus only in base 10.
   if base notin [2'i32, 8, 10, 16]:
     raise nsNewException(ArgumentException, "Invalid Base.")
   var i = 0
-  if base == 16 and s.len > 2 and s[0] == '0' and s[1] in {'x', 'X'}: i = 2
+  neg = false
+  if i < s.len and s[i] in {'+', '-'}:
+    if s[i] == '-':
+      if base != 10:
+        raise nsNewException(ArgumentException,
+                             "String cannot contain a minus sign if the base is not 10.")
+      neg = true
+    inc i
+  let first = i
+  if base == 16 and s.len > i + 2 and s[i] == '0' and s[i + 1] in {'x', 'X'}: i += 2
   if i >= s.len: raise newException(FormatException, "Could not find any recognizable digits.")
   result = 0
   while i < s.len:
     let c = toLowerAscii(s[i])
     let d = (if c in {'0'..'9'}: ord(c) - ord('0') elif c in {'a'..'f'}: ord(c) - ord('a') + 10 else: 99)
     if d >= int(base):
-      if i == 0: raise newException(FormatException, "Could not find any recognizable digits.")
+      if i == first: raise newException(FormatException, "Could not find any recognizable digits.")
       raise newException(FormatException, "Additional non-parsable characters are at the end of the string.")
     let limit = (if bits == 64: high(uint64) else: (1'u64 shl bits) - 1)
     if result > (limit - uint64(d)) div uint64(base):
@@ -1052,10 +1076,11 @@ proc ToInt32*(t: typedesc[Convert]; value: bool): int32 = int32(ord(value))
 proc ToInt32*(t: typedesc[Convert]; value: char): int32 = int32(ord(value))
 proc ToInt32*(t: typedesc[Convert]; value: string): int32 = Parse(int32, value)
 proc ToInt32*(t: typedesc[Convert]; value: string; fromBase: int32): int32 =
-  let v = nsDigitsIn(value, fromBase, 32)
+  var neg: bool
+  let v = nsDigitsIn(value, fromBase, 32, neg)
   if fromBase == 10:
-    if v > uint64(high(int32)): nsConvFail("an Int32")
-    int32(v)
+    if v > uint64(high(int32)) + uint64(neg): nsConvFail("an Int32")
+    if neg: int32(-int64(v)) else: int32(v)
   else: cast[int32](uint32(v))
 proc ToInt64*(t: typedesc[Convert]; value: float): int64 = nsToInteger[int64](value)
 proc ToInt64*[S: SomeInteger](t: typedesc[Convert]; value: S): int64 = nsToInteger[int64, S](value)
@@ -1063,16 +1088,20 @@ proc ToInt64*(t: typedesc[Convert]; value: bool): int64 = int64(ord(value))
 proc ToInt64*(t: typedesc[Convert]; value: char): int64 = int64(ord(value))
 proc ToInt64*(t: typedesc[Convert]; value: string): int64 = Parse(int64, value)
 proc ToInt64*(t: typedesc[Convert]; value: string; fromBase: int32): int64 =
-  let v = nsDigitsIn(value, fromBase, 64)
+  var neg: bool
+  let v = nsDigitsIn(value, fromBase, 64, neg)
   if fromBase == 10:
-    if v > uint64(high(int64)): nsConvFail("an Int64")
-    int64(v)
+    if v > uint64(high(int64)) + uint64(neg): nsConvFail("an Int64")
+    if neg: cast[int64](0'u64 - v) else: int64(v)
   else: cast[int64](v)
-proc ToInt16*(t: typedesc[Convert]; value: float): int16 = nsToInteger[int16](value)
+proc ToInt16*(t: typedesc[Convert]; value: float): int16 =
+  ## Through `ToInt32`, as .NET's, which names that type when out of its range.
+  nsToInteger[int16, int32](nsToInteger[int32](value))
 proc ToInt16*[S: SomeInteger](t: typedesc[Convert]; value: S): int16 = nsToInteger[int16, S](value)
 proc ToInt16*(t: typedesc[Convert]; value: bool): int16 = int16(ord(value))
 proc ToInt16*(t: typedesc[Convert]; value: string): int16 = Parse(int16, value)
-proc ToByte*(t: typedesc[Convert]; value: float): uint8 = nsToInteger[uint8](value)
+proc ToByte*(t: typedesc[Convert]; value: float): uint8 =
+  nsToInteger[uint8, int32](nsToInteger[int32](value))
 proc ToByte*[S: SomeInteger](t: typedesc[Convert]; value: S): uint8 = nsToInteger[uint8, S](value)
 proc ToByte*(t: typedesc[Convert]; value: bool): uint8 = uint8(ord(value))
 proc ToByte*(t: typedesc[Convert]; value: char): uint8 = uint8(ord(value))
@@ -1271,20 +1300,29 @@ proc nsSpanFail() {.noinline, noreturn.} =
   raise nsStamped(OverflowException, "TimeSpan overflowed because the duration is too long.",
                   "System.OverflowException")
 
+proc nsSpanRange() {.noinline, noreturn.} =
+  ## A constructor's or a whole-unit `From*`'s overflow, which .NET reports as an
+  ## argument out of range.
+  raise nsNewException(ArgumentOutOfRangeException, "",
+                       "TimeSpan overflowed because the duration is too long.")
+
 proc nsSpanTicks(a, b: int64): int64 =
-  ## `a * b` ticks, overflowing as a TimeSpan does.
-  if a != 0 and (abs(b) > high(int64) div abs(a)): nsSpanFail()
+  ## `a * b` ticks (`b` positive), out of range as a TimeSpan's arguments are.
+  if a > high(int64) div b or a < low(int64) div b: nsSpanRange()
   a * b
+
+proc nsSpanOfMs(days, hours, minutes, seconds, milliseconds: int64): TimeSpan =
+  ## The parts, which cannot overflow `long` as 32-bit values, then the range.
+  let ms = (days * 86400 + hours * 3600 + minutes * 60 + seconds) * 1000 + milliseconds
+  TimeSpan(nsTicks: nsSpanTicks(ms, nsTicksPerMs))
 
 proc newTimeSpan*(ticks: int64): TimeSpan = TimeSpan(nsTicks: ticks)
 proc newTimeSpan*(hours, minutes, seconds: int32): TimeSpan =
-  TimeSpan(nsTicks: (int64(hours) * 3600 + int64(minutes) * 60 + int64(seconds)) * nsTicksPerSecond)
+  nsSpanOfMs(0, hours, minutes, seconds, 0)
 proc newTimeSpan*(days, hours, minutes, seconds: int32): TimeSpan =
-  TimeSpan(nsTicks: (int64(days) * 86400 + int64(hours) * 3600 + int64(minutes) * 60 +
-                     int64(seconds)) * nsTicksPerSecond)
+  nsSpanOfMs(days, hours, minutes, seconds, 0)
 proc newTimeSpan*(days, hours, minutes, seconds, milliseconds: int32): TimeSpan =
-  TimeSpan(nsTicks: ((int64(days) * 86400 + int64(hours) * 3600 + int64(minutes) * 60 +
-                      int64(seconds)) * 1000 + int64(milliseconds)) * nsTicksPerMs)
+  nsSpanOfMs(days, hours, minutes, seconds, milliseconds)
 
 proc nsSpanOf(value: float; scale: int64): TimeSpan =
   if value != value:
@@ -1349,14 +1387,14 @@ proc `+`*(a: TimeSpan): TimeSpan = a
 proc `*`*(a: TimeSpan; factor: float): TimeSpan =
   if factor != factor:
     raise nsNewException(ArgumentException, "TimeSpan does not accept floating point Not-a-Number values.")
-  let t = round(float(a.nsTicks) * factor)
+  let t = Round(float(a.nsTicks) * factor)
   if not (t >= -9.223372036854775808e18 and t < 9.223372036854775808e18): nsSpanFail()
   TimeSpan(nsTicks: int64(t))
 proc `*`*(factor: float; a: TimeSpan): TimeSpan = a * factor
 proc `/`*(a: TimeSpan; divisor: float): TimeSpan =
   if divisor != divisor:
     raise nsNewException(ArgumentException, "TimeSpan does not accept floating point Not-a-Number values.")
-  let t = round(float(a.nsTicks) / divisor)
+  let t = Round(float(a.nsTicks) / divisor)
   if not (t >= -9.223372036854775808e18 and t < 9.223372036854775808e18): nsSpanFail()
   TimeSpan(nsTicks: int64(t))
 proc `/`*(a, b: TimeSpan): float = float(a.nsTicks) / float(b.nsTicks)
@@ -1583,8 +1621,13 @@ proc AddMonths*(d: DateTime; months: int32): DateTime =
                     d.nsTicks mod nsTicksPerDay, nsKind: d.nsKind)
 proc AddYears*(d: DateTime; value: int32): DateTime =
   if value < -10000 or value > 10000:
-    nsDateFail("Years value must be between +/-10000.", "years")
-  d.AddMonths(value * 12)
+    nsDateFail("Years value must be between +/-10000.", "value")
+  let (y, m, day) = nsCivil(d.nsTicks div nsTicksPerDay)
+  let ny = y + value
+  if ny < 1 or ny > 9999:
+    nsDateFail("The added or subtracted value results in an un-representable DateTime.", "value")
+  DateTime(nsTicks: nsDaysFromCivil(ny, m, min(day, nsDaysIn(ny, m))) * nsTicksPerDay +
+                    d.nsTicks mod nsTicksPerDay, nsKind: d.nsKind)
 proc Add*(d: DateTime; value: TimeSpan): DateTime = d.AddTicks(value.nsTicks)
 proc Subtract*(d: DateTime; value: TimeSpan): DateTime =
   var r: int64
@@ -1620,6 +1663,7 @@ proc nsFormatDate(d: DateTime; format: string): string =
     of 's': f = "yyyy'-'MM'-'dd'T'HH':'mm':'ss"
     of 'o', 'O': f = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffffK"
     of 'u': f = "yyyy'-'MM'-'dd HH':'mm':'ss'Z'"
+    of 'R', 'r': f = "ddd, dd MMM yyyy HH':'mm':'ss 'GMT'"
     of 'M', 'm': f = "MMMM d"
     of 'Y', 'y': f = "MMMM yyyy"
     else:
