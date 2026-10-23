@@ -521,9 +521,9 @@ whole float reads `3.0` where C# writes `3` (a format spec, `{x:G}`, gives C#'s
 form). `ToString` is a dispatched `method`, so a class shows its override for its
 *dynamic* type; a struct likewise through a generated `$`. **A class or struct
 without an override prints its fields, as Nim prints an object, not its type's
-name as C# does:** `(Name: "Rex", Age: 3, Friend: nil)`, a base class's fields
+name as C# does:** `(Name: "Rex", Age: 3, Friend: null)`, a base class's fields
 first (private ones too), an auto-property under its own name, events, statics
-and constants left out, strings and chars quoted, null as `nil`, and an object
+and constants left out, strings and chars quoted, null as `null`, and an object
 already being printed further out as `...`, so a cycle ends. A record keeps C#'s
 `R { A = 1 }`, and `GetType().ToString()` still gives the type's name. **A
 collection or array likewise prints its elements**, in `foreach` order, as Nim

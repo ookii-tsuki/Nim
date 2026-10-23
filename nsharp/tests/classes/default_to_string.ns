@@ -1,7 +1,7 @@
 // A class or struct that does not override ToString prints its fields, as Nim
 // prints an object (C# prints the type's name; see the .csout): base class fields
 // first, private ones too, an auto-property under its own name, events, statics
-// and constants left out, strings and chars quoted, null as nil, and an object
+// and constants left out, strings and chars quoted, null as null, and an object
 // already being printed as `...`.
 using System;
 namespace Demo {

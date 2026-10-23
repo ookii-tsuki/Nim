@@ -296,17 +296,17 @@ method nsValueText*(x: RootRef): string {.base.} = $x
   ## boxed string is quoted as a string is.
 
 proc nsFieldValue*[T](x: T): string =
-  ## One field's value: a string or char quoted, null as `nil`, anything else as
+  ## One field's value: a string or char quoted, null as `null`, anything else as
   ## it prints.
   when T is string or T is char: result.addQuoted(x)
   elif T is Option:
-    result = (if x.isSome: nsFieldValue(x.get) else: "nil")
+    result = (if x.isSome: nsFieldValue(x.get) else: "null")
   elif T is RootRef:
-    result = (if x.isNil: "nil" else: nsValueText(x))
+    result = (if x.isNil: "null" else: nsValueText(x))
   elif T is ref or T is ptr or T is pointer:
-    result = (if x.isNil: "nil" else: $x)
+    result = (if x.isNil: "null" else: $x)
   elif (T is proc):
-    result = (if x.isNil: "nil" else: "...")
+    result = (if x.isNil: "null" else: "...")
   elif compiles($x): result = $x
   else: result = "..."
 
