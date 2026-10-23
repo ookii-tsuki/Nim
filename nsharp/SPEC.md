@@ -525,7 +525,10 @@ name as C# does:** `(Name: "Rex", Age: 3, Friend: null)`, a base class's fields
 first (private ones too), an auto-property under its own name, events, statics
 and constants left out, strings and chars quoted, null as `null`, and an object
 already being printed further out as `...`, so a cycle ends. A record keeps C#'s
-`R { A = 1 }`, and `GetType().ToString()` still gives the type's name. **A
+`R { A = 1 }`, and `GetType().ToString()` still gives the type's name.
+`base.ToString()` in an override, where the base has none of its own, prints the
+base's fields only, as a base written by hand would: an override can add its own,
+`base.ToString() + " +" + Extra`. **A
 collection or array likewise prints its elements**, in `foreach` order, as Nim
 prints a seq: `[1, 2]`, a multi-dimensional array as nested rows
 `[[1, 2], [3, 4]]`, a dictionary its entries `{"a": 1}`, a collection holding
