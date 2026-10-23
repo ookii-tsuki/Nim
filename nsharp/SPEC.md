@@ -962,6 +962,10 @@ Members are resolved from those declarations, not from a table of names: the
 frontend reads the prelude's own Nim sources (`bcl.nim`'s *surface*), so
 `x.Length`, `.Count`, `.Message`, `int.MaxValue` and `String.Concat` are answered
 by the proc the prelude declares, and lowering reaches it through Nim's dot-call.
+A helper the prelude exports only for the code N# generates (`nsBox`, the
+`new<Type>` constructors `new T()` lowers to, `items` for `foreach`) is marked
+`{.nsHidden.}` (or sits in a `{.push nsHidden.}` region), so it is not part of
+the surface: N# source cannot name it, and `x.nsBox()` is CS1061 as in C#.
 
 ### 15.1 Collections - pinned member surface (3b)
 

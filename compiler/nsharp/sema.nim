@@ -1973,7 +1973,8 @@ proc chainInScope(ctx: NsCheckContext; cls: string): bool =
 proc libraryHas(ctx: NsCheckContext; recv: string; kind: NsTypeKind; name: string): bool =
   ## Whether the prelude gives a value of this type a member `name`: its own, or one
   ## declared for any value (`ToString`, `GetType`), or an extension in scope.
-  if ctx.surface.member(recv, kind, name).name.len > 0: return true
+  ## A `{.nsHidden.}` helper is no member of N# source's (`x.nsBox()` is CS1061).
+  if ctx.surface.member(recv, kind, name, visibleOnly = true).name.len > 0: return true
   var cur = ctx.surface.nimSpellingOf(recv)
   var hops = 0
   while cur.len > 0 and ctx.surface.types.hasKey(cur) and hops < 16:
@@ -1982,7 +1983,7 @@ proc libraryHas(ctx: NsCheckContext; recv: string; kind: NsTypeKind; name: strin
     cur = ctx.surface.types[cur].base
     inc hops
   for m in ctx.surface.members.getOrDefault(NsParamKey):
-    if m.name == name: return true
+    if m.name == name and not m.hidden: return true
   ctx.scope.extensions.hasKey(name)
 
 proc checkConstCall(ctx: NsCheckContext; n: NsNode) =

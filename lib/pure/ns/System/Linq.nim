@@ -38,7 +38,7 @@ import std/algorithm
 import ../System
 import Collections/Generic
 from ../../nsharp/intrinsics import nsCkAdd, NsArray, nsArrayOf, Equals
-from ../../nsharp/pragmas import nsStatic
+from ../../nsharp/pragmas import nsStatic, nsHidden
 
 {.push discardable.}
 
@@ -62,9 +62,9 @@ proc nsView[T](source: NsEnumerable[T]): IEnumerable[T] =
   nsEnumerable(T):
     for x in items(src): yield x
 
-proc nsToIEnumerable*[T](o: IOrderedEnumerable[T]): IEnumerable[T] = nsView(o)
+proc nsToIEnumerable*[T](o: IOrderedEnumerable[T]): IEnumerable[T] {.nsHidden.} = nsView(o)
   ## Where C# converts an ordered query to `IEnumerable<T>`.
-proc nsToIEnumerable*[T](g: IGroupingBase[T]): IEnumerable[T] = nsView(g)
+proc nsToIEnumerable*[T](g: IGroupingBase[T]): IEnumerable[T] {.nsHidden.} = nsView(g)
 
 proc nsCompare[K](a, b: K): int =
   ## The default order of a key: its `CompareTo`, else the natural one.

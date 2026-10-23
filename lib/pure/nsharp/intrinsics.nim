@@ -8,6 +8,7 @@
 # which is why a bool reads `true` here and `True` in C#.
 
 import format
+from pragmas import nsHidden
 export format
 import std/strutils
 import std/hashes
@@ -46,8 +47,8 @@ proc nsProgramAssembly(): string =
     nsProgramAsm = name & ", Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
   nsProgramAsm
 
-proc nsTypeNamed*(full: string; assembly = ""): Type = Type(nsFull: full, nsAsm: assembly)
-proc nsDisplay*(t: Type): string = t.nsFull
+proc nsTypeNamed*(full: string; assembly = ""): Type {.nsHidden.} = Type(nsFull: full, nsAsm: assembly)
+proc nsDisplay*(t: Type): string {.nsHidden.} = t.nsFull
   ## The name as `ToString()` gives it, and generic arguments are written in it:
   ## ``System.Collections.Generic.List`1[System.Int32]``.
 proc nsAssembly(t: Type): string =
@@ -101,7 +102,7 @@ proc FullName*(t: Type): string =
       t.nsQual = qual
   t.nsQual
 
-proc nsGenericType*(base, assembly: string; args: varargs[Type]): Type =
+proc nsGenericType*(base, assembly: string; args: varargs[Type]): Type {.nsHidden.} =
   ## A constructed generic type, ``System.Collections.Generic.List`1[System.Int32]``,
   ## from its arguments' types, which say their own assemblies.
   var display = base & "`" & $args.len & "["
@@ -120,10 +121,10 @@ proc Namespace*(t: Type): string =
   let i = base.rfind('.')
   if i >= 0: base[0 ..< i] else: ""
 
-method nsTypeName*(x: RootRef): string {.base.} = "System.Object"
+method nsTypeName*(x: RootRef): string {.nsHidden, base.} = "System.Object"
   ## The dynamic type's name, which every class N# lowers, and each class of the
   ## library, overrides.
-method nsDynType*(x: RootRef): Type {.base.} = nsTypeNamed(x.nsTypeName)
+method nsDynType*(x: RootRef): Type {.nsHidden, base.} = nsTypeNamed(x.nsTypeName)
   ## `GetType()` of a class value: a generic class overrides it to say its type
   ## arguments' assemblies too.
 
@@ -150,7 +151,7 @@ method ToString*(x: RootRef): string {.base, discardable.} =
   else: x.nsDynType.nsDisplay
 
 method ToString*(t: Type): string = t.nsFull
-proc nsTypeOf*(t: typedesc[Type]): Type = nsTypeNamed("System.Type")
+proc nsTypeOf*(t: typedesc[Type]): Type {.nsHidden.} = nsTypeNamed("System.Type")
 proc `==`*(a, b: Type): bool =
   if a.isNil or b.isNil: a.isNil and b.isNil else: a.nsFull == b.nsFull
 
@@ -187,17 +188,17 @@ proc `+`*[T](a: T, b: string): string = $a & b
 #
 # The smallest value over `-1` overflows, and .NET throws `OverflowException` for
 # both `/` and `%` then, checked or not; the processor would trap on `%`.
-template nsStamped*(T: typedesc; message, netName: string): untyped =
+template nsStamped*(T: typedesc; message, netName: string): untyped {.nsHidden.} =
   ## An exception N# raises under one of the defects .NET's exceptions alias,
   ## named as .NET names its type. Nim's runtime raises the same defects named as
   ## Nim does, which is how `nsAdoptException` tells them apart.
   (let nsE = newException(T, message); nsE.name = netName; nsE)
 
-proc nsOverflowFail*() {.noinline, noreturn.} =
+proc nsOverflowFail*() {.nsHidden, noinline, noreturn.} =
   raise nsStamped(OverflowDefect, "Arithmetic operation resulted in an overflow.",
                   "System.OverflowException")
 
-proc nsIndexFail*() {.noinline, noreturn.} =
+proc nsIndexFail*() {.nsHidden, noinline, noreturn.} =
   raise nsStamped(IndexDefect, "Index was outside the bounds of the array.",
                   "System.IndexOutOfRangeException")
 
@@ -225,7 +226,7 @@ else:
   {.pop.}
 
 {.push rangeChecks: off.}
-proc nsCkConv*[T: SomeInteger; S: SomeInteger](t: typedesc[T]; x: S): T {.inline.} =
+proc nsCkConv*[T: SomeInteger; S: SomeInteger](t: typedesc[T]; x: S): T {.nsHidden, inline.} =
   ## `checked((T)x)` between integer types: .NET's `OverflowException` when `x` is
   ## outside `T`, which Nim's range check does not make for an unsigned `T`.
   when S is SomeSignedInt and T is SomeUnsignedInt:
@@ -237,7 +238,7 @@ proc nsCkConv*[T: SomeInteger; S: SomeInteger](t: typedesc[T]; x: S): T {.inline
   T(x)
 {.pop.}
 
-proc nsCkNeg*[T: SomeInteger](a: T): T {.inline.} =
+proc nsCkNeg*[T: SomeInteger](a: T): T {.nsHidden, inline.} =
   when T is SomeSignedInt:
     if a == low(T): nsOverflowFail()
     -a
@@ -245,13 +246,13 @@ proc nsCkNeg*[T: SomeInteger](a: T): T {.inline.} =
     if a != 0: nsOverflowFail()
     a
 
-proc nsDiv*[T: SomeInteger](a, b: T): T {.inline.} =
+proc nsDiv*[T: SomeInteger](a, b: T): T {.nsHidden, inline.} =
   if b == 0: raise newException(DivByZeroDefect, "Attempted to divide by zero.")
   when T is SomeSignedInt:
     if b == T(-1) and a == low(T): nsDivOverflow()
   system.`div`(a, b)
 
-proc nsMod*[T: SomeInteger](a, b: T): T {.inline.} =
+proc nsMod*[T: SomeInteger](a, b: T): T {.nsHidden, inline.} =
   if b == 0: raise newException(DivByZeroDefect, "Attempted to divide by zero.")
   when T is SomeSignedInt:
     if b == T(-1) and a == low(T): nsDivOverflow()
@@ -261,16 +262,16 @@ proc nsMod*[T: SomeInteger](a, b: T): T {.inline.} =
 # `fmod`; Nim's integer `mod` does not apply to floats.
 from std/math import nil
 
-proc nsFmod*(a, b: float64): float64 {.inline.} = math.`mod`(a, b)
-proc nsFmod*(a, b: float32): float32 {.inline.} = math.`mod`(a, b)
+proc nsFmod*(a, b: float64): float64 {.nsHidden, inline.} = math.`mod`(a, b)
+proc nsFmod*(a, b: float32): float32 {.nsHidden, inline.} = math.`mod`(a, b)
 
 # A shift count is masked to the operand's width, as C# does (`1 << 33 == 2`); in
 # C a count that large is undefined. `>>>` shifts zeros in whatever the sign.
 template nsShiftMask[T](n: SomeInteger): int = int(n) and (sizeof(T) * 8 - 1)
 
-proc nsShl*[T: SomeInteger](a: T; n: SomeInteger): T {.inline.} = a shl nsShiftMask[T](n)
-proc nsShr*[T: SomeInteger](a: T; n: SomeInteger): T {.inline.} = a shr nsShiftMask[T](n)
-proc nsUShr*[T: SomeInteger](a: T; n: SomeInteger): T {.inline.} =
+proc nsShl*[T: SomeInteger](a: T; n: SomeInteger): T {.nsHidden, inline.} = a shl nsShiftMask[T](n)
+proc nsShr*[T: SomeInteger](a: T; n: SomeInteger): T {.nsHidden, inline.} = a shr nsShiftMask[T](n)
+proc nsUShr*[T: SomeInteger](a: T; n: SomeInteger): T {.nsHidden, inline.} =
   when T is SomeUnsignedInt: a shr nsShiftMask[T](n)
   elif sizeof(T) == 8: cast[T](cast[uint64](a) shr nsShiftMask[T](n))
   elif sizeof(T) == 4: cast[T](cast[uint32](a) shr nsShiftMask[T](n))
@@ -292,11 +293,11 @@ proc `$`*[T](x: Option[T]): string =
 # lists the fields (an auto-property shows under its own name, events and statics
 # not at all) and these say how each value is written.
 
-method nsValueText*(x: RootRef): string {.base.} = $x
+method nsValueText*(x: RootRef): string {.nsHidden, base.} = $x
   ## An object as an element or field prints; a boxed value overrides it, so a
   ## boxed string is quoted as a string is.
 
-proc nsFieldValue*[T](x: T): string =
+proc nsFieldValue*[T](x: T): string {.nsHidden.} =
   ## One field's value: a string or char quoted, null as `null`, anything else as
   ## it prints.
   when T is string or T is char: result.addQuoted(x)
@@ -314,7 +315,7 @@ proc nsFieldValue*[T](x: T): string =
   elif compiles($x): result = $x
   else: result = "..."
 
-proc nsFieldAdd*[T](text: var string; name: string; value: T) =
+proc nsFieldAdd*[T](text: var string; name: string; value: T) {.nsHidden.} =
   ## `, name: value` onto the fields printed so far.
   if text.len > 0: text.add ", "
   text.add name
@@ -327,7 +328,7 @@ const nsPrintDepth = 64
   ## thousands of nodes) ends in `...`, so printing it neither recurses without
   ## bound nor copies its text once per level.
 
-template nsGuarded*(self: typed; text: untyped): string =
+template nsGuarded*(self: typed; text: untyped): string {.nsHidden.} =
   ## `text`, or `...` for an object already being printed further out, so a cycle
   ## (`a.Next = a`, a list holding itself) ends, or one `nsPrintDepth` levels in.
   when self is ref:
@@ -339,11 +340,11 @@ template nsGuarded*(self: typed; text: untyped): string =
       finally: discard nsPrinting.pop()
   else: text
 
-template nsObjectText*(self: typed; fields: untyped): string =
+template nsObjectText*(self: typed; fields: untyped): string {.nsHidden.} =
   ## `(fields)`: a class or struct without a `ToString` of its own.
   nsGuarded(self, "(" & fields & ")")
 
-proc nsItemsText*[O, C](owner: O; c: C): string =
+proc nsItemsText*[O, C](owner: O; c: C): string {.nsHidden.} =
   ## `owner`'s elements `c`, in `foreach` order: `[1, 2]`. (C# prints the type's
   ## name; `GetType()` still gives it.)
   mixin items
@@ -355,10 +356,10 @@ proc nsItemsText*[O, C](owner: O; c: C): string =
     text.add ']'
     text
 
-proc nsItemsText*[C](c: C): string = nsItemsText(c, c)
+proc nsItemsText*[C](c: C): string {.nsHidden.} = nsItemsText(c, c)
   ## A collection as its elements.
 
-proc nsPairsText*[C](c: C): string =
+proc nsPairsText*[C](c: C): string {.nsHidden.} =
   ## A dictionary as its entries: `{"a": 1, "b": 2}`.
   mixin items
   nsGuarded(c):
@@ -395,12 +396,12 @@ proc GetValueOrDefault*[T](x: Option[T]): T =
   if x.isSome: result = x.get
   else: result = default(T)
 
-proc nsAbsent*[T](x: Option[T]): bool =
+proc nsAbsent*[T](x: Option[T]): bool {.nsHidden.} =
   ## `a?.V` / `a ?? b` ask the type whether it is absent; the compiler emits this
   ## rather than naming a member, so the `Option` API stays the library's business.
   x.isNone
 
-proc nsPresent*[T](x: Option[T]): T =
+proc nsPresent*[T](x: Option[T]): T {.nsHidden.} =
   ## The unwrapped value, for the present side of the same lowering, and for
   ## `(int)x`, which throws as `x.Value` does when there is none.
   if x.isNone: nsAbsentValue()
@@ -495,15 +496,15 @@ proc `xor`*(a: bool, b: Option[bool]): Option[bool] = some(a) xor b
 proc `not`*(a: Option[bool]): Option[bool] =
   if a.isSome: some(not a.get) else: none(bool)
 
-proc nsOptAs*[T, U](a: Option[T]; t: typedesc[U]): Option[U] =
+proc nsOptAs*[T, U](a: Option[T]; t: typedesc[U]): Option[U] {.nsHidden.} =
   ## A lifted conversion, `long? l = i;` for an `int? i`: absent stays absent.
   if a.isSome: some(U(a.get)) else: none(U)
 
-proc nsNilFail*() {.noinline, noreturn.} =
+proc nsNilFail*() {.nsHidden, noinline, noreturn.} =
   raise nsStamped(NilAccessDefect, "Object reference not set to an instance of an object.",
                   "System.NullReferenceException")
 
-template nsCheckNil*(x: untyped): untyped =
+template nsCheckNil*(x: untyped): untyped {.nsHidden.} =
   ## C# throws when a method is called on a nil receiver even if the body never
   ## touches `self`. A dereference check cannot see that, so the receiver is tested
   ## at the call. `desugar.nim` emits this around a dot-called class receiver that
@@ -512,13 +513,13 @@ template nsCheckNil*(x: untyped): untyped =
   ## temporary `x` makes is destroyed with the statement, as it would be anyway).
   (let nsR {.cursor.} = x; (if nsR == nil: nsNilFail()); nsR)
 
-template nsCheckNilVar*(x: untyped): untyped =
+template nsCheckNilVar*(x: untyped): untyped {.nsHidden.} =
   ## `nsCheckNil` for a receiver that is a variable: read twice rather than
   ## copied, so the check costs no reference count, and the throw is out of line.
   (if x == nil: nsNilFail()
    x)
 
-proc nsIfaceCast*[T](v: T; src: RootRef): T =
+proc nsIfaceCast*[T](v: T; src: RootRef): T {.nsHidden.} =
   ## `(I)x` for an interface `I`: `v` is what the object's class answered for `I`,
   ## empty when it does not implement it. C# throws `InvalidCastException` then,
   ## unless `x` was null, which casts to the null interface value.
@@ -531,7 +532,7 @@ proc nsIfaceCast*[T](v: T; src: RootRef): T =
       raise newException(ObjectConversionDefect, "Specified cast is not valid.")
   v
 
-proc nsCreate*[T: not ref](t: typedesc[T]): T =
+proc nsCreate*[T: not ref](t: typedesc[T]): T {.nsHidden.} =
   ## `new T()` for a value type: its default. A class declares its own `nsCreate`,
   ## which calls its parameterless constructor.
   default(T)
@@ -543,21 +544,21 @@ type
     ## is left early.
     fins: seq[proc () {.closure.}]
 
-proc nsDisposePush*(d: NsDisposeStack; f: proc () {.closure.}) {.inline.} = d.fins.add f
-proc nsDisposePop*(d: NsDisposeStack) {.inline.} =
+proc nsDisposePush*(d: NsDisposeStack; f: proc () {.closure.}) {.nsHidden, inline.} = d.fins.add f
+proc nsDisposePop*(d: NsDisposeStack) {.nsHidden, inline.} =
   if d.fins.len > 0: d.fins.setLen(d.fins.len - 1)
-proc nsDisposeRun*(d: NsDisposeStack) =
+proc nsDisposeRun*(d: NsDisposeStack) {.nsHidden.} =
   while d.fins.len > 0:
     let f = d.fins.pop()
     f()
 
-proc nsCellOf*[T](v: T): ref T {.inline.} =
+proc nsCellOf*[T](v: T): ref T {.nsHidden, inline.} =
   ## A loop-body variable a lambda captures: one cell per iteration, which every
   ## closure of that iteration shares and no other iteration does.
   new(result)
   result[] = v
 
-proc nsIsNull*[T](x: T): bool {.inline.} =
+proc nsIsNull*[T](x: T): bool {.nsHidden, inline.} =
   ## `x == null` for a value of a type parameter: never for a value type, as C#
   ## has it, the empty string for a `string` (N#'s null one), and `nil` otherwise.
   when T is string: x.len == 0
@@ -566,7 +567,7 @@ proc nsIsNull*[T](x: T): bool {.inline.} =
   elif compiles(x == nil): x == nil
   else: false
 
-template nsStmt*(x: untyped) =
+template nsStmt*(x: untyped) {.nsHidden.} =
   ## A delegate call used as a statement: C# drops its result, and a Nim proc value
   ## cannot be `{.discardable.}`, so a result is discarded here.
   when typeof(x) is void: x
@@ -584,17 +585,17 @@ template nsStepped(v: typed; up: static bool): untyped =
      else: v)
   elif typeof(v) is SomeFloat: (when up: v + 1 else: v - 1)
   else: (when up: succ(v) else: pred(v))
-template nsPostInc*(x: untyped): untyped =
+template nsPostInc*(x: untyped): untyped {.nsHidden.} =
   (let nsOld = x; x = nsStepped(nsOld, true); nsOld)
-template nsPostDec*(x: untyped): untyped =
+template nsPostDec*(x: untyped): untyped {.nsHidden.} =
   (let nsOld = x; x = nsStepped(nsOld, false); nsOld)
-template nsPreInc*(x: untyped): untyped =
+template nsPreInc*(x: untyped): untyped {.nsHidden.} =
   (x = nsStepped(x, true); x)
-template nsPreDec*(x: untyped): untyped =
+template nsPreDec*(x: untyped): untyped {.nsHidden.} =
   (x = nsStepped(x, false); x)
-template nsInc*(x: untyped) =
+template nsInc*(x: untyped) {.nsHidden.} =
   x = nsStepped(x, true)
-template nsDec*(x: untyped) =
+template nsDec*(x: untyped) {.nsHidden.} =
   x = nsStepped(x, false)
 
 type
@@ -602,7 +603,7 @@ type
     ## What a switch expression throws when no arm matches. C# declares it in
     ## `System.Runtime.CompilerServices`; the compiler raises it, so it lives here.
 
-template nsDispose*(x: typed) =
+template nsDispose*(x: typed) {.nsHidden.} =
   ## What `using` runs when its scope is left: `x.Dispose()`, unless `x` is null.
   when x is ref:
     if x != nil: x.Dispose()
@@ -613,7 +614,7 @@ template nsDispose*(x: typed) =
 
 import std/cmdline
 
-proc nsVal*[T](x: T): T {.inline.} =
+proc nsVal*[T](x: T): T {.nsHidden, inline.} =
   ## A variable's value read now: `x + F()` in C# reads `x` before `F` runs, while
   ## Nim reads a variable operand after the call. The compiler wraps an operand in
   ## this when a later one may change it.
@@ -624,7 +625,7 @@ proc nsVal*[T](x: T): T {.inline.} =
 # `distinct` integer, each member as a template over its `typedesc`
 # (`Color.Red`), and calls `nsEnum` for the operators C# gives every enum.
 
-proc nsEnumName*(v: int64; names: openArray[(string, int64)]; flags: bool): string =
+proc nsEnumName*(v: int64; names: openArray[(string, int64)]; flags: bool): string {.nsHidden.} =
   ## How .NET prints an enum value: the name of a member with that value; for a
   ## `[Flags]` enum, otherwise the names of the members whose bits make it up,
   ## highest first in the search and listed in declaration order; else the number.
@@ -666,20 +667,20 @@ macro Invoke*(d: typed; args: varargs[typed]): untyped =
 # they are told apart by their proc, one per place `nsCombine` is expanded.
 var nsMultiQuery* {.threadvar.}: bool
 
-proc nsMultiSlot*[D](): var seq[D] =
+proc nsMultiSlot*[D](): var seq[D] {.nsHidden.} =
   var slot {.global.}: seq[D]
   slot
 
-proc nsMultiProcs*[D](): var seq[pointer] =
+proc nsMultiProcs*[D](): var seq[pointer] {.nsHidden.} =
   var procs {.global.}: seq[pointer]
   procs
 
-proc nsRawProc*[D](f: D): pointer =
+proc nsRawProc*[D](f: D): pointer {.nsHidden.} =
   ## The proc behind a closure, or nil for a proc type `rawProc` does not take.
   when compiles(rawProc(f)): rawProc(f)
   else: cast[pointer](f)
 
-proc nsMarkMulti*[D](f: D) =
+proc nsMarkMulti*[D](f: D) {.nsHidden.} =
   let p = nsRawProc(f)
   if p notin nsMultiProcs[D](): nsMultiProcs[D]().add p
 
@@ -707,7 +708,7 @@ macro nsQueryList(d: typed): untyped =
   result.add(if ret.kind == nnkEmpty: call else: newNimNode(nnkDiscardStmt).add(call))
   result = newBlockStmt(result)
 
-template nsListOf*(d: typed): untyped =
+template nsListOf*(d: typed): untyped {.nsHidden.} =
   ## The invocation list of `d`: none for null, itself for a single delegate.
   block:
     let nsX = d
@@ -722,7 +723,7 @@ template nsListOf*(d: typed): untyped =
         nsR = @[nsX]
     nsR
 
-macro nsCombine*(a, b: typed): untyped =
+macro nsCombine*(a, b: typed): untyped {.nsHidden.} =
   ## `a + b` for delegates (`d += h`): a delegate calling `a`'s list and then
   ## `b`'s, answering the last one's result; a null side is the other one.
   let (ret, names, types) = nsDelegateParams(a)
@@ -760,7 +761,7 @@ macro nsCombine*(a, b: typed): untyped =
         nsMarkMulti(`f`)
         `f`)
 
-proc nsWithout*[D](la, lb: seq[D]): seq[D] =
+proc nsWithout*[D](la, lb: seq[D]): seq[D] {.nsHidden.} =
   ## `la` without the last run of delegates equal to `lb`, as C#'s `Delegate.Remove`
   ## takes it out; `la` itself when it holds no such run.
   result = la
@@ -769,7 +770,7 @@ proc nsWithout*[D](la, lb: seq[D]): seq[D] =
     if la[i ..< i + lb.len] == lb:
       return la[0 ..< i] & la[i + lb.len .. ^1]
 
-macro nsRemove*(a, b: typed): untyped =
+macro nsRemove*(a, b: typed): untyped {.nsHidden.} =
   ## `a - b` for delegates (`d -= h`): the delegate of the list that remains.
   let r = genSym(nskVar, "nsR")
   let x = genSym(nskForVar, "nsX")
@@ -779,11 +780,11 @@ macro nsRemove*(a, b: typed): untyped =
       for `x` in nsWithout(nsListOf(`a`), nsListOf(`b`)): `r` = nsCombine(`r`, `x`)
       `r`)
 
-proc nsSubscribe*[D](e: var seq[D]; h: D) =
+proc nsSubscribe*[D](e: var seq[D]; h: D) {.nsHidden.} =
   ## `e += h` on an event: `h` joins its handlers (a null one does not).
   if h != nil: e.add h
 
-proc nsUnsubscribe*[D](e: var seq[D]; h: D) =
+proc nsUnsubscribe*[D](e: var seq[D]; h: D) {.nsHidden.} =
   ## `e -= h` on an event: the last handler equal to `h` leaves.
   for i in countdown(e.high, 0):
     if e[i] == h:
@@ -798,26 +799,26 @@ proc `==`*[D: proc](e: seq[D]; n: typeof(nil)): bool = e.len == 0
 # it lowers and the library for the built-in ones; `x.GetType()` asks a class
 # value for its dynamic type's name, through a `method` every class overrides.
 
-proc nsTypeOf*(t: typedesc[int8]): Type = nsTypeNamed("System.SByte")
-proc nsTypeOf*(t: typedesc[uint8]): Type = nsTypeNamed("System.Byte")
-proc nsTypeOf*(t: typedesc[int16]): Type = nsTypeNamed("System.Int16")
-proc nsTypeOf*(t: typedesc[uint16]): Type = nsTypeNamed("System.UInt16")
-proc nsTypeOf*(t: typedesc[int32]): Type = nsTypeNamed("System.Int32")
-proc nsTypeOf*(t: typedesc[uint32]): Type = nsTypeNamed("System.UInt32")
-proc nsTypeOf*(t: typedesc[int64]): Type = nsTypeNamed("System.Int64")
-proc nsTypeOf*(t: typedesc[int]): Type = nsTypeNamed("System.Int32")
+proc nsTypeOf*(t: typedesc[int8]): Type {.nsHidden.} = nsTypeNamed("System.SByte")
+proc nsTypeOf*(t: typedesc[uint8]): Type {.nsHidden.} = nsTypeNamed("System.Byte")
+proc nsTypeOf*(t: typedesc[int16]): Type {.nsHidden.} = nsTypeNamed("System.Int16")
+proc nsTypeOf*(t: typedesc[uint16]): Type {.nsHidden.} = nsTypeNamed("System.UInt16")
+proc nsTypeOf*(t: typedesc[int32]): Type {.nsHidden.} = nsTypeNamed("System.Int32")
+proc nsTypeOf*(t: typedesc[uint32]): Type {.nsHidden.} = nsTypeNamed("System.UInt32")
+proc nsTypeOf*(t: typedesc[int64]): Type {.nsHidden.} = nsTypeNamed("System.Int64")
+proc nsTypeOf*(t: typedesc[int]): Type {.nsHidden.} = nsTypeNamed("System.Int32")
   ## Nim's `int` is an untyped C# `int` literal (`3.GetType()`); C#'s `long` is
   ## always `int64`.
-proc nsTypeOf*(t: typedesc[uint64]): Type = nsTypeNamed("System.UInt64")
-proc nsTypeOf*(t: typedesc[float32]): Type = nsTypeNamed("System.Single")
-proc nsTypeOf*(t: typedesc[float]): Type = nsTypeNamed("System.Double")
-proc nsTypeOf*(t: typedesc[bool]): Type = nsTypeNamed("System.Boolean")
-proc nsTypeOf*(t: typedesc[char]): Type = nsTypeNamed("System.Char")
-proc nsTypeOf*(t: typedesc[string]): Type = nsTypeNamed("System.String")
-proc nsTypeOf*(t: typedesc[RootRef]): Type = nsTypeNamed("System.Object")
+proc nsTypeOf*(t: typedesc[uint64]): Type {.nsHidden.} = nsTypeNamed("System.UInt64")
+proc nsTypeOf*(t: typedesc[float32]): Type {.nsHidden.} = nsTypeNamed("System.Single")
+proc nsTypeOf*(t: typedesc[float]): Type {.nsHidden.} = nsTypeNamed("System.Double")
+proc nsTypeOf*(t: typedesc[bool]): Type {.nsHidden.} = nsTypeNamed("System.Boolean")
+proc nsTypeOf*(t: typedesc[char]): Type {.nsHidden.} = nsTypeNamed("System.Char")
+proc nsTypeOf*(t: typedesc[string]): Type {.nsHidden.} = nsTypeNamed("System.String")
+proc nsTypeOf*(t: typedesc[RootRef]): Type {.nsHidden.} = nsTypeNamed("System.Object")
 
 
-proc nsAdoptException*(e: ref Exception) =
+proc nsAdoptException*(e: ref Exception) {.nsHidden.} =
   ## An exception as the program first sees it, in a `catch`: a defect Nim's
   ## runtime raised (a check N# leaves to Nim, such as a string's index) is named as
   ## Nim names its type, where N#'s own throws are named as .NET does (`nsStamped`),
@@ -848,10 +849,10 @@ proc GetType*[T: not RootRef](x: T): Type {.discardable.} = nsTypeOf(T)
 
 # `sizeof(T)` for the built-in value types, as C# defines them (a `char` is two
 # bytes there, whatever N#'s is).
-proc nsSizeOf*(t: typedesc[int8 | uint8 | bool]): int32 = 1
-proc nsSizeOf*(t: typedesc[int16 | uint16 | char]): int32 = 2
-proc nsSizeOf*(t: typedesc[int32 | uint32 | float32]): int32 = 4
-proc nsSizeOf*(t: typedesc[int64 | uint64 | float]): int32 = 8
+proc nsSizeOf*(t: typedesc[int8 | uint8 | bool]): int32 {.nsHidden.} = 1
+proc nsSizeOf*(t: typedesc[int16 | uint16 | char]): int32 {.nsHidden.} = 2
+proc nsSizeOf*(t: typedesc[int32 | uint32 | float32]): int32 {.nsHidden.} = 4
+proc nsSizeOf*(t: typedesc[int64 | uint64 | float]): int32 {.nsHidden.} = 8
 
 # --- boxing -----------------------------------------------------------------
 #
@@ -871,7 +872,7 @@ type
   NsBox*[T] = ref object of NsBoxed
     v*: T
 
-method nsValueText*[T](b: NsBox[T]): string = nsFieldValue(b.v)
+method nsValueText*[T](b: NsBox[T]): string {.nsHidden.} = nsFieldValue(b.v)
 
 # `Equals` and `GetHashCode` of a value, as .NET defines them for its built-in types:
 # a `double` equals itself when NaN, and hashes its bits with every NaN alike and
@@ -935,7 +936,7 @@ proc nsBoxOf[T](x: T): RootRef =
   NsBox[T](v: x, nsStr: nsBoxStr[T], nsEq: nsBoxEq[T], nsHash: nsBoxHash[T],
            nsFmt: nsBoxFmt[T], nsType: name)
 
-proc nsFormatValue*(o: RootRef; spec: string): string =
+proc nsFormatValue*(o: RootRef; spec: string): string {.nsHidden.} =
   ## One hole of a composite format (`string.Format`) holding an `object`: a boxed
   ## value takes the spec as an interpolation hole does, null is empty, and any
   ## other object is its `ToString()`.
@@ -944,20 +945,20 @@ proc nsFormatValue*(o: RootRef; spec: string): string =
   elif o of NsBoxed: NsBoxed(o).nsFmt(NsBoxed(o), spec)
   else: o.ToString()
 
-proc nsBox*(x: RootRef): RootRef {.inline.} = x
+proc nsBox*(x: RootRef): RootRef {.nsHidden, inline.} = x
   ## A reference is already an object.
-proc nsBox*[T: not RootRef](x: T): RootRef =
+proc nsBox*[T: not RootRef](x: T): RootRef {.nsHidden.} =
   ## An untyped integer literal (Nim's `int`) is a C# `int`; any other value keeps
   ## its type, `3'i64` a `long`. One generic, so a typed literal is not converted to
   ## `int` to reach a narrower overload.
   when T is int: nsBoxOf(int32(x)) else: nsBoxOf(x)
-proc nsBox*[T](x: Option[T]): RootRef =
+proc nsBox*[T](x: Option[T]): RootRef {.nsHidden.} =
   ## Boxing a `T?` boxes its value, or is null when it has none (ECMA-334 8.3.12).
   if x.isSome: nsBoxOf(x.get) else: nil
 
 from std/tables import Table, getOrDefault, `[]=`
 var nsLiteralBoxes {.threadvar.}: Table[string, RootRef]
-proc nsBoxLit*(s: string): RootRef =
+proc nsBoxLit*(s: string): RootRef {.nsHidden.} =
   ## A string literal as an `object`: identical literals are one instance (6.4.5.6),
   ## so `(object)"x" == (object)"x"`.
   result = nsLiteralBoxes.getOrDefault(s)
@@ -966,9 +967,9 @@ proc nsBoxLit*(s: string): RootRef =
     nsLiteralBoxes[s] = result
 
 method ToString*(b: NsBoxed): string = b.nsStr(b)
-method nsTypeName*(b: NsBoxed): string = b.nsType
-proc nsBoxEquals*(a: NsBoxed; b: RootRef): bool = a.nsEq(a, b)
-proc nsBoxHash*(a: NsBoxed): int32 = a.nsHash(a)
+method nsTypeName*(b: NsBoxed): string {.nsHidden.} = b.nsType
+proc nsBoxEquals*(a: NsBoxed; b: RootRef): bool {.nsHidden.} = a.nsEq(a, b)
+proc nsBoxHash*(a: NsBoxed): int32 {.nsHidden.} = a.nsHash(a)
 
 method Equals*(a, b: RootRef): bool {.base, discardable.} = a == b
   ## `object.Equals`: the reference, unless a class overrides it.
@@ -983,14 +984,14 @@ proc nsCastFail(src, dst: string) {.noinline, noreturn.} =
   raise newException(ObjectConversionDefect,
     "Unable to cast object of type '" & src & "' to type '" & dst & "'.")
 
-proc nsDowncast*[T: RootRef](x: RootRef; t: typedesc[T]): T {.inline.} =
+proc nsDowncast*[T: RootRef](x: RootRef; t: typedesc[T]): T {.nsHidden, inline.} =
   ## `(T)x` from a base class: `x` itself when it is a `T` or null, else .NET's
   ## `InvalidCastException`.
   mixin nsTypeOf
   if x != nil and not (x of T): nsCastFail(GetType(x).nsDisplay, nsTypeOf(T).nsDisplay)
   T(x)
 
-proc nsUnbox*[T](o: RootRef; t: typedesc[T]): T =
+proc nsUnbox*[T](o: RootRef; t: typedesc[T]): T {.nsHidden.} =
   ## `(T)o`: the boxed value, which must be exactly a `T`.
   mixin nsTypeOf
   when T is Option:
@@ -1006,7 +1007,7 @@ proc nsUnbox*[T](o: RootRef; t: typedesc[T]): T =
     if not (o of NsBox[T]): nsCastFail(GetType(o).nsDisplay, nsTypeOf(T).nsDisplay)
     NsBox[T](o).v
 
-proc nsAsValue*[T](o: RootRef; t: typedesc[T]): T =
+proc nsAsValue*[T](o: RootRef; t: typedesc[T]): T {.nsHidden.} =
   ## `o as T` for a `string`, an array or a `T?`: the value when `o` holds one of
   ## the type, null (the empty string, nil, the absent value) otherwise.
   when T is Option:
@@ -1017,7 +1018,7 @@ proc nsAsValue*[T](o: RootRef; t: typedesc[T]): T =
   else:
     if o != nil and o of NsBox[T]: NsBox[T](o).v else: default(T)
 
-proc nsIsType*[T](o: RootRef; t: typedesc[T]): bool =
+proc nsIsType*[T](o: RootRef; t: typedesc[T]): bool {.nsHidden.} =
   ## `o is T`: a reference of that class, or a box of that value type; `o is T?`
   ## tests for a box of `T`, since a boxed nullable is a boxed value (8.3.12).
   when T is RootRef: o != nil and o of T
@@ -1060,16 +1061,16 @@ method ToString*[T](a: NsMdArray[T]): string =
     var text = ""
     rows(a, 0, 0, text)
     text
-method nsTypeName*(a: NsMdBase): string = a.nsName
+method nsTypeName*(a: NsMdBase): string {.nsHidden.} = a.nsName
 
-proc nsNewMd*[T](t: typedesc[T]; dims: varargs[int]): NsMdArray[T] =
+proc nsNewMd*[T](t: typedesc[T]; dims: varargs[int]): NsMdArray[T] {.nsHidden.} =
   var n = 1
   for d in dims:
     if d < 0: nsOverflowFail()
     n *= d
   NsMdArray[T](nsDims: @dims, nsData: newSeq[T](n), nsName: nsMdName[T](dims.len))
 
-proc nsMdOf*[T](data: seq[T]; dims: seq[int]): NsMdArray[T] =
+proc nsMdOf*[T](data: seq[T]; dims: seq[int]): NsMdArray[T] {.nsHidden.} =
   NsMdArray[T](nsDims: dims, nsData: data, nsName: nsMdName[T](dims.len))
 
 proc nsFlat[T](a: NsMdArray[T]; idx: openArray[int]): int =
@@ -1089,7 +1090,7 @@ proc `[]=`*[T](a: NsMdArray[T]; i, j: SomeInteger; v: T) =
 proc `[]=`*[T](a: NsMdArray[T]; i, j, k: SomeInteger; v: T) =
   a.nsData[a.nsFlat([int(i), int(j), int(k)])] = v
 
-proc len*[T](a: NsMdArray[T]): int = a.nsData.len
+proc len*[T](a: NsMdArray[T]): int {.nsHidden.} = a.nsData.len
   ## `Length`: every element, across the dimensions.
 proc Length*[T](a: NsMdArray[T]): int32 = int32(a.nsData.len)
 proc Rank*[T](a: NsMdArray[T]): int32 = int32(a.nsDims.len)
@@ -1099,7 +1100,7 @@ proc GetLength*[T](a: NsMdArray[T]; d: SomeInteger): int32 =
   int32(a.nsDims[d])
 proc GetUpperBound*[T](a: NsMdArray[T]; d: SomeInteger): int32 = a.GetLength(d) - 1
 proc GetLowerBound*[T](a: NsMdArray[T]; d: SomeInteger): int32 = 0
-iterator items*[T](a: NsMdArray[T]): T =
+iterator items*[T](a: NsMdArray[T]): T {.nsHidden.} =
   for x in a.nsData: yield x
 
 # --- arrays -------------------------------------------------------------------
@@ -1122,13 +1123,13 @@ proc nsArrayName[T](): string {.nimcall.} =
   name & "[]"
 
 method ToString*(a: NsArrayBase): string = a.nsName()
-method nsTypeName*(a: NsArrayBase): string = a.nsName()
+method nsTypeName*(a: NsArrayBase): string {.nsHidden.} = a.nsName()
 
-proc nsArrayOf*[T](data: sink seq[T]): NsArray[T] {.inline.} =
+proc nsArrayOf*[T](data: sink seq[T]): NsArray[T] {.nsHidden, inline.} =
   ## The array holding `data`: an array literal, or a library result.
   NsArray[T](nsData: data, nsName: nsArrayName[T])
 
-proc nsNewArray*[T](t: typedesc[T]; n: SomeInteger): NsArray[T] =
+proc nsNewArray*[T](t: typedesc[T]; n: SomeInteger): NsArray[T] {.nsHidden.} =
   ## `new T[n]`: `n` default elements.
   if n < 0: nsOverflowFail()
   nsArrayOf(newSeq[T](int(n)))
@@ -1169,51 +1170,51 @@ proc `[]`*[T; U, V: Ordinal | BackwardsIndex](a: NsArray[T]; r: HSlice[U, V]): N
   ## `a[1..^1]`: a new array of those elements, as C# copies a range.
   nsArrCheck(a)
   nsArrayOf(a.nsData[r])
-proc len*[T](a: NsArray[T]): int {.inline.} =
+proc len*[T](a: NsArray[T]): int {.nsHidden, inline.} =
   nsArrCheck(a)
   a.nsData.len
-proc high*[T](a: NsArray[T]): int {.inline.} = a.len - 1
+proc high*[T](a: NsArray[T]): int {.nsHidden, inline.} = a.len - 1
 
-template nsForBound*(i, a: untyped; cond: bool): bool =
+template nsForBound*(i, a: untyped; cond: bool): bool {.nsHidden.} =
   ## A counted loop's condition (`i < a.Length`), marked for the lowering's own
   ## bounds-check removal; a marker it leaves is the condition.
   cond
 
 {.push boundChecks: off.}
-proc nsAtUnchecked*[T](a: NsArray[T]; i: SomeInteger): var T {.inline.} =
+proc nsAtUnchecked*[T](a: NsArray[T]; i: SomeInteger): var T {.nsHidden, inline.} =
   ## `a[i]` in a loop that keeps `0 <= i < a.Length` and the array: neither the
   ## null test (the condition made it) nor the bounds check.
   a.nsData[int(i)]
 {.pop.}
 
-iterator items*[T](a: NsArray[T]): T =
+iterator items*[T](a: NsArray[T]): T {.nsHidden.} =
   nsArrCheck(a)
   for x in a.nsData: yield x
-iterator mitems*[T](a: NsArray[T]): var T =
+iterator mitems*[T](a: NsArray[T]): var T {.nsHidden.} =
   nsArrCheck(a)
   for x in a.nsData.mitems: yield x
-iterator pairs*[T](a: NsArray[T]): (int, T) =
+iterator pairs*[T](a: NsArray[T]): (int, T) {.nsHidden.} =
   nsArrCheck(a)
   for i, x in a.nsData: yield (i, x)
 
 method ToString*[T](a: NsArray[T]): string = nsItemsText(a, a.nsData)
   ## Its elements, `[1, 2]`, not C#'s `System.Int32[]` (`GetType()` still says that).
 
-template nsElemRef*(x: untyped): untyped =
+template nsElemRef*(x: untyped): untyped {.nsHidden.} =
   ## `ref a[i]`: the element as a location of its own, which a `ref` return or
   ## a `ref` local may keep while the array lives.
   cast[ptr typeof(x)](addr x)[]
 
-proc nsArrayFrom*[T](xs: openArray[T]): NsArray[T] = nsArrayOf(@xs)
+proc nsArrayFrom*[T](xs: openArray[T]): NsArray[T] {.nsHidden.} = nsArrayOf(@xs)
   ## A copy of `xs` as an array: `params` elements, a library collection's.
 
-proc nsCommandLine*(): NsArray[string] =
+proc nsCommandLine*(): NsArray[string] {.nsHidden.} =
   ## `Main`'s `string[] args`: the command line without the program's name.
   nsArrayOf(commandLineParams())
 
 # --- variance -----------------------------------------------------------------
 
-proc nsVariant*[A, B](x: A; t: typedesc[B]): B =
+proc nsVariant*[A, B](x: A; t: typedesc[B]): B {.nsHidden.} =
   ## `IProducer<Cat>` as `IProducer<Animal>`, `Func<Cat>` as `Func<Animal>`: C#
   ## allows these only over reference type arguments, which Nim represents alike,
   ## so the value is reread as the other instantiation (and copied as one, which
@@ -1223,13 +1224,13 @@ proc nsVariant*[A, B](x: A; t: typedesc[B]): B =
 
 # --- `typeof` of constructed types ---------------------------------------------
 
-proc nsGenericName*(base: string; args: varargs[string]): string =
+proc nsGenericName*(base: string; args: varargs[string]): string {.nsHidden.} =
   ## .NET's name of a constructed generic type: ``System.Collections.Generic.List`1[System.Int32]``.
   base & "`" & $args.len & "[" & args.join(",") & "]"
 
-proc nsTypeOf*[T](t: typedesc[NsArray[T]]): Type = nsTypeNamed(nsArrayName[T]())
+proc nsTypeOf*[T](t: typedesc[NsArray[T]]): Type {.nsHidden.} = nsTypeNamed(nsArrayName[T]())
   ## `typeof(int[])` is `System.Int32[]`.
-proc nsTypeOf*[T](t: typedesc[NsMdArray[T]]): Type = nsTypeNamed(nsMdName[T](2))
+proc nsTypeOf*[T](t: typedesc[NsMdArray[T]]): Type {.nsHidden.} = nsTypeNamed(nsMdName[T](2))
   ## `typeof(int[,])`; a rank above 2 is not told apart by the type.
 
 # --- type tests against generic interfaces ------------------------------------
@@ -1240,15 +1241,15 @@ proc nsTypeOf*[T](t: typedesc[NsMdArray[T]]): Type = nsTypeNamed(nsMdName[T](2))
 
 import std/typetraits
 
-method nsVtByKey*(x: RootRef; key: string): pointer {.base.} = nil
+method nsVtByKey*(x: RootRef; key: string): pointer {.nsHidden, base.} = nil
 
-proc nsKeyOf*(t: typedesc): string = name(t)
+proc nsKeyOf*(t: typedesc): string {.nsHidden.} = name(t)
 
-proc nsIfaceObject*[I: object](v: I): RootRef {.inline.} =
+proc nsIfaceObject*[I: object](v: I): RootRef {.nsHidden, inline.} =
   ## An interface value used as an `object`: the instance it holds (null for none).
   v.nsObj
 
-proc nsAsByKey*[I](o: RootRef; t: typedesc[I]): I =
+proc nsAsByKey*[I](o: RootRef; t: typedesc[I]): I {.nsHidden.} =
   ## The interface value of `o`, or the empty one when its class does not
   ## implement `I`. A library interface may answer for objects it knows by type
   ## (`nsLibAs`: an `int[]` is an `IList<int>`).
@@ -1270,7 +1271,7 @@ proc nsAsByKey*[I](o: RootRef; t: typedesc[I]): I =
 # is invalid; using one throws `NullReferenceException`, as a null reference
 # does in C#, unless checks are off (`-d:danger`).
 
-template nsHandleProcs*(H, R: untyped; hdr, validPat, nullPat, derefPat: untyped) =
+template nsHandleProcs*(H, R: untyped; hdr, validPat, nullPat, derefPat: untyped) {.nsHidden.} =
   ## A handle family's helpers: `validPat` tests a handle (`static_cast<bool>(#)`,
   ## or the binding's `Valid`), `nullPat` makes the invalid one, with `'1` the
   ## class, and `derefPat` reaches the object (`#.operator->()`, or `Deref`).
@@ -1292,7 +1293,7 @@ template nsHandleProcs*(H, R: untyped; hdr, validPat, nullPat, derefPat: untyped
     ## Any handle of the family is one of its root class: an upcast C# makes
     ## implicitly, which a library call (`List<Node>.Add(coin)`) relies on.
 
-proc nsDerefCached*[H, T](h: H; p: var ptr T): ptr T {.inline.} =
+proc nsDerefCached*[H, T](h: H; p: var ptr T): ptr T {.nsHidden, inline.} =
   ## The object a handle local reaches, resolved once and kept in `p` until a
   ## statement that may move engine objects clears it (desugar's handle hoisting).
   mixin nsDeref

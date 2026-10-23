@@ -46,6 +46,9 @@ type
                           ## (`Sum<T>(Func<T, N>)` is `int Sum(Func<T, int>)`, ...)
     viaUnion*: bool       ## filed under this receiver as a member of a type class it
                           ## is one of: a C# extension method, seen with its `using`
+    hidden*: bool         ## declared `{.nsHidden.}`: a helper the generated code
+                          ## calls (`nsBox`, `newList`, `items`), which the frontend
+                          ## knows but N# source cannot name
 
   NsStaticDecl* = tuple[typ, member, module: string]
     ## A `{.nsStatic: "T".}` pragma: the qualifier, the proc, and its module.
@@ -291,8 +294,9 @@ proc isKnownTypeName*(s: NsBclSurface; name: string): bool =
     isDeclaredType(canon) or isDeclaredNamespace(canon)
 
 proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
-             name: string): NsBclMember =
+             name: string; visibleOnly = false): NsBclMember =
   ## The member on a receiver, or a zeroed member when the library declares none.
+  ## `visibleOnly` leaves out a `{.nsHidden.}` helper, for a member N# source names.
   result = NsBclMember()
   if name.len == 0: return
   var keys: seq[string] = @[]
@@ -300,9 +304,6 @@ proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
   if nim.len > 0: keys.add nim
   let kk = kindKey(recvKind)
   if kk.len > 0: keys.add kk
-  for key in keys:
-    for m in s.members.getOrDefault(key):
-      if m.name == name: return m
   ## A prelude type inherits its base's members, as `IEnumerator<T>` has `MoveNext`
   ## from the non-generic enumerator.
   var cur = nim
@@ -310,8 +311,10 @@ proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
   while cur.len > 0 and s.types.hasKey(cur) and hops < 16:
     cur = s.types[cur].base
     inc hops
-    for m in s.members.getOrDefault(cur):
-      if m.name == name: return m
+    if cur.len > 0: keys.add cur
+  for key in keys:
+    for m in s.members.getOrDefault(key):
+      if m.name == name and not (visibleOnly and m.hidden): return m
 
 proc retIsInstance*(m: NsBclMember): bool =
   ## Whether a member's result is a generic type instantiated (`IEnumerable[T]`),
@@ -490,7 +493,15 @@ proc nsStaticOf(n: PNode): string =
         return e[1].strVal
   ""
 
-proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
+proc hasPragma(n: PNode; name: string): bool =
+  ## Whether a declaration's pragmas name `name` (`{.nsHidden.}`, `{.nsHidden, inline.}`).
+  for i in 0 ..< n.len:
+    let p = n[i]
+    if p == nil or p.kind != nkPragma: continue
+    for j in 0 ..< p.len:
+      if p[j] != nil and declaredName(p[j]) == name: return true
+
+proc loadMembers(s: var NsBclSurface; n: PNode; module: string; hidden: bool) =
   ## One declaration as a member: the receiver is its first parameter, and a type
   ## parameter receiver stands for what that parameter is constrained to.
   if n.len < 4: return
@@ -498,6 +509,7 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
   if name.len == 0: return
   let renamed = name.startsWith("nsM_") and name.len > 4
   if renamed: name = name[4 .. ^1]
+  let hidden = hidden or n.hasPragma("nsHidden")
   ## In declaration order, which explicit type arguments (`M<int>()`) follow.
   var constraints = initOrderedTable[string, string]()
   if n[2] != nil and n[2].kind == nkGenericParams:
@@ -517,6 +529,7 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
     var gps: seq[string] = @[]
     for k in constraints.keys: gps.add k
     let ret0 = headSpelling(fp[0])
+    if hidden: return
     s.members.mgetOrPut("#static", @[]).add NsBclMember(name: name, path: module,
       recv: "", ret: ret0, retIsParam: ret0.len > 0 and constraints.hasKey(ret0),
       genParams: gps, qualifier: q,
@@ -555,10 +568,10 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
                              ["SomeNumber", "SomeInteger", "SomeFloat", "SomeSignedInt"],
                            isVirtual: n.kind == nkMethodDef,
                            genParams: gps, paramTypes: ptypes,
-                           qualifier: nsStaticOf(n),
+                           qualifier: nsStaticOf(n), hidden: hidden,
                            retType: (if fp[0].kind == nkEmpty: nil else: fp[0]))
   let qualifier = nsStaticOf(n)
-  if qualifier.len > 0 and (typ: qualifier, member: name, module: module) notin s.staticDecls:
+  if qualifier.len > 0 and not hidden and (typ: qualifier, member: name, module: module) notin s.staticDecls:
     ## Queued for `applyStatics`, which runs once every file has been read.
     s.staticDecls.add (typ: qualifier, member: name, module: module)
 
@@ -626,14 +639,32 @@ proc applyStatics(s: var NsBclSurface; config: ConfigRef) =
       sm.isStatic = true
       s.noteMember sm
 
-proc loadDecl(s: var NsBclSurface; n: PNode; module: string) =
+proc pushOrPop(n: PNode): tuple[push, pop, hides: bool] =
+  ## A `{.push ....}` (and whether it pushes `nsHidden`), or a `{.pop.}`.
+  result = (false, false, false)
+  if n.kind != nkPragma or n.len == 0: return
+  case declaredName(n[0])
+  of "push":
+    result.push = true
+    for j in 1 ..< n.len:
+      if n[j] != nil and declaredName(n[j]) == "nsHidden": result.hides = true
+  of "pop": result.pop = true
+  else: discard
+
+proc loadDecl(s: var NsBclSurface; n: PNode; module: string; pushed: var seq[bool]) =
+  ## `pushed` holds each open `{.push.}`: whether it pushes `nsHidden`, which then
+  ## marks every declaration up to its `{.pop.}`.
   if n == nil: return
   case n.kind
   of nkTypeSection: s.loadTypes(n, module)
   of nkStmtList:
-    for i in 0 ..< n.len: s.loadDecl(n[i], module)
+    for i in 0 ..< n.len: s.loadDecl(n[i], module, pushed)
+  of nkPragma:
+    let pp = pushOrPop(n)
+    if pp.push: pushed.add pp.hides
+    elif pp.pop and pushed.len > 0: discard pushed.pop()
   else:
-    if isDefinition(n): s.loadMembers(n, module)
+    if isDefinition(n): s.loadMembers(n, module, true in pushed)
 
 proc modulePathOf(file, root: string): string =
   ## A prelude file's import path: its path under the root, without the extension.
@@ -676,8 +707,9 @@ proc loadPrelude(s: var NsBclSurface; config: ConfigRef) =
       source = readFile(entry.path)
     except CatchableError:
       continue
+    var pushed: seq[bool] = @[]
     s.loadDecl(nimparser.parseString(source, cache, config, entry.path),
-               entry.module)
+               entry.module, pushed)
 
 var surfaceCache: Table[string, NsBclSurface]
   ## One surface per library path; the prelude cannot change under a running

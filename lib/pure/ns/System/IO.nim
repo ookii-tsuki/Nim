@@ -29,6 +29,7 @@
 
 import std/[os, strutils, syncio, algorithm]
 import ../System
+from ../../nsharp/pragmas import nsHidden
 import Collections/Generic
 from ../../nsharp/intrinsics import NsArray, nsArrayOf, items, len, ToString, nsTypeName,
   Type, nsTypeNamed
@@ -62,14 +63,14 @@ type
     nsOpen: bool
 
 method ToString*(r: StreamReader): string = "System.IO.StreamReader"
-method nsTypeName*(r: StreamReader): string = "System.IO.StreamReader"
+method nsTypeName*(r: StreamReader): string {.nsHidden.} = "System.IO.StreamReader"
 method ToString*(w: StreamWriter): string = "System.IO.StreamWriter"
-method nsTypeName*(w: StreamWriter): string = "System.IO.StreamWriter"
+method nsTypeName*(w: StreamWriter): string {.nsHidden.} = "System.IO.StreamWriter"
 method ToString*(d: DirectoryInfo): string = d.nsPath
-method nsTypeName*(d: DirectoryInfo): string = "System.IO.DirectoryInfo"
-proc nsTypeOf*(t: typedesc[StreamReader]): Type = nsTypeNamed("System.IO.StreamReader")
-proc nsTypeOf*(t: typedesc[StreamWriter]): Type = nsTypeNamed("System.IO.StreamWriter")
-proc nsTypeOf*(t: typedesc[DirectoryInfo]): Type = nsTypeNamed("System.IO.DirectoryInfo")
+method nsTypeName*(d: DirectoryInfo): string {.nsHidden.} = "System.IO.DirectoryInfo"
+proc nsTypeOf*(t: typedesc[StreamReader]): Type {.nsHidden.} = nsTypeNamed("System.IO.StreamReader")
+proc nsTypeOf*(t: typedesc[StreamWriter]): Type {.nsHidden.} = nsTypeNamed("System.IO.StreamWriter")
+proc nsTypeOf*(t: typedesc[DirectoryInfo]): Type {.nsHidden.} = nsTypeNamed("System.IO.DirectoryInfo")
 
 proc Message*(e: ref FileNotFoundException): string = e.msg
   ## .NET's `FileNotFoundException` overrides `Message` (to name the file when made
@@ -315,7 +316,7 @@ proc EnumerateDirectories*(t: typedesc[Directory]; path: string): NsArray[string
 
 # --- System.IO.StreamReader -----------------------------------------------------
 
-proc newStreamReader*(path: string): StreamReader = StreamReader(nsText: nsReadAll(path))
+proc newStreamReader*(path: string): StreamReader {.nsHidden.} = StreamReader(nsText: nsReadAll(path))
 
 proc nsCheckOpen(r: StreamReader) =
   if r.nsClosed:
@@ -353,9 +354,9 @@ proc Dispose*(r: StreamReader) = r.nsClosed = true
 
 # --- System.IO.StreamWriter -----------------------------------------------------
 
-proc newStreamWriter*(path: string; append: bool): StreamWriter =
+proc newStreamWriter*(path: string; append: bool): StreamWriter {.nsHidden.} =
   StreamWriter(nsFile: nsOpen(path, if append: fmAppend else: fmWrite), nsOpen: true)
-proc newStreamWriter*(path: string): StreamWriter = newStreamWriter(path, false)
+proc newStreamWriter*(path: string): StreamWriter {.nsHidden.} = newStreamWriter(path, false)
 
 proc nsCheckOpen(w: StreamWriter) =
   if not w.nsOpen:

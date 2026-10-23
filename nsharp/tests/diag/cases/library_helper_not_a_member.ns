@@ -1,0 +1,15 @@
+// A helper the library exports for generated code ({.nsHidden.}) is not a C#
+// member: naming it is CS1061, as in C#.
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var xs = new List<int> { 1, 2 };
+            Console.WriteLine(xs.nsItemsText());
+        }
+    }
+}

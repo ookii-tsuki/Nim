@@ -72,7 +72,7 @@ from ../../../nsharp/intrinsics import nsNilFail, NsDisposeStack, nsDisposeRun, 
 export Collections
 
 # `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
-from ../../../nsharp/pragmas import nsStatic, nsInterface
+from ../../../nsharp/pragmas import nsStatic, nsInterface, nsHidden
 
 type
   NsCollectionBase* = object of RootObj
@@ -376,24 +376,24 @@ proc cmpOf[T](c: Comparison[T]): proc (a, b: T): int =
 
 # --- constructors -----------------------------------------------------------
 
-proc newList*[T](): List[T] = List[T]()
-proc newList*[T](capacity: int): List[T] =
+proc newList*[T](): List[T] {.nsHidden.} = List[T]()
+proc newList*[T](capacity: int): List[T] {.nsHidden.} =
   if capacity < 0: raise newException(ArgumentOutOfRangeException, indexMsg)
   List[T](data: newSeqOfCap[T](capacity))
 
-proc newKeyValuePair*[K, V](key: K; value: V): KeyValuePair[K, V] =
+proc newKeyValuePair*[K, V](key: K; value: V): KeyValuePair[K, V] {.nsHidden.} =
   KeyValuePair[K, V](Key: key, Value: value)
 
-proc newDictionary*[K, V](): Dictionary[K, V] =
+proc newDictionary*[K, V](): Dictionary[K, V] {.nsHidden.} =
   Dictionary[K, V](data: initNsHashMap[K, V]())
-proc newDictionary*[K, V](capacity: int): Dictionary[K, V] =
+proc newDictionary*[K, V](capacity: int): Dictionary[K, V] {.nsHidden.} =
   Dictionary[K, V](data: initNsHashMap[K, V](max(capacity, 0)))
-proc newDictionary*[K, V](dictionary: Dictionary[K, V]): Dictionary[K, V] =
+proc newDictionary*[K, V](dictionary: Dictionary[K, V]): Dictionary[K, V] {.nsHidden.} =
   ## The entries in the source's order, without its free places.
   result = Dictionary[K, V](data: initNsHashMap[K, V](nshash.len(dictionary.data)))
   for k, v in nshash.pairs(dictionary.data): discard result.data.put(k, v, false)
 
-proc newHashSet*[T](): HashSet[T] = HashSet[T](data: initNsHashMap[T, bool]())
+proc newHashSet*[T](): HashSet[T] {.nsHidden.} = HashSet[T](data: initNsHashMap[T, bool]())
 
 proc nsIsDefaultComparer[K](c: IEqualityComparer[K]): bool =
   ## A null comparer, or `EqualityComparer<K>.Default`: the keys' own equality.
@@ -406,40 +406,40 @@ proc nsUseComparer[K, V](m: var NsHashMap[K, V]; c: IEqualityComparer[K]) =
     m.withComparer(proc (a, b: K): bool = cc.Equals(a, b),
                    proc (k: K): int32 = cc.GetHashCode(k))
 
-proc newDictionary*[K, V](comparer: IEqualityComparer[K]): Dictionary[K, V] =
+proc newDictionary*[K, V](comparer: IEqualityComparer[K]): Dictionary[K, V] {.nsHidden.} =
   result = Dictionary[K, V](data: initNsHashMap[K, V]())
   result.data.nsUseComparer(comparer)
-proc newDictionary*[K, V](capacity: int; comparer: IEqualityComparer[K]): Dictionary[K, V] =
+proc newDictionary*[K, V](capacity: int; comparer: IEqualityComparer[K]): Dictionary[K, V] {.nsHidden.} =
   result = Dictionary[K, V](data: initNsHashMap[K, V](max(capacity, 0)))
   result.data.nsUseComparer(comparer)
 proc newDictionary*[K, V](dictionary: Dictionary[K, V]; comparer: IEqualityComparer[K]):
-    Dictionary[K, V] =
+    Dictionary[K, V] {.nsHidden.} =
   result = Dictionary[K, V](data: initNsHashMap[K, V](nshash.len(dictionary.data)))
   result.data.nsUseComparer(comparer)
   for k, v in nshash.pairs(dictionary.data):
     if not result.data.put(k, v, false): raise keyDuplicate(k)
-proc newHashSet*[T](comparer: IEqualityComparer[T]): HashSet[T] =
+proc newHashSet*[T](comparer: IEqualityComparer[T]): HashSet[T] {.nsHidden.} =
   result = HashSet[T](data: initNsHashMap[T, bool]())
   result.data.nsUseComparer(comparer)
   if not nsIsDefaultComparer(comparer): result.comparer = comparer
-proc newHashSet*[T](collection: NsEnumerable[T]; comparer: IEqualityComparer[T]): HashSet[T] =
+proc newHashSet*[T](collection: NsEnumerable[T]; comparer: IEqualityComparer[T]): HashSet[T] {.nsHidden.} =
   result = HashSet[T](data: initNsHashMap[T, bool]())
   result.data.nsUseComparer(comparer)
   if not nsIsDefaultComparer(comparer): result.comparer = comparer
   for x in snapshot(collection): discard result.data.put(x, true, false)
-proc newHashSet*[T](capacity: int): HashSet[T] =
+proc newHashSet*[T](capacity: int): HashSet[T] {.nsHidden.} =
   HashSet[T](data: initNsHashMap[T, bool](max(capacity, 0)))
-proc newSortedSet*[T](): SortedSet[T] = SortedSet[T]()
+proc newSortedSet*[T](): SortedSet[T] {.nsHidden.} = SortedSet[T]()
 
-proc newSortedDictionary*[K, V](): SortedDictionary[K, V] = SortedDictionary[K, V]()
-proc newSortedList*[K, V](): SortedList[K, V] = SortedList[K, V]()
-proc newSortedList*[K, V](capacity: int): SortedList[K, V] = SortedList[K, V]()
+proc newSortedDictionary*[K, V](): SortedDictionary[K, V] {.nsHidden.} = SortedDictionary[K, V]()
+proc newSortedList*[K, V](): SortedList[K, V] {.nsHidden.} = SortedList[K, V]()
+proc newSortedList*[K, V](capacity: int): SortedList[K, V] {.nsHidden.} = SortedList[K, V]()
 
-proc newQueue*[T](): Queue[T] = Queue[T](data: initDeque[T]())
-proc newQueue*[T](capacity: int): Queue[T] =
+proc newQueue*[T](): Queue[T] {.nsHidden.} = Queue[T](data: initDeque[T]())
+proc newQueue*[T](capacity: int): Queue[T] {.nsHidden.} =
   Queue[T](data: initDeque[T](max(capacity, 0)))
-proc newStack*[T](): Stack[T] = Stack[T]()
-proc newStack*[T](capacity: int): Stack[T] =
+proc newStack*[T](): Stack[T] {.nsHidden.} = Stack[T]()
+proc newStack*[T](capacity: int): Stack[T] {.nsHidden.} =
   Stack[T](data: newSeqOfCap[T](max(capacity, 0)))
 
 # A constructor from C#'s `IEnumerable<T>` is written once per source type: Nim
@@ -483,12 +483,12 @@ fromEnumerable(newQueue, queueOf)
 fromEnumerable(newStack, stackOf)
 fromEnumerable(newLinkedList, linkedListOf)
 
-proc newLinkedListNode*[T](value: T): LinkedListNode[T] =
+proc newLinkedListNode*[T](value: T): LinkedListNode[T] {.nsHidden.} =
   LinkedListNode[T](Value: value)
-proc newLinkedList*[T](): LinkedList[T] = LinkedList[T]()
+proc newLinkedList*[T](): LinkedList[T] {.nsHidden.} = LinkedList[T]()
 
-proc newPriorityQueue*[E, P](): PriorityQueue[E, P] = PriorityQueue[E, P]()
-proc newPriorityQueue*[E, P](capacity: int): PriorityQueue[E, P] =
+proc newPriorityQueue*[E, P](): PriorityQueue[E, P] {.nsHidden.} = PriorityQueue[E, P]()
+proc newPriorityQueue*[E, P](capacity: int): PriorityQueue[E, P] {.nsHidden.} =
   PriorityQueue[E, P](nodes: newSeqOfCap[(E, P)](max(capacity, 0)))
 
 # --- Count ------------------------------------------------------------------
@@ -519,7 +519,7 @@ proc `[]=`*[T](l: List[T]; i: int; x: sink T) {.inline.} =
   {.pop.}
   touch l
 
-iterator items*[T](l: List[T]): T =
+iterator items*[T](l: List[T]): T {.nsHidden.} =
   let v = l.version
   var i = 0
   while true:
@@ -665,7 +665,7 @@ proc `[]=`*[K, V](t: Dictionary[K, V]; k: K; v: sink V) =
   ## a key does not.
   if t.data.put(k, v, true): touch t
 
-iterator items*[K, V](t: Dictionary[K, V]): KeyValuePair[K, V] =
+iterator items*[K, V](t: Dictionary[K, V]): KeyValuePair[K, V] {.nsHidden.} =
   let v = t.version
   for k, x in nshash.pairs(t.data):
     yield KeyValuePair[K, V](Key: k, Value: x)
@@ -719,7 +719,7 @@ proc Values*[K, V](t: Dictionary[K, V]): ValueCollection[K, V] =
 # later additions take: `ExceptWith` removes in the other collection's order,
 # `IntersectWith` and `RemoveWhere` in the set's own.
 
-iterator items*[T](s: HashSet[T]): T =
+iterator items*[T](s: HashSet[T]): T {.nsHidden.} =
   let v = s.version
   for x in nshash.keys(s.data):
     yield x
@@ -864,7 +864,7 @@ proc SetEquals*[T](s: HashSet[T]; other: NsEnumerable[T]): bool =
 
 # --- SortedSet<T> -----------------------------------------------------------
 
-iterator items*[T](s: SortedSet[T]): T =
+iterator items*[T](s: SortedSet[T]): T {.nsHidden.} =
   let v = s.version
   var i = 0
   while true:
@@ -1006,7 +1006,7 @@ template sortedItems(t: untyped; K, V: typedesc) =
 
 proc `[]`*[K, V](t: SortedDictionary[K, V]; k: K): V = sortedGet(t, k)
 proc `[]=`*[K, V](t: SortedDictionary[K, V]; k: K; v: V) = sortedSet(t, k, v)
-iterator items*[K, V](t: SortedDictionary[K, V]): KeyValuePair[K, V] =
+iterator items*[K, V](t: SortedDictionary[K, V]): KeyValuePair[K, V] {.nsHidden.} =
   sortedItems(t, K, V)
 proc Add*[K, V](t: SortedDictionary[K, V]; k: K; v: V) = sortedAdd(t, k, v)
 proc TryAdd*[K, V](t: SortedDictionary[K, V]; k: K; v: V): bool =
@@ -1034,7 +1034,7 @@ proc Values*[K, V](t: SortedDictionary[K, V]): ValueCollection[K, V] =
 
 proc `[]`*[K, V](t: SortedList[K, V]; k: K): V = sortedGet(t, k)
 proc `[]=`*[K, V](t: SortedList[K, V]; k: K; v: V) = sortedSet(t, k, v)
-iterator items*[K, V](t: SortedList[K, V]): KeyValuePair[K, V] =
+iterator items*[K, V](t: SortedList[K, V]): KeyValuePair[K, V] {.nsHidden.} =
   sortedItems(t, K, V)
 proc Add*[K, V](t: SortedList[K, V]; k: K; v: V) = sortedAdd(t, k, v)
 proc TryAdd*[K, V](t: SortedList[K, V]; k: K; v: V): bool =
@@ -1079,14 +1079,14 @@ proc Count*[K, V](c: ValueCollection[K, V]): int32 =
   elif c.sorted != nil: c.sorted.Count
   else: c.list.Count
 
-iterator items*[K, V](c: KeyCollection[K, V]): K =
+iterator items*[K, V](c: KeyCollection[K, V]): K {.nsHidden.} =
   if c.dict != nil:
     for kv in c.dict: yield kv.Key
   elif c.sorted != nil:
     for kv in c.sorted: yield kv.Key
   else:
     for kv in c.list: yield kv.Key
-iterator items*[K, V](c: ValueCollection[K, V]): V =
+iterator items*[K, V](c: ValueCollection[K, V]): V {.nsHidden.} =
   if c.dict != nil:
     for kv in c.dict: yield kv.Value
   elif c.sorted != nil:
@@ -1144,7 +1144,7 @@ proc GetValueAtIndex*[K, V](t: SortedList[K, V]; index: int): V =
 
 # --- Queue<T> (FIFO) --------------------------------------------------------
 
-iterator items*[T](q: Queue[T]): T =
+iterator items*[T](q: Queue[T]): T {.nsHidden.} =
   ## Front to back, the order `Dequeue` would give.
   let v = q.version
   var i = 0
@@ -1195,7 +1195,7 @@ proc TrimExcess*[T](q: Queue[T]) = discard
 
 # --- Stack<T> (LIFO) --------------------------------------------------------
 
-iterator items*[T](s: Stack[T]): T =
+iterator items*[T](s: Stack[T]): T {.nsHidden.} =
   ## Top to bottom, the order `Pop` would give, as .NET enumerates a stack.
   let v = s.version
   var i = s.data.high
@@ -1253,7 +1253,7 @@ proc Previous*[T](n: LinkedListNode[T]): LinkedListNode[T] = n.prev
 proc First*[T](l: LinkedList[T]): LinkedListNode[T] = l.head
 proc Last*[T](l: LinkedList[T]): LinkedListNode[T] = l.tail
 
-iterator items*[T](l: LinkedList[T]): T =
+iterator items*[T](l: LinkedList[T]): T {.nsHidden.} =
   let v = l.version
   var n = l.head
   while true:
@@ -1464,7 +1464,7 @@ proc Clear*[E, P](q: PriorityQueue[E, P]) =
 # collection converts to `IEnumerable<T>` (`nsToIEnumerable`), enumerated live,
 # as .NET's interface views are.
 
-proc nsEnumeratorOf*[T](step: iterator(): T; disp: NsDisposeStack = nil): IEnumerator[T] =
+proc nsEnumeratorOf*[T](step: iterator(): T; disp: NsDisposeStack = nil): IEnumerator[T] {.nsHidden.} =
   ## The enumerator that runs `step`, one element per `MoveNext`.
   let e = IEnumerator[T](step: step, disp: disp)
   e.nsStep = proc (): bool =
@@ -1479,7 +1479,7 @@ proc nsEnumeratorOf*[T](step: iterator(): T; disp: NsDisposeStack = nil): IEnume
 
 proc Current*[T](e: IEnumerator[T]): T = e.current
 
-proc nsDisposeEnumerator*[T](e: IEnumerator[T]) =
+proc nsDisposeEnumerator*[T](e: IEnumerator[T]) {.nsHidden.} =
   ## Ends the enumeration: an iterator suspended inside `try` blocks runs their
   ## `finally` blocks, innermost first, and `MoveNext` answers false from then on.
   ## `System` declares `Dispose` with it, since .NET's is `IDisposable`'s.
@@ -1507,16 +1507,16 @@ proc nsSorted[T](o: IOrderedEnumerable[T]): seq[T] =
   result = newSeqOfCap[T](xs.len)
   for i in at: result.add xs[i]
 
-iterator items*[T](o: IOrderedEnumerable[T]): T =
+iterator items*[T](o: IOrderedEnumerable[T]): T {.nsHidden.} =
   for x in nsSorted(o): yield x
 
-iterator items*[T](g: IGroupingBase[T]): T =
+iterator items*[T](g: IGroupingBase[T]): T {.nsHidden.} =
   for x in g.nsElems: yield x
 
 proc Key*[K, T](g: IGrouping[K, T]): K = g.nsKey
   ## The key the group's elements share.
 
-iterator items*[T](s: IEnumerable[T]): T =
+iterator items*[T](s: IEnumerable[T]): T {.nsHidden.} =
   ## `foreach` disposes the enumerator however the loop is left (13.9.5).
   let e = s.make()
   try:
@@ -1524,7 +1524,7 @@ iterator items*[T](s: IEnumerable[T]): T =
   finally:
     e.nsDisposeEnumerator()
 
-template nsEnumerator*(T: typedesc; body: untyped): untyped =
+template nsEnumerator*(T: typedesc; body: untyped): untyped {.nsHidden.} =
   ## The enumerator of an iterator block whose member returns `IEnumerator<T>`.
   ## `nsDisp` is where the block's `try` statements register their `finally`.
   block:
@@ -1533,7 +1533,7 @@ template nsEnumerator*(T: typedesc; body: untyped): untyped =
       body
     nsEnumeratorOf[T](nsStepIt, nsDisp)
 
-template nsEnumerable*(T: typedesc; body: untyped): untyped =
+template nsEnumerable*(T: typedesc; body: untyped): untyped {.nsHidden.} =
   ## The sequence of an iterator block whose member returns `IEnumerable<T>`: each
   ## enumeration starts the block again.
   IEnumerable[T](make: proc(): IEnumerator[T] =
@@ -1552,14 +1552,14 @@ template nsSequenceView(xs: untyped; T: typedesc): untyped =
 # `IEnumerable<T>` implicitly, so the view is enumerated live. A Nim converter
 # would be tried, and fail to instantiate, wherever a ref value meets an
 # overloaded operator.
-proc nsToIEnumerable*[T](xs: seq[T]): IEnumerable[T] = nsSequenceView(xs, T)
-proc nsToIEnumerable*[T](xs: NsArray[T]): IEnumerable[T] = nsSequenceView(xs, T)
-proc nsToIEnumerable*[T](xs: List[T]): IEnumerable[T] = nsSequenceView(xs, T)
-proc nsToIEnumerable*[T](xs: HashSet[T]): IEnumerable[T] = nsSequenceView(xs, T)
-proc nsToIEnumerable*[T](xs: SortedSet[T]): IEnumerable[T] = nsSequenceView(xs, T)
-proc nsToIEnumerable*[T](xs: Queue[T]): IEnumerable[T] = nsSequenceView(xs, T)
-proc nsToIEnumerable*[T](xs: Stack[T]): IEnumerable[T] = nsSequenceView(xs, T)
-proc nsToIEnumerable*[T](xs: LinkedList[T]): IEnumerable[T] = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: seq[T]): IEnumerable[T] {.nsHidden.} = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: NsArray[T]): IEnumerable[T] {.nsHidden.} = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: List[T]): IEnumerable[T] {.nsHidden.} = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: HashSet[T]): IEnumerable[T] {.nsHidden.} = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: SortedSet[T]): IEnumerable[T] {.nsHidden.} = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: Queue[T]): IEnumerable[T] {.nsHidden.} = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: Stack[T]): IEnumerable[T] {.nsHidden.} = nsSequenceView(xs, T)
+proc nsToIEnumerable*[T](xs: LinkedList[T]): IEnumerable[T] {.nsHidden.} = nsSequenceView(xs, T)
 
 # --- `typeof` -----------------------------------------------------------------
 #
@@ -1587,47 +1587,47 @@ template nsCachedType(body: untyped): Type =
   if cached.isNil: cached = body
   cached
 
-proc nsTypeOf*[T](t: typedesc[List[T]]): Type =
+proc nsTypeOf*[T](t: typedesc[List[T]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "List", nsCoreLib, nsArgType(T)))
-proc nsTypeOf*[T](t: typedesc[HashSet[T]]): Type =
+proc nsTypeOf*[T](t: typedesc[HashSet[T]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "HashSet", nsCoreLib, nsArgType(T)))
-proc nsTypeOf*[T](t: typedesc[SortedSet[T]]): Type =
+proc nsTypeOf*[T](t: typedesc[SortedSet[T]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "SortedSet", nsCollectionsLib, nsArgType(T)))
-proc nsTypeOf*[T](t: typedesc[Queue[T]]): Type =
+proc nsTypeOf*[T](t: typedesc[Queue[T]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "Queue", nsCoreLib, nsArgType(T)))
-proc nsTypeOf*[T](t: typedesc[Stack[T]]): Type =
+proc nsTypeOf*[T](t: typedesc[Stack[T]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "Stack", nsCollectionsLib, nsArgType(T)))
-proc nsTypeOf*[T](t: typedesc[LinkedList[T]]): Type =
+proc nsTypeOf*[T](t: typedesc[LinkedList[T]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "LinkedList", nsCollectionsLib, nsArgType(T)))
-proc nsTypeOf*[K, T](t: typedesc[IGrouping[K, T]]): Type =
+proc nsTypeOf*[K, T](t: typedesc[IGrouping[K, T]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType("System.Linq.IGrouping", "System.Linq, Version=10.0.0.0, " &
     "Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", nsArgType(K), nsArgType(T)))
-proc nsTypeOf*[K, V](t: typedesc[Dictionary[K, V]]): Type =
+proc nsTypeOf*[K, V](t: typedesc[Dictionary[K, V]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "Dictionary", nsCoreLib, nsArgType(K), nsArgType(V)))
-proc nsTypeOf*[K, V](t: typedesc[SortedDictionary[K, V]]): Type =
+proc nsTypeOf*[K, V](t: typedesc[SortedDictionary[K, V]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "SortedDictionary", nsCollectionsLib, nsArgType(K),
                              nsArgType(V)))
-proc nsTypeOf*[K, V](t: typedesc[SortedList[K, V]]): Type =
+proc nsTypeOf*[K, V](t: typedesc[SortedList[K, V]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "SortedList", nsCollectionsLib, nsArgType(K),
                              nsArgType(V)))
-proc nsTypeOf*[E, P](t: typedesc[PriorityQueue[E, P]]): Type =
+proc nsTypeOf*[E, P](t: typedesc[PriorityQueue[E, P]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "PriorityQueue", nsCollectionsLib, nsArgType(E),
                              nsArgType(P)))
-proc nsTypeOf*[K, V](t: typedesc[KeyValuePair[K, V]]): Type =
+proc nsTypeOf*[K, V](t: typedesc[KeyValuePair[K, V]]): Type {.nsHidden.} =
   nsCachedType(nsGenericType(nsGenNs & "KeyValuePair", nsCoreLib, nsArgType(K),
                              nsArgType(V)))
 
 # `GetType()` of a collection held as an `object`.
-method nsDynType*[T](x: List[T]): Type = nsTypeOf(List[T])
-method nsDynType*[K, V](x: Dictionary[K, V]): Type = nsTypeOf(Dictionary[K, V])
-method nsDynType*[T](x: HashSet[T]): Type = nsTypeOf(HashSet[T])
-method nsDynType*[T](x: Queue[T]): Type = nsTypeOf(Queue[T])
-method nsDynType*[T](x: Stack[T]): Type = nsTypeOf(Stack[T])
-method nsDynType*[T](x: LinkedList[T]): Type = nsTypeOf(LinkedList[T])
-method nsDynType*[T](x: SortedSet[T]): Type = nsTypeOf(SortedSet[T])
-method nsDynType*[K, V](x: SortedDictionary[K, V]): Type = nsTypeOf(SortedDictionary[K, V])
-method nsDynType*[K, V](x: SortedList[K, V]): Type = nsTypeOf(SortedList[K, V])
-method nsDynType*[E, P](x: PriorityQueue[E, P]): Type = nsTypeOf(PriorityQueue[E, P])
+method nsDynType*[T](x: List[T]): Type {.nsHidden.} = nsTypeOf(List[T])
+method nsDynType*[K, V](x: Dictionary[K, V]): Type {.nsHidden.} = nsTypeOf(Dictionary[K, V])
+method nsDynType*[T](x: HashSet[T]): Type {.nsHidden.} = nsTypeOf(HashSet[T])
+method nsDynType*[T](x: Queue[T]): Type {.nsHidden.} = nsTypeOf(Queue[T])
+method nsDynType*[T](x: Stack[T]): Type {.nsHidden.} = nsTypeOf(Stack[T])
+method nsDynType*[T](x: LinkedList[T]): Type {.nsHidden.} = nsTypeOf(LinkedList[T])
+method nsDynType*[T](x: SortedSet[T]): Type {.nsHidden.} = nsTypeOf(SortedSet[T])
+method nsDynType*[K, V](x: SortedDictionary[K, V]): Type {.nsHidden.} = nsTypeOf(SortedDictionary[K, V])
+method nsDynType*[K, V](x: SortedList[K, V]): Type {.nsHidden.} = nsTypeOf(SortedList[K, V])
+method nsDynType*[E, P](x: PriorityQueue[E, P]): Type {.nsHidden.} = nsTypeOf(PriorityQueue[E, P])
 
 # Printing a collection shows its elements in `foreach` order, `[1, 2]`, and a
 # dictionary its entries, `{"a": 1}` -- not the type's name, as C# prints
@@ -1651,16 +1651,16 @@ method ToString*[K, V](x: SortedList[K, V]): string = nsPairsText(x)
 # A class naming one of them keeps its own `GetEnumerator` (or `MoveNext` and
 # `Current`); where C# converts it to the interface, the compiler calls these.
 
-proc nsToIEnumerator*[T](e: IEnumerator[T]): IEnumerator[T] = e
+proc nsToIEnumerator*[T](e: IEnumerator[T]): IEnumerator[T] {.nsHidden.} = e
 
-proc nsToIEnumerator*[C: ref RootObj and not NsArrayBase and not ref NsCollectionBase](c: C): auto =
+proc nsToIEnumerator*[C: ref RootObj and not NsArrayBase and not ref NsCollectionBase](c: C): auto {.nsHidden.} =
   ## A user enumerator as the library's: each `MoveNext` steps the class's.
   mixin Current, MoveNext
   type E = typeof(c.Current)
   nsEnumeratorOf[E](iterator(): E {.closure.} =
     while c.MoveNext(): yield c.Current)
 
-proc nsToIEnumerable*[C: ref RootObj and not NsArrayBase and not ref NsCollectionBase](c: C): auto =
+proc nsToIEnumerable*[C: ref RootObj and not NsArrayBase and not ref NsCollectionBase](c: C): auto {.nsHidden.} =
   ## A user sequence as the library's: each enumeration asks it for a new
   ## enumerator.
   mixin GetEnumerator
@@ -1890,36 +1890,36 @@ proc nsDictionaryVt[C, K, V](): ptr nsVT_IDictionary[K, V] =
 # The members, through the table.
 
 proc Count*[T](v: IReadOnlyCollection[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
-iterator items*[T](v: IReadOnlyCollection[T]): T =
+iterator items*[T](v: IReadOnlyCollection[T]): T {.nsHidden.} =
   let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
   while e.MoveNext(): yield e.Current
 proc `$`*[T](v: IReadOnlyCollection[T]): string = $v.nsObj
 proc ToString*[T](v: IReadOnlyCollection[T]): string = $v.nsObj
-proc nsToIEnumerable*[T](v: IReadOnlyCollection[T]): IEnumerable[T] =
+proc nsToIEnumerable*[T](v: IReadOnlyCollection[T]): IEnumerable[T] {.nsHidden.} =
   if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
 proc Count*[T](v: IReadOnlyList[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
-iterator items*[T](v: IReadOnlyList[T]): T =
+iterator items*[T](v: IReadOnlyList[T]): T {.nsHidden.} =
   let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
   while e.MoveNext(): yield e.Current
 proc `$`*[T](v: IReadOnlyList[T]): string = $v.nsObj
 proc ToString*[T](v: IReadOnlyList[T]): string = $v.nsObj
-proc nsToIEnumerable*[T](v: IReadOnlyList[T]): IEnumerable[T] =
+proc nsToIEnumerable*[T](v: IReadOnlyList[T]): IEnumerable[T] {.nsHidden.} =
   if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
 proc Count*[T](v: ICollection[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
-iterator items*[T](v: ICollection[T]): T =
+iterator items*[T](v: ICollection[T]): T {.nsHidden.} =
   let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
   while e.MoveNext(): yield e.Current
 proc `$`*[T](v: ICollection[T]): string = $v.nsObj
 proc ToString*[T](v: ICollection[T]): string = $v.nsObj
-proc nsToIEnumerable*[T](v: ICollection[T]): IEnumerable[T] =
+proc nsToIEnumerable*[T](v: ICollection[T]): IEnumerable[T] {.nsHidden.} =
   if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
 proc Count*[T](v: IList[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
-iterator items*[T](v: IList[T]): T =
+iterator items*[T](v: IList[T]): T {.nsHidden.} =
   let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
   while e.MoveNext(): yield e.Current
 proc `$`*[T](v: IList[T]): string = $v.nsObj
 proc ToString*[T](v: IList[T]): string = $v.nsObj
-proc nsToIEnumerable*[T](v: IList[T]): IEnumerable[T] =
+proc nsToIEnumerable*[T](v: IList[T]): IEnumerable[T] {.nsHidden.} =
   if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
 proc `[]`*[T](v: IReadOnlyList[T]; i: int32): T = v.nsVt.fGet(nsIfaceObj(v), i)
 proc IsReadOnly*[T](v: ICollection[T]): bool =
@@ -1947,12 +1947,12 @@ proc Insert*[T](v: IList[T]; i: int32; x: T) = v.nsVt.fInsert(nsIfaceObj(v), i, 
 proc RemoveAt*[T](v: IList[T]; i: int32) = v.nsVt.fRemoveAt(nsIfaceObj(v), i)
 
 proc Count*[T](v: ISet[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
-iterator items*[T](v: ISet[T]): T =
+iterator items*[T](v: ISet[T]): T {.nsHidden.} =
   let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
   while e.MoveNext(): yield e.Current
 proc `$`*[T](v: ISet[T]): string = $v.nsObj
 proc ToString*[T](v: ISet[T]): string = $v.nsObj
-proc nsToIEnumerable*[T](v: ISet[T]): IEnumerable[T] =
+proc nsToIEnumerable*[T](v: ISet[T]): IEnumerable[T] {.nsHidden.} =
   if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
 proc Contains*[T](v: ISet[T]; x: T): bool = v.nsVt.fContains(nsIfaceObj(v), x)
 proc IsSubsetOf*[T](v: ISet[T]; other: NsEnumerable[T]): bool =
@@ -1968,12 +1968,12 @@ proc Overlaps*[T](v: ISet[T]; other: NsEnumerable[T]): bool =
 proc SetEquals*[T](v: ISet[T]; other: NsEnumerable[T]): bool =
   v.nsVt.fSetEquals(nsIfaceObj(v), nsArrayOf(snapshot(other)))
 proc Count*[T](v: IReadOnlySet[T]): int32 = v.nsVt.fCount(nsIfaceObj(v))
-iterator items*[T](v: IReadOnlySet[T]): T =
+iterator items*[T](v: IReadOnlySet[T]): T {.nsHidden.} =
   let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
   while e.MoveNext(): yield e.Current
 proc `$`*[T](v: IReadOnlySet[T]): string = $v.nsObj
 proc ToString*[T](v: IReadOnlySet[T]): string = $v.nsObj
-proc nsToIEnumerable*[T](v: IReadOnlySet[T]): IEnumerable[T] =
+proc nsToIEnumerable*[T](v: IReadOnlySet[T]): IEnumerable[T] {.nsHidden.} =
   if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
 proc Contains*[T](v: IReadOnlySet[T]; x: T): bool = v.nsVt.fContains(nsIfaceObj(v), x)
 proc IsSubsetOf*[T](v: IReadOnlySet[T]; other: NsEnumerable[T]): bool =
@@ -2005,24 +2005,24 @@ proc ExceptWith*[T](v: ISet[T]; other: NsEnumerable[T]) =
 proc SymmetricExceptWith*[T](v: ISet[T]; other: NsEnumerable[T]) =
   v.nsVt.fSymmetricExceptWith(nsIfaceObj(v), nsArrayOf(snapshot(other)), nsAsHashSet(other))
 proc Count*[K, V](v: IReadOnlyDictionary[K, V]): int32 = v.nsVt.fCount(nsIfaceObj(v))
-iterator items*[K, V](v: IReadOnlyDictionary[K, V]): KeyValuePair[K, V] =
+iterator items*[K, V](v: IReadOnlyDictionary[K, V]): KeyValuePair[K, V] {.nsHidden.} =
   let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
   while e.MoveNext(): yield e.Current
 proc `$`*[K, V](v: IReadOnlyDictionary[K, V]): string = $v.nsObj
 proc ToString*[K, V](v: IReadOnlyDictionary[K, V]): string = $v.nsObj
-proc nsToIEnumerable*[K, V](v: IReadOnlyDictionary[K, V]): IEnumerable[KeyValuePair[K, V]] =
+proc nsToIEnumerable*[K, V](v: IReadOnlyDictionary[K, V]): IEnumerable[KeyValuePair[K, V]] {.nsHidden.} =
   if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
 proc `[]`*[K, V](v: IReadOnlyDictionary[K, V]; k: K): V = v.nsVt.fGet(nsIfaceObj(v), k)
 proc ContainsKey*[K, V](v: IReadOnlyDictionary[K, V]; k: K): bool = v.nsVt.fContainsKey(nsIfaceObj(v), k)
 proc TryGetValue*[K, V](v: IReadOnlyDictionary[K, V]; k: K; value: var V): bool =
   v.nsVt.fTryGetValue(nsIfaceObj(v), k, value)
 proc Count*[K, V](v: IDictionary[K, V]): int32 = v.nsVt.fCount(nsIfaceObj(v))
-iterator items*[K, V](v: IDictionary[K, V]): KeyValuePair[K, V] =
+iterator items*[K, V](v: IDictionary[K, V]): KeyValuePair[K, V] {.nsHidden.} =
   let e = v.nsVt.fEnum(nsIfaceObj(v)).make()
   while e.MoveNext(): yield e.Current
 proc `$`*[K, V](v: IDictionary[K, V]): string = $v.nsObj
 proc ToString*[K, V](v: IDictionary[K, V]): string = $v.nsObj
-proc nsToIEnumerable*[K, V](v: IDictionary[K, V]): IEnumerable[KeyValuePair[K, V]] =
+proc nsToIEnumerable*[K, V](v: IDictionary[K, V]): IEnumerable[KeyValuePair[K, V]] {.nsHidden.} =
   if v.nsObj != nil: result = v.nsVt.fEnum(v.nsObj)
 proc `[]`*[K, V](v: IDictionary[K, V]; k: K): V = v.nsVt.fGet(nsIfaceObj(v), k)
 proc ContainsKey*[K, V](v: IDictionary[K, V]; k: K): bool = v.nsVt.fContainsKey(nsIfaceObj(v), k)
@@ -2047,97 +2047,97 @@ proc IsReadOnly*[K, V](v: IDictionary[K, V]): bool =
 proc nsIfaceUp[I](o: RootRef): I =
   if o != nil: result = I(nsObj: o, nsVt: cast[typeof(result.nsVt)](nsVtByKey(o, nsKeyOf(I))))
 
-proc nsToIReadOnlyCollection*[T](xs: List[T]): IReadOnlyCollection[T] =
+proc nsToIReadOnlyCollection*[T](xs: List[T]): IReadOnlyCollection[T] {.nsHidden.} =
   if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[List[T], T]())
-proc nsToIReadOnlyCollection*[T](xs: NsArray[T]): IReadOnlyCollection[T] =
+proc nsToIReadOnlyCollection*[T](xs: NsArray[T]): IReadOnlyCollection[T] {.nsHidden.} =
   if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[NsArray[T], T]())
-proc nsToIReadOnlyCollection*[T](v: IReadOnlyList[T]): IReadOnlyCollection[T] =
+proc nsToIReadOnlyCollection*[T](v: IReadOnlyList[T]): IReadOnlyCollection[T] {.nsHidden.} =
   nsIfaceUp[IReadOnlyCollection[T]](v.nsObj)
-proc nsToIReadOnlyList*[T](xs: List[T]): IReadOnlyList[T] =
+proc nsToIReadOnlyList*[T](xs: List[T]): IReadOnlyList[T] {.nsHidden.} =
   if xs != nil: result = IReadOnlyList[T](nsObj: xs, nsVt: nsReadOnlyListVt[List[T], T]())
-proc nsToIReadOnlyList*[T](xs: NsArray[T]): IReadOnlyList[T] =
+proc nsToIReadOnlyList*[T](xs: NsArray[T]): IReadOnlyList[T] {.nsHidden.} =
   if xs != nil: result = IReadOnlyList[T](nsObj: xs, nsVt: nsReadOnlyListVt[NsArray[T], T]())
-proc nsToICollection*[T](xs: List[T]): ICollection[T] =
+proc nsToICollection*[T](xs: List[T]): ICollection[T] {.nsHidden.} =
   if xs != nil: result = ICollection[T](nsObj: xs, nsVt: nsCollectionVt[List[T], T]())
-proc nsToICollection*[T](xs: NsArray[T]): ICollection[T] =
+proc nsToICollection*[T](xs: NsArray[T]): ICollection[T] {.nsHidden.} =
   if xs != nil: result = ICollection[T](nsObj: xs, nsVt: nsCollectionVt[NsArray[T], T]())
-proc nsToICollection*[T](v: IList[T]): ICollection[T] = nsIfaceUp[ICollection[T]](v.nsObj)
-proc nsToIList*[T](xs: List[T]): IList[T] =
+proc nsToICollection*[T](v: IList[T]): ICollection[T] {.nsHidden.} = nsIfaceUp[ICollection[T]](v.nsObj)
+proc nsToIList*[T](xs: List[T]): IList[T] {.nsHidden.} =
   if xs != nil: result = IList[T](nsObj: xs, nsVt: nsListVt[List[T], T]())
-proc nsToIList*[T](xs: NsArray[T]): IList[T] =
+proc nsToIList*[T](xs: NsArray[T]): IList[T] {.nsHidden.} =
   if xs != nil: result = IList[T](nsObj: xs, nsVt: nsListVt[NsArray[T], T]())
 
-proc nsToISet*[T](xs: HashSet[T]): ISet[T] =
+proc nsToISet*[T](xs: HashSet[T]): ISet[T] {.nsHidden.} =
   if xs != nil: result = ISet[T](nsObj: xs, nsVt: nsSetVt[HashSet[T], T]())
-proc nsToIReadOnlySet*[T](xs: HashSet[T]): IReadOnlySet[T] =
+proc nsToIReadOnlySet*[T](xs: HashSet[T]): IReadOnlySet[T] {.nsHidden.} =
   if xs != nil: result = IReadOnlySet[T](nsObj: xs, nsVt: nsReadOnlySetVt[HashSet[T], T]())
-proc nsToICollection*[T](xs: HashSet[T]): ICollection[T] =
+proc nsToICollection*[T](xs: HashSet[T]): ICollection[T] {.nsHidden.} =
   if xs != nil: result = ICollection[T](nsObj: xs, nsVt: nsCollectionVt[HashSet[T], T]())
-proc nsToIReadOnlyCollection*[T](xs: HashSet[T]): IReadOnlyCollection[T] =
+proc nsToIReadOnlyCollection*[T](xs: HashSet[T]): IReadOnlyCollection[T] {.nsHidden.} =
   if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[HashSet[T], T]())
-proc nsToIReadOnlyCollection*[T](xs: Queue[T]): IReadOnlyCollection[T] =
+proc nsToIReadOnlyCollection*[T](xs: Queue[T]): IReadOnlyCollection[T] {.nsHidden.} =
   if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[Queue[T], T]())
-proc nsToIReadOnlyCollection*[T](xs: Stack[T]): IReadOnlyCollection[T] =
+proc nsToIReadOnlyCollection*[T](xs: Stack[T]): IReadOnlyCollection[T] {.nsHidden.} =
   if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[Stack[T], T]())
-proc nsToIReadOnlyCollection*[T](xs: LinkedList[T]): IReadOnlyCollection[T] =
+proc nsToIReadOnlyCollection*[T](xs: LinkedList[T]): IReadOnlyCollection[T] {.nsHidden.} =
   if xs != nil: result = IReadOnlyCollection[T](nsObj: xs, nsVt: nsReadOnlyCollectionVt[LinkedList[T], T]())
-proc nsToICollection*[T](xs: LinkedList[T]): ICollection[T] =
+proc nsToICollection*[T](xs: LinkedList[T]): ICollection[T] {.nsHidden.} =
   if xs != nil: result = ICollection[T](nsObj: xs, nsVt: nsCollectionVt[LinkedList[T], T]())
-proc nsToIDictionary*[K, V](xs: Dictionary[K, V]): IDictionary[K, V] =
+proc nsToIDictionary*[K, V](xs: Dictionary[K, V]): IDictionary[K, V] {.nsHidden.} =
   if xs != nil: result = IDictionary[K, V](nsObj: xs, nsVt: nsDictionaryVt[Dictionary[K, V], K, V]())
-proc nsToIReadOnlyDictionary*[K, V](xs: Dictionary[K, V]): IReadOnlyDictionary[K, V] =
+proc nsToIReadOnlyDictionary*[K, V](xs: Dictionary[K, V]): IReadOnlyDictionary[K, V] {.nsHidden.} =
   if xs != nil:
     result = IReadOnlyDictionary[K, V](nsObj: xs,
                                        nsVt: nsReadOnlyDictionaryVt[Dictionary[K, V], K, V]())
-proc nsToIReadOnlyCollection*[K, V](xs: Dictionary[K, V]): IReadOnlyCollection[KeyValuePair[K, V]] =
+proc nsToIReadOnlyCollection*[K, V](xs: Dictionary[K, V]): IReadOnlyCollection[KeyValuePair[K, V]] {.nsHidden.} =
   if xs != nil:
     result = IReadOnlyCollection[KeyValuePair[K, V]](nsObj: xs,
       nsVt: nsReadOnlyCollectionVt[Dictionary[K, V], KeyValuePair[K, V]]())
-proc nsToICollection*[T](v: ISet[T]): ICollection[T] = nsIfaceUp[ICollection[T]](v.nsObj)
-proc nsToIReadOnlyCollection*[T](v: IReadOnlySet[T]): IReadOnlyCollection[T] =
+proc nsToICollection*[T](v: ISet[T]): ICollection[T] {.nsHidden.} = nsIfaceUp[ICollection[T]](v.nsObj)
+proc nsToIReadOnlyCollection*[T](v: IReadOnlySet[T]): IReadOnlyCollection[T] {.nsHidden.} =
   nsIfaceUp[IReadOnlyCollection[T]](v.nsObj)
-proc nsToIReadOnlyCollection*[K, V](v: IReadOnlyDictionary[K, V]): IReadOnlyCollection[KeyValuePair[K, V]] =
+proc nsToIReadOnlyCollection*[K, V](v: IReadOnlyDictionary[K, V]): IReadOnlyCollection[KeyValuePair[K, V]] {.nsHidden.} =
   nsIfaceUp[IReadOnlyCollection[KeyValuePair[K, V]]](v.nsObj)
 
 # `is`/`as`: the tables an object has, by the interface's key.
 
 # An array's tables: an array is no class of its own here (its type is the
 # runtime's), so a type test answers for it by the element type the interface names.
-proc nsLibAs*[T](o: RootRef; t: typedesc[IList[T]]): IList[T] =
+proc nsLibAs*[T](o: RootRef; t: typedesc[IList[T]]): IList[T] {.nsHidden.} =
   if o of NsArray[T]: result = nsToIList(NsArray[T](o))
-proc nsLibAs*[T](o: RootRef; t: typedesc[ICollection[T]]): ICollection[T] =
+proc nsLibAs*[T](o: RootRef; t: typedesc[ICollection[T]]): ICollection[T] {.nsHidden.} =
   if o of NsArray[T]: result = nsToICollection(NsArray[T](o))
-proc nsLibAs*[T](o: RootRef; t: typedesc[IReadOnlyList[T]]): IReadOnlyList[T] =
+proc nsLibAs*[T](o: RootRef; t: typedesc[IReadOnlyList[T]]): IReadOnlyList[T] {.nsHidden.} =
   if o of NsArray[T]: result = nsToIReadOnlyList(NsArray[T](o))
-proc nsLibAs*[T](o: RootRef; t: typedesc[IReadOnlyCollection[T]]): IReadOnlyCollection[T] =
+proc nsLibAs*[T](o: RootRef; t: typedesc[IReadOnlyCollection[T]]): IReadOnlyCollection[T] {.nsHidden.} =
   if o of NsArray[T]: result = nsToIReadOnlyCollection(NsArray[T](o))
 
-method nsVtByKey*[T](x: List[T]; key: string): pointer =
+method nsVtByKey*[T](x: List[T]; key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IList[T]): return nsListVt[List[T], T]()
   if key == nsKeyOf(ICollection[T]): return nsCollectionVt[List[T], T]()
   if key == nsKeyOf(IReadOnlyList[T]): return nsReadOnlyListVt[List[T], T]()
   if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[List[T], T]()
   procCall nsVtByKey(RootRef(x), key)
-method nsVtByKey*[T](x: HashSet[T]; key: string): pointer =
+method nsVtByKey*[T](x: HashSet[T]; key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(ISet[T]): return nsSetVt[HashSet[T], T]()
   if key == nsKeyOf(IReadOnlySet[T]): return nsReadOnlySetVt[HashSet[T], T]()
   if key == nsKeyOf(ICollection[T]): return nsCollectionVt[HashSet[T], T]()
   if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[HashSet[T], T]()
   procCall nsVtByKey(RootRef(x), key)
-method nsVtByKey*[K, V](x: Dictionary[K, V]; key: string): pointer =
+method nsVtByKey*[K, V](x: Dictionary[K, V]; key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IDictionary[K, V]): return nsDictionaryVt[Dictionary[K, V], K, V]()
   if key == nsKeyOf(IReadOnlyDictionary[K, V]):
     return nsReadOnlyDictionaryVt[Dictionary[K, V], K, V]()
   if key == nsKeyOf(IReadOnlyCollection[KeyValuePair[K, V]]):
     return nsReadOnlyCollectionVt[Dictionary[K, V], KeyValuePair[K, V]]()
   procCall nsVtByKey(RootRef(x), key)
-method nsVtByKey*[T](x: Queue[T]; key: string): pointer =
+method nsVtByKey*[T](x: Queue[T]; key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[Queue[T], T]()
   procCall nsVtByKey(RootRef(x), key)
-method nsVtByKey*[T](x: Stack[T]; key: string): pointer =
+method nsVtByKey*[T](x: Stack[T]; key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[Stack[T], T]()
   procCall nsVtByKey(RootRef(x), key)
-method nsVtByKey*[T](x: LinkedList[T]; key: string): pointer =
+method nsVtByKey*[T](x: LinkedList[T]; key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(ICollection[T]): return nsCollectionVt[LinkedList[T], T]()
   if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[LinkedList[T], T]()
   procCall nsVtByKey(RootRef(x), key)
@@ -2151,45 +2151,45 @@ method nsVtByKey*[T](x: LinkedList[T]; key: string): pointer =
 
 type NsUserClass = ref RootObj and not NsArrayBase and not ref NsCollectionBase
 
-proc nsToIList*[C: NsUserClass; T](c: C; t: typedesc[IList[T]]): IList[T] =
+proc nsToIList*[C: NsUserClass; T](c: C; t: typedesc[IList[T]]): IList[T] {.nsHidden.} =
   if c != nil: result = IList[T](nsObj: c, nsVt: nsListVt[C, T]())
-proc nsToICollection*[C: NsUserClass; T](c: C; t: typedesc[ICollection[T]]): ICollection[T] =
+proc nsToICollection*[C: NsUserClass; T](c: C; t: typedesc[ICollection[T]]): ICollection[T] {.nsHidden.} =
   if c != nil: result = ICollection[T](nsObj: c, nsVt: nsCollectionVt[C, T]())
-proc nsToIReadOnlyList*[C: NsUserClass; T](c: C; t: typedesc[IReadOnlyList[T]]): IReadOnlyList[T] =
+proc nsToIReadOnlyList*[C: NsUserClass; T](c: C; t: typedesc[IReadOnlyList[T]]): IReadOnlyList[T] {.nsHidden.} =
   if c != nil: result = IReadOnlyList[T](nsObj: c, nsVt: nsReadOnlyListVt[C, T]())
 proc nsToIReadOnlyCollection*[C: NsUserClass; T](c: C; t: typedesc[IReadOnlyCollection[T]]):
-    IReadOnlyCollection[T] =
+    IReadOnlyCollection[T] {.nsHidden.} =
   if c != nil: result = IReadOnlyCollection[T](nsObj: c, nsVt: nsReadOnlyCollectionVt[C, T]())
-proc nsToISet*[C: NsUserClass; T](c: C; t: typedesc[ISet[T]]): ISet[T] =
+proc nsToISet*[C: NsUserClass; T](c: C; t: typedesc[ISet[T]]): ISet[T] {.nsHidden.} =
   if c != nil: result = ISet[T](nsObj: c, nsVt: nsSetVt[C, T]())
-proc nsToIReadOnlySet*[C: NsUserClass; T](c: C; t: typedesc[IReadOnlySet[T]]): IReadOnlySet[T] =
+proc nsToIReadOnlySet*[C: NsUserClass; T](c: C; t: typedesc[IReadOnlySet[T]]): IReadOnlySet[T] {.nsHidden.} =
   if c != nil: result = IReadOnlySet[T](nsObj: c, nsVt: nsReadOnlySetVt[C, T]())
-proc nsToIDictionary*[C: NsUserClass; K, V](c: C; t: typedesc[IDictionary[K, V]]): IDictionary[K, V] =
+proc nsToIDictionary*[C: NsUserClass; K, V](c: C; t: typedesc[IDictionary[K, V]]): IDictionary[K, V] {.nsHidden.} =
   if c != nil: result = IDictionary[K, V](nsObj: c, nsVt: nsDictionaryVt[C, K, V]())
 proc nsToIReadOnlyDictionary*[C: NsUserClass; K, V](c: C; t: typedesc[IReadOnlyDictionary[K, V]]):
-    IReadOnlyDictionary[K, V] =
+    IReadOnlyDictionary[K, V] {.nsHidden.} =
   if c != nil:
     result = IReadOnlyDictionary[K, V](nsObj: c, nsVt: nsReadOnlyDictionaryVt[C, K, V]())
 
-proc nsKeysOfIList*[C, T](key: string): pointer =
+proc nsKeysOfIList*[C, T](key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IList[T]): return nsListVt[C, T]()
   if key == nsKeyOf(ICollection[T]): return nsCollectionVt[C, T]()
-proc nsKeysOfICollection*[C, T](key: string): pointer =
+proc nsKeysOfICollection*[C, T](key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(ICollection[T]): return nsCollectionVt[C, T]()
-proc nsKeysOfIReadOnlyList*[C, T](key: string): pointer =
+proc nsKeysOfIReadOnlyList*[C, T](key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IReadOnlyList[T]): return nsReadOnlyListVt[C, T]()
   if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[C, T]()
-proc nsKeysOfIReadOnlyCollection*[C, T](key: string): pointer =
+proc nsKeysOfIReadOnlyCollection*[C, T](key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[C, T]()
-proc nsKeysOfISet*[C, T](key: string): pointer =
+proc nsKeysOfISet*[C, T](key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(ISet[T]): return nsSetVt[C, T]()
   if key == nsKeyOf(ICollection[T]): return nsCollectionVt[C, T]()
-proc nsKeysOfIReadOnlySet*[C, T](key: string): pointer =
+proc nsKeysOfIReadOnlySet*[C, T](key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IReadOnlySet[T]): return nsReadOnlySetVt[C, T]()
   if key == nsKeyOf(IReadOnlyCollection[T]): return nsReadOnlyCollectionVt[C, T]()
-proc nsKeysOfIDictionary*[C, K, V](key: string): pointer =
+proc nsKeysOfIDictionary*[C, K, V](key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IDictionary[K, V]): return nsDictionaryVt[C, K, V]()
-proc nsKeysOfIReadOnlyDictionary*[C, K, V](key: string): pointer =
+proc nsKeysOfIReadOnlyDictionary*[C, K, V](key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IReadOnlyDictionary[K, V]): return nsReadOnlyDictionaryVt[C, K, V]()
   if key == nsKeyOf(IReadOnlyCollection[KeyValuePair[K, V]]):
     return nsReadOnlyCollectionVt[C, KeyValuePair[K, V]]()
@@ -2261,24 +2261,24 @@ proc Default*[T](t: typedesc[EqualityComparer[T]]): EqualityComparer[T] =
 proc Equals*[T](c: EqualityComparer[T]; a, b: T): bool = nsDefaultEquals(a, b)
 proc GetHashCode*[T](c: EqualityComparer[T]; x: T): int32 = nsDefaultHash(x)
 
-proc nsToIComparer*[T](c: Comparer[T]): IComparer[T] =
+proc nsToIComparer*[T](c: Comparer[T]): IComparer[T] {.nsHidden.} =
   if c != nil: result = IComparer[T](nsObj: c, nsVt: nsComparerVt[Comparer[T], T]())
-proc nsToIEqualityComparer*[T](c: EqualityComparer[T]): IEqualityComparer[T] =
+proc nsToIEqualityComparer*[T](c: EqualityComparer[T]): IEqualityComparer[T] {.nsHidden.} =
   if c != nil:
     result = IEqualityComparer[T](nsObj: c, nsVt: nsEqualityComparerVt[EqualityComparer[T], T]())
-proc nsToIComparer*[C: NsUserClass; T](c: C; t: typedesc[IComparer[T]]): IComparer[T] =
+proc nsToIComparer*[C: NsUserClass; T](c: C; t: typedesc[IComparer[T]]): IComparer[T] {.nsHidden.} =
   if c != nil: result = IComparer[T](nsObj: c, nsVt: nsComparerVt[C, T]())
 proc nsToIEqualityComparer*[C: NsUserClass; T](c: C; t: typedesc[IEqualityComparer[T]]):
-    IEqualityComparer[T] =
+    IEqualityComparer[T] {.nsHidden.} =
   if c != nil: result = IEqualityComparer[T](nsObj: c, nsVt: nsEqualityComparerVt[C, T]())
-proc nsKeysOfIComparer*[C, T](key: string): pointer =
+proc nsKeysOfIComparer*[C, T](key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IComparer[T]): return nsComparerVt[C, T]()
-proc nsKeysOfIEqualityComparer*[C, T](key: string): pointer =
+proc nsKeysOfIEqualityComparer*[C, T](key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IEqualityComparer[T]): return nsEqualityComparerVt[C, T]()
-method nsVtByKey*[T](x: Comparer[T]; key: string): pointer =
+method nsVtByKey*[T](x: Comparer[T]; key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IComparer[T]): return nsComparerVt[Comparer[T], T]()
   procCall nsVtByKey(RootRef(x), key)
-method nsVtByKey*[T](x: EqualityComparer[T]; key: string): pointer =
+method nsVtByKey*[T](x: EqualityComparer[T]; key: string): pointer {.nsHidden.} =
   if key == nsKeyOf(IEqualityComparer[T]): return nsEqualityComparerVt[EqualityComparer[T], T]()
   procCall nsVtByKey(RootRef(x), key)
 
@@ -2302,15 +2302,15 @@ proc BinarySearch*[T](l: List[T]; x: T; comparer: IComparer[T]): int32 =
     else: hi = mid - 1
   int32(not lo)
 
-proc nsToIComparer*(c: StringComparer): IComparer[string] =
+proc nsToIComparer*(c: StringComparer): IComparer[string] {.nsHidden.} =
   if c != nil: result = IComparer[string](nsObj: c, nsVt: nsComparerVt[StringComparer, string]())
-proc nsToIEqualityComparer*(c: StringComparer): IEqualityComparer[string] =
+proc nsToIEqualityComparer*(c: StringComparer): IEqualityComparer[string] {.nsHidden.} =
   if c != nil:
     result = IEqualityComparer[string](nsObj: c,
                                        nsVt: nsEqualityComparerVt[StringComparer, string]())
-proc nsLibAs*(o: RootRef; t: typedesc[IComparer[string]]): IComparer[string] =
+proc nsLibAs*(o: RootRef; t: typedesc[IComparer[string]]): IComparer[string] {.nsHidden.} =
   if o of StringComparer: result = nsToIComparer(StringComparer(o))
-proc nsLibAs*(o: RootRef; t: typedesc[IEqualityComparer[string]]): IEqualityComparer[string] =
+proc nsLibAs*(o: RootRef; t: typedesc[IEqualityComparer[string]]): IEqualityComparer[string] {.nsHidden.} =
   if o of StringComparer: result = nsToIEqualityComparer(StringComparer(o))
 
 proc snapshot[T](collection: NsEnumerable[T]): seq[T] =

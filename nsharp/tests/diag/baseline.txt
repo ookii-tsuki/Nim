@@ -121,6 +121,7 @@ interface_instance CS0144 match
 invoke_event_with_accessors CS0079 match
 lambda_arity CS1593 match
 lambda_wrong_ret CS0029 match
+library_helper_not_a_member CS1061 match
 list_add_wrong CS1503 match
 long_to_int CS0266 match
 math_wrong CS1503 match

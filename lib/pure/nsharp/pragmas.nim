@@ -16,3 +16,9 @@ template nsInterface*() {.pragma.}
   ## `nsObj`/`nsVt` fields is a contract: a class may name it in its base list
   ## and N# checks the members exist (Nim's generics call them by name). One with
   ## them is a value, as a user's interface lowers.
+
+template nsHidden*() {.pragma.}
+  ## `{.nsHidden.}` marks a helper the library exports for the code N# generates
+  ## (`nsBox`, `newList`, `items`) but that is not a C# member: the frontend leaves
+  ## it out of the surface, so N# source cannot name it. `{.push nsHidden.}` marks
+  ## every declaration up to its `{.pop.}`.

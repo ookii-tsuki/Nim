@@ -13,7 +13,7 @@ from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, Equals, GetHas
   Type, nsTypeNamed, nsTypeOf
 
 # `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
-from ../nsharp/pragmas import nsStatic, nsInterface
+from ../nsharp/pragmas import nsStatic, nsInterface, nsHidden
 
 {.push discardable.}
 
@@ -149,7 +149,7 @@ proc nsExceptionTypeName(e: ref Exception): string =
   ## `raise` to Nim's when nothing did.
   nsNetName(if e.name.isNil: "" else: $e.name)
 
-proc nsDefaultMessage*[T: Exception](e: ref T): string =
+proc nsDefaultMessage*[T: Exception](e: ref T): string {.nsHidden.} =
   ## The message of an exception made without one, as .NET's parameterless
   ## constructors make it: the nearest library type's, or `Exception`'s, which
   ## names the type.
@@ -190,12 +190,12 @@ proc nsMade[T: Exception](t: typedesc[T]): ref T =
 proc nsParam(m, param: string): string =
   if param.len > 0: m & " (Parameter '" & param & "')" else: m
 
-proc nsNewException*[T: Exception](t: typedesc[T]): ref T =
+proc nsNewException*[T: Exception](t: typedesc[T]): ref T {.nsHidden.} =
   ## `new E()`.
   result = nsMade(T)
   result.msg = nsDefaultMessage(result)
 
-proc nsNewException*[T: Exception](t: typedesc[T]; a: string): ref T =
+proc nsNewException*[T: Exception](t: typedesc[T]; a: string): ref T {.nsHidden.} =
   ## `new E(message)`; of `ArgumentNullException` and `ArgumentOutOfRangeException`
   ## the parameter's name, and of `ObjectDisposedException` the object's.
   result = nsMade(T)
@@ -206,7 +206,7 @@ proc nsNewException*[T: Exception](t: typedesc[T]; a: string): ref T =
   else:
     result.msg = a
 
-proc nsNewException*[T: Exception](t: typedesc[T]; a, b: string): ref T =
+proc nsNewException*[T: Exception](t: typedesc[T]; a, b: string): ref T {.nsHidden.} =
   ## `new ArgumentException(message, paramName)`, and the `(paramName, message)`
   ## of its relatives; `new ObjectDisposedException(objectName, message)`.
   result = nsMade(T)
@@ -220,7 +220,7 @@ proc nsNewException*[T: Exception](t: typedesc[T]; a, b: string): ref T =
     {.error: "this exception has no constructor taking two strings".}
 
 proc nsNewException*[T: Exception](t: typedesc[T]; a: string;
-                                   inner: ref Exception): ref T =
+                                   inner: ref Exception): ref T {.nsHidden.} =
   ## `new E(message, innerException)`.
   result = nsMade(T)
   result.msg = a
@@ -542,11 +542,11 @@ proc ReferenceEquals*(a, b: RootRef): bool {.nsStatic: "object".} = a == b
 proc HasFlag*[E](a, b: E): bool = (int64(a) and int64(b)) == int64(b)
   ## `System.Enum.HasFlag`: every bit of `b` is set in `a`. An enum is its
   ## underlying integer (see `nsEnum` in the intrinsics).
-proc newRootRef*(): RootRef = RootRef()
-proc initAttribute*(self: Attribute) = discard
-proc initEventArgs*(self: EventArgs) = discard
+proc newRootRef*(): RootRef {.nsHidden.} = RootRef()
+proc initAttribute*(self: Attribute) {.nsHidden.} = discard
+proc initEventArgs*(self: EventArgs) {.nsHidden.} = discard
   ## The base constructor a user `EventArgs` class's constructor runs.
-proc newEventArgs*(): EventArgs = EventArgs()
+proc newEventArgs*(): EventArgs {.nsHidden.} = EventArgs()
 proc Empty*(t: typedesc[EventArgs]): EventArgs = EventArgs()
   ## `EventArgs.Empty`.
   ## The base constructor a user attribute class's constructor runs.
@@ -555,7 +555,7 @@ proc Empty*(t: typedesc[EventArgs]): EventArgs = EventArgs()
 # --- System.String ----------------------------------------------------------
 
 proc Length*(s: string): int32 = int32(s.len)
-proc newstring*(c: char; count: int32): string = repeat(c, count)
+proc newstring*(c: char; count: int32): string {.nsHidden.} = repeat(c, count)
   ## `new string(c, n)`: `c` repeated `n` times. Spelled as the lowering spells
   ## `new` + `string`; to Nim it is an overload of `newString`, told apart by arity.
 proc ToString*(s: string): string = s
@@ -614,7 +614,7 @@ proc nsFormatFail(offset: int; reason: string) {.noinline, noreturn.} =
   raise nsNewException(FormatException, "Input string was not in a correct format. " &
     "Failure to parse near offset " & $offset & ". " & reason)
 
-proc nsComposite*(format: string; args: openArray[RootRef]): string =
+proc nsComposite*(format: string; args: openArray[RootRef]): string {.nsHidden.} =
   ## The composite format, which `string.Format`, `Console.WriteLine` and
   ## `StringBuilder.AppendFormat` share.
   result = newStringOfCap(format.len + 8 * args.len)
@@ -869,10 +869,10 @@ type
     nsNext, nsNextP: int
 
 method ToString*(r: Random): string = "System.Random"
-method nsTypeName*(r: Random): string = "System.Random"
-proc nsTypeOf*(t: typedesc[Random]): Type = nsTypeNamed("System.Random")
+method nsTypeName*(r: Random): string {.nsHidden.} = "System.Random"
+proc nsTypeOf*(t: typedesc[Random]): Type {.nsHidden.} = nsTypeNamed("System.Random")
 
-proc nsActualValue*(param, value, rule: string): ref ArgumentOutOfRangeException =
+proc nsActualValue*(param, value, rule: string): ref ArgumentOutOfRangeException {.nsHidden.} =
   ## .NET's message for an argument out of range that it names with its value:
   ## `maxValue ('-1') must be a non-negative value. (Parameter 'maxValue')`, then
   ## `Actual value was -1.`
@@ -906,11 +906,11 @@ proc nsSeed(r: Random; seed: int32) =
   r.nsNext = 0
   r.nsNextP = 21
 
-proc newRandom*(seed: int32): Random =
+proc newRandom*(seed: int32): Random {.nsHidden.} =
   new(result)
   result.nsSeed(seed)
 
-proc newRandom*(): Random =
+proc newRandom*(): Random {.nsHidden.} =
   new(result)
   let t = getTime()
   result.nsSeed(cast[int32](t.toUnix xor t.nanosecond))
@@ -1348,12 +1348,12 @@ proc nsSpanOfMs(days, hours, minutes, seconds, milliseconds: int64): TimeSpan =
   let ms = (days * 86400 + hours * 3600 + minutes * 60 + seconds) * 1000 + milliseconds
   TimeSpan(nsTicks: nsSpanTicks(ms, nsTicksPerMs))
 
-proc newTimeSpan*(ticks: int64): TimeSpan = TimeSpan(nsTicks: ticks)
-proc newTimeSpan*(hours, minutes, seconds: int32): TimeSpan =
+proc newTimeSpan*(ticks: int64): TimeSpan {.nsHidden.} = TimeSpan(nsTicks: ticks)
+proc newTimeSpan*(hours, minutes, seconds: int32): TimeSpan {.nsHidden.} =
   nsSpanOfMs(0, hours, minutes, seconds, 0)
-proc newTimeSpan*(days, hours, minutes, seconds: int32): TimeSpan =
+proc newTimeSpan*(days, hours, minutes, seconds: int32): TimeSpan {.nsHidden.} =
   nsSpanOfMs(days, hours, minutes, seconds, 0)
-proc newTimeSpan*(days, hours, minutes, seconds, milliseconds: int32): TimeSpan =
+proc newTimeSpan*(days, hours, minutes, seconds, milliseconds: int32): TimeSpan {.nsHidden.} =
   nsSpanOfMs(days, hours, minutes, seconds, milliseconds)
 
 proc nsSpanOf(value: float; scale: int64): TimeSpan =
@@ -1466,7 +1466,7 @@ proc ToString*(s: TimeSpan): string =
   let frac = rest mod nsTicksPerSecond
   if frac != 0: result.add "." & nsPad(frac, 7)
 proc `$`*(s: TimeSpan): string = s.ToString
-proc nsTypeOf*(t: typedesc[TimeSpan]): Type = nsTypeNamed("System.TimeSpan")
+proc nsTypeOf*(t: typedesc[TimeSpan]): Type {.nsHidden.} = nsTypeNamed("System.TimeSpan")
 
 # --- System.DateTime ------------------------------------------------------------
 #
@@ -1499,29 +1499,29 @@ template Saturday*(t: typedesc[DayOfWeek]): DayOfWeek = DayOfWeek(6)
 proc `==`*(a, b: DayOfWeek): bool = int32(a) == int32(b)
 proc `<`*(a, b: DayOfWeek): bool = int32(a) < int32(b)
 proc `<=`*(a, b: DayOfWeek): bool = int32(a) <= int32(b)
-proc hash*(a: DayOfWeek): Hash = hash(int32(a))
-proc nsEnumMembers*(t: typedesc[DayOfWeek]): array[7, (string, int64)] =
+proc hash*(a: DayOfWeek): Hash {.nsHidden.} = hash(int32(a))
+proc nsEnumMembers*(t: typedesc[DayOfWeek]): array[7, (string, int64)] {.nsHidden.} =
   const table = [("Sunday", 0'i64), ("Monday", 1'i64), ("Tuesday", 2'i64),
                  ("Wednesday", 3'i64), ("Thursday", 4'i64), ("Friday", 5'i64),
                  ("Saturday", 6'i64)]
   table
-proc nsEnumIsFlags*(t: typedesc[DayOfWeek]): bool = false
+proc nsEnumIsFlags*(t: typedesc[DayOfWeek]): bool {.nsHidden.} = false
 proc `$`*(a: DayOfWeek): string = nsEnumName(int64(a), nsEnumMembers(DayOfWeek), false)
 proc ToString*(a: DayOfWeek): string = $a
-proc nsTypeOf*(t: typedesc[DayOfWeek]): Type = nsTypeNamed("System.DayOfWeek")
+proc nsTypeOf*(t: typedesc[DayOfWeek]): Type {.nsHidden.} = nsTypeNamed("System.DayOfWeek")
 
 template Unspecified*(t: typedesc[DateTimeKind]): DateTimeKind = DateTimeKind(0)
 template Utc*(t: typedesc[DateTimeKind]): DateTimeKind = DateTimeKind(1)
 template Local*(t: typedesc[DateTimeKind]): DateTimeKind = DateTimeKind(2)
 proc `==`*(a, b: DateTimeKind): bool = int32(a) == int32(b)
-proc hash*(a: DateTimeKind): Hash = hash(int32(a))
-proc nsEnumMembers*(t: typedesc[DateTimeKind]): array[3, (string, int64)] =
+proc hash*(a: DateTimeKind): Hash {.nsHidden.} = hash(int32(a))
+proc nsEnumMembers*(t: typedesc[DateTimeKind]): array[3, (string, int64)] {.nsHidden.} =
   const table = [("Unspecified", 0'i64), ("Utc", 1'i64), ("Local", 2'i64)]
   table
-proc nsEnumIsFlags*(t: typedesc[DateTimeKind]): bool = false
+proc nsEnumIsFlags*(t: typedesc[DateTimeKind]): bool {.nsHidden.} = false
 proc `$`*(a: DateTimeKind): string = nsEnumName(int64(a), nsEnumMembers(DateTimeKind), false)
 proc ToString*(a: DateTimeKind): string = $a
-proc nsTypeOf*(t: typedesc[DateTimeKind]): Type = nsTypeNamed("System.DateTimeKind")
+proc nsTypeOf*(t: typedesc[DateTimeKind]): Type {.nsHidden.} = nsTypeNamed("System.DateTimeKind")
 
 const
   nsMaxDateTicks = 3_155_378_975_999_999_999'i64  ## 9999-12-31 23:59:59.9999999
@@ -1573,20 +1573,20 @@ proc nsDate(ticks: int64; kind: int32 = 0): DateTime =
     nsDateFail("The added or subtracted value results in an un-representable DateTime.", "value")
   DateTime(nsTicks: ticks, nsKind: kind)
 
-proc newDateTime*(ticks: int64): DateTime =
+proc newDateTime*(ticks: int64): DateTime {.nsHidden.} =
   if ticks < 0 or ticks > nsMaxDateTicks:
     nsDateFail("Ticks must be between DateTime.MinValue.Ticks and DateTime.MaxValue.Ticks.", "ticks")
   DateTime(nsTicks: ticks)
-proc newDateTime*(year, month, day: int32): DateTime =
+proc newDateTime*(year, month, day: int32): DateTime {.nsHidden.} =
   DateTime(nsTicks: nsDateTicks(year, month, day))
-proc newDateTime*(year, month, day, hour, minute, second: int32): DateTime =
+proc newDateTime*(year, month, day, hour, minute, second: int32): DateTime {.nsHidden.} =
   DateTime(nsTicks: nsDateTicks(year, month, day) + nsTimeTicks(hour, minute, second))
-proc newDateTime*(year, month, day, hour, minute, second, millisecond: int32): DateTime =
+proc newDateTime*(year, month, day, hour, minute, second, millisecond: int32): DateTime {.nsHidden.} =
   if millisecond notin 0'i32 .. 999:
     nsDateFail("Valid values are between 0 and 999, inclusive.", "millisecond")
   DateTime(nsTicks: nsDateTicks(year, month, day) + nsTimeTicks(hour, minute, second) +
                     int64(millisecond) * nsTicksPerMs)
-proc newDateTime*(year, month, day, hour, minute, second: int32; kind: DateTimeKind): DateTime =
+proc newDateTime*(year, month, day, hour, minute, second: int32; kind: DateTimeKind): DateTime {.nsHidden.} =
   DateTime(nsTicks: nsDateTicks(year, month, day) + nsTimeTicks(hour, minute, second),
            nsKind: int32(kind))
 
@@ -1761,7 +1761,7 @@ proc ToString*(d: DateTime): string = nsFormatDate(d, "G")
 proc ToString*(d: DateTime; format: string): string =
   nsFormatDate(d, if format.len == 0: "G" else: format)
 proc `$`*(d: DateTime): string = d.ToString
-proc nsTypeOf*(t: typedesc[DateTime]): Type = nsTypeNamed("System.DateTime")
+proc nsTypeOf*(t: typedesc[DateTime]): Type {.nsHidden.} = nsTypeNamed("System.DateTime")
 proc ToShortDateString*(d: DateTime): string = nsFormatDate(d, "d")
 proc ToLongDateString*(d: DateTime): string = nsFormatDate(d, "D")
 proc ToShortTimeString*(d: DateTime): string = nsFormatDate(d, "t")

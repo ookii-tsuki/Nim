@@ -16,6 +16,7 @@
 
 import std/[monotimes, syncio]
 import ../System
+from ../../nsharp/pragmas import nsHidden
 from ../../nsharp/intrinsics import ToString, nsTypeName, Type, nsTypeNamed
 
 {.push discardable.}
@@ -30,12 +31,12 @@ type
     ## `System.Diagnostics.Debug`: its members are static.
 
 method ToString*(s: Stopwatch): string = "System.Diagnostics.Stopwatch"
-method nsTypeName*(s: Stopwatch): string = "System.Diagnostics.Stopwatch"
-proc nsTypeOf*(t: typedesc[Stopwatch]): Type = nsTypeNamed("System.Diagnostics.Stopwatch")
+method nsTypeName*(s: Stopwatch): string {.nsHidden.} = "System.Diagnostics.Stopwatch"
+proc nsTypeOf*(t: typedesc[Stopwatch]): Type {.nsHidden.} = nsTypeNamed("System.Diagnostics.Stopwatch")
 
 proc nsNow(): int64 = getMonoTime().ticks
 
-proc newStopwatch*(): Stopwatch = Stopwatch()
+proc newStopwatch*(): Stopwatch {.nsHidden.} = Stopwatch()
 
 template Frequency*(t: typedesc[Stopwatch]): int64 = 1_000_000_000'i64
 template IsHighResolution*(t: typedesc[Stopwatch]): bool = true

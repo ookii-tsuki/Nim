@@ -15,6 +15,7 @@
 
 import std/strutils
 import ../System
+from ../../nsharp/pragmas import nsHidden
 import Collections/Generic
 from ../../nsharp/intrinsics import ToString, nsTypeName, Type, nsTypeNamed, nsBox,
   nsFormatValue
@@ -27,9 +28,9 @@ type
     ## `System.Text.StringBuilder`.
     nsText: string
 
-proc newStringBuilder*(): StringBuilder = StringBuilder()
-proc newStringBuilder*(value: string): StringBuilder = StringBuilder(nsText: value)
-proc newStringBuilder*(capacity: int32): StringBuilder =
+proc newStringBuilder*(): StringBuilder {.nsHidden.} = StringBuilder()
+proc newStringBuilder*(value: string): StringBuilder {.nsHidden.} = StringBuilder(nsText: value)
+proc newStringBuilder*(capacity: int32): StringBuilder {.nsHidden.} =
   if capacity < 0:
     raise nsActualValue("capacity", $capacity, "must be a non-negative value.")
   StringBuilder(nsText: newStringOfCap(int(capacity)))
@@ -145,8 +146,8 @@ proc Clear*(sb: StringBuilder): StringBuilder =
   sb
 
 method ToString*(sb: StringBuilder): string = sb.nsText
-method nsTypeName*(sb: StringBuilder): string = "System.Text.StringBuilder"
-proc nsTypeOf*(t: typedesc[StringBuilder]): Type = nsTypeNamed("System.Text.StringBuilder")
+method nsTypeName*(sb: StringBuilder): string {.nsHidden.} = "System.Text.StringBuilder"
+proc nsTypeOf*(t: typedesc[StringBuilder]): Type {.nsHidden.} = nsTypeNamed("System.Text.StringBuilder")
 proc ToString*(sb: StringBuilder; startIndex, length: int32): string =
   if startIndex < 0: nsNegative("startIndex", startIndex)
   if length < 0: nsNegative("length", length)
