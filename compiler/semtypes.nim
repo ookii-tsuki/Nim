@@ -524,7 +524,8 @@ proc semArrayIndex(c: PContext, n: PNode): PType =
       result = makeRangeType(c, 0, e.intVal-1, n.info, e.typ)
     elif e.kind == nkSym and (e.typ.kind == tyStatic or e.typ.kind == tyTypeDesc):
       if e.typ.kind == tyStatic:
-        if e.sym.ast != nil:
+        if e.sym.ast != nil and e.sym.kind != skGenericParam:
+          # the `ast` of a generic param is only its default value (#9942)
           return semArrayIndex(c, e.sym.ast)
         if e.typ.skipModifier.kind != tyGenericParam and not isOrdinalType(e.typ.skipModifier):
           let info = if n.safeLen > 1: n[1].info else: n.info
@@ -686,6 +687,15 @@ proc semIdentVis(c: PContext, kind: TSymKind, n: PNode,
   else:
     result = newSymG(kind, n, c)
 
+proc customPragmasOf(n: PNode): PNode =
+  ## the custom pragmas of the checked pragma section `n`, or nil
+  result = nil
+  for it in n:
+    let callee = if it.kind in nkPragmaCallKinds and it.len > 0: it[0] else: it
+    if callee.kind == nkSym and sfCustomPragma in callee.sym.flags:
+      if result == nil: result = newNodeI(nkPragma, n.info)
+      result.add it
+
 proc semIdentWithPragma(c: PContext, kind: TSymKind, n: PNode,
                         allowed: TSymFlags, fromTopLevel = false): PSym =
   if n.kind == nkPragmaExpr:
@@ -695,7 +705,11 @@ proc semIdentWithPragma(c: PContext, kind: TSymKind, n: PNode,
     of skType:
       # process pragmas later, because result.typ has not been set yet
       discard
-    of skField: pragma(c, result, n[1], fieldPragmas)
+    of skField:
+      pragma(c, result, n[1], fieldPragmas)
+      # kept on the symbol so that the instances of a generic object type
+      # have them with the generic params replaced:
+      result.customPragmas = customPragmasOf(n[1])
     of skVar:   pragma(c, result, n[1], varPragmas)
     of skLet:   pragma(c, result, n[1], letPragmas)
     of skConst: pragma(c, result, n[1], constPragmas)
@@ -876,10 +890,101 @@ proc formatMissingEnums(c: PContext, n: PNode): string =
       coveredCases.incl val
   result = (c.getIntSetOfType(n[0].typ) - coveredCases).renderAsType(n[0].typ)
 
-proc semRecordCase(c: PContext, n: PNode, check: var IntSet, pos: var int,
-                   father: PNode, rectype: PType) =
+proc isSumTypeCase(n: PNode): bool {.inline.} =
+  ## `case` without a discriminator: `n[0]` is `nkIdentDefs(empty, ...)`.
+  n[0].kind == nkIdentDefs and n[0].len > 0 and n[0][0].kind == nkEmpty
+
+proc sumTypeScope(c: PContext; owner: PSym): PScope =
+  ## The scope the declaration of `owner` lives in: generic type
+  ## declarations are processed in a scope of their own.
+  result = c.currentScope
+  if c.inGenericContext > 0 and owner.typ != nil and
+      owner.typ.kind == tyGenericBody and result.parent != nil:
+    result = result.parent
+
+proc addSumTypeBranchNames(c: PContext; scope: PScope; enumType: PType) =
+  for f in enumType.n:
+    addInterfaceOverloadableSymAt(c, scope, f.sym)
+
+proc semSumTypeCase(c: PContext, n: PNode, check: var IntSet, pos: var int,
+                    father: PNode, rectype: PType, hasCaseFields: bool) =
+  ## Lowers `case` / `of A, B: fields` / `of C: fields` to a case object
+  ## whose (hidden) discriminator is of a generated enum type with the
+  ## values `A`, `B`, `C`. The branch names become overloadable enum fields
+  ## in the scope of the type declaration.
+  let owner = getCurrOwner(c)
+  if owner.kind != skType:
+    localError(c.config, n.info, "a sum type must be declared in a type section")
+    return
+  if tfSumType in rectype.flags:
+    localError(c.config, n.info, "only one empty `case` section is allowed in an object type")
+    return
+  if hasCaseFields:
+    localError(c.config, n.info, "a sum type `case` cannot be nested in another `case`")
+    return
+  rectype.incl tfSumType
+
+  let enumSym = newSym(skType, getIdent(c.cache, owner.name.s & "Kind"),
+                       c.idgen, owner, n.info)
+  let enumType = newType(tyEnum, c.idgen, enumSym)
+  rawAddSon(enumType, nil)
+  enumType.n = newNodeI(nkEnumTy, n.info)
+  enumSym.typ = enumType
+  enumType.sym = enumSym
+  # the owner of the branch names, constructors need it:
+  enumSym.ast = newSymNode(owner)
+  if sfExported in owner.flags: enumSym.incl sfExported
+
+  let disc = newSym(skField, getIdent(c.cache, SumTypeDiscriminatorName), c.idgen,
+                    owner, n.info)
+  disc.typ = enumType
+  disc.position = pos
+  disc.options = c.config.options
+  disc.incl sfDiscriminant
+  inc pos
+
   var a = copyNode(n)
+  a.add newSymNode(disc)
+  for i in 1..<n.len:
+    let it = n[i]
+    case it.kind
+    of nkOfBranch:
+      checkMinSonsLen(it, 2, c.config)
+      var b = newNodeI(nkOfBranch, it.info)
+      for j in 0..<it.len-1:
+        let ident = considerQuotedIdent(c, it[j])
+        if ident.id == ord(wInvalid): continue
+        if getSymFromList(enumType.n, ident) != nil:
+          localError(c.config, it[j].info, "duplicate sum type branch name: " & ident.s)
+          continue
+        let e = newSym(skEnumField, ident, c.idgen, enumSym, it[j].info)
+        e.typ = enumType
+        e.position = enumType.n.len
+        if sfExported in owner.flags: e.incl {sfUsed, sfExported}
+        enumType.n.add newSymNode(e)
+        b.add newIntTypeNode(e.position, enumType)
+        styleCheckDef(c, e)
+        onDef(e.info, e)
+        suggestSym(c.graph, e.info, e, c.graph.usageSym)
+      if b.len == 0: continue
+      a.add b
+      semRecordNodeAux(c, it[^1], check, pos, b, rectype, hasCaseFields = true)
+    of nkElse:
+      localError(c.config, it.info, "sum type case objects cannot have an else branch")
+    else: illFormedAst(n, c.config)
+  if enumType.n.len > 0x00007FFF:
+    localError(c.config, n.info, "a sum type must have less than 32768 branches")
+  setToStringProc(c.graph, enumType, genEnumToStrProc(enumType, n.info, c.graph, c.idgen))
+  addSumTypeBranchNames(c, sumTypeScope(c, owner), enumType)
+  father.add a
+
+proc semRecordCase(c: PContext, n: PNode, check: var IntSet, pos: var int,
+                   father: PNode, rectype: PType, hasCaseFields: bool) =
   checkMinSonsLen(n, 2, c.config)
+  if isSumTypeCase(n):
+    semSumTypeCase(c, n, check, pos, father, rectype, hasCaseFields)
+    return
+  var a = copyNode(n)
   semRecordNodeAux(c, n[0], check, pos, a, rectype, hasCaseFields = true)
   if a[0].kind != nkSym:
     internalError(c.config, "semRecordCase: discriminant is no symbol")
@@ -898,7 +1003,12 @@ proc semRecordCase(c: PContext, n: PNode, check: var IntSet, pos: var int,
     if skipTypes(typ.elementType, abstractInst).kind in shouldChckCovered:
       chckCovered = true
   of tyForward:
-    errorUndeclaredIdentifier(c, n[0].info, typ.sym.name.s)
+    if typ.sym != nil:
+      errorUndeclaredIdentifier(c, n[0].info, typ.sym.name.s)
+    else:
+      # a generic instance with forward type arguments, see `semGeneric`
+      localError(c.config, n[0].info,
+        "selector type '$1' depends on a type that is not yet defined" % renderTree(n[0][^2]))
   elif not isOrdinalType(typ):
     localError(c.config, n[0].info, "selector must be of an ordinal type")
 
@@ -949,7 +1059,13 @@ proc semRecordNodeAux(c: PContext, n: PNode, check: var IntSet, pos: var int,
         if c.inGenericContext == 0:
           var e = semConstBoolExpr(c, it[0])
           if e.kind != nkIntLit: discard "don't report followup error"
-          elif e.intVal != 0 and branch == nil: branch = it[1]
+          else:
+            # record the evaluated condition in the type's declaration so that
+            # macros inspecting `getImpl` (e.g. `hasCustomPragma`) can tell
+            # which branch was taken (bug #26373):
+            n[i][0] = newSymNode(getSysSym(c.graph, it[0].info,
+                                 if e.intVal != 0: "true" else: "false"), it[0].info)
+            if e.intVal != 0 and branch == nil: branch = n[i][1]
         else:
           # XXX this is still a hard compilation in a generic context, this can
           # result in unresolved generic parameters being treated like real types
@@ -962,11 +1078,14 @@ proc semRecordNodeAux(c: PContext, n: PNode, check: var IntSet, pos: var int,
             let val = getConstExpr(c.module, it[0], c.idgen, c.graph)
             if val == nil or val.kind != nkIntLit:
               cannotResolve = true
-            elif not cannotResolve and val.intVal != 0 and branch == nil:
-              branch = it[1]
+            else:
+              n[i][0] = newSymNode(getSysSym(c.graph, it[0].info,
+                                   if val.intVal != 0: "true" else: "false"), it[0].info)
+              if not cannotResolve and val.intVal != 0 and branch == nil:
+                branch = n[i][1]
       of nkElse:
         checkSonsLen(it, 1, c.config)
-        if branch == nil and not cannotResolve: branch = it[0]
+        if branch == nil and not cannotResolve: branch = n[i][0]
         idx = 0
       else: illFormedAst(n, c.config)
       if c.inGenericContext > 0 and cannotResolve:
@@ -983,7 +1102,7 @@ proc semRecordNodeAux(c: PContext, n: PNode, check: var IntSet, pos: var int,
     elif father.kind in {nkElse, nkOfBranch}:
       father.add newNodeI(nkRecList, n.info)
   of nkRecCase:
-    semRecordCase(c, n, check, pos, father, rectype)
+    semRecordCase(c, n, check, pos, father, rectype, hasCaseFields)
   of nkNilLit:
     if father.kind != nkRecList: father.add newNodeI(nkRecList, n.info)
   of nkRecList:
@@ -1098,13 +1217,38 @@ proc tryAddInheritedFields(c: PContext, check: var IntSet, pos: var int,
   else:
     result = true
 
+proc checkUncheckedArrayLast(c: PContext; n: PNode) =
+  ## an `UncheckedArray` field becomes a C flexible array member, it must
+  ## be the last field (#9275)
+  var last: PNode = nil
+  proc walk(c: PContext; n: PNode; last: var PNode) =
+    case n.kind
+    of nkRecList:
+      for it in n: walk(c, it, last)
+    of nkSym, nkRecCase:
+      if last != nil:
+        localError(c.config, last.info,
+          "an 'UncheckedArray' field must be the last field of an object")
+        last = nil
+      if n.kind == nkSym and n.sym.typ != nil and
+          n.sym.typ.skipTypes({tyGenericInst, tyAlias}).kind == tyUncheckedArray:
+        last = n
+    else: discard
+  walk(c, n, last)
+
 proc semObjectNode(c: PContext, n: PNode, prev: PType; flags: TTypeFlags): PType =
   result = nil
   if n.len == 0:
     return newConstraint(c, tyObject)
   if prevIsKind(prev, tyObject) and sfForward notin prev.sym.flags:
     # the symbol already has an object type (likely resem), don't create a new type
-    return skipGenericPrev(prev)
+    result = skipGenericPrev(prev)
+    if tfSumType in result.flags:
+      # but bring the branch names into scope again:
+      let rc = sumTypeCase(result.n)
+      if rc != nil:
+        addSumTypeBranchNames(c, sumTypeScope(c, getCurrOwner(c)), rc[0].sym.typ)
+    return
   var check = initIntSet()
   var pos = 0
   var base, realBase: PType = nil
@@ -1129,7 +1273,7 @@ proc semObjectNode(c: PContext, n: PNode, prev: PType; flags: TTypeFlags): PType
               sfSystemModule notin c.module.flags:
             message(c.config, n.info, warnInheritFromException, "")
           if not tryAddInheritedFields(c, check, pos, concreteBase, n):
-            return newType(tyError, c.idgen, result.owner)
+            return newType(tyError, c.idgen, getCurrOwner(c))
 
       elif concreteBase.kind == tyForward:
         needsForwardUpdate = true
@@ -1159,6 +1303,8 @@ proc semObjectNode(c: PContext, n: PNode, prev: PType; flags: TTypeFlags): PType
       return newType(tyError, c.idgen, result.owner)
 
   semRecordNodeAux(c, n[2], check, pos, result.n, result)
+  if result.sym == nil or sfImportc notin result.sym.flags:
+    checkUncheckedArrayLast(c, result.n)
   if n[0].kind != nkEmpty:
     # dummy symbol for `pragma`:
     var s = newSymS(skType, newIdentNode(getIdent(c.cache, "dummy"), n.info), c)
@@ -1262,7 +1408,11 @@ proc findEnforcedStaticType(t: PType): PType =
 proc addParamOrResult(c: PContext, param: PSym, kind: TSymKind) =
   if kind == skMacro:
     let staticType = findEnforcedStaticType(param.typ)
-    if staticType != nil:
+    if param.kind == skResult:
+      # already a NimNode (see `maybeAddResult`); a copy would differ from
+      # the routine's result symbol that `return` and injectdestructors use:
+      addDecl(c, param)
+    elif staticType != nil:
       var a = copySym(param, c.idgen)
       a.typ = staticType.base
       addDecl(c, a)
@@ -1465,7 +1615,17 @@ proc liftParamType(c: PContext, procKind: TSymKind, genericParams: PNode,
                                           allowMetaTypes = true)
       result = recurse(expanded, true)
 
-  of tyUserTypeClasses, tyBuiltInTypeClass, tyCompositeTypeClass,
+  of tyCompositeTypeClass:
+    if anon and paramType.base.kind == tyGenericBody:
+      # `b: distinct Table` after `a: Table`: here `Table` names the implicit
+      # generic param of `a` whose `auto` arguments are bound already, so
+      # lift the generic body again to get a fresh set of them (bug #1385)
+      result = recurse(paramType.base, true)
+    else:
+      result = addImplicitGeneric(c,
+          copyType(paramType, c.idgen, getCurrOwner(c)), paramTypId,
+          info, genericParams, paramName)
+  of tyUserTypeClasses, tyBuiltInTypeClass,
      tyAnd, tyOr, tyNot, tyConcept:
     result = addImplicitGeneric(c,
         copyType(paramType, c.idgen, getCurrOwner(c)), paramTypId,
@@ -1605,7 +1765,11 @@ proc semProcTypeNode(c: PContext, n, genericParams: PNode,
         # if def.typ != nil and def.typ.kind != tyNone:
         # example code that triggers it:
         # proc sort[T](cmp: proc(a, b: T): int = cmp)
-        if not containsGenericType(typ):
+        if typ.kind == tyForward and def.kind == nkNilLit:
+          # `nil` for a type that is still being defined, like
+          # `T = ref object of RootRef; p: proc (x: T = nil)` (#6615)
+          def.typ = typ
+        elif not containsGenericType(typ):
           # check type compatibility between def.typ and typ:
           def = fitNode(c, typ, def, def.info)
         elif typ.kind == tyStatic:
@@ -1884,12 +2048,13 @@ proc semGeneric(c: PContext, n: PNode, s: PSym, prev: PType): PType =
         # returning `tyGenericInvocation` makes `Option[Foo]` to `tyGenericInvocation` and
         # next time `semGeneric` is called with `Option[Foo]`, containsGenericType(typeof(`Foo`)) == true
         # and `isConcrete == false`.
+        # Do not set `result.sym` here: `typeSectionFinalPass` uses `assignType`
+        # which keeps an existing `sym`, so the instance would end up with the
+        # generic body's symbol and lose its arguments (bug #26368).
         if prev == nil:
           result = newTypeS(tyForward, c)
-          result.sym = s
         else:
           assignType(result, newTypeS(tyForward, c))
-          result.sym = s
         c.forwardTypeUpdates.add (getCurrOwner(c), result, n) #fixes 1500
         return
       else:
@@ -1937,7 +2102,12 @@ proc semTypeExpr(c: PContext, n: PNode; prev: PType): PType =
     result = n.typ.base
     # fix types constructed by macros/template:
     if prev != nil and prev.kind != tyGenericBody and prev.sym != nil:
-      if result.sym.isNil:
+      if result.kind == tyGenericInst:
+        # a generic instance has no symbol of its own but is shared via the
+        # instantiation cache, so it must not be renamed. Alias it instead,
+        # as `semTypeOf` does (bugs #26400, #26412):
+        fixupTypeOf(c, prev, result)
+      elif result.sym.isNil:
         # Behold! you're witnessing enormous power yielded
         # by macros. Only macros can summon unnamed types
         # and cast spell upon AST. Here we need to give
@@ -2329,7 +2499,11 @@ proc semTypeNode(c: PContext, n: PNode, prev: PType): PType =
         case n.len
         of 3:
           result = semTypeNode(c, n[1], prev)
-          if result.kind == tyTypeDesc and tfUnresolved notin result.flags:
+          if result == nil:
+            # malformed code, as seen by nimsuggest (#25818)
+            localError(c.config, n.info, errTypeExpected)
+            result = newOrPrevType(tyError, prev, c)
+          elif result.kind == tyTypeDesc and tfUnresolved notin result.flags:
             result = result.base
           if n[2].kind != nkNilLit:
             localError(c.config, n.info,
@@ -2519,6 +2693,13 @@ proc semTypeNode(c: PContext, n: PNode, prev: PType): PType =
         result = prev
   of nkSym:
     let s = getGenSym(c, n.sym)
+    if s.kind == skGenericParam and s.typ != nil and
+        s.typ.kind == tyGenericParam and s.typ.len == 0 and
+        tfWildcard in s.typ.flags:
+      # a generic param passed as a symbol, for example created by
+      # `genSym(nskGenericParam)` (#4939); see `semTypeIdent`
+      s.transitionGenericParamToType()
+      s.typ.excl tfWildcard
     if s.typ != nil and (s.kind == skType or s.typ.kind == tyTypeDesc):
       var t =
         if s.kind == skType:
@@ -2684,8 +2865,8 @@ proc processMagicType(c: PContext, m: PSym) =
     setMagicIntegral(c.config, m, tyIterable, 0)
     rawAddSon(m.typ, newTypeS(tyNone, c))
   of mPNimrodNode:
+    # its hooks count the VM's handle, see `liftdestructors.nimNodeOp`:
     incl m.typ, tfTriggersCompileTime
-    incl m.typ, tfCheckedForDestructor
   of mException: discard
   of mBuiltinType:
     case m.name.s
@@ -2722,6 +2903,12 @@ proc semGenericParamList(c: PContext, n: PNode, father: PType = nil): PNode =
 
       if constraint.kind != nkEmpty:
         typ = semTypeNode(c, constraint, nil)
+        if typ.kind in {tySet, tyArray, tySequence, tyUncheckedArray} and
+            typ.elementType.kind == tyNone:
+          # a bare `seq` etc. is the type class of all seqs, it must not share
+          # the generic param of the magic type between constraints (#8435);
+          # see `typeSectionFinalPass`
+          typ = newTypeS(tyBuiltInTypeClass, c, newTypeS(typ.kind, c))
         if typ.kind != tyStatic or typ.len == 0:
           if typ.kind == tyTypeDesc:
             if typ.elementType.kind == tyNone:
@@ -2734,7 +2921,11 @@ proc semGenericParamList(c: PContext, n: PNode, father: PType = nil): PNode =
         def = semConstExpr(c, def)
         if typ == nil:
           if def.typ.kind != tyTypeDesc:
-            typ = newTypeS(tyStatic, c, def.typ)
+            # not `static[int literal(3)]`, see #9942
+            typ = newTypeS(tyStatic, c, def.typ.skipIntLit(c.idgen))
+            typ.incl tfHasStatic
+            if not containsGenericType(def.typ):
+              def = fitNode(c, typ, def, def.info)
         else:
           # the following line fixes ``TV2*[T:SomeNumber=TR] = array[0..1, T]``
           # from manyloc/named_argument_bug/triengine:

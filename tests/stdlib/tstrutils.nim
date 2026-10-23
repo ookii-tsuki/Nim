@@ -549,6 +549,14 @@ template main() =
     doAssert(insertSep($232) == "232")
     doAssert(insertSep($12345, ',') == "12,345")
     doAssert(insertSep($0) == "0")
+    doAssert(insertSep("-1000000", ',') == "-1,000,000")
+    doAssert(insertSep("+123456") == "+123_456")
+    doAssert(insertSep("USD 1000000") == "USD 1_000_000")
+    doAssert(insertSep("") == "")
+    doAssert(insertSep("-") == "-")
+    # bug #24788: a string that is not a number is grouped as a whole
+    doAssert(insertSep("SGVsbG8gV29ybGQ=", ' ', 4) == "SGVs bG8g V29y bGQ=")
+    doAssert(insertSep("abcd") == "a_bcd")
 
   block: # repeat, spaces
     doAssert(' '.repeat(8) == "        ")
@@ -805,6 +813,7 @@ bar
       doAssert formatBiggestFloat(1234.567, ffDecimal, -1) == "1234.567000"
       when not defined(js):
         doAssert formatBiggestFloat(1234.567, ffDecimal, 0) == "1235." # bugs 8242, 12586
+        doAssert formatBiggestFloat(-1.7976931348623157e308, ffDecimal, 32).len == 343
       doAssert formatBiggestFloat(1234.567, ffDecimal, 1) == "1234.6"
       doAssert formatBiggestFloat(0.00000000001, ffDecimal, 11) == "0.00000000001"
       doAssert formatBiggestFloat(0.00000000001, ffScientific, 1, ',') in

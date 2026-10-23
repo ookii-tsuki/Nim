@@ -79,8 +79,9 @@ type
                                   # `nim nifc`, bucketed only after every
                                   # module is loaded (`flushMethodReplays`)
     icImplDeps*: IntSet           # NeedsImpl edge tracking under `nim m`:
-                                  # module ids (FileIndex) whose routine BODIES
-                                  # this compilation consumed at compile time.
+                                  # module ids (FileIndex) whose routine bodies
+                                  # or generic type instances this compilation
+                                  # consumed at compile time.
                                   # Written to the `.edges` sidecar; deps.nim
                                   # then gates the dependent on those modules'
                                   # IMPL cookie instead of the iface cookie, so
@@ -91,7 +92,8 @@ type
                                   # consumer records an edge here: VM-compiled /
                                   # getImpl'ed bodies (recordIcImplDep from vm/
                                   # vmgen), expanded templates (semTemplateExpr)
-                                  # and instantiated generics (generateInstance).
+                                  # and instantiated generics (generateInstance,
+                                  # searchInstTypes).
                                   # Inline iterators / `inline` procs are NOT
                                   # tracked: they are inlined by the backend,
                                   # whose `lower`/`cg` rules depend on the
@@ -101,6 +103,9 @@ type
                                   # iterators, embedded foreign definitions).
                                   # Written to a sidecar so deps.nim can make
                                   # the stage's rule depend on their NIFs.
+    icOfferedInstances*: HashSet[string] # backend: NIF names of the generic
+                                  # instances some loaded module `(offer)`s
+                                  # (see `cgen.homeEmitsInstance`)
     icQualIfaces*: IntSet         # module positions whose interface tables were
                                   # populated ONLY for qualified access through a
                                   # module re-export (`import x; export x`); the
@@ -1004,6 +1009,13 @@ proc recordIcImplDep*(g: ModuleGraph; s: PSym) =
      s.itemId.module >= 0 and not isBackendMinted(s.itemId):
     g.icImplDeps.incl module(s.itemId).int
 
+proc recordIcImplDep*(g: ModuleGraph; t: PType) =
+  ## Reusing a generic type instance embeds its defining module's type ID.
+  ## A body edit can change that ID without changing the interface cookie.
+  if g.config.cmd == cmdM and t != nil and t.itemId.module >= 0 and
+     not isBackendMinted(t.itemId):
+    g.icImplDeps.incl module(t.itemId).int
+
 proc dependsOn(a, b: int): int {.inline.} = (a shl 15) + b
 
 proc addDep*(g: ModuleGraph; m: PSym, dep: FileIndex) =
@@ -1210,8 +1222,9 @@ when not defined(nimKochBootstrap):
         not g.icQualIfaces.containsOrIncl(fIdx.int):
       var interf = initStrTable()
       var interfHidden = initStrTable()
-      discard loadNifModule(ast.program, ModuleSuffix(msuffix),
-                            interf, interfHidden, {}, moduleResolver(g))
+      let precomp = loadNifModule(ast.program, ModuleSuffix(msuffix),
+                                  interf, interfHidden, {}, moduleResolver(g))
+      for off in precomp.offeredNames: g.icOfferedInstances.incl off.inst
       g.ifaces[fIdx.int].interf = interf
       g.ifaces[fIdx.int].interfHidden = interfHidden
       g.ifaces[fIdx.int].hiddenPending = true
@@ -1294,6 +1307,10 @@ when not defined(nimKochBootstrap):
     # `(toffer …)`. Keyed by the generic body sym's itemId, as `searchInstTypes`.
     for off in result.typeOffers:
       g.typeInstCache.mgetOrPut(off.generic.itemId, @[]).add off.inst
+
+    # The backend loads offers by name only; `cgen.homeEmitsInstance` asks them.
+    for off in result.offeredNames:
+      g.icOfferedInstances.incl off.inst
 
     # Mark module as cached
     g.cachedMods.incl fileIdx.int

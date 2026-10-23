@@ -210,7 +210,10 @@ proc addLocalDecl(c: var TemplCtx, n: var PNode, k: TSymKind) =
           closeScope(c)
     let (ident, hasParam) = getIdentReplaceParams(c, n)
     if not hasParam:
-      if n.kind != nkSym and not (n.kind == nkIdent and n.ident.id == ord(wUnderscore)):
+      if n.kind == nkIdent and n.ident.id in c.toInject:
+        # its uses are not gensym'ed either (#10609)
+        discard
+      elif n.kind != nkSym and not (n.kind == nkIdent and n.ident.id == ord(wUnderscore)):
         let local = newGenSym(k, ident, c)
         addPrelimDecl(c.c, local)
         styleCheckDef(c.c, n.info, local)
@@ -430,9 +433,18 @@ proc semTemplBody(c: var TemplCtx, n: PNode): PNode =
     for i in 1..<n.len:
       var a = n[i]
       checkMinSonsLen(a, 1, c.c.config)
+      openScope(c)
       for j in 0..<a.len-1:
-        a[j] = semTemplBody(c, a[j])
+        if a.kind == nkOfBranch and isSumTypePattern(c.c, a[j]):
+          # `Branch(x, y)`: `x` and `y` are bindings, local to the branch
+          a[j][0] = semTemplBody(c, a[j][0])
+          for k in 1..<a[j].len:
+            if a[j][k].kind in {nkIdent, nkAccQuoted}:
+              addLocalDecl(c, a[j][k], skTemplate)
+        else:
+          a[j] = semTemplBody(c, a[j])
       a[^1] = semTemplBodyScope(c, a[^1])
+      closeScope(c)
     closeScope(c)
   of nkForStmt, nkParForStmt:
     openScope(c)

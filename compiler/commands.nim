@@ -332,6 +332,7 @@ proc compileOptionValue*(conf: ConfigRef; switch: string; known: var bool): bool
   case switch.normalize
   of "debuginfo": result = contains(conf.globalOptions, optCDebug)
   of "compileonly", "c": result = contains(conf.globalOptions, optCompileOnly)
+  of "mergeableccode": result = contains(conf.globalOptions, optMergeableCcode)
   of "nolinking": result = contains(conf.globalOptions, optNoLinking)
   of "nomain": result = contains(conf.globalOptions, optNoMain)
   of "forcebuild", "f": result = contains(conf.globalOptions, optForceFullMake)
@@ -997,6 +998,16 @@ proc processSwitch*(switch, arg: string, pass: TCmdLinePass, info: TLineInfo;
     expectArg(conf, switch, arg, pass, info)
     if pass in {passCmd1, passCmd2, passPP}:
       conf.icProject = canonicalizePath(conf, AbsoluteFile arg).string
+  of "icsemdir", "icmainsemdir":
+    # IC children receive concrete semantic input directories; only the driver
+    # chooses configuration and entry-point subdirectories.
+    expectArg(conf, switch, arg, pass, info)
+    let dir = processPath(conf, arg, info, notRelativeToProj=true)
+    if switch.normalize == "icsemdir": conf.icSemDir = dir
+    else: conf.icMainSemDir = dir
+  of "icmainmodule":
+    expectArg(conf, switch, arg, pass, info)
+    if arg notin conf.icMainModules: conf.icMainModules.add arg
   of "icpreparsedconfig":
     # `nim m`/`nim nifc` only: path of the precompiled-config artifact (see
     # options.icPreparsedConfig). Read in `passCmd1`, before `loadConfigs`, so
@@ -1159,6 +1170,8 @@ proc processSwitch*(switch, arg: string, pass: TCmdLinePass, info: TLineInfo;
     processOnOffSwitchG(conf, {optCompileOnly}, arg, pass, info)
   of "spawncodegen":
     processOnOffSwitchG(conf, {optSpawnCodegen}, arg, pass, info)
+  of "mergeableccode":
+    processOnOffSwitchG(conf, {optMergeableCcode}, arg, pass, info)
   of "gencdeps":
     processOnOffSwitchG(conf, {optGenCDeps}, arg, pass, info)
   of "colors": processOnOffSwitchG(conf, {optUseColors}, arg, pass, info)

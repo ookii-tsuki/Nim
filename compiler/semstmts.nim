@@ -901,6 +901,12 @@ proc semVarOrLet(c: PContext, n: PNode, symkind: TSymKind): PNode =
     # this can only happen for errornous var statements:
     if typ == nil: continue
 
+    if a[^1].kind == nkEmpty and typ.kind == tyTypeDesc and
+        c.p.owner.kind != skMacro and c.matchedConcept == nil and
+        c.inGenericContext == 0:
+      # `var a: typedesc` is as invalid as `var a = int` (#8654)
+      typFlags.incl taProcContextIsNotMacro
+
     if c.matchedConcept != nil:
       typFlags.incl taConcept
     typeAllowedCheck(c, a.info, typ, symkind, typFlags)
@@ -1328,6 +1334,15 @@ proc semFor(c: PContext, n: PNode; flags: TExprFlags): PNode =
     result.typ = result.lastSon.typ
   closeScope(c)
 
+proc sumTypeObject(t: PType): PType =
+  ## The object type of the sum type `t`, seen through `var`, `ref`, etc.
+  ## nil if `t` is not a sum type.
+  let t = t.skipTypes(abstractInst + {tyVar, tyLent, tyRef, tyPtr} - {tyDistinct})
+  result = if t.kind == tyObject and tfSumType in t.flags: t else: nil
+
+proc semSumTypeCase(c: PContext; n: PNode; objType: PType;
+                    flags: TExprFlags; expectedType: PType): PNode
+
 proc semCase(c: PContext, n: PNode; flags: TExprFlags; expectedType: PType = nil): PNode =
   result = n
   checkMinSonsLen(n, 2, c.config)
@@ -1346,6 +1361,9 @@ proc semCase(c: PContext, n: PNode; flags: TExprFlags; expectedType: PType = nil
   else:
     popCaseContext(c)
     closeScope(c)
+    let objType = sumTypeObject(n[0].typ)
+    if objType != nil:
+      return semSumTypeCase(c, n, objType, flags, expectedType)
     return handleCaseStmtMacro(c, n, flags)
   template invalidOrderOfBranches(n: PNode) =
     localError(c.config, n.info, "invalid order of case branches")
@@ -1414,6 +1432,139 @@ proc semCase(c: PContext, n: PNode; flags: TExprFlags; expectedType: PType = nil
         it[j] = fitNode(c, typ, it[j], it[j].info)
     result.typ = typ
 
+
+proc sumTypeBranchIdent(c: PContext; n: PNode): PIdent =
+  ## The branch name of a pattern head: `Branch`, `module.Branch` or a
+  ## symbol bound by a template or generic.
+  case n.kind
+  of nkIdent, nkAccQuoted: result = considerQuotedIdent(c, n)
+  of nkSym: result = n.sym.name
+  of nkSymChoices: result = n[0].sym.name
+  of nkOpenSym: result = sumTypeBranchIdent(c, n[0])
+  of nkDotExpr: result = sumTypeBranchIdent(c, n[1])
+  else: result = nil
+
+proc sumTypeDeclBranch(rc: PNode; e: PSym): PNode =
+  ## The `of` branch of the sum type's record case that declares `e`.
+  result = nil
+  for i in 1..<rc.len:
+    let b = rc[i]
+    for j in 0..<b.len-1:
+      if b[j].kind in nkIntLit..nkUInt64Lit and b[j].intVal == e.position: return b
+
+proc collectBranchFields(n: PNode; result: var seq[PSym]) =
+  case n.kind
+  of nkSym: result.add n.sym
+  of nkRecList:
+    for it in n: collectBranchFields(it, result)
+  else: discard
+
+proc isUnderscore(n: PNode): bool {.inline.} =
+  n.kind == nkIdent and n.ident.s == "_"
+
+proc semSumTypeCase(c: PContext; n: PNode; objType: PType;
+                    flags: TExprFlags; expectedType: PType): PNode =
+  ## `case x of Branch(a, b): body` is rewritten to an ordinary `case` over
+  ## the hidden discriminator of `x`. The bindings `a` and `b` become
+  ## templates that expand to the (otherwise inaccessible) fields of the
+  ## branch, so they are views and mutable if `x` is.
+  let rc = sumTypeCase(objType.n)
+  let enumType = rc[0].sym.typ
+  var sel = n[0]
+  var tmpDecl: PNode = nil
+  if not (sel.kind == nkSym or
+      (sel.kind == nkHiddenDeref and sel[0].kind == nkSym)):
+    # evaluate the selector only once:
+    let tmp = newSym(skLet, getIdent(c.cache, ":case"), c.idgen, getCurrOwner(c), sel.info)
+    tmp.incl sfGenSym
+    var val = sel
+    let selType = sel.typ.skipTypes({tyVar, tyLent})
+    if selType.skipTypes(abstractInst).kind notin {tyRef, tyPtr} and
+        isAssignable(c.p.owner, sel) in {arLValue, arLocalLValue, arAddressableConst, arLentValue}:
+      # a location: refer to it, the bindings are views
+      tmp.typ = makePtrType(c, selType)
+      val = newTreeIT(nkAddr, sel.info, tmp.typ, sel)
+      sel = newTreeIT(nkHiddenDeref, sel.info, selType, newSymNode(tmp))
+    else:
+      tmp.typ = selType
+      sel = newSymNode(tmp)
+    tmpDecl = newTreeI(nkLetSection, n.info,
+      newTreeI(nkIdentDefs, n.info, newSymNode(tmp), c.graph.emptyNode, val))
+
+  var r = newNodeI(nkCaseStmt, n.info)
+  r.add newTreeI(nkDotExpr, n[0].info, sel, newSymNode(rc[0].sym, n[0].info))
+  for i in 1..<n.len:
+    let x = n[i]
+    if x.kind != nkOfBranch:
+      r.add x
+      continue
+    var b = newNodeI(nkOfBranch, x.info)
+    var templates: seq[PNode] = @[]
+    for j in 0..<x.len-1:
+      let p = x[j]
+      let hasArgs = p.kind in nkCallKinds
+      let head = if hasArgs: p[0] else: p
+      let names = if head.kind == nkCurly: head.sons else: @[head]
+      var declBranch: PNode = nil
+      for nameNode in names:
+        let ident = sumTypeBranchIdent(c, nameNode)
+        let e = if ident != nil: getSymFromList(enumType.n, ident) else: nil
+        if e == nil:
+          localError(c.config, nameNode.info, "undeclared sum type branch: " &
+            renderTree(nameNode, {renderNoComments}))
+          continue
+        let db = sumTypeDeclBranch(rc, e)
+        if declBranch == nil:
+          declBranch = db
+        elif db != declBranch:
+          localError(c.config, nameNode.info,
+            "branches in set pattern must come from the same `of` declaration")
+        b.add newIntTypeNode(e.position, enumType)
+        b[^1].info = nameNode.info
+      if hasArgs and p.len > 1 and declBranch != nil:
+        if x.len > 2:
+          localError(c.config, p.info,
+            "bindings require a single pattern in an `of` branch")
+          continue
+        var fields: seq[PSym] = @[]
+        collectBranchFields(declBranch[^1], fields)
+        if p.len-1 > fields.len:
+          localError(c.config, p[fields.len+1].info,
+            "too many bindings for sum type branch")
+        for k in 1..min(p.len-1, fields.len):
+          let a = p[k]
+          if isUnderscore(a): continue
+          if a.kind notin {nkIdent, nkAccQuoted, nkSym}:
+            localError(c.config, a.info, "identifier expected, but found: " &
+              renderTree(a, {renderNoComments}))
+            continue
+          if not fieldVisible(c, fields[k-1]):
+            localError(c.config, a.info,
+              "the field '$1' is not accessible." % fields[k-1].name.s)
+            continue
+          # template a(): untyped = sel.field
+          let access = newTreeI(nkDotExpr, a.info, copyTree(sel),
+                                newSymNode(fields[k-1], a.info))
+          templates.add newTreeI(nkTemplateDef, a.info, a, c.graph.emptyNode,
+            c.graph.emptyNode,
+            newTreeI(nkFormalParams, a.info, newIdentNode(getIdent(c.cache, "untyped"), a.info)),
+            c.graph.emptyNode, c.graph.emptyNode, access)
+    if templates.len > 0:
+      var body = newNodeI(nkStmtList, x[^1].info)
+      for t in templates: body.add t
+      body.add x[^1]
+      b.add body
+    else:
+      b.add x[^1]
+    r.add b
+  result = semCase(c, r, flags, expectedType)
+  if tmpDecl != nil:
+    let typ = result.typ
+    if typ == nil or typ.kind == tyVoid:
+      result = newTreeI(nkStmtList, n.info, tmpDecl, result)
+    else:
+      result = newTreeIT(nkStmtListExpr, n.info, typ, tmpDecl, result)
+
 proc semRaise(c: PContext, n: PNode): PNode =
   result = n
   checkSonsLen(n, 1, c.config)
@@ -1424,7 +1575,7 @@ proc semRaise(c: PContext, n: PNode): PNode =
       typ = typ.skipTypes({tyAlias, tyGenericInst, tyOwned})
       if typ.kind != tyRef:
         localError(c.config, n.info, errExprCannotBeRaised)
-      if typ.len > 0 and not isException(typ.elementType):
+      elif typ.len > 0 and not isException(typ.elementType):
         localError(c.config, n.info, "raised object of type $1 does not inherit from Exception" % typeToString(typ))
 
 proc addGenericParamListToScope(c: PContext, n: PNode) =
@@ -1885,7 +2036,12 @@ proc typeSectionFinalPass(c: PContext, n: PNode) =
             # AtomicFlag* {.importc: "atomic_flag", header: "<stdatomic.h>", size: 1.} = object
             localError(c.config, pragmas[i].info, "size pragma only allowed for enum types and imported types")
 
-    if a[1].kind == nkEmpty:
+    if a[1].kind == nkEmpty and s.typ != nil and
+        s.typ.kind in {tyOr, tyAnd, tyNot} and typeClassContains(s.typ, s.typ):
+      # `type string = string | char` (#9772)
+      localError(c.config, s.info, "illegal recursion in type '" & s.name.s & "'")
+      s.typ = errorType(c)
+    elif a[1].kind == nkEmpty:
       var x = a[2]
       if x.kind in nkCallKinds and nfSem in x.flags:
         discard "already semchecked, see line marked with bug #10548"
@@ -2703,6 +2859,9 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
   # potential forward declaration.
   setGenericParamsMisc(c, n)
 
+  # see the shared forward declaration symbol case below:
+  let fwdType = if sfForward in s.flags and n[bodyPos].kind != nkEmpty: s.typ
+                else: nil
   if n[paramsPos].kind != nkEmpty:
     semParamList(c, n[paramsPos], n[genericParamsPos], s)
   else:
@@ -2747,6 +2906,10 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     ## declarations if they share the same sym.
     ## See the "doubly-typed forward decls" case in tmacros_issues.nim
     proto = s
+    if fwdType != nil and fwdType.kind == tyProc and s.typ != nil:
+      # keep the calling convention of the forward declaration (#5030)
+      s.typ.callConv = fwdType.callConv
+      if tfExplicitCallConv in fwdType.flags: s.typ.incl tfExplicitCallConv
   let hasProto = proto != nil
 
   # set the default calling conventions
@@ -3148,6 +3311,7 @@ proc semPragmaBlock(c: PContext, n: PNode; expectedType: PType = nil): PNode =
   pragma(c, nil, pragmaList, exprPragmas, isStatement = true)
 
   var inUncheckedAssignSection = 0
+  var inUncheckedAccess = 0
   for p in pragmaList:
     if whichPragma(p) == wCast:
       case whichPragma(p[1])
@@ -3155,11 +3319,15 @@ proc semPragmaBlock(c: PContext, n: PNode; expectedType: PType = nil): PNode =
         discard "handled in sempass2"
       of wUncheckedAssign:
         inUncheckedAssignSection = 1
+      of wUncheckedAccess:
+        inUncheckedAccess = 1
       else:
         localError(c.config, p.info, "invalid pragma block: " & $p)
 
   inc c.inUncheckedAssignSection, inUncheckedAssignSection
+  inc c.inUncheckedAccess, inUncheckedAccess
   n[1] = semExpr(c, n[1], expectedType = expectedType)
+  dec c.inUncheckedAccess, inUncheckedAccess
   dec c.inUncheckedAssignSection, inUncheckedAssignSection
   result = n
   result.typ = n[1].typ

@@ -99,14 +99,12 @@ proc hasTypeHeader*(t: PType): bool =
     tfFinal notin t.flags
 
 proc enumSize(conf: ConfigRef; t: PType): int =
+  # Match the C backend, including explicit {.size.} pragmas. Inferring this
+  # from the declared values truncates casts used for native bitmask enums.
   if firstOrd(conf, t) < Zero:
     result = 4
   else:
-    let last = toInt64(lastOrd(conf, t))
-    if last < (1 shl 8): result = 1
-    elif last < (1 shl 16): result = 2
-    elif last < (1'i64 shl 32): result = 4
-    else: result = 8
+    result = int(getSize(conf, t))
 
 proc setSize*(conf: ConfigRef; t: PType): int =
   ## Size of a set type in bytes. Sets of up to 64 elements are stored as an
@@ -378,8 +376,10 @@ proc elemSize*(c: var LayoutCache; conf: ConfigRef; t: PType): int =
     layoutError(conf, t, "not an array type")
 
 proc hasPayloads(t: PType; marker: var IntSet): bool =
-  ## does a value of type `t` contain strings or seqs (not behind a pointer)?
+  ## does a value of type `t` contain strings, seqs or NimNodes (not behind a
+  ## pointer)? The VM manages these, also when they have no hooks.
   let t = skipForLayout(t)
+  if isNimNodeType(t): return true
   case t.kind
   of tyString, tySequence: true
   of tyArray: hasPayloads(t.elementType, marker)

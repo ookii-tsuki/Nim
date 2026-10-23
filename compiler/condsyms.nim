@@ -176,4 +176,6 @@ proc initDefines*(symbols: StringTableRef) =
   defineSymbol("nimHasPreviewDuplicateModuleError")
 
   defineSymbol("nimHasImplicitRangeConversion")
+  defineSymbol("nimHasNonZeroDefaultTrait")
+  defineSymbol("nimHasFieldCustomPragmas")
 

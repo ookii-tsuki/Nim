@@ -13,6 +13,7 @@ import
   ast, msgs, options, idents, lookups,
   semdata, modulepaths, sigmatch, lineinfos,
   modulegraphs, wordrecg, renderer
+from astalgo import enumOrSumTypeEnum
 from std/strutils import `%`, startsWith, replace
 from std/sequtils import addUnique
 import std/[sets, tables, intsets]
@@ -89,8 +90,8 @@ proc rawImportSymbol(c: PContext, s, origin: PSym; importSet: var IntSet) =
   else:
     importSet.incl s.id
   if s.kind == skType:
-    var etyp = s.typ
-    if etyp.kind in {tyBool, tyEnum}:
+    var etyp = enumOrSumTypeEnum(s.typ)
+    if etyp != nil:
       for j in 0..<etyp.n.len:
         var e = etyp.n[j].sym
         if e.kind != skEnumField:
@@ -332,6 +333,9 @@ proc myImportModule(c: PContext, n: var PNode, importStmtResult: PNode): PSym =
 
     let trackUnusedImport = warnUnusedImportX in c.config.notes
     discard pushOptionEntry(c)
+    # the imported module starts with the options this module started with,
+    # not with the ones a `{.push.}` around the import set (bug #26431):
+    c.config.options = c.optionStack[0].options
     let realModule = c.graph.importModuleCallback(c.graph, c.module, f)
     result = importModuleAs(c, n, realModule, transf.importHidden, trackUnusedImport)
     popOptionEntry(c)
@@ -356,6 +360,9 @@ proc myImportModule(c: PContext, n: var PNode, importStmtResult: PNode): PSym =
         suggestMod(n[0], realModule)
       elif n.kind == nkInfix:
         suggestMod(n[2], s)
+      elif n.kind == nkPrefix:
+        # `./foo`, `../foo` and the expanded `./[foo, bar]` form (bug #26307)
+        suggestMod(n[1], s)
       else:
         suggestSym(c.graph, n.info, s, c.graph.usageSym, false)
     suggestMod(n, result)

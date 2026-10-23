@@ -14,7 +14,8 @@
 
 import important_packages
 import std/[strformat, strutils, tables]
-from std/sequtils import filterIt
+from std/sequtils import filterIt, mapIt
+from std/sha1 import secureHash, `$`
 
 const
   specialCategories = [
@@ -48,7 +49,7 @@ proc isTestFile*(file: string): bool =
 
 # --------------------- DLL generation tests ----------------------------------
 
-proc runBasicDLLTest(c, r: var TResults, cat: Category, options: string, isOrc = false) =
+proc runBasicDLLTest(c, r: var TResults, cat: Category, options: string) =
   const rpath = when defined(macosx):
       " --passL:-rpath --passL:@loader_path"
     else:
@@ -79,19 +80,25 @@ proc runBasicDLLTest(c, r: var TResults, cat: Category, options: string, isOrc =
     defer: putEnv(libpathenv, libpath)
 
   testSpec r, makeTest("tests/dll/client.nim", options & " --threads:on" & rpath, cat)
-  when not defined(osx):
-    # the nimhcr runtime segfaults on macOS:
-    testSpec r, makeTest("tests/dll/nimhcr_unit.nim", options & " --threads:off" & rpath, cat)
+  if "refc" notin options:
+    # with refc, a thread of a program that uses nimrtl does not set up its
+    # GC heap either, and hangs on its first allocation; not fixed yet
+    testSpec r, makeTest("tests/dll/nimrtl_threads.nim", options & " --threads:on" & rpath, cat)
+    if "boehm" notin options:
+      # Boehm's GC has no setupForeignThreadGc
+      testSpec r, makeTest("tests/dll/nimrtl_foreign_thread.nim", options & " --threads:on" & rpath, cat)
+  testSpec r, makeTest("tests/dll/nimhcr_unit.nim", options & " --threads:off" & rpath, cat)
   testSpec r, makeTest("tests/dll/visibility.nim", options & " --threads:off" & rpath, cat)
 
-  # the nimhcr runtime segfaults on macOS, so no hcr test runs there:
-  if "boehm" notin options and not defined(osx):
+  if "boehm" notin options:
     # hcr tests
 
-    var basicHcrTest = makeTest("tests/dll/nimhcr_basic.nim", options & " --threads:off --forceBuild --hotCodeReloading:on " & rpath, cat)
-    # test segfaults for now but compiles:
-    if isOrc: basicHcrTest.spec.action = actionCompile
-    testSpec r, basicHcrTest
+    testSpec r, makeTest("tests/dll/nimhcr_basic.nim", options & " --threads:off --forceBuild --hotCodeReloading:on " & rpath, cat)
+    testSpec r, makeTest("tests/dll/nimhcr_methods.nim", options & " --threads:off --forceBuild --hotCodeReloading:on " & rpath, cat)
+    testSpec r, makeTest("tests/dll/nimhcr_global_ref.nim", options & " --threads:off --forceBuild --hotCodeReloading:on " & rpath, cat)
+    testSpec r, makeTest("tests/dll/nimhcr_threadvar.nim", options & " --threads:off --forceBuild --hotCodeReloading:on " & rpath, cat)
+    testSpec r, makeTest("tests/dll/nimhcr_logging.nim", options & " --threads:off --forceBuild --hotCodeReloading:on " & rpath, cat)
+    testSpec r, makeTest("tests/dll/nimhcr_async.nim", options & " --threads:off --forceBuild --hotCodeReloading:on " & rpath, cat)
 
     # force build required - see the comments in the .nim file for more details
     var hcri = makeTest("tests/dll/nimhcr_integration.nim",
@@ -108,8 +115,8 @@ proc dllTests(r: var TResults, cat: Category, options: string) =
 
   runBasicDLLTest c, r, cat, options & " --mm:refc"
   runBasicDLLTest c, r, cat, options & " -d:release --mm:refc"
-  runBasicDLLTest c, r, cat, options, isOrc = true
-  runBasicDLLTest c, r, cat, options & " -d:release", isOrc = true
+  runBasicDLLTest c, r, cat, options
+  runBasicDLLTest c, r, cat, options & " -d:release"
   when not defined(windows) and not defined(osx):
     # boehm library linking broken on macos 13
     # still cannot find a recent Windows version of boehm.dll:
@@ -145,6 +152,8 @@ proc gcTests(r: var TResults, cat: Category, options: string) =
       run filename, " -d:release --gc:boehm"
 
   testLegacyGc "gctest"
+  when not defined(windows) and not defined(android) and not defined(osx):
+    run "tboehm_signal", " --gc:boehm"
 
   test "foreign_thr"
   test "gcemscripten"
@@ -385,6 +394,8 @@ proc testStdlib(r: var TResults, pattern, options: string, cat: Category) =
     testSpec r, testObj
 
 # ----------------------------- nimble ----------------------------------------
+import packagebatches
+
 proc listPackagesAll(): seq[NimblePackage] =
   result = @[]
   var nimbleDir = getEnv("NIMBLE_DIR")
@@ -415,8 +426,10 @@ proc listPackages(packageFilter: string): seq[NimblePackage] =
       result = pkgs
     else:
       result = @[]
+      let batches = packageBatchAssignments(pkgs.mapIt(it.name),
+        testamentData0.testamentNumBatch)
       for i in 0..<pkgs.len:
-        if i mod testamentData0.testamentNumBatch == testamentData0.testamentBatch:
+        if batches[i] == testamentData0.testamentBatch:
           result.add pkgs[i]
 
 proc makeSupTest(test, options: string, cat: Category, debugInfo = ""): TTest =
@@ -436,6 +449,7 @@ proc testNimblePackages(r: var TResults; cat: Category; packageFilter: string) =
   try:
     let pkgs = listPackages(packageFilter)
     for i, pkg in pkgs:
+      echo "Testing package [$#/$#] $#" % [$i, $pkgs.len, pkg.name]
       inc r.total
       var test = makeSupTest(pkg.name, "", cat, "[$#/$#] " % [$i, $pkgs.len])
       let buildPath = packagesDir / pkg.name
@@ -443,6 +457,7 @@ proc testNimblePackages(r: var TResults; cat: Category; packageFilter: string) =
         var outp: string = ""
         let ok = retryCall(maxRetry = maxRetries, backoffDuration = 10.0):
           var status: int
+          echo "[$#] $#" % [pkg.name, cmd]
           (outp, status) = execCmdEx(cmd, workingDir = workingDir2)
           status == QuitSuccess
         if not ok:
@@ -623,17 +638,30 @@ proc runMetamorphicIcTest(r: var TResults; file: string; cat: Category; options:
   removeDir(buildDir)
   createDir(buildDir)
 
-  # Extra switches for both compilers, settable per step via `#!FLAGS`.
+  when defined(macosx):
+    # Mach-O debug maps contain object-file mtimes outside the header skipped
+    # by stableBinary. Make those timestamps (and their signature hashes)
+    # deterministic for the clean-vs-incremental comparison.
+    let hadZeroArDate = existsEnv("ZERO_AR_DATE")
+    let zeroArDate = getEnv("ZERO_AR_DATE")
+    putEnv("ZERO_AR_DATE", "1")
+    defer:
+      if hadZeroArDate: putEnv("ZERO_AR_DATE", zeroArDate)
+      else: delEnv("ZERO_AR_DATE")
+
+  # Command-line options apply to every step, including the classic oracle.
+  # `#!FLAGS` replaces only the per-step switches.
+  let compilerOptions = parseCmdLine(options)
   var extraFlags: seq[string] = @[]
 
   template compileIc(): untyped =
     execCmdEx2(compilerPrefix, @["ic", "--hint:Conf:off", "--warnings:off",
-      "--nimcache:" & nc, "--out:" & bin] & extraFlags & @["main.nim"],
+      "--nimcache:" & nc, "--out:" & bin] & compilerOptions & extraFlags & @["main.nim"],
       workingDir = buildDir)
 
   template compileRef(): untyped =
     execCmdEx2(compilerPrefix, @["c", "--hint:Conf:off", "--warnings:off",
-      "--nimcache:" & ncRef, "--out:" & binRef] & extraFlags & @["main.nim"],
+      "--nimcache:" & ncRef, "--out:" & binRef] & compilerOptions & extraFlags & @["main.nim"],
       workingDir = buildDir)
 
   # Parse the source into a flat op list: ("file", name, content) | ("step", attrs, "").
@@ -806,8 +834,25 @@ proc runMetamorphicIcTest(r: var TResults; file: string; cat: Category; options:
           mmRaise(reOutputsDiffer, "clean binary == incremental binary",
             where & ": clean rebuild produced a different binary")
         var diff: seq[string] = @[]
+        # Earlier programs/configurations and unused shared modules remain cached.
+        # Compare all clean shared inputs and the active program's outputs;
+        # no-op checks still cover every file in the accumulated cache.
+        let activePrefix = "configs" / $secureHash(snap["ic_build_args.txt"]) & DirSep
+        let backendPrefix = snap["ic_link_args.txt"].splitLines[0].relativePath(nc) & DirSep
+        let mainPrefix = activePrefix / "sem" / "main" /
+          backendPrefix[0 ..< backendPrefix.len - 1].extractFilename & DirSep
         for p in changedPaths(snap, cleanSnap):
-          if not isProvenance(p): diff.add p
+          let inactiveConfig = p.startsWith("configs" & DirSep) and
+            not p.startsWith(activePrefix)
+          let inactiveBackend = p.startsWith(activePrefix / "backend" & DirSep) and
+            not p.startsWith(backendPrefix)
+          let inactiveMain = p.startsWith(activePrefix / "sem" / "main" & DirSep) and
+            not p.startsWith(mainPrefix)
+          let unusedShared = p notin cleanSnap and
+            (p.startsWith("parsed" & DirSep) or p.parentDir == activePrefix / "sem")
+          if not (inactiveConfig or inactiveBackend or inactiveMain or unusedShared or
+              isProvenance(p)):
+            diff.add p
         if diff.len != 0:
           mmRaise(reOutputsDiffer, "clean cache == incremental cache",
             where & ": clean rebuild differs in " & $diff.len & " cache file(s): " & diff.join(", "))

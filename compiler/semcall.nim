@@ -377,32 +377,38 @@ proc presentFailedCandidates(c: PContext, n: PNode, errors: CandidateErrors):
             candidates.add "\n"
         of kGenericParamTypeMismatch:
           let pos = err.firstMismatch.arg
-          doAssert n[0].kind == nkBracketExpr and pos < n[0].len
-          let arg = n[0][pos]
-          doAssert arg != nil
           var wanted = err.firstMismatch.formal.typ
           if wanted.kind == tyGenericParam and wanted.genericParamHasConstraints:
             wanted = wanted.genericConstraint
-          let got = arg.typ.skipTypes({tyTypeDesc})
-          doAssert err.firstMismatch.formal != nil
-          doAssert wanted != nil
-          doAssert got != nil
-          candidates.add "  generic parameter mismatch, expected "
-          candidates.addTypeDeclVerboseMaybe(c.config, wanted)
-          candidates.add " but got '"
-          candidates.add renderTree(arg)
-          candidates.add "' of type: "
-          candidates.addTypeDeclVerboseMaybe(c.config, got)
-          if nArg.kind in nkSymChoices:
+          if not (n[0].kind == nkBracketExpr and pos < n[0].len):
+            # the explicit generic arguments are gone, e.g. for a call that
+            # was produced from an object field's default value (#24904)
+            candidates.add "  generic parameter mismatch, expected "
+            candidates.addTypeDeclVerboseMaybe(c.config, wanted)
             candidates.add "\n"
-            candidates.add ambiguousIdentifierMsg(nArg, indent = 2)
-          if got != nil and got.kind == tyProc and wanted.kind == tyProc:
-            # These are proc mismatches so,
-            # add the extra explict detail of the mismatch
-            candidates.addPragmaAndCallConvMismatch(wanted, got, c.config)
-          if got != nil:
-            effectProblem(wanted, got, candidates, c)
-          candidates.add "\n"
+          else:
+            let arg = n[0][pos]
+            doAssert arg != nil
+            let got = arg.typ.skipTypes({tyTypeDesc})
+            doAssert err.firstMismatch.formal != nil
+            doAssert wanted != nil
+            doAssert got != nil
+            candidates.add "  generic parameter mismatch, expected "
+            candidates.addTypeDeclVerboseMaybe(c.config, wanted)
+            candidates.add " but got '"
+            candidates.add renderTree(arg)
+            candidates.add "' of type: "
+            candidates.addTypeDeclVerboseMaybe(c.config, got)
+            if nArg.kind in nkSymChoices:
+              candidates.add "\n"
+              candidates.add ambiguousIdentifierMsg(nArg, indent = 2)
+            if got != nil and got.kind == tyProc and wanted.kind == tyProc:
+              # These are proc mismatches so,
+              # add the extra explict detail of the mismatch
+              candidates.addPragmaAndCallConvMismatch(wanted, got, c.config)
+            if got != nil:
+              effectProblem(wanted, got, candidates, c)
+            candidates.add "\n"
         of kUnknown: discard "do not break 'nim check'"
       else:
         candidates.add("  first type mismatch at position: " & $err.firstMismatch.arg)
@@ -696,7 +702,9 @@ proc bracketNotFoundError(c: PContext; n: PNode; flags: TExprFlags) =
     notFoundError(c, n, errors)
 
 proc instGenericConvertersArg*(c: PContext, a: PNode, x: TCandidate) =
-  let a = if a.kind == nkHiddenDeref: a[0] else: a
+  var a = if a.kind == nkHiddenDeref: a[0] else: a
+  # converter result passed to an openArray (#2652)
+  if a.kind == nkHiddenStdConv and a[1].kind == nkHiddenCallConv: a = a[1]
   if a.kind == nkHiddenCallConv and a[0].kind == nkSym:
     let s = a[0].sym
     if s.isGenericRoutineStrict:
@@ -875,6 +883,20 @@ proc compactVoidArgs(n: PNode): PNode =
       if n[i] != nil:
         result.add n[i]
 
+proc eraseVoidParamArgs(call: PNode; callee: PSym) =
+  ## `void` parameters are erased from instantiated signatures, so must be
+  ## the references to `void` typed parameters passed to them (#3833)
+  let formals = callee.typ.n
+  if formals == nil or call.len <= formals.len: return
+  var i = 1
+  while i < call.len:
+    let arg = call[i]
+    if arg != nil and arg.kind == nkSym and arg.sym.kind == skParam and
+        arg.typ != nil and arg.typ.kind == tyVoid:
+      call.delSon(i)
+    else:
+      inc i
+
 proc semResolvedCall(c: PContext, x: var TCandidate,
                      n: PNode, flags: TExprFlags;
                      expectedType: PType = nil): PNode =
@@ -902,6 +924,7 @@ proc semResolvedCall(c: PContext, x: var TCandidate,
       else:
         c.inheritBindings(x, expectedType)
         finalCallee = generateInstance(c, x.calleeSym, x.bindings, n.info)
+        eraseVoidParamArgs(x.call, finalCallee)
     else:
       # For macros and templates, the resolved generic params
       # are added as normal params.
@@ -933,6 +956,15 @@ proc semResolvedCall(c: PContext, x: var TCandidate,
   result[0] = newSymNode(finalCallee, getCallLineInfo(result[0]))
   if finalCallee.magic notin {mArrGet, mArrPut}:
     result.typ = finalCallee.typ.returnType
+    if result.typ != nil and result.typ.kind == tyAnything and
+        finalCallee.kind in {skProc, skFunc, skMethod, skConverter} and
+        c.inGenericContext == 0:
+      # the routine is still being checked and its `auto` return type
+      # has not been inferred yet (#13736)
+      localError(c.config, n.info, "cannot infer the return type of '" &
+        finalCallee.name.s & "': it is called recursively before a " &
+        "'return' or 'result' assignment determines it")
+      result.typ = errorType(c)
   updateDefaultParams(c, result)
   commitGenericExpansions(c, x)
 

@@ -29,7 +29,10 @@ const
 
   nimEnableCovariance* = defined(nimEnableCovariance)
 
-  icFormatVersion* = "47"
+  icFormatVersion* = "52"
+    ## v51: the lowered `.t.bif` carries its module's `(offer)` names.
+    ## v49: shared parsing, configuration semantics, and per-entry-point backend caches.
+    ## v48: track implementation dependencies for reused generic type instances.
     ## v46: every type definition wraps its sons in `(genericargs ...)`.
     ## v45: localPassC backend actions are keyed by their generated C file.
     ## v44: CacheCounter values live in the shared, file-locked `ic.counters`.
@@ -143,6 +146,8 @@ type                          # please make sure we have under 32 options
                               # implementation
     optSpawnCodegen           # spawn a separate nim process for codegen
                               # to reclaim memory before C compilation
+    optMergeableCcode         # generated C code must be identical for all
+                              # targets so that niminst can merge it
     optOwnedRefs              # active if the Nim compiler knows about 'owned'.
     optMultiMethods
     optBenchmarkVM            # Enables cpuTime() in the VM
@@ -229,7 +234,7 @@ type
     cmdCompileToNif
     cmdNifC  # generate C code from NIF files
     cmdIc  # generate .build.nif for nifmake
-    cmdIcConfig # `nim ic`'s precompiled-config producer (writes ic_config.cfg.nif)
+    cmdIcConfig # `nim ic`'s precompiled-config producer (writes config snapshots)
     cmdTrack # `nim track --def/--usages`: IC frontend build + NIF scan for IDE queries
 
 const
@@ -259,7 +264,8 @@ type
   IdeCmd* = enum
     ideNone, ideSug, ideCon, ideDef, ideUse, ideDus, ideChk, ideChkFile, ideMod,
     ideHighlight, ideOutline, ideKnown, ideMsg, ideProject, ideGlobalSymbols,
-    ideRecompile, ideChanged, ideType, ideDeclaration, ideExpand, ideInlayHints
+    ideRecompile, ideChanged, ideType, ideDeclaration, ideExpand, ideInlayHints,
+    ideOutline2
 
   Feature* = enum  ## experimental features; DO NOT RENAME THESE!
     dotOperators,
@@ -452,6 +458,10 @@ type
     lastCmdTime*: float        # when caas is enabled, we measure each command
     symbolFiles*: SymbolFilesOption
     ic*: bool # whether ic is enabled
+    icParsedDir*: AbsoluteDir # shared source/dependency scans, selected by the IC driver
+    icSemDir*: AbsoluteDir    # imported-module semantics for the effective configuration
+    icMainSemDir*: AbsoluteDir # semantics for this entry point's import-cycle group
+    icMainModules*: seq[string] # module suffixes whose semantics live in icMainSemDir
     icGroup*: HashSet[string] # under `nim m`: absolute paths of the modules in
                               # this strongly-connected import group. They are all
                               # compiled from source in one process (so mutual
@@ -1009,6 +1019,32 @@ proc getNimcacheDir*(conf: ConfigRef): AbsoluteDir =
       AbsoluteDir(getOsCacheDir() / splitFile(conf.projectName).name &
         nimcacheSuffix(conf))
 
+proc getParsedCacheDir*(conf: ConfigRef): AbsoluteDir =
+  if conf.icParsedDir.isEmpty: getNimcacheDir(conf) else: conf.icParsedDir
+
+proc getSemanticCacheDir*(conf: ConfigRef): AbsoluteDir =
+  if conf.icSemDir.isEmpty: getNimcacheDir(conf) else: conf.icSemDir
+
+proc semanticFile*(conf: ConfigRef; suffix, ext: string): AbsoluteFile =
+  ## Locate a semantic input independently of the child's output directory.
+  let dir =
+    if not conf.icMainSemDir.isEmpty and suffix in conf.icMainModules:
+      conf.icMainSemDir
+    else:
+      getSemanticCacheDir(conf)
+  dir / RelativeFile(suffix & ext)
+
+iterator semanticFiles*(conf: ConfigRef): string =
+  ## Scan the active semantic modules, excluding imported versions of main's group.
+  for file in walkFiles(getSemanticCacheDir(conf).string / "*.s.bif"):
+    let suffix = file.extractFilename.changeFileExt("").changeFileExt("")
+    if conf.icMainSemDir.isEmpty or suffix notin conf.icMainModules:
+      yield file
+  if not conf.icMainSemDir.isEmpty:
+    for suffix in conf.icMainModules:
+      let file = semanticFile(conf, suffix, ".s.bif").string
+      if fileExists(file): yield file
+
 proc pathSubs*(conf: ConfigRef; p, config: string): string =
   let home = removeTrailingDirSep(os.getHomeDir())
   result = unixToNativePath(p % [
@@ -1263,6 +1299,7 @@ proc parseIdeCmd*(s: string): IdeCmd =
   of "mod": ideMod
   of "highlight": ideHighlight
   of "outline": ideOutline
+  of "outline2": ideOutline2
   of "known": ideKnown
   of "msg": ideMsg
   of "project": ideProject
@@ -1295,6 +1332,7 @@ proc `$`*(c: IdeCmd): string =
   of ideChanged: "changed"
   of ideType: "type"
   of ideInlayHints: "inlayHints"
+  of ideOutline2: "outline2"
 
 proc floatInt64Align*(conf: ConfigRef): int16 =
   ## Returns either 4 or 8 depending on reasons.

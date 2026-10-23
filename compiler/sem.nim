@@ -271,7 +271,9 @@ proc commonType*(c: PContext; x, y: PType): PType =
       if result == b: return y
       # bug #7906, tyRef/tyPtr + tyGenericInst of ref/ptr object ->
       # ill-formed AST, no need for additional tyRef/tyPtr
-      if k != tyNone and x.kind != tyGenericInst:
+      if k != tyNone and x.kind != tyGenericInst and
+          # the base can be an instance of a generic `ref object` (#7955)
+          result.skipTypes({tyGenericInst, tyAlias}).kind != k:
         let r = result
         result = newType(k, c.idgen, r.owner)
         result.addSonSkipIntLit(r, c.idgen)
@@ -830,6 +832,15 @@ proc defaultNodeField(c: PContext, a: PNode, aTyp: PType, checkDefault: bool): P
 
 proc defaultNodeField(c: PContext, a: PNode, checkDefault: bool): PNode =
   result = defaultNodeField(c, a, a.typ, checkDefault)
+
+proc sumTypeBranchCandidates(c: PContext; n: PNode): seq[PSym]
+
+proc isSumTypePattern(c: PContext; n: PNode): bool =
+  ## Whether `n`, a pattern of an `of` branch, is `Branch(bindings)` or
+  ## `{A, B}(bindings)` of a sum type: the bindings are declarations then.
+  if n.kind notin nkCallKinds or n.len < 2: return false
+  let head = if n[0].kind == nkCurly and n[0].len > 0: n[0][0] else: n[0]
+  result = sumTypeBranchCandidates(c, head).len > 0
 
 include semtempl, semgnrc, semstmts, semexprs
 

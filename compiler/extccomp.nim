@@ -336,7 +336,7 @@ proc isVSCompatible*(conf: ConfigRef): bool =
           (conf.cCompiler == ccIcl and conf.target.hostOS in osDos..osWindows)
 
 proc getConfigVar(conf: ConfigRef; c: TSystemCC, suffix: string): string =
-  # use ``cpu.os.cc`` for cross compilation, unless ``--compileOnly`` is given
+  # use ``cpu.os.cc`` for cross compilation, unless ``--mergeableCcode`` is given
   # for niminst support
   var fullSuffix = suffix
   case conf.backend
@@ -348,7 +348,7 @@ proc getConfigVar(conf: ConfigRef; c: TSystemCC, suffix: string): string =
     return ""
 
   if (conf.target.hostOS != conf.target.targetOS or conf.target.hostCPU != conf.target.targetCPU) and
-      optCompileOnly notin conf.globalOptions:
+      optMergeableCcode notin conf.globalOptions:
     let fullCCname = platform.CPU[conf.target.targetCPU].name & '.' &
                      platform.OS[conf.target.targetOS].name & '.' &
                      CC[c].name & fullSuffix
@@ -534,6 +534,7 @@ proc vccplatform(conf: ConfigRef): string =
         of cpuI386: " --platform:x86"
         of cpuArm: " --platform:arm"
         of cpuAmd64: " --platform:amd64"
+        of cpuArm64: " --platform:arm64"
         else: ""
     else:
       result = ""
@@ -1052,6 +1053,10 @@ proc callCCompiler*(conf: ConfigRef) =
 
     if conf.hcrOn: # lets assume that optCompileOnly isn't on
       cmds = @[]
+      # a running program reloads a library as soon as it looks newer, so the
+      # linker writes each one beside its final name and it is moved into place
+      # complete: written in place, it could be loaded half written or be missing
+      var linkedLibs: seq[tuple[linked, target: AbsoluteFile]] = @[]
       let mainFileIdx = conf.toCompile.len - 1
       for idx, x in conf.toCompile:
         # don't relink each of the many binaries (one for each source file) if the nim code is
@@ -1064,7 +1069,11 @@ proc callCCompiler*(conf: ConfigRef) =
         let objFile = conf.getObjFilePath(x)
         let buildDll = idx != mainFileIdx
         let linkTarget = conf.hcrLinkTargetName(objFile, not buildDll)
-        cmds.add(getLinkCmd(conf, linkTarget, objfiles & " " & quoteShell(objFile), buildDll, removeStaticFile = true))
+        let linkOutput =
+          if buildDll: AbsoluteFile(linkTarget.string & ".tmp")
+          else: linkTarget
+        if buildDll: linkedLibs.add (linkOutput, linkTarget)
+        cmds.add(getLinkCmd(conf, linkOutput, objfiles & " " & quoteShell(objFile), buildDll, removeStaticFile = true))
         # try to remove all .pdb files for the current binary so they don't accumulate endlessly in the nimcache
         # for more info check the comment inside of getLinkCmd() where the /PDB:<filename> MSVC flag is used
         if isVSCompatible(conf):
@@ -1074,6 +1083,8 @@ proc callCCompiler*(conf: ConfigRef) =
       # if it fails than that from execLinkCmd() but that doesn't matter
       prettyCmds = map(prettyCmds, proc (curr: string): string = return curr.replace("CC", "Link"))
       execCmdsInParallel(conf, cmds, prettyCb)
+      for lib in linkedLibs:
+        moveFile(lib.linked.string, lib.target.string)
       # only if not cached - copy the resulting main file from the nimcache folder to its originally intended destination
       if CfileFlag.Cached notin conf.toCompile[mainFileIdx].flags:
         let mainObjFile = getObjFilePath(conf, conf.toCompile[mainFileIdx])
@@ -1113,11 +1124,13 @@ proc jsonBuildInstructionsFile*(conf: ConfigRef): AbsoluteFile =
   # works out of the box with `hashMainCompilationParams`.
   result = getNimcacheDir(conf) / conf.outFile.changeFileExt("json")
 
-const cacheVersion = "D20240927T193831" # update when `BuildCache` spec changes
+proc jsonBuildStateFile(conf: ConfigRef): AbsoluteFile =
+  result = AbsoluteFile(conf.jsonBuildInstructionsFile.string.changeFileExt("state"))
+
+const cacheVersion = "D20260925T120000" # update when `BuildCache` spec changes
 type BuildCache = object
   cacheVersion: string
   outputFile: string
-  outputLastModificationTime: string
   compile: seq[(string, string)]
   link: seq[string]
   linkcmd: string
@@ -1127,9 +1140,49 @@ type BuildCache = object
   projectIsCmd: bool
   cmdInput: string
   currentDir: string
+  depfiles: seq[(string, string)]
+  nimexe: string
+
+type BuildState = object
+  cacheVersion: string
+  outputFile: string
+  outputLastModificationTime: string
+  configFiles: seq[string]
+  stdinInput: bool
+  projectIsCmd: bool
+  cmdInput: string
+  currentDir: string
   cmdline: string
   depfiles: seq[(string, string)]
   nimexe: string
+
+proc tracksBuildState(conf: ConfigRef): bool {.inline.} =
+  result = optRun in conf.globalOptions or isDefined(conf, "nimBetterRun")
+
+proc writeBuildState(conf: ConfigRef; bcache: BuildCache) =
+  ## Build instructions are produced before their commands run (and, under
+  ## --spawncodegen, in a different process). Persist the reusable-build
+  ## record only after the outer invocation has completed the link.
+  if not tracksBuildState(conf) or conf.errorCounter > 0 or
+      not fileExists(bcache.outputFile):
+    return
+  let state = BuildState(
+    cacheVersion: bcache.cacheVersion,
+    outputFile: bcache.outputFile,
+    outputLastModificationTime: $getLastModificationTime(bcache.outputFile),
+    configFiles: bcache.configFiles,
+    stdinInput: bcache.stdinInput,
+    projectIsCmd: bcache.projectIsCmd,
+    cmdInput: bcache.cmdInput,
+    currentDir: bcache.currentDir,
+    cmdline: conf.commandLine,
+    depfiles: bcache.depfiles,
+    nimexe: bcache.nimexe)
+  try:
+    jsonBuildStateFile(conf).writeFile(state.toJson.pretty)
+  except IOError, OSError:
+    # This is only an optimization; a missing/invalid state causes a rebuild.
+    discard
 
 proc writeJsonBuildInstructions*(conf: ConfigRef; deps: StringTableRef) =
   var linkFiles = collect(for it in conf.externalToLink:
@@ -1150,8 +1203,7 @@ proc writeJsonBuildInstructions*(conf: ConfigRef; deps: StringTableRef) =
     cmdInput: conf.cmdInput,
     configFiles: conf.configFiles.mapIt(it.string),
     currentDir: getCurrentDir())
-  if optRun in conf.globalOptions or isDefined(conf, "nimBetterRun"):
-    bcache.cmdline = conf.commandLine
+  if tracksBuildState(conf):
     for it in conf.m.fileInfos:
       let path = it.fullPath.string
       if isAbsolute(path): # TODO: else?
@@ -1161,29 +1213,34 @@ proc writeJsonBuildInstructions*(conf: ConfigRef; deps: StringTableRef) =
           bcache.depfiles.add (path, $secureHashFile(path))
 
     bcache.nimexe = hashNimExe()
-    if fileExists(bcache.outputFile):
-      bcache.outputLastModificationTime = $getLastModificationTime(bcache.outputFile)
   conf.jsonBuildFile = conf.jsonBuildInstructionsFile
   conf.jsonBuildFile.string.writeFile(bcache.toJson.pretty)
+  # The in-process path has already compiled and linked at this point. The
+  # spawned --compileOnly child must leave completion state to its parent.
+  if optCompileOnly notin conf.globalOptions:
+    writeBuildState(conf, bcache)
 
 proc changeDetectedViaJsonBuildInstructions*(conf: ConfigRef; jsonFile: AbsoluteFile): bool =
   result = false
-  if not fileExists(jsonFile) or not fileExists(conf.absOutFile): return true
-  var bcache: BuildCache = default(BuildCache)
-  try: bcache.fromJson(jsonFile.string.parseFile)
-  except IOError, OSError, ValueError:
-    stderr.write "Warning: JSON processing failed for: $#\n" % jsonFile.string
+  let stateFile = jsonBuildStateFile(conf)
+  if not fileExists(jsonFile) or not fileExists(stateFile) or
+      not fileExists(conf.absOutFile):
     return true
-  if bcache.currentDir != getCurrentDir() or # fixes bug #16271
-     bcache.configFiles != conf.configFiles.mapIt(it.string) or
-     bcache.cacheVersion != cacheVersion or bcache.outputFile != conf.absOutFile.string or
-     bcache.cmdline != conf.commandLine or bcache.nimexe != hashNimExe() or
-     bcache.projectIsCmd != conf.projectIsCmd or conf.cmdInput != bcache.cmdInput: return true
-  if bcache.stdinInput or conf.projectIsStdin: return true
+  var state: BuildState = default(BuildState)
+  try: state.fromJson(stateFile.string.parseFile)
+  except IOError, OSError, ValueError, KeyError, JsonKindError:
+    stderr.write "Warning: JSON processing failed for: $#\n" % stateFile.string
+    return true
+  if state.currentDir != getCurrentDir() or # fixes bug #16271
+     state.configFiles != conf.configFiles.mapIt(it.string) or
+     state.cacheVersion != cacheVersion or state.outputFile != conf.absOutFile.string or
+     state.cmdline != conf.commandLine or state.nimexe != hashNimExe() or
+     state.projectIsCmd != conf.projectIsCmd or conf.cmdInput != state.cmdInput: return true
+  if state.stdinInput or conf.projectIsStdin: return true
     # xxx optimize by returning false if stdin input was the same
-  for (file, hash) in bcache.depfiles:
+  for (file, hash) in state.depfiles:
     if $secureHashFile(file) != hash: return true
-  if bcache.outputLastModificationTime != $getLastModificationTime(bcache.outputFile):
+  if state.outputLastModificationTime != $getLastModificationTime(state.outputFile):
     return true
 
 proc runJsonBuildInstructions*(conf: ConfigRef; jsonFile: AbsoluteFile) =
@@ -1200,6 +1257,7 @@ proc runJsonBuildInstructions*(conf: ConfigRef; jsonFile: AbsoluteFile) =
     globalError(conf, gCmdLineInfo,
       "jsonscript command outputFile '$1' must match '$2' which was specified during --compileOnly, see \"outputFile\" entry in '$3' " %
       [outputCurrent, output, jsonFile.string])
+  let errorsBeforeBuild = conf.errorCounter
   var cmds: TStringSeq = default(TStringSeq)
   var prettyCmds: TStringSeq = default(TStringSeq)
   let prettyCb = proc (idx: int) = writePrettyCmdsStderr(prettyCmds[idx])
@@ -1209,6 +1267,8 @@ proc runJsonBuildInstructions*(conf: ConfigRef; jsonFile: AbsoluteFile) =
   execCmdsInParallel(conf, cmds, prettyCb)
   preventLinkCmdMaxCmdLen(conf, bcache.linkcmd)
   for cmd in bcache.extraCmds: execExternalProgram(conf, cmd, hintExecuting)
+  if conf.errorCounter == errorsBeforeBuild:
+    writeBuildState(conf, bcache)
 
 proc spawnCodegenSubprocess*(conf: ConfigRef) =
   ## Spawns a separate nim process with --compileOnly to perform

@@ -29,17 +29,29 @@ proc opSlurp*(file: string, info: TLineInfo, module: PSym; conf: ConfigRef): str
     localError(conf, info, "cannot open file: " & file)
     result = ""
 
+proc atomicTypeX(s: PSym; t: PType; info: TLineInfo): PNode
+
 proc atomicTypeX(cache: IdentCache; name: string; m: TMagic; t: PType; info: TLineInfo;
                  idgen: IdGenerator): PNode =
+  if m != mNone and t.sym != nil and t.sym.magic == m:
+    # use the builtin's symbol so that `int.getType == int.getType` (#5109)
+    return atomicTypeX(t.sym, t, info)
   let sym = newSym(skType, getIdent(cache, name), idgen, t.owner, info)
   sym.magic = m
   sym.typ = t
   result = newSymNode(sym)
   result.typ = t
 
-proc atomicTypeX(s: PSym; info: TLineInfo): PNode =
+proc atomicTypeX(s: PSym; t: PType; info: TLineInfo): PNode =
   result = newSymNode(s)
   result.info = info
+  # `s.typ` can differ from `t`: the object type of a generic `ref object`
+  # instance shares the symbol of the generic body (bug #26374). Keep `t`
+  # so that `getTypeImpl` etc. on the result see the instantiated type.
+  # But a `tyForward` is a stale placeholder (e.g. the name node of a
+  # `T = typeof(...)` type section entry); `s.typ` is the resolved type.
+  if t.kind != tyForward:
+    result.typ = t
 
 proc mapTypeToAstX(cache: IdentCache; t: PType; info: TLineInfo; idgen: IdGenerator;
                    inst=false; allowRecursionX=false; skipAlias = false): PNode
@@ -76,7 +88,7 @@ proc mapTypeToAstX(cache: IdentCache; t: PType; info: TLineInfo;
                    inst=false; allowRecursionX=false; skipAlias = false): PNode =
   var allowRecursion = allowRecursionX
   template atomicType(name, m): untyped = atomicTypeX(cache, name, m, t, info, idgen)
-  template atomicType(s): untyped = atomicTypeX(s, info)
+  template atomicType(s): untyped = atomicTypeX(s, t, info)
   template mapTypeToAst(t, info): untyped = mapTypeToAstX(cache, t, info, idgen, inst)
   template mapTypeToAstR(t, info): untyped = mapTypeToAstX(cache, t, info, idgen, inst, true)
   template mapTypeToAst(t, i, info): untyped =

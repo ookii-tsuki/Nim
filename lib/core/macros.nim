@@ -280,6 +280,11 @@ when (NimMajor, NimMinor, NimPatch) >= (1, 3, 5) or defined(nimSymImplTransform)
     ## See an example in `tests/macros/tmacros_various.nim`.
 
 proc owner*(sym: NimNode): NimNode {.magic: "SymOwner", noSideEffect, deprecated.}
+
+when defined(nimHasFieldCustomPragmas):
+  proc fieldCustomPragmas(field: NimNode): NimNode {.magic: "SymCustomPragmas", noSideEffect.}
+    ## The custom pragmas of the field symbol `field`, as the compiler
+    ## instantiated them with the object type.
   ## Accepts a node of kind `nnkSym` and returns its owner's symbol.
   ## The meaning of 'owner' depends on `sym`'s `NimSymKind` and declaration
   ## context. For top level declarations this is an `nskModule` symbol,
@@ -1582,6 +1587,9 @@ proc extractTypeImpl(n: NimNode): NimNode =
         let resolved = typSym.getTypeInstSkipAlias()
         if resolved.kind == nnkSym:
           return resolved.getImpl.extractTypeImpl()
+        elif resolved.kind == nnkBracketExpr and resolved[0].kind == nnkSym:
+          # alias of a generic instance like `typeof(Base[int]())`
+          return resolved[0].getImpl.extractTypeImpl()
       error("Invalid node to retrieve type implementation of: " & $result.kind)
   else: error("Invalid node to retrieve type implementation of: " & $n.kind)
 
@@ -1619,6 +1627,11 @@ proc customPragmaNode(n: NimNode): NimNode =
       else:
         return timpl
 
+  when defined(nimHasFieldCustomPragmas):
+    let field = if n.kind == nnkCheckedFieldExpr: n[0][1] elif n.kind == nnkDotExpr: n[1] else: nil
+    if field != nil and field.kind == nnkSym and field.symKind == nskField:
+      return fieldCustomPragmas(field)
+
   if n.kind in {nnkDotExpr, nnkCheckedFieldExpr}:
     let name = $(if n.kind == nnkCheckedFieldExpr: n[0][1] else: n[1])
     var typInst = getTypeInst(if n.kind == nnkCheckedFieldExpr or n[0].kind == nnkHiddenDeref: n[0][0] else: n[0])
@@ -1634,7 +1647,15 @@ proc customPragmaNode(n: NimNode): NimNode =
           if resolved.kind == nnkSym:
             typDef = getImpl(resolved)
             continue
+          elif resolved.kind == nnkBracketExpr and resolved[0].kind == nnkSym:
+            # alias of a generic instance like `typeof(Base[int]())`
+            typDef = getImpl(resolved[0])
+            continue
         break
+      if typDef[2].kind == nnkBracketExpr and typDef[2][0].kind == nnkSym:
+        # alias of a generic instance like `BaseInt = Base[int]`
+        typDef = getImpl(typDef[2][0])
+        continue
       let typ = typDef[2].extractTypeImpl()
       if typ.kind notin {nnkRefTy, nnkPtrTy, nnkObjectTy}: break
       let isRef = typ.kind in {nnkRefTy, nnkPtrTy}
@@ -1658,6 +1679,22 @@ proc customPragmaNode(n: NimNode): NimNode =
             # Add branches
             for i in 1 ..< identDefs.len:
               identDefsStack.add(identDefs[i].last)
+          of nnkRecWhen:
+            # the compiler records the evaluated conditions as `true`/`false`;
+            # take the first true branch. If a condition could not be
+            # evaluated (generic object), consider all remaining branches.
+            for branch in identDefs.children:
+              if branch.kind == nnkElifBranch:
+                let cond = branch[0]
+                if cond.kind in {nnkIdent, nnkSym} and eqIdent(cond, "false"):
+                  discard "branch not taken"
+                elif cond.kind in {nnkIdent, nnkSym} and eqIdent(cond, "true"):
+                  identDefsStack.add(branch[1])
+                  break
+                else:
+                  identDefsStack.add(branch[1])
+              else:
+                identDefsStack.add(branch.last)
           else:
             for i in 0 .. identDefs.len - 3:
               let varNode = identDefs[i]
@@ -1670,7 +1707,12 @@ proc customPragmaNode(n: NimNode): NimNode =
                   return varNode[1]
 
         if obj[1].kind == nnkOfInherit: # explore the parent object
-          typDef = getImpl(obj[1][0])
+          var parent = obj[1][0]
+          if parent.kind == nnkBracketExpr:
+            # generic parent like `Base[int]`: the fields are declared
+            # in the generic type's definition
+            parent = parent[0]
+          typDef = getImpl(parent)
         else:
           typDef = nil
 

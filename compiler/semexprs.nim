@@ -497,7 +497,12 @@ proc semConv(c: PContext, n: PNode; flags: TExprFlags = {}, expectedType: PType 
   if n[1].kind == nkExprEqExpr and
       targetType.skipTypes(abstractPtrs).kind == tyObject:
     localError(c.config, n.info, "object construction uses ':', not '='")
-  var op = semExprWithType(c, n[1], flags * {efDetermineType} + {efAllowSymChoice})
+  # `T(Branch(...))` selects the sum type `T` that `Branch` belongs to:
+  let opExpected =
+    if n[1].kind in nkCallKinds+{nkObjConstr} and n[1].len > 0 and
+        sumTypeBranchCandidates(c, n[1][0]).len > 0: targetType
+    else: nil
+  var op = semExprWithType(c, n[1], flags * {efDetermineType} + {efAllowSymChoice}, opExpected)
   if isSymChoice(op) and op[0].sym.kind notin routineKinds:
     # T(foo) disambiguation syntax only allowed for routines
     op = semSymChoice(c, op)
@@ -560,8 +565,15 @@ proc semCast(c: PContext, n: PNode): PNode =
     errorUseQualifier(c, n[1].info, castedExpr)
   if targetType == nil:
     localError(c.config, n.info, "Invalid usage of cast, cast requires a type to convert to, e.g., cast[int](0d).")
+    return errorNode(c, n)
   if tfHasMeta in targetType.flags:
     localError(c.config, n[0].info, "cannot cast to a non concrete type: '$1'" % $targetType)
+  if c.inGenericContext == 0 and castedExpr.kind == nkSym and
+      castedExpr.sym.kind in routineKinds and
+      isGenericRoutine(castedExpr.sym) and sfFromGeneric notin castedExpr.sym.flags:
+    # (#12765)
+    localError(c.config, n[1].info, errProcHasNoConcreteType % castedExpr.renderTree)
+    return errorNode(c, n)
   if not isCastable(c, targetType, castedExpr.typ, n.info):
     localError(c.config, n.info, "expression cannot be cast to '$1'" % $targetType)
   result = newNodeI(nkCast, n.info)
@@ -652,7 +664,10 @@ proc isOpImpl(c: PContext, n: PNode, flags: TExprFlags): PNode =
     if efExplain in flags:
       m.diagnostics = @[]
       m.diagnosticsEnabled = true
-    res = typeRel(m, t2, t1) >= isSubtype # isNone
+    if t2.kind == tyBuiltInTypeClass and t2.last.kind == tyVar:
+      res = t1.kind == tyVar # `x is var` (#9443)
+    else:
+      res = typeRel(m, t2, t1) >= isSubtype # isNone
     # `res = sameType(t1, t2)` would be wrong, e.g. for `int is (int|float)`
 
   result = newIntNode(nkIntLit, ord(res))
@@ -672,6 +687,10 @@ proc semIs(c: PContext, n: PNode, flags: TExprFlags): PNode =
   if n[2].kind notin {nkStrLit..nkTripleStrLit}:
     let t2 = semTypeNode(c, n[2], nil)
     n[2] = newNodeIT(nkType, n[2].info, t2)
+    if n[1].kind == nkHiddenDeref and (t2.kind == tyVar or
+        (t2.kind == tyBuiltInTypeClass and t2.last.kind == tyVar)):
+      # `x is var` asks for the `var` of `x` (#9443)
+      n[1] = n[1][0]
     if t2.kind == tyStatic:
       let evaluated = tryConstExpr(c, n[1])
       if evaluated != nil:
@@ -812,8 +831,8 @@ proc semArrayConstr(c: PContext, n: PNode, flags: TExprFlags; expectedType: PTyp
     of tyArray:
       expectedIndexType = expectedBase[0]
       expectedElementType = expectedBase[1]
-    of tyOpenArray, tySequence:
-      # typed bracket expressions can also have seq type
+    of tyOpenArray, tyVarargs, tySequence:
+      # typed bracket expressions can also have seq or varargs type (#7357)
       expectedElementType = expectedBase[0]
     else: discard
   var
@@ -1348,6 +1367,16 @@ proc lookupInRecordAndBuildCheck(c: PContext, n, r: PNode, field: PIdent,
     if r.sym.name.id == field.id: result = r.sym
   else: illFormedAst(n, c.config)
 
+proc isSumTypeFieldCheck(check: PNode): bool =
+  ## Whether the field check `check` built by `lookupInRecordAndBuildCheck`
+  ## guards a field in a branch of a sum type.
+  result = false
+  for i in 1..<check.len:
+    var it = check[i]
+    if it[0].kind == nkSym and it[0].sym.magic == mNot: it = it[1]
+    let disc = it[2]
+    if disc.kind == nkSym and isSumTypeDiscriminator(disc.sym): return true
+
 const
   tyDotOpTransparent = {tyVar, tyLent, tyPtr, tyRef, tyOwned, tyAlias, tySink}
 
@@ -1528,6 +1557,9 @@ proc tryReadingGenericParam(c: PContext, n: PNode, i: PIdent, t: PType): PNode =
   of tyUserTypeClasses:
     if t.isResolvedUserTypeClass:
       result = readTypeParameter(c, t, i, n.info)
+      if result == nil and t.len > 0 and t.last.kind == tyGenericInst:
+        # a generic param of the type that matched the concept (#9006)
+        result = readTypeParameter(c, t.last, i, n.info)
     elif c.inGenericContext > 0:
       result = semGenericStmt(c, n)
       result.typ = makeTypeFromExpr(c, copyTree(result))
@@ -1651,6 +1683,10 @@ proc builtinFieldAccess(c: PContext; n: PNode; flags: var TExprFlags): PNode =
         if n[1].kind == nkSym and n[1].sym == f:
           false # field lookup was done already, likely by hygienic template or bindSym
         else: true
+      if visibilityCheckNeeded and check != nil and c.inUncheckedAccess == 0 and
+          isSumTypeFieldCheck(check):
+        localError(c.config, n[1].info, "field '" & f.name.s &
+          "' can only be accessed in a pattern matching `case` branch")
       if not visibilityCheckNeeded or fieldVisible(c, f):
         # is the access to a public field or in the same module or in a friend?
         markUsed(c, n[1].info, f)
@@ -1698,7 +1734,14 @@ proc dotTransformation(c: PContext, n: PNode, initialDerefs: int): PNode =
     # undo the derefs for overload resolution
     for _ in initialDerefs ..< currentDerefs:
       root = root[0]
+  # an operand that was resolved to a concrete type must not be semchecked
+  # again by overload resolution: that is not idempotent and can turn a `var`
+  # argument into a by-value one (#26521). `copyTree` does not keep `nfSem`.
+  # Symchoices etc. still need to be resolved (and reported as ambiguous):
+  let keepSem = nfSem in root.flags and root.kind notin nkSymChoices and
+    root.typ != nil and root.typ.kind notin {tyNone, tyError, tyFromExpr}
   root = copyTree(root)
+  if keepSem: root.flags.incl nfSem
   if isSymChoice(n[1]) or
       # generics usually leave field names as symchoices, but not types
       (n[1].kind == nkSym and n[1].sym.kind == skType):
@@ -1774,6 +1817,10 @@ proc semSubscript(c: PContext, n: PNode, flags: TExprFlags, afterOverloading = f
   n[0] = semExprWithType(c, n[0], {efNoEvaluateGeneric, efAllowSymChoice})
   var arr = skipTypes(n[0].typ, {tyGenericInst, tyUserTypeClassInst, tyOwned,
                                       tyVar, tyLent, tyPtr, tyRef, tyAlias, tySink})
+  if arr.isResolvedUserTypeClass:
+    # the type that matched the concept (#9289)
+    arr = arr.last.skipTypes({tyGenericInst, tyUserTypeClassInst, tyOwned,
+                              tyVar, tyLent, tyPtr, tyRef, tyAlias, tySink})
   if arr.kind == tyStatic:
     if arr.base.kind == tyNone:
       result = n
@@ -2135,13 +2182,19 @@ proc semAsgn(c: PContext, n: PNode; mode=asgnNormal): PNode =
           rhsTyp = rhsTyp.last
         if lhs.sym.typ.kind == tyAnything:
           rhsTyp = rhsTyp.skipTypes({tySink}).skipIntLit(c.idgen)
-        if cmpTypes(c, lhs.typ, rhsTyp) in {isGeneric, isEqual}:
-          internalAssert c.config, c.p.resultSym != nil
+        if lhs.sym != c.p.resultSym:
+          # `result` of an outer routine, bug #18556
+          localError(c.config, n.info, "cannot infer the return type of '" &
+            lhs.sym.owner.name.s & "' from within a nested routine")
+        elif cmpTypes(c, lhs.typ, rhsTyp) in {isGeneric, isEqual}:
           # Make sure the type is valid for the result variable
           typeAllowedCheck(c, n.info, rhsTyp, skResult)
           lhs.typ = rhsTyp
           c.p.resultSym.typ = rhsTyp
           c.p.owner.typ.setReturnType rhsTyp
+          if rhsTyp.kind == tyTypeDesc and c.p.owner.kind in {skProc, skFunc}:
+            # returns a type, only usable at compile time (#8301)
+            incl(c.p.owner, sfCompileTime)
         else:
           typeMismatch(c.config, n.info, lhs.typ, rhsTyp, rhs)
     borrowCheck(c, n, lhs, rhs)
@@ -3139,8 +3192,8 @@ proc semExport(c: PContext, n: PNode): PNode =
           markUsed(c, n.info, s)
           specialSyms(c, s)
           if s.kind == skType and sfPure notin s.flags:
-            var etyp = s.typ
-            if etyp.kind in {tyBool, tyEnum}:
+            var etyp = enumOrSumTypeEnum(s.typ)
+            if etyp != nil:
               for j in 0..<etyp.n.len:
                 var e = etyp.n[j].sym
                 if e.kind != skEnumField:
@@ -3538,6 +3591,10 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}, expectedType: PType 
     let mode = if nfDotField in n.flags: {} else: {checkUndeclared}
     c.isAmbiguous = false
     var s = qualifiedLookUp(c, n[0], mode)
+    if s != nil and s.kind in routineKinds and s.typ == nil and s.ast == nil:
+      # a gensym'ed routine that was never declared, bug #15097
+      localError(c.config, n[0].info, "attempting to call undeclared routine: '" & s.name.s & "'")
+      return errorNode(c, n)
     if s != nil:
       case s.kind
       of skMacro, skTemplate:
@@ -3555,8 +3612,18 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}, expectedType: PType 
         elif s.magic == mNone: result = semDirectOp(c, n, flags, expectedType)
         else: result = semMagic(c, n, s, flags, expectedType)
       of skProc, skFunc, skMethod, skConverter, skIterator:
-        if s.magic == mNone: result = semDirectOp(c, n, flags, expectedType)
+        # an imported overload of `addr` must take part in overload
+        # resolution (#4007):
+        if s.magic == mNone or (s.magic == mAddr and c.isAmbiguous):
+          result = semDirectOp(c, n, flags, expectedType)
         else: result = semMagic(c, n, s, flags, expectedType)
+      of skEnumField:
+        # `Branch()` or `Branch(field: value)` of a sum type:
+        let branches = sumTypeBranchCandidates(c, n[0])
+        if branches.len > 0:
+          result = semSumTypeConstr(c, n, branches, flags, expectedType)
+        else:
+          result = semIndirectOp(c, n, flags, expectedType)
       else:
         #liMessage(n.info, warnUser, renderTree(n));
         result = semIndirectOp(c, n, flags, expectedType)

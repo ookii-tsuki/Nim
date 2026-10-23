@@ -178,8 +178,11 @@ proc storeValue*(vc: ValueConv; dest: Address; n: PNode; t: PType; inConst: bool
   let t = skipForLayout(t)
   let conf = vc.conf
   if isNimNodeType(t):
-    # a `nil` NimNode is the handle 0:
-    if n.kind != nkNilLit: st[int64](dest, nodeHandle(vc.mem[], n))
+    # a `nil` NimNode is the handle 0. The memory owns the handle, unless it
+    # is constant memory, which is never freed:
+    if n.kind != nkNilLit:
+      st[int64](dest, if inConst: pinnedNodeHandle(vc.mem[], n)
+                      else: nodeHandle(vc.mem[], n))
     return
   case t.kind
   of tyBool, tyChar, tyEnum, tyInt..tyInt64, tyUInt..tyUInt64:
@@ -211,7 +214,7 @@ proc storeValue*(vc: ValueConv; dest: Address; n: PNode; t: PType; inConst: bool
   of tySequence:
     case n.kind
     of nkBracket:
-      st[int](dest +! StrLenOffset, n.len)
+      stInt(dest +! StrLenOffset, n.len)
       if n.len > 0:
         let e = t.elementType
         let L = getLayout(vc.layouts[], conf, e)
@@ -229,7 +232,7 @@ proc storeValue*(vc: ValueConv; dest: Address; n: PNode; t: PType; inConst: bool
               else: heapAlloc(vc.mem[], n.len*L.size)
       storeElems(vc, p, n, e, n.len, inConst)
       st[Address](dest +! OpenArrayDataOffset, p)
-      st[int](dest +! OpenArrayLenOffset, n.len)
+      stInt(dest +! OpenArrayLenOffset, n.len)
   of tyArray:
     if n.kind == nkBracket:
       storeElems(vc, dest, n, t.elementType, toInt(lengthOrd(conf, t)), inConst)
@@ -305,10 +308,11 @@ proc storeValue*(vc: ValueConv; dest: Address; n: PNode; t: PType; inConst: bool
       valueError(vc, n.info, "VM: cannot store a closure with an environment")
   of tyTypeDesc:
     # typedesc values are NimNodes of kind nkType
+    # (these have no destructors, so their handles are pinned):
     let x = if n.kind == nkType: n else: newNodeIT(nkType, n.info, n.typ)
-    st[int64](dest, nodeHandle(vc.mem[], x))
+    st[int64](dest, pinnedNodeHandle(vc.mem[], x))
   of tyUntyped, tyTyped:
-    st[int64](dest, nodeHandle(vc.mem[], n))
+    st[int64](dest, pinnedNodeHandle(vc.mem[], n))
   of tyVoid, tyEmpty:
     discard
   else:
@@ -400,6 +404,12 @@ proc loadElems(L: var Loader; data: Address; count: int; elemType: PType; res: P
   for i in 0..<count:
     res.add loadValue(L, data +! i*esize, elemType)
 
+proc isZeroed(a: Address; size: int): bool =
+  let p = cast[ptr UncheckedArray[byte]](toPtr(a))
+  for i in 0..<size:
+    if p[i] != 0: return false
+  result = true
+
 proc loadValue(L: var Loader; src: Address; t: PType): PNode =
   let conf = L.vc.conf
   let s = skipForLayout(t)
@@ -420,7 +430,7 @@ proc loadValue(L: var Loader; src: Address; t: PType): PNode =
     result.typ = t
     result.info = L.info
   of tyString:
-    let len = ld[int](src +! StrLenOffset)
+    let len = ldInt(src +! StrLenOffset)
     if len > 0:
       let p = ld[Address](src +! StrPayloadOffset)
       checkRead(L, p, PayloadDataOffset + len)
@@ -449,7 +459,7 @@ proc loadValue(L: var Loader; src: Address; t: PType): PNode =
       result.info = L.info
   of tySequence:
     result = newNodeIT(nkBracket, L.info, t)
-    let len = ld[int](src +! StrLenOffset)
+    let len = ldInt(src +! StrLenOffset)
     if len < 0: valueError(L.vc, L.info, "VM produced a corrupt seq")
     if len > 0:
       let p = ld[Address](src +! StrPayloadOffset)
@@ -459,13 +469,22 @@ proc loadValue(L: var Loader; src: Address; t: PType): PNode =
       loadElems(L, p +! payloadDataOffset(vmAlignOf(L.vc.layouts[], conf, e)), len, e, result)
   of tyOpenArray, tyVarargs:
     result = newNodeIT(nkBracket, L.info, t)
-    let len = ld[int](src +! OpenArrayLenOffset)
+    let len = ldInt(src +! OpenArrayLenOffset)
     if len < 0: valueError(L.vc, L.info, "VM produced a corrupt openArray")
     if len > 0:
       loadElems(L, ld[Address](src +! OpenArrayDataOffset), len, s.elementType, result)
   of tyArray:
     result = newNodeIT(nkBracket, L.info, t)
-    loadElems(L, src, toInt(lengthOrd(conf, s)), s.elementType, result)
+    let count = toInt(lengthOrd(conf, s))
+    let size = count * vmSizeOf(L.vc.layouts[], conf, s.elementType)
+    if count > broadcastArrayThreshold and
+        (checkRead(L, src, size); isZeroed(src, size)):
+      # the broadcast form of the old VM's `getNullValue`: a single son
+      # stands for `count` zeroed elements, see `isDefaultBroadcastArray`.
+      result.add loadValue(L, src, s.elementType)
+      result.flags.incl nfBroadcast
+    else:
+      loadElems(L, src, count, s.elementType, result)
   of tyTuple:
     result = newNodeIT(nkTupleConstr, L.info, t)
     for i in 0..<s.kidsLen:
@@ -487,7 +506,7 @@ proc loadValue(L: var Loader; src: Address; t: PType): PNode =
       let objType = s.elementType.skipTypes(abstractInst)
       if objType.kind != tyObject:
         valueError(L.vc, L.info, "VM: cannot produce a constant of type " & typeToString(t))
-      let addrKey = cast[int](p)
+      let addrKey = cast[int](uint(p)) # an address fits a host `int`
       if L.onPath.containsOrIncl(addrKey):
         valueError(L.vc, L.info, "VM: the resulting value is cyclic")
       checkRead(L, p -! RefHeaderSize, RefHeaderSize)
@@ -517,10 +536,11 @@ proc loadValue(L: var Loader; src: Address; t: PType): PNode =
       fnNode = newIntNode(nkIntLit, cast[BiggestInt](a))
       fnNode.typ = t
       fnNode.info = L.info
-    if s.callConv == ccClosure:
+    let env = if s.callConv == ccClosure: ld[int64](src +! ClosureEnvOffset)
+              else: 0
+    if s.callConv == ccClosure and (a != 0 or env != 0):
       result = newNodeIT(nkTupleConstr, L.info, t)
       result.add fnNode
-      let env = ld[int64](src +! ClosureEnvOffset)
       if env == 0:
         result.add newNodeIT(nkNilLit, L.info, L.vc.nilType)
       else:

@@ -12,7 +12,7 @@
 import std / tables
 
 import ast, astalgo, msgs, types, magicsys, semdata, renderer, options,
-  lineinfos, modulegraphs, layeredtable
+  lineinfos, modulegraphs, layeredtable, nversion, int128
 
 when defined(nimPreviewSlimSystem):
   import std/assertions
@@ -23,13 +23,39 @@ proc checkPartialConstructedType(conf: ConfigRef; info: TLineInfo, t: PType) =
   if t.kind in {tyVar, tyLent} and t.elementType.kind in {tyVar, tyLent}:
     localError(conf, info, "type 'var var' is not allowed")
 
+proc typeClassContains*(t, x: PType; depth = 0): bool =
+  ## does the type class `t` (`A | B`, `A and B`, `not A`) contain `x` as
+  ## one of its alternatives?
+  result = false
+  if depth > 100: return true
+  for k in t.kids:
+    let k = k.skipTypes({tyAlias})
+    if k == x or (k.kind in {tyOr, tyAnd, tyNot} and typeClassContains(k, x, depth+1)):
+      return true
+
 proc checkConstructedType*(conf: ConfigRef; info: TLineInfo, typ: PType) =
-  var t = typ.skipTypes({tyDistinct})
+  var t = typ
+  var seen: seq[PType] = @[]
+  while t.kind == tyDistinct:
+    # `type x = distinct x` would make `skipTypes` loop forever (#5282)
+    for s in seen:
+      if s == t:
+        localError(conf, info, "illegal recursion in type '" & typeToString(typ) & "'")
+        return
+    seen.add t
+    t = t.skipModifier
   if t.kind in tyTypeClasses: discard
   elif t.kind in {tyVar, tyLent} and t.elementType.kind in {tyVar, tyLent}:
     localError(conf, info, "type 'var var' is not allowed")
   elif computeSize(conf, t) == szIllegalRecursion or isRecursiveStructuralType(t):
     localError(conf, info, "illegal recursion in type '" & typeToString(t) & "'")
+  elif (let st = t.skipTypes({tyGenericInst, tyAlias, tySink}); st.kind == tySet) and
+      st.elementType.kind notin {tyGenericParam, tyError} and
+      isOrdinalType(st.elementType, allowEnumWithHoles = true) and
+      lengthOrd(conf, st.elementType) > toInt128(MaxSetElements):
+    # (#8141)
+    localError(conf, info, "set is too large; use `std/sets` for ordinal " &
+      "types with more than 2^16 elements")
 
 proc searchInstTypes*(g: ModuleGraph; key: PType): PType =
   result = nil
@@ -38,7 +64,9 @@ proc searchInstTypes*(g: ModuleGraph; key: PType): PType =
       genericTyp.sym != nil): return
 
   for inst in typeInstCacheItems(g, genericTyp.sym):
-    if inst.id == key.id: return inst
+    if inst.id == key.id:
+      g.recordIcImplDep(inst)
+      return inst
     if inst.kidsLen < key.kidsLen:
       # XXX: This happens for prematurely cached
       # types such as Channel[empty]. Why?
@@ -55,6 +83,7 @@ proc searchInstTypes*(g: ModuleGraph; key: PType): PType =
                             flags = {ExactGenericParams, PickyCAliases}):
           break matchType
 
+      g.recordIcImplDep(inst)
       return inst
 
 proc cacheTypeInst(c: PContext; inst: PType) =
@@ -239,6 +268,38 @@ proc hasValuelessStatics(n: PNode): bool =
       if hasValuelessStatics(x):
         return true
 
+proc instCustomPragmas(cl: var TReplTypeVars, n: PNode): PNode =
+  ## the custom pragmas of a field of a generic object type for an instance:
+  ## a type param becomes the type it is bound to, `prepareNode` does the rest
+  proc substTypeParams(cl: var TReplTypeVars, n: PNode): PNode =
+    case n.kind
+    of nkSym:
+      result = n
+      if n.typ != nil and n.typ.kind == tyTypeDesc and n.typ.len > 0 and
+          n.typ.base.kind == tyGenericParam:
+        let t = replaceTypeVarsT(cl, n.typ)
+        if t.kind == tyTypeDesc and t.base.kind notin {tyGenericParam, tyNone}:
+          # the shape `ty(int16)` has outside of a generic:
+          result = if t.base.sym != nil: newSymNode(t.base.sym, n.info)
+                   else: newNodeI(nkType, n.info)
+          result.typ = t
+    of nkNone..pred(nkSym), succ(nkSym)..nkNilLit:
+      result = n
+    else:
+      result = shallowCopy(n)
+      for i in 0..<n.len: result[i] = substTypeParams(cl, n[i])
+  # only the arguments: a call of a pragma template has no value to compute
+  result = copyNode(n)
+  for it in n:
+    if it.kind in nkPragmaCallKinds and it.len > 0:
+      var call = copyNode(it)
+      call.typ = nil
+      call.add it[0]
+      for i in 1..<it.len: call.add prepareNode(cl, substTypeParams(cl, it[i]))
+      result.add call
+    else:
+      result.add it
+
 proc replaceTypeVarsN(cl: var TReplTypeVars, n: PNode; start=0; expectedType: PType = nil): PNode =
   if n == nil: return
   result = copyNode(n)
@@ -281,6 +342,9 @@ proc replaceTypeVarsN(cl: var TReplTypeVars, n: PNode; start=0; expectedType: PT
         # node-type agree (else a generic-object instance serializes a field
         # whose sym-type diverges from its node-type -> loader/computeSize crash).
         result.sym.typ = result.typ
+      if result.sym.customPragmas != nil:
+        # `field {.tag(N).}` in `R[N: static int]` is `tag(2)` in `R[2]`
+        result.sym.customPragmas = instCustomPragmas(cl, result.sym.customPragmas)
     # sym type can be nil if was gensym created by macro, see #24048
     if result.sym.typ != nil and result.sym.typ.kind == tyVoid:
       # don't add the 'void' field
@@ -420,6 +484,10 @@ proc handleGenericInvocation(cl: var TReplTypeVars, t: PType): PType =
   var body = t.genericHead
   if body.kind != tyGenericBody:
     internalError(cl.c.config, cl.info, "no generic body")
+  if t.kidsLen > body.kidsLen:
+    # more arguments than generic parameters; only reached after an error,
+    # e.g. a malformed generic type under `nim check` (#10217)
+    return errorType(cl.c)
   var header = t
   # search for some instantiation here:
   if cl.allowMetaTypes:
@@ -675,7 +743,7 @@ proc replaceTypeVarsTAux(cl: var TReplTypeVars, t: PType, isInstValue = false): 
   case t.kind
   of tyGenericInvocation:
     result = handleGenericInvocation(cl, t)
-    if result.last.kind == tyUserTypeClass:
+    if result.kind != tyError and result.last.kind == tyUserTypeClass:
       result.kind = tyUserTypeClassInst
 
   of tyGenericBody:
@@ -811,6 +879,13 @@ proc replaceTypeVarsTAux(cl: var TReplTypeVars, t: PType, isInstValue = false): 
       of tyArray:
         let idx = result.indexType
         internalAssert cl.c.config, idx.kind != tyStatic
+        let idxB = idx.skipTypes({tyGenericInst, tyAlias, tySink})
+        if idxB.kind in {tyInt..tyInt64, tyUInt..tyUInt64} and
+            lengthOrd(cl.c.config, idxB) > high(uint16).int:
+          # like `array[int, T]`, e.g. a value passed to a non-static
+          # generic param (#10363)
+          localError(cl.c.config, cl.info,
+            "index type '" & typeToString(idxB) & "' for array is too large")
 
       of tyObject, tyTuple:
         propagateFieldFlags(result, result.n)
@@ -889,7 +964,9 @@ when false:
 proc recomputeFieldPositions*(t: PType; obj: PNode; currPosition: var int) =
   if t != nil and t.baseClass != nil:
     let b = skipTypes(t.baseClass, skipPtrs)
-    recomputeFieldPositions(b, b.n, currPosition)
+    # the base is not an object after an instantiation error (`nim check`)
+    if b.kind == tyObject:
+      recomputeFieldPositions(b, b.n, currPosition)
   case obj.kind
   of nkRecList:
     for i in 0..<obj.len: recomputeFieldPositions(nil, obj[i], currPosition)

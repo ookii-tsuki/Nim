@@ -278,7 +278,7 @@ proc computeSizeAlign(conf: ConfigRef; typ: PType) =
       # the C backend emits `array[0, T]` as `T[1]` (C has no zero-length
       # arrays), so reserve one element here as well (bug #26220):
       let n = if len == Zero: One else: len
-      typ.size = toInt64Checked(n * int32(elemSize), szTooBigSize)
+      typ.size = toInt64Checked(n * toInt128(elemSize), szTooBigSize)
       typ.align = typ.elementType.align
 
   of tyUncheckedArray:
@@ -309,6 +309,10 @@ proc computeSizeAlign(conf: ConfigRef; typ: PType) =
     if typ.elementType.kind == tyGenericParam:
       typ.size = szUncomputedSize
       typ.align = szUncomputedSize
+    elif lengthOrd(conf, typ.elementType) > toInt128(MaxSetElements):
+      # an error is reported elsewhere (#8141)
+      typ.size = szUnknownSize
+      typ.align = szUnknownSize
     else:
       let length = toInt64(lengthOrd(conf, typ.elementType))
       if length <= 8:
@@ -522,11 +526,12 @@ template foldOffsetOf*(conf: ConfigRef; n: PNode; fallback: PNode): PNode =
       dotExpr = nil
       localError(config, node.info, "can't compute offsetof on this ast")
 
-  assert dotExpr != nil
-  let value = dotExpr[0]
-  let member = dotExpr[1]
-  computeSizeAlign(config, value.typ)
-  let offset = member.sym.offset
+  # `dotExpr` is nil after the error above, which `nim check` survives (#17693)
+  let offset =
+    if dotExpr != nil and dotExpr[1].kind == nkSym:
+      computeSizeAlign(config, dotExpr[0].typ)
+      dotExpr[1].sym.offset
+    else: -1
   if offset >= 0:
     let tmp = newIntNode(nkIntLit, offset)
     tmp.info = node.info

@@ -115,7 +115,7 @@ proc storeInt(dest: Address; k: MemKind; v: int64) {.inline.} =
 
 proc readString(c: PCtx; s: Address): string =
   if not canRead(c.mem, s, 16): return ""
-  let L = ld[int](s)
+  let L = ldInt(s)
   let p = ld[Address](s +! StrPayloadOffset)
   if L <= 0 or p == 0 or not canRead(c.mem, p, PayloadDataOffset + L): return ""
   result = loadString(s)
@@ -177,7 +177,7 @@ proc reserve(c: PCtx; s: Address; newLen, esize, ealign: int; isString: bool): b
   ## makes the payload of the string or seq at `s` unique and big enough for
   ## `newLen` elements. Returns false for invalid memory.
   if not canWrite(c.mem, s, 16): return false
-  let len = ld[int](s)
+  let len = ldInt(s)
   let p = ld[Address](s +! StrPayloadOffset)
   let dataOff = payloadDataOffset(ealign)
   if len < 0: return false
@@ -198,27 +198,27 @@ proc reserve(c: PCtx; s: Address; newLen, esize, ealign: int; isString: bool): b
 proc strSetLen(c: PCtx; s: Address; newLen: int): bool =
   if newLen < 0: return false
   if not reserve(c, s, newLen, 1, 1, true): return false
-  let len = ld[int](s)
+  let len = ldInt(s)
   let p = ld[Address](s +! StrPayloadOffset)
   if newLen > len:
     zeroMem(toPtr(p +! (PayloadDataOffset + len)), newLen - len + 1)
   else:
     st[char](p +! (PayloadDataOffset + newLen), '\0')
-  st[int](s, newLen)
+  stInt(s, newLen)
   result = true
 
 proc strAdd(c: PCtx; s: Address; data: pointer; L: int): bool =
-  let len = ld[int](s)
+  let len = ldInt(s)
   if not reserve(c, s, len + L, 1, 1, true): return false
   let p = ld[Address](s +! StrPayloadOffset)
   if L > 0: moveMem(toPtr(p +! (PayloadDataOffset + len)), data, L)
   st[char](p +! (PayloadDataOffset + len + L), '\0')
-  st[int](s, len + L)
+  stInt(s, len + L)
   result = true
 
 proc strAddStr(c: PCtx; s, src: Address): bool =
   if not canRead(c.mem, src, 16): return false
-  let L = ld[int](src)
+  let L = ldInt(src)
   if L <= 0: return true
   # `src` may alias `s`; copy first:
   let tmp = readString(c, src)
@@ -245,19 +245,19 @@ proc strAsgn(c: PCtx; dest, src: Address): bool =
   if dest == src: return true
   if not canWrite(c.mem, dest, 16) or not canRead(c.mem, src, 16): return false
   let sp = ld[Address](src +! StrPayloadOffset)
-  let L = ld[int](src)
+  let L = ldInt(src)
   if L < 0 or not payloadOk(c, sp, PayloadDataOffset + L): return false
   if ld[Address](dest +! StrPayloadOffset) == sp and sp != 0:
-    st[int](dest, L)
+    stInt(dest, L)
     return true
   if sp == 0 or isLiteralPayload(sp):
     if not freePayload(c, dest): return false
-    st[int](dest, L)
+    stInt(dest, L)
     st[Address](dest +! StrPayloadOffset, sp)
     return true
   if not payloadOk(c, sp, PayloadDataOffset + L): return false
   let tmp = loadString(src)
-  st[int](dest, 0)
+  stInt(dest, 0)
   result = strSetLen(c, dest, 0)
   if result and tmp.len > 0:
     result = strAdd(c, dest, unsafeAddr tmp[0], tmp.len)
@@ -284,13 +284,13 @@ proc emptyCString(c: PCtx): Address =
 
 proc seqSetLen(c: PCtx; s: Address; newLen, esize, ealign: int): bool =
   if newLen < 0: return false
-  let len = ld[int](s)
+  let len = ldInt(s)
   if newLen > len:
     if not reserve(c, s, newLen, esize, ealign, false): return false
     let p = ld[Address](s +! StrPayloadOffset)
     let dataOff = payloadDataOffset(ealign)
     zeroMem(toPtr(p +! (dataOff + len*esize)), (newLen - len)*esize)
-  st[int](s, newLen)
+  stInt(s, newLen)
   result = true
 
 # ------------------------- type headers --------------------------------------
@@ -370,7 +370,8 @@ proc payloadParts(c: PCtx; a: Address; t: PType): seq[(Address, PType)] =
   case t.kind
   of tyArray:
     let et = t.elementType
-    if skipForLayout(et).kind in {tyString, tySequence, tyArray, tyTuple, tyObject}:
+    if skipForLayout(et).kind in {tyString, tySequence, tyArray, tyTuple, tyObject} or
+        isNimNodeType(skipForLayout(et)):
       let esize = vmSizeOf(c.layouts, c.config, et)
       for i in 0..<toInt(lengthOrd(c.config, t)):
         result.add (a +! i*esize, et)
@@ -385,14 +386,19 @@ proc payloadParts(c: PCtx; a: Address; t: PType): seq[(Address, PType)] =
   else: discard
 
 proc unshare(c: PCtx; a: Address; t: PType): bool =
-  ## gives the strings and seqs of the value at `a` their own payloads.
+  ## gives the strings and seqs of the value at `a` their own payloads and
+  ## counts its NimNodes.
   result = true
   let t = skipForLayout(t)
+  if isNimNodeType(t):
+    if not canRead(c.mem, a, 8): return false
+    incNodeRef(c.mem, ld[int64](a))
+    return
   case t.kind
   of tyString:
     if not canWrite(c.mem, a, 16): return false
     let p = ld[Address](a +! StrPayloadOffset)
-    let L = ld[int](a)
+    let L = ldInt(a)
     if p != 0 and L <= 0 and not isLiteralPayload(p):
       # an empty copy does not need a payload (`setLen(s, 0)` keeps it):
       st[Address](a +! StrPayloadOffset, 0)
@@ -404,7 +410,7 @@ proc unshare(c: PCtx; a: Address; t: PType): bool =
   of tySequence:
     if not canWrite(c.mem, a, 16): return false
     let p = ld[Address](a +! StrPayloadOffset)
-    let L = ld[int](a)
+    let L = ldInt(a)
     if p != 0 and L <= 0 and not isLiteralPayload(p):
       st[Address](a +! StrPayloadOffset, 0)
     elif p != 0 and L > 0:
@@ -426,9 +432,13 @@ proc unshare(c: PCtx; a: Address; t: PType): bool =
 
 proc destroyValue(c: PCtx; a: Address; t: PType): bool =
   ## `=destroy` for a value without hooks: frees the payloads of its
-  ## strings and seqs.
+  ## strings and seqs and releases its NimNodes.
   result = true
   let t = skipForLayout(t)
+  if isNimNodeType(t):
+    if not canRead(c.mem, a, 8): return false
+    decNodeRef(c.mem, ld[int64](a))
+    return
   case t.kind
   of tyString:
     result = freePayload(c, a)
@@ -437,7 +447,7 @@ proc destroyValue(c: PCtx; a: Address; t: PType): bool =
     let p = ld[Address](a +! StrPayloadOffset)
     let et = t.elementType
     if p != 0 and not isLiteralPayload(p) and hasPayloads(et):
-      let L = ld[int](a)
+      let L = ldInt(a)
       let esize = vmSizeOf(c.layouts, c.config, et)
       let off = payloadDataOffset(vmAlignOf(c.layouts, c.config, et))
       if L < 0 or not canRead(c.mem, p, off + L*esize): return false
@@ -465,6 +475,13 @@ proc asgnValue(c: PCtx; dest, src: Address; t: PType; isSink: bool): bool =
     result = unshare(c, tmp, t) and destroyValue(c, dest, t)
     copyMem(toPtr(dest), toPtr(tmp), size)
     discard heapDealloc(c.mem, tmp)
+
+proc destroyReg(c: PCtx; a: Address; t: PType) =
+  ## releases the value in register format at `a` that the host owns: the
+  ## arguments and the result of a call from the compiler into the VM.
+  if t == nil or isEmptyType(t) or not hasPayloads(t): return
+  let p = if isBig(c.layouts, c.config, t): ld[Address](a) else: a
+  if p != 0: discard destroyValue(c, p, t)
 
 proc dynamicType(c: PCtx; objAddr: Address): PType =
   ## the type stored in the header of an inheritable object
@@ -1201,7 +1218,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
       let s = rAdr(ra)
       checkWrite(s, 16)
       if len < 0: stackTrace(c, tos, pc, formatErrorIndexBound(len, high(int)))
-      st[int](s, 0)
+      stInt(s, 0)
       st[Address](s +! StrPayloadOffset, 0)
       ensure strSetLen(c, s, len)
     of opcStrSetLen:
@@ -1239,7 +1256,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
       let oa = rAdr(instr.regB)
       checkRead(oa, 16)
       let data = ld[Address](oa)
-      let len = ld[int](oa +! 8)
+      let len = ldInt(oa +! 8)
       checkRead(data, len)
       var s = newString(len)
       if len > 0: copyMem(addr s[0], toPtr(data), len)
@@ -1254,7 +1271,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
       checkWrite(s, 16)
       let len = int(rInt(instr.regB))
       if len < 0: stackTrace(c, tos, pc, formatErrorIndexBound(len, high(int)))
-      st[int](s, 0)
+      stInt(s, 0)
       st[Address](s +! StrPayloadOffset, 0)
       ensure seqSetLen(c, s, len, esize, ealign)
     of opcSeqSetLen:
@@ -1268,7 +1285,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
       let ealign = int(w shr 32)
       let s = rAdr(instr.regB)
       checkWrite(s, 16)
-      let len = ld[int](s)
+      let len = ldInt(s)
       ensure seqSetLen(c, s, len+1, esize, ealign)
       rAdr(ra) = ld[Address](s +! StrPayloadOffset) +! (payloadDataOffset(ealign) + len*esize)
     of opcSeqData:
@@ -1292,7 +1309,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
         let s = rAdr(ra)
         let p = if canRead(c.mem, s, 16): ld[Address](s +! StrPayloadOffset) else: 0
         stackTrace(c, tos, pc, errInvalidFree & (if isFreedBlock(c.mem, p): " (double free)" else: "") &
-          " " & $cast[int](p) & " in region kind " &
+          " " & $p & " in region kind " &
           (let r = findRegion(c.mem, p); if r < 0: "none" else: "?"))
     of opcSamePayload:
       let a = rAdr(instr.regB)
@@ -1307,8 +1324,8 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
       let ealign = int(rInt(instr.regC+1))
       checkWrite(d, 16)
       checkRead(s, 16)
-      let len = ld[int](s)
-      st[int](d, min(ld[int](d), len))
+      let len = ldInt(s)
+      stInt(d, min(ldInt(d), len))
       ensure seqSetLen(c, d, len, esize, ealign)
       ensure reserve(c, d, len, esize, ealign, false)
       if len > 0:
@@ -1329,7 +1346,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
     of opcMakeUnique:
       let s = rAdr(ra)
       checkWrite(s, 16)
-      ensure reserve(c, s, ld[int](s), 1, 1, true)
+      ensure reserve(c, s, ldInt(s), 1, 1, true)
 
     # ----------------------------- refs and objects
     of opcNewRef:
@@ -1340,6 +1357,16 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
       if p != 0:
         checkWrite(p -! RefHeaderSize, RefHeaderSize)
         incRef(p)
+    of opcNodeIncRef, opcNodeDecRef:
+      when defined(nimVmNodeRcCheck):
+        try:
+          if instr.opcode == opcNodeIncRef: incNodeRef(c.mem, rInt(ra))
+          else: decNodeRef(c.mem, rInt(ra))
+        except AssertionDefect as e:
+          stackTrace(c, tos, pc, e.msg & " at pc " & $pc)
+      else:
+        if instr.opcode == opcNodeIncRef: incNodeRef(c.mem, rInt(ra))
+        else: decNodeRef(c.mem, rInt(ra))
     of opcDecRefIsLast:
       let p = rAdr(instr.regB)
       if p == 0:
@@ -1459,11 +1486,17 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
       if prc.offset < -1:
         # it's a callback:
         var shape = callShapeOf(c, prc)
-        c.callbacks[-prc.offset-2](
-          VmArgs(ctxp: cast[pointer](c), args: slotAddr(rb + 2 + shape.resultSlots),
-                 res: slotAddr(rb + 2), shape: addr shape,
-                 currentException: c.currentExceptionA,
-                 currentLineInfo: c.debug[pc]))
+        try:
+          c.callbacks[-prc.offset-2](
+            VmArgs(ctxp: cast[pointer](c), args: slotAddr(rb + 2 + shape.resultSlots),
+                   res: slotAddr(rb + 2), shape: addr shape,
+                   currentException: c.currentExceptionA,
+                   currentLineInfo: c.debug[pc]))
+        except IOError, OSError:
+          # a host proc like `readFile` failed; report it like an unhandled
+          # VM exception instead of crashing the compiler (#22558, #24530)
+          let e = getCurrentException()
+          stackTrace(c, tos, pc, "unhandled exception: " & e.msg & " [" & $e.name & "]")
       elif importcCond(c, prc):
         globalError(c.config, c.debug[pc], "cannot evaluate importc'ed proc at compile time: " &
                     prc.name.s)
@@ -1720,6 +1753,16 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
         setNode(ra, n)
       else:
         stackTrace(c, tos, pc, "node is not a symbol")
+    of opcSymCustomPragmas:
+      let a = node(instr.regB)
+      if a != nil and a.kind == nkSym:
+        let p = if a.sym.kind == skField and a.sym.customPragmas != nil:
+                  copyTree(a.sym.customPragmas)
+                else: newNode(nkPragma)
+        p.flags.incl nfIsRef
+        setNode(ra, p)
+      else:
+        stackTrace(c, tos, pc, "node is not a symbol")
     of opcSymIsInstantiationOf:
       let a = node(instr.regB)
       let b = node(instr.regC)
@@ -1781,7 +1824,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
       let oa = rAdr(instr.regC)
       checkRead(oa, 16)
       let data = ld[Address](oa)
-      let len = ld[int](oa +! 8)
+      let len = ldInt(oa +! 8)
       checkRead(data, len*8)
       if nfSem in u.flags and allowSemcheckedAstModification notin c.config.legacyFeatures:
         stackTrace(c, tos, pc, "typechecked nodes may not be modified")
@@ -1943,12 +1986,13 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
                             proc (conf: ConfigRef; info: TLineInfo; msg: TMsgKind; arg: string) =
                               if error.len == 0 and msg <= errMax:
                                 error = formatMsg(conf, info, msg, arg))
-      setNode(ra, newNode(nkEmpty))
       if error.len > 0:
         c.errorFlag = error
+        setNode(ra, newNode(nkEmpty))
       elif ast.len != 1:
         c.errorFlag = formatMsg(c.config, c.debug[pc], errGenerated,
           "expected expression, but got multiple statements")
+        setNode(ra, newNode(nkEmpty))
       else:
         setNode(ra, ast[0])
     of opcParseStmtToAst, opcParseStmtToAstFile:
@@ -2003,7 +2047,24 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): Address =
         # operator. `nkAccQuoted` is used to quote an identifier that
         # wouldn't be allowed to use in an unquoted context.
         if n.kind == nkPostfix: n = n[1]
-        if n.kind == nkAccQuoted: n = n[0]
+        if n.kind == nkAccQuoted:
+          if n.len == 1:
+            n = n[0]
+          else:
+            # multi-part quoted identifier like `field name`: concatenate
+            # the parts the same way `considerQuotedIdent` does.
+            result = ""
+            for i in 0..<n.len:
+              let x = n[i]
+              case x.kind
+              of nkIdent: result.add x.ident.s
+              of nkSym: result.add x.sym.name.s
+              of nkOpenSymChoice, nkClosedSymChoice, nkOpenSym:
+                if x[0].kind == nkSym: result.add x[0].sym.name.s
+                else: return ""
+              of nkLiterals - nkFloatLiterals: result.add x.renderTree
+              else: return ""
+            return
         case n.kind
         of nkStrLit..nkTripleStrLit: n.strVal
         of nkIdent: n.ident.s
@@ -2263,8 +2324,11 @@ proc execProc*(c: PCtx; sym: PSym; args: openArray[PNode]): PNode =
       let ret = sym.typ.returnType
       if ret != nil and not isEmptyType(ret) and a != 0:
         result = regToNode(c, a, ret, sym.info)
+        destroyReg(c, a, ret)
       else:
         result = newNodeI(nkEmpty, sym.info)
+      for i in 0..<sym.typ.paramsLen:
+        destroyReg(c, firstParam +! shape.paramOffsets[i], shape.paramTypes[i])
       c.mem.popFrames(tos.mark)
   else:
     result = nil
@@ -2372,6 +2436,7 @@ proc evalConstExprAux(module: PSym; idgen: IdGenerator;
     result = newNodeI(nkEmpty, n.info)
   else:
     result = regToNode(c, a, n.typ, n.info)
+    if n.typ.kind != tyTypeDesc and not defined(nimVmNoInject): destroyReg(c, a, n.typ)
   c.mem.popFrames(tos.mark)
   if result.info.col < 0: result.info = n.info
   c.mode = oldMode
@@ -2417,7 +2482,14 @@ proc setupMacroParam(c: PCtx; x: PNode; typ: PType; dest: Address) =
     if n.kind in {nkHiddenSubConv, nkHiddenStdConv}: n = n[1]
     n.flags.incl nfIsRef
     n.typ = x.typ
+    # the caller owns the handle, see `releaseMacroParam`:
     st[int64](dest, nodeHandle(c.mem, n))
+
+proc releaseMacroParam(c: PCtx; typ: PType; dest: Address) =
+  if typ.kind == tyStatic:
+    destroyReg(c, dest, typ.base)
+  else:
+    decNodeRef(c.mem, ld[int64](dest))
 
 proc unshareTree(n: PNode; seen: var IntSet): PNode =
   ## The old VM copied a NimNode from the macro's input whenever it was
@@ -2485,6 +2557,15 @@ proc evalMacroCall*(module: PSym; idgen: IdGenerator; g: ModuleGraph; templInstC
                  " generic parameter(s)")
   let a = rawExecute(c, start.pc, tos)
   result = if a != 0: getNode(c.mem, ld[int64](a)) else: nil
+  if a != 0: decNodeRef(c.mem, ld[int64](a))
+  for i, param in paramTypes(sym.typ):
+    let idx = i-FirstParamAt
+    releaseMacroParam(c, param, firstParam +! shape.paramOffsets[idx])
+  for i in 0..<gp.len:
+    let idx = sym.typ.signatureLen + i
+    if idx < n.len and i < start.genericParamSlots.len:
+      releaseMacroParam(c, gp[i].sym.typ,
+                        tos.fp +! int(start.genericParamSlots[i]) * SlotSize)
   c.mem.popFrames(tos.mark)
   if result == nil:
     if a != 0:

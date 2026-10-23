@@ -11,7 +11,7 @@
 
 import
   ast, astalgo, trees, msgs, platform, renderer, options,
-  lineinfos, int128, modulegraphs, astmsgs
+  lineinfos, int128, modulegraphs, astmsgs, nversion
 
 import std/[intsets, strutils]
 
@@ -349,7 +349,7 @@ proc isNimNodeType*(t: PType): bool {.inline.} =
   t.sym != nil and t.sym.magic == mPNimrodNode and t.kind in {tyRef, tyObject}
 
 proc isManagedMemory(t: PType): bool =
-  # NimNodes only exist at compile time; the VM does not count them
+  # NimNodes only exist at compile time; only the VM counts them
   result = (t.kind in GcTypeKinds and not isNimNodeType(t)) or
     (t.kind == tyProc and t.callConv == ccClosure)
 
@@ -993,19 +993,23 @@ proc sameTypeAux(x, y: PType, c: var TSameTypeClosure): bool =
   case a.kind
   of tyEmpty, tyChar, tyBool, tyNil, tyPointer, tyString, tyCstring,
      tyInt..tyUInt64, tyTyped, tyUntyped, tyVoid:
+    template compareCAliases(sameIdentity: untyped) =
+      let symFlagsA = if a.sym != nil: a.sym.flags else: {}
+      let symFlagsB = if b.sym != nil: b.sym.flags else: {}
+      if (symFlagsA+symFlagsB) * {sfImportc, sfExportc} != {}:
+        result = sameIdentity and symFlagsA == symFlagsB and
+          a.sym.loc.snippet == b.sym.loc.snippet
+
     result = sameFlags(a, b)
     if result and {PickyCAliases, ExactTypeDescValues} <= c.flags:
       # additional requirement for the caching of generics for importc'ed types:
-      # the symbols must be identical too:
-      let symFlagsA = if a.sym != nil: a.sym.flags else: {}
-      let symFlagsB = if b.sym != nil: b.sym.flags else: {}
-      if (symFlagsA+symFlagsB) * {sfImportc, sfExportc} != {}:
-        result = symFlagsA == symFlagsB
+      # the symbol flags and external names must match too. Ordinary aliases
+      # inherit the external name and can still share an instantiation.
+      compareCAliases(true)
     elif result and PickyBackendAliases in c.flags:
-      let symFlagsA = if a.sym != nil: a.sym.flags else: {}
-      let symFlagsB = if b.sym != nil: b.sym.flags else: {}
-      if (symFlagsA+symFlagsB) * {sfImportc, sfExportc} != {}:
-        result = a.id == b.id
+      # Imported aliases can share the builtin's type ID while using a
+      # different C type, e.g. `const char *` instead of `cstring`.
+      compareCAliases(a.id == b.id)
 
   of tyStatic, tyFromExpr:
     result = exprStructuralEquivalent(a.n, b.n) and sameFlags(a, b)
@@ -1017,9 +1021,10 @@ proc sameTypeAux(x, y: PType, c: var TSameTypeClosure): bool =
     if result:
       ifFastObjectTypeCheckFailed(a, b):
         cycleCheck()
-        # should be generic, and belong to the same generic head type:
-        assert a.typeInst != nil, "generic object " & $a & " has no typeInst"
-        assert b.typeInst != nil, "generic object " & $b & " has no typeInst"
+        # should be generic, and belong to the same generic head type; an
+        # object with a non-concrete field is not, after an error (`nim check`):
+        if a.typeInst == nil or b.typeInst == nil:
+          result = false
         if result:
           withoutShallowFlags:
             # this is required because of generic `ref object`s,
@@ -1629,7 +1634,15 @@ proc isRecursiveStructuralType(t: PType, cycleDetector: var IntSet): bool =
   of tyRef, tyPtr, tyVar, tyLent, tySink,
       tyArray, tyUncheckedArray, tySequence, tyDistinct:
     return isRecursiveStructuralType(t.elementType, cycleDetector)
-  of tyAlias, tyGenericInst:
+  of tyGenericInst:
+    # `A = TableRef[string, A]` (#14015)
+    var cycleDetectorCopy: IntSet
+    for i in FirstGenericParamAt..<t.kidsLen-1:
+      cycleDetectorCopy = cycleDetector
+      if isRecursiveStructuralType(t[i], cycleDetectorCopy):
+        return true
+    return isRecursiveStructuralType(t.skipModifier, cycleDetector)
+  of tyAlias:
     return isRecursiveStructuralType(t.skipModifier, cycleDetector)
   else:
     return false
@@ -1689,7 +1702,7 @@ proc lookupFieldAgain*(ty: PType; field: PSym): PSym =
   while ty != nil:
     ty = ty.skipTypes(skipPtrs)
     assert(ty.kind in {tyTuple, tyObject})
-    result = lookupInRecord(ty.n, field.name)
+    result = lookupInRecord(ty.n, field)
     if result != nil: break
     ty = ty.baseClass
   if result == nil: result = field

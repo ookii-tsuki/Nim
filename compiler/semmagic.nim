@@ -96,6 +96,15 @@ proc semArrGet(c: PContext; n: PNode; flags: TExprFlags): PNode =
       result = errorNode(c, n)
 
 proc semArrPut(c: PContext; n: PNode; flags: TExprFlags): PNode =
+  let a = n[1].skipHiddenAddr
+  if n.len > 3 and a.typ != nil and a.typ.skipTypes(abstractInst).kind in {tyPtr, tyRef}:
+    # `p[i] = x` dereferences `p`, also when written as `[]=`(p, i, x)
+    # like templates do (#7272):
+    var call = newNodeI(nkCall, n.info)
+    call.add newIdentNode(getIdent(c.cache, "[]="), n.info)
+    call.add newDeref(a)
+    for i in 2..<n.len: call.add n[i]
+    return semExprNoType(c, call)
   # rewrite `[]=`(a, i, x)  back to ``a[i] = x``.
   let b = newNodeI(nkBracketExpr, n.info)
   b.add(n[1].skipHiddenAddr)
@@ -230,6 +239,10 @@ proc evalTypeTrait(c: PContext; traitCall: PNode, operand: PType, context: PSym)
     result = newIntNodeT(toInt128(ord(types.canFormAcycle(c.graph, operand))), traitCall, c.idgen, c.graph)
   of "hasDefaultValue":
     result = newIntNodeT(toInt128(ord(not operand.requiresInit)), traitCall, c.idgen, c.graph)
+  of "hasNonZeroDefault":
+    # true if `default(T)` is not the all-zero bit pattern (field default values)
+    let cond = defaultNodeField(c, traitCall[1], operand, false) != nil
+    result = newIntNodeT(toInt128(ord(cond)), traitCall, c.idgen, c.graph)
   of "isNamedTuple":
     var operand = operand.skipTypes({tyGenericInst})
     let cond = operand.kind == tyTuple and operand.n != nil
@@ -454,6 +467,7 @@ proc turnFinalizerIntoDestructor(c: PContext; orig: PSym; info: TLineInfo): PSym
   # nkDeref is for 'ref T':  x[].field
   # nkHiddenDeref is for 'var T': x<hidden deref [] here>.field
   proc transform(c: PContext; n: PNode; old, fresh: PType; oldParam, newParam: PSym): PNode =
+    if n == nil: return nil # incomplete AST after an error under `nim check`
     result = shallowCopy(n)
     if sameTypeOrNil(n.typ, old):
       result.typ = fresh
