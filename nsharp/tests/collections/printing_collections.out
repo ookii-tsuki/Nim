@@ -1,0 +1,19 @@
+[1, 2]
+[1, 2]
+[[1, 2], [3, 4]]
+[]
+{"a": 1, "b": 2}
+{1: "a", 2: "b"}
+[3]
+[2, 1]
+["a", "b"]
+['p', 'q']
+[[1], []]
+[5]
+[1, "x", ...]
+(Tags: [1, 2], Names: ["a", "b"])
+arr: [7] [8]
+System.Collections.Generic.IEnumerable`1[System.Int32]
+[1, 3]
+System.Collections.Generic.List`1[System.Double]
+hi

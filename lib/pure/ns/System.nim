@@ -729,6 +729,12 @@ proc Sort*[T](a: NsArray[T]; comparer: IComparer[T]) {.nsStatic: "Array".} =
 proc WriteLine*[T](x: T) {.nsStatic: "Console".} = echo x
 proc WriteLine*() {.nsStatic: "Console".} = echo ""
 proc Write*[T](x: T) {.nsStatic: "Console".} = stdout.write x
+proc WriteLine*(x: NsArray[char]) {.nsStatic: "Console".} =
+  ## C#'s `WriteLine(char[])`: the characters, as a string.
+  for c in x: stdout.write c
+  stdout.write '\n'
+proc Write*(x: NsArray[char]) {.nsStatic: "Console".} =
+  for c in x: stdout.write c
 proc WriteLine*[A](format: string; arg0: A; args: varargs[RootRef, nsBox]) {.nsStatic: "Console".} =
   ## `Console.WriteLine("{0} {1}", a, b)`: a composite format (see `string.Format`).
   ## It takes at least one argument after the format, so a lone string is printed

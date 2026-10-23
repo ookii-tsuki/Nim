@@ -1,0 +1,32 @@
+// A collection or array prints its elements, in foreach order, and a dictionary
+// its entries, as Nim prints a seq or a table (C# prints the type's name; see the
+// .csout). Strings and chars are quoted, a collection holding itself prints `...`,
+// and a LINQ query is not run to print it. Console.WriteLine(char[]) prints the
+// characters, as C#'s overload for it does.
+using System;
+using System.Linq;
+using System.Collections.Generic;
+class Bag { public List<int> Tags = new List<int> { 1, 2 }; public string[] Names = { "a", "b" }; }
+class Program {
+  static void Main() {
+    Console.WriteLine(new List<int> { 1, 2 });
+    Console.WriteLine(new int[] { 1, 2 });
+    Console.WriteLine(new int[,] { { 1, 2 }, { 3, 4 } });
+    Console.WriteLine(new int[0]);
+    Console.WriteLine(new Dictionary<string, int> { ["a"] = 1, ["b"] = 2 });
+    Console.WriteLine(new SortedDictionary<int, string> { [2] = "b", [1] = "a" });
+    Console.WriteLine(new HashSet<int> { 3 });
+    var st = new Stack<int>(); st.Push(1); st.Push(2); Console.WriteLine(st);
+    var q = new Queue<string>(); q.Enqueue("a"); q.Enqueue("b"); Console.WriteLine(q);
+    Console.WriteLine(new LinkedList<char>(new[] { 'p', 'q' }));
+    Console.WriteLine(new List<List<int>> { new List<int> { 1 }, new List<int>() });
+    IList<int> view = new List<int> { 5 }; Console.WriteLine(view);
+    var self = new List<object> { 1, "x" }; self.Add(self); Console.WriteLine(self);
+    Console.WriteLine(new Bag());
+    Console.WriteLine("arr: " + new int[] { 7 } + " " + $"{new List<int> { 8 }}");
+    Console.WriteLine(new List<int> { 3, 1 }.Where(x => x > 1));
+    Console.WriteLine(new List<int> { 3, 1 }.OrderBy(x => x).ToList());
+    Console.WriteLine(new List<double> { 1.5 }.GetType());
+    Console.WriteLine(new char[] { 'h', 'i' });
+  }
+}

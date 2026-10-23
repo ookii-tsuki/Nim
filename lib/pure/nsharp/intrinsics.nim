@@ -291,12 +291,18 @@ proc `$`*[T](x: Option[T]): string =
 # lists the fields (an auto-property shows under its own name, events and statics
 # not at all) and these say how each value is written.
 
+method nsValueText*(x: RootRef): string {.base.} = $x
+  ## An object as an element or field prints; a boxed value overrides it, so a
+  ## boxed string is quoted as a string is.
+
 proc nsFieldValue*[T](x: T): string =
   ## One field's value: a string or char quoted, null as `nil`, anything else as
   ## it prints.
   when T is string or T is char: result.addQuoted(x)
   elif T is Option:
     result = (if x.isSome: nsFieldValue(x.get) else: "nil")
+  elif T is RootRef:
+    result = (if x.isNil: "nil" else: nsValueText(x))
   elif T is ref or T is ptr or T is pointer:
     result = (if x.isNil: "nil" else: $x)
   elif (T is proc):
@@ -312,17 +318,49 @@ proc nsFieldAdd*[T](text: var string; name: string; value: T) =
   text.add nsFieldValue(value)
 
 var nsPrinting {.threadvar.}: seq[pointer]
-template nsObjectText*(self: typed; fields: untyped): string =
-  ## `(fields)`, or `...` for an object already being printed further out, so a
-  ## cycle (`a.Next = a`) ends.
+template nsGuarded*(self: typed; text: untyped): string =
+  ## `text`, or `...` for an object already being printed further out, so a cycle
+  ## (`a.Next = a`, a list holding itself) ends.
   when self is ref:
     let nsAt = cast[pointer](self)
     if nsAt in nsPrinting: "..."
     else:
       nsPrinting.add nsAt
-      try: "(" & fields & ")"
+      try: text
       finally: discard nsPrinting.pop()
-  else: "(" & fields & ")"
+  else: text
+
+template nsObjectText*(self: typed; fields: untyped): string =
+  ## `(fields)`: a class or struct without a `ToString` of its own.
+  nsGuarded(self, "(" & fields & ")")
+
+proc nsItemsText*[O, C](owner: O; c: C): string =
+  ## `owner`'s elements `c`, in `foreach` order: `[1, 2]`. (C# prints the type's
+  ## name; `GetType()` still gives it.)
+  mixin items
+  nsGuarded(owner):
+    var text = "["
+    for x in c:
+      if text.len > 1: text.add ", "
+      text.add nsFieldValue(x)
+    text.add ']'
+    text
+
+proc nsItemsText*[C](c: C): string = nsItemsText(c, c)
+  ## A collection as its elements.
+
+proc nsPairsText*[C](c: C): string =
+  ## A dictionary as its entries: `{"a": 1, "b": 2}`.
+  mixin items
+  nsGuarded(c):
+    var text = "{"
+    for kv in c:
+      if text.len > 1: text.add ", "
+      text.add nsFieldValue(kv.Key)
+      text.add ": "
+      text.add nsFieldValue(kv.Value)
+    text.add '}'
+    text
 
 # `.NET`'s nullable members and `??` are the *type's* business, so they are ordinary
 # procs over `Option` reached by Nim's own dot-call, the way `int.high` reaches
@@ -824,6 +862,8 @@ type
   NsBox*[T] = ref object of NsBoxed
     v*: T
 
+method nsValueText*[T](b: NsBox[T]): string = nsFieldValue(b.v)
+
 # `Equals` and `GetHashCode` of a value, as .NET defines them for its built-in types:
 # a `double` equals itself when NaN, and hashes its bits with every NaN alike and
 # `-0.0` as `0.0`; a `long` folds its halves, a `char` repeats itself in the upper
@@ -996,6 +1036,21 @@ proc nsMdName[T](rank: int): string =
   name & "[" & repeat(',', rank - 1) & "]"
 
 method ToString*(a: NsMdBase): string = a.nsName
+method ToString*[T](a: NsMdArray[T]): string =
+  ## Its elements as nested rows, `[[1, 2], [3, 4]]`, not C#'s `System.Int32[,]`.
+  proc rows(a: NsMdArray[T]; dim, at: int; text: var string) =
+    text.add '['
+    var stride = 1
+    for k in dim + 1 ..< a.nsDims.len: stride *= a.nsDims[k]
+    for i in 0 ..< a.nsDims[dim]:
+      if i > 0: text.add ", "
+      if dim == a.nsDims.high: text.add nsFieldValue(a.nsData[at + i])
+      else: rows(a, dim + 1, at + i * stride, text)
+    text.add ']'
+  nsGuarded(a):
+    var text = ""
+    rows(a, 0, 0, text)
+    text
 method nsTypeName*(a: NsMdBase): string = a.nsName
 
 proc nsNewMd*[T](t: typedesc[T]; dims: varargs[int]): NsMdArray[T] =
@@ -1131,6 +1186,9 @@ iterator mitems*[T](a: NsArray[T]): var T =
 iterator pairs*[T](a: NsArray[T]): (int, T) =
   nsArrCheck(a)
   for i, x in a.nsData: yield (i, x)
+
+method ToString*[T](a: NsArray[T]): string = nsItemsText(a, a.nsData)
+  ## Its elements, `[1, 2]`, not C#'s `System.Int32[]` (`GetType()` still says that).
 
 template nsElemRef*(x: untyped): untyped =
   ## `ref a[i]`: the element as a location of its own, which a `ref` return or

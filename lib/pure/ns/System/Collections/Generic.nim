@@ -68,7 +68,7 @@ from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remov
 from ../../../nsharp/hashmap as nshash import nil
 from ../../../nsharp/intrinsics import nsNilFail, NsDisposeStack, nsDisposeRun, Type, nsTypeNamed, nsTypeOf, nsDisplay, nsGenericType, nsDynType, nsCoreLib, nsCollectionsLib,
   nsVtByKey, nsKeyOf, Equals, GetHashCode,
-  NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
+  NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`, ToString, nsItemsText, nsPairsText
 export Collections
 
 # `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
@@ -1568,6 +1568,15 @@ template nsArgType(T: typedesc): Type =
   ## A type argument's type; one with no .NET name (a native C++ type) by Nim's.
   mixin nsTypeOf
   when compiles(nsTypeOf(T)): nsTypeOf(T) else: nsTypeNamed($T)
+proc `$`*[T](s: IEnumerable[T]): string =
+  ## A query is not run to print it (it may be endless, or its lambdas have
+  ## effects): it prints as a sequence of its element type. `ToList()` prints
+  ## the elements.
+  "System.Collections.Generic.IEnumerable`1[" & nsArgType(T).nsDisplay & "]"
+proc ToString*[T](s: IEnumerable[T]): string = $s
+proc `$`*[T](s: IOrderedEnumerable[T]): string =
+  "System.Linq.IOrderedEnumerable`1[" & nsArgType(T).nsDisplay & "]"
+proc ToString*[T](s: IOrderedEnumerable[T]): string = $s
 template nsCachedType(body: untyped): Type =
   ## Made once per instantiation: `GetType()` and `ToString()` of a collection are
   ## its constructed type.
@@ -1613,6 +1622,20 @@ method nsDynType*[T](x: SortedSet[T]): Type = nsTypeOf(SortedSet[T])
 method nsDynType*[K, V](x: SortedDictionary[K, V]): Type = nsTypeOf(SortedDictionary[K, V])
 method nsDynType*[K, V](x: SortedList[K, V]): Type = nsTypeOf(SortedList[K, V])
 method nsDynType*[E, P](x: PriorityQueue[E, P]): Type = nsTypeOf(PriorityQueue[E, P])
+
+# Printing a collection shows its elements in `foreach` order, `[1, 2]`, and a
+# dictionary its entries, `{"a": 1}` -- not the type's name, as C# prints
+# (`GetType()` still gives that). A `PriorityQueue`, which C# does not enumerate,
+# keeps its name.
+method ToString*[T](x: List[T]): string = nsItemsText(x)
+method ToString*[T](x: HashSet[T]): string = nsItemsText(x)
+method ToString*[T](x: Queue[T]): string = nsItemsText(x)
+method ToString*[T](x: Stack[T]): string = nsItemsText(x)
+method ToString*[T](x: LinkedList[T]): string = nsItemsText(x)
+method ToString*[T](x: SortedSet[T]): string = nsItemsText(x)
+method ToString*[K, V](x: Dictionary[K, V]): string = nsPairsText(x)
+method ToString*[K, V](x: SortedDictionary[K, V]): string = nsPairsText(x)
+method ToString*[K, V](x: SortedList[K, V]): string = nsPairsText(x)
 
 # --- classes implementing `IEnumerable<T>` / `IEnumerator<T>` --------------------
 #

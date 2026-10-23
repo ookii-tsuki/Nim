@@ -1,0 +1,27 @@
+using System
+using System.Collections.Generic
+using System.Linq
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member List.Add = System.Collections.Generic | void
+member Queue.Enqueue = System.Collections.Generic | void
+member Queue.Enqueue = System.Collections.Generic | void
+member Stack.Push = System.Collections.Generic | void
+member Stack.Push = System.Collections.Generic | void

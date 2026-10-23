@@ -12,4 +12,4 @@ System.Exception: outer
  ---> System.ArgumentException: inner (Parameter 'p')
    --- End of inner exception stack trace ---
 Demo.Box`1[[System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]
-System.Collections.Generic.List`1[System.Int32] System.Collections.Generic.SortedSet`1[System.String]
+System.Collections.Generic.List`1[System.Int32] []

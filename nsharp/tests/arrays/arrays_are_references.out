@@ -16,7 +16,7 @@ x
 true
 null array
 out of range
-System.Int32[]
+[13, 12, 17]
 true
 Int32[]
 17

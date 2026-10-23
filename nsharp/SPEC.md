@@ -525,7 +525,15 @@ name as C# does:** `(Name: "Rex", Age: 3, Friend: nil)`, a base class's fields
 first (private ones too), an auto-property under its own name, events, statics
 and constants left out, strings and chars quoted, null as `nil`, and an object
 already being printed further out as `...`, so a cycle ends. A record keeps C#'s
-`R { A = 1 }`, and `GetType().ToString()` still gives the type's name. String `+` accepts
+`R { A = 1 }`, and `GetType().ToString()` still gives the type's name. **A
+collection or array likewise prints its elements**, in `foreach` order, as Nim
+prints a seq: `[1, 2]`, a multi-dimensional array as nested rows
+`[[1, 2], [3, 4]]`, a dictionary its entries `{"a": 1}`, a collection holding
+itself `...`. A LINQ query is not run to be printed (it may be endless, or its
+lambdas have effects): it prints as ``System.Collections.Generic.IEnumerable`1[T]``,
+and `ToList()` prints the elements. A `PriorityQueue`, which C# does not
+enumerate, keeps its name. `Console.WriteLine(char[])` prints the characters, as
+C#'s overload for it does. String `+` accepts
 any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 `"obj=" + obj` both work.
 | Null-forgiving `x!` | suppress NRT | ✅ v1 | front (a postfix with no effect: it only silences nullable warnings, which N# does not issue) |
