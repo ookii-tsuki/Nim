@@ -83,6 +83,21 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'nsTypeOf'
     nkEmpty
     nkEmpty
@@ -323,6 +338,21 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -426,6 +456,52 @@ nkStmtList
     nkEmpty
   nkCall
     nkIdent 'nsStaticInitPerson'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Person'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "Name"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'NameBacking'
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "Age"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'AgeBacking'
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "Id"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'IdBacking'
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "Tag"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'TagBacking'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -760,6 +836,24 @@ nkStmtList
     nkStmtList
       nkCall
         nkIdent 'newPerson'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -776,7 +870,12 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.Program"
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'

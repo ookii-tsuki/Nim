@@ -101,6 +101,27 @@ nkStmtList
         nkBracketExpr
           nkIdent 'nsRegistry_Label'
           nkIdent 'T'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Registry'
+          nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -322,6 +343,21 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -473,6 +509,37 @@ nkStmtList
       nkCall
         nkIdent 'nsTypeNamed'
         nkStrLit "Demo.Program"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Registry'
+          nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "Value"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'Value'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -496,13 +563,11 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsGenericName'
-        nkStrLit "Demo.Registry"
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
         nkCall
-          nkIdent 'nsDisplay'
-          nkCall
-            nkIdent 'nsTypeOf'
-            nkIdent 'T'
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -839,6 +904,24 @@ nkStmtList
                 nkIdent 'Registry'
                 nkIdent 'float64'
               nkNilLit
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -855,7 +938,12 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.Program"
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
   nkMethodDef
     nkPostfix
       nkIdent '*'

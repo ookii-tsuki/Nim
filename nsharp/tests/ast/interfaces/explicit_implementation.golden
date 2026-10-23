@@ -301,6 +301,21 @@ nkStmtList
       nkIdent 'base'
     nkEmpty
     nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Polite'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -493,6 +508,21 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Ticker'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'ToString'
     nkEmpty
     nkEmpty
@@ -654,6 +684,21 @@ nkStmtList
       nkIdent 'Ticker'
     nkPragma
       nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -971,6 +1016,24 @@ nkStmtList
       nkCall
         nkIdent 'default'
         nkIdent 'ICounter'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Polite'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -987,7 +1050,12 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.Polite"
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1264,6 +1332,31 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Ticker'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "Count"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'Count'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'ToString'
     nkEmpty
     nkEmpty
@@ -1277,7 +1370,12 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.Ticker"
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1522,6 +1620,24 @@ nkStmtList
       nkCall
         nkIdent 'initTicker'
         nkIdent 'result'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -1538,7 +1654,12 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
-      nkStrLit "Demo.Program"
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'

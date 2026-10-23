@@ -169,6 +169,21 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Counter'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -340,6 +355,21 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Cell'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'ToString'
     nkEmpty
     nkEmpty
@@ -428,6 +458,21 @@ nkStmtList
       nkIdent 'Cell'
     nkPragma
       nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -601,6 +646,52 @@ nkStmtList
     nkEmpty
   nkCall
     nkIdent 'nsStaticInitProgram'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Counter'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "v"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'v'
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "Gets"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'Gets'
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "Sets"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'Sets'
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "d"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'd'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -617,7 +708,12 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
-      nkStrLit "Counter"
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -825,6 +921,31 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Cell'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "X"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'X'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'ToString'
     nkEmpty
     nkEmpty
@@ -838,7 +959,12 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
-      nkStrLit "Cell"
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -927,6 +1053,24 @@ nkStmtList
       nkCall
         nkIdent 'initCell'
         nkIdent 'result'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -943,7 +1087,12 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkStmtList
-      nkStrLit "Program"
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'

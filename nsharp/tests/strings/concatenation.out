@@ -4,4 +4,4 @@ n=3
 c=b
 world5
 flag=true
-obj=Demo.Thing
+obj=(N: 0)

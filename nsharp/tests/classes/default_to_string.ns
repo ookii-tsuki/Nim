@@ -1,0 +1,46 @@
+// A class or struct that does not override ToString prints its fields, as Nim
+// prints an object (C# prints the type's name; see the .csout): base class fields
+// first, private ones too, an auto-property under its own name, events, statics
+// and constants left out, strings and chars quoted, null as nil, and an object
+// already being printed as `...`.
+using System;
+namespace Demo {
+  class Animal { public string Name; protected int legs = 4; private double weight = 3.5; }
+  class Dog : Animal {
+    public int Age { get; set; } = 3;
+    public string Upper => Name.ToUpper();
+    public event Action Barked;
+    public Dog Friend;
+    public int? Maybe;
+    public char Initial = 'R';
+    public bool Good = true;
+    static int count;
+    const int Max = 9;
+  }
+  class Empty { }
+  class Node { public int Value; public Node Next; }
+  struct Pt { public int X; public int Y; }
+  class Box<T> { public T Value; }
+  class Named { public string Id = "n1"; public override string ToString() => "Named " + Id; }
+  class SubNamed : Named { public int Extra = 7; }
+  record Rec(int A, string B);
+  class Program {
+    static void Main() {
+      var d = new Dog { Name = "Rex" };
+      Console.WriteLine(d);
+      d.Friend = d;
+      d.Maybe = 5;
+      Console.WriteLine(d);
+      Console.WriteLine(new Empty());
+      var list = new Node { Value = 1, Next = new Node { Value = 2 } };
+      Console.WriteLine(list);
+      Console.WriteLine(new Pt { X = 1, Y = 2 });
+      Console.WriteLine(new Box<string> { Value = "hi" });
+      Console.WriteLine(new Box<Pt>());
+      Console.WriteLine(new SubNamed());
+      Console.WriteLine(new Rec(1, "b"));
+      object o = new Pt { X = 3 };
+      Console.WriteLine(o.ToString() + " " + $"{new Empty()}");
+    }
+  }
+}

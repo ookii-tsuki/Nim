@@ -1,0 +1,10 @@
+(Name: "Rex", legs: 4, weight: 3.5, Age: 3, Friend: nil, Maybe: nil, Initial: 'R', Good: true)
+(Name: "Rex", legs: 4, weight: 3.5, Age: 3, Friend: ..., Maybe: 5, Initial: 'R', Good: true)
+()
+(Value: 1, Next: (Value: 2, Next: nil))
+(X: 1, Y: 2)
+(Value: "hi")
+(Value: (X: 0, Y: 0))
+Named n1
+Rec { A = 1, B = b }
+(X: 3, Y: 0) ()

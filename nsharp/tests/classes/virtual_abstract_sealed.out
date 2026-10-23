@@ -9,9 +9,9 @@ Dog: bit says yip
 animal
 puppy
 Dog(max)
-Zoo.Bird
-Zoo.Plain
+(name: "tweety")
+()
 Dog(rex)
 (3, 4)
 at (3, 4)
-Zoo.Bare
+(V: 0)

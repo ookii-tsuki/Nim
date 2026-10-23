@@ -4711,10 +4711,40 @@ proc recordMembers(l: Lowerer; n: NsNode; isClass: bool; into: var seq[PNode]) =
     if isRoot: md[4] = newTree(nkPragma, info, l.id("base", info))
     into.add md
 
+proc fieldText(l: Lowerer; n: NsNode; isClass: bool; selfDefs: PNode): PNode =
+  ## `nsFieldText(self)`: the instance fields as `Name: value, ...`, a base class's
+  ## first (through its own `nsFieldText`, so its private fields print too). An
+  ## auto-property shows under its own name; events, statics and constants not.
+  let info = n.info
+  let body = newNodeI(nkStmtList, info)
+  var start: PNode = newAtom(nkStrLit, "", info)
+  if isClass and n.typ != nil and n.typ.kind == nsnTypeName and
+      l.scope.classes.hasKey(n.typ.name) and not l.scope.nativeBased(n.name):
+    start = newTree(nkCall, info, l.id("nsFieldText", info),
+      newTree(nkCall, info, l.objTypeToNim(n.typ, info), l.id("self", info)))
+  body.add newTree(nkAsgn, info, l.id("result", info), start)
+  for m in n.sons:
+    if m.attrs.isStatic or m.attrs.isConst or m.attrs.isEvent: continue
+    var value: PNode = nil
+    if m.kind == nsnFieldDecl:
+      value = newTree(nkDotExpr, info, l.id("self", info), l.memberIdent(m.name, nil, info))
+    elif m.kind == nsnPropertyDecl and m.explicitIface.len == 0 and isAutoProperty(m):
+      value = newTree(nkDotExpr, info, l.id("self", info), l.id(m.name & "Backing", info))
+    if value != nil:
+      body.add newTree(nkCall, info, l.id("nsFieldAdd", info), l.id("result", info),
+                       newAtom(nkStrLit, m.name, info), value)
+  let fp = newNodeI(nkFormalParams, info)
+  fp.add l.id("string", info)
+  fp.add copyTree(selfDefs)
+  result = l.mkProc(l.alwaysExported("nsFieldText", info), fp, body, info)
+  if n.typeParams.len > 0: result[2] = l.genericParams(l.clsTypeParams, info)
+
 proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
-  ## C#'s `object.ToString()` names the dynamic type, namespace included. A class
-  ## that does not override it, and inherits no override from this compilation, gets
-  ## a `method` that says so; a struct gets a proc, and `$` for both reaches it.
+  ## `ToString()` of a class that does not override it, and inherits no override
+  ## from this compilation, prints its fields as Nim prints an object -- not the
+  ## type's name, as C#'s `object.ToString()` does (SPEC §7). A class gets a
+  ## `method`, a struct a proc, and `$` for both reaches it. A record keeps C#'s
+  ## `R { A = 1 }`.
   result = @[]
   var overridden = false
   for c in l.scope.chain(n.name):
@@ -4761,12 +4791,17 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
     result.add l.mkProc(l.alwaysExported("ToString", info), fp,
                         newTree(nkStmtList, info, text), info, withPragmas = true,
                         kind = (if isClass: nkMethodDef else: nkProcDef))
-  elif not overridden:
+  if not n.attrs.isRecord:
+    result.add l.fieldText(n, isClass, selfDefs)
+  if not overridden and not n.attrs.isRecord:
+    ## Not C#'s type name: the fields, as Nim prints an object (see `nsObjectText`).
     let fp = newNodeI(nkFormalParams, info)
     fp.add l.id("string", info)
     fp.add copyTree(selfDefs)
+    let text = newTree(nkCall, info, l.id("nsObjectText", info), l.id("self", info),
+                       newTree(nkCall, info, l.id("nsFieldText", info), l.id("self", info)))
     result.add l.mkProc(l.alwaysExported("ToString", info), fp,
-                        newTree(nkStmtList, info, copyTree(typeName)), info,
+                        newTree(nkStmtList, info, text), info,
                         withPragmas = true, kind = (if isClass: nkMethodDef else: nkProcDef))
   ## `typeof(C)` and, for a class, the dynamic type `GetType()` reads.
   if n.typeParams.len > 0:

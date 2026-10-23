@@ -518,9 +518,14 @@ v2.
 **Stringification of primitives is Nim's.** `$` and `ToString` are the same thing.
 Two consequences are deliberate: a bool reads `true` where C# writes `True`, and a
 whole float reads `3.0` where C# writes `3` (a format spec, `{x:G}`, gives C#'s
-form). An object prints the way C# prints it: `ToString` is a dispatched `method`,
-so a class shows its override, or its namespace-qualified name, for its *dynamic*
-type; a struct likewise through a generated `$`. String `+` accepts
+form). `ToString` is a dispatched `method`, so a class shows its override for its
+*dynamic* type; a struct likewise through a generated `$`. **A class or struct
+without an override prints its fields, as Nim prints an object, not its type's
+name as C# does:** `(Name: "Rex", Age: 3, Friend: nil)`, a base class's fields
+first (private ones too), an auto-property under its own name, events, statics
+and constants left out, strings and chars quoted, null as `nil`, and an object
+already being printed further out as `...`, so a cycle ends. A record keeps C#'s
+`R { A = 1 }`, and `GetType().ToString()` still gives the type's name. String `+` accepts
 any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 `"obj=" + obj` both work.
 | Null-forgiving `x!` | suppress NRT | ✅ v1 | front (a postfix with no effect: it only silences nullable warnings, which N# does not issue) |
@@ -645,7 +650,7 @@ These look like trivial desugars but are not - each needs an explicit rule.
 | Dynamic dispatch | via vtable | ✅ v1 | Nim `method` |
 | `base.M()` calls | call base impl | ✅ v1 | desugar (→ `procCall M(Base(self), ...)`; `base.P` likewise for a property) |
 | `this` | self ref | ✅ v1 | desugar |
-| `Object` base (`Equals`/`ToString`/`GetHashCode`) | universal methods | ✅ v1 | `ToString` is a base `method` in the intrinsics; every class N# compiles overrides it with its namespace-qualified name unless it (or a base) overrides it, and `$` calls it, so `Console.WriteLine(obj)` prints what C# prints |
+| `Object` base (`Equals`/`ToString`/`GetHashCode`) | universal methods | ✅ v1 | `ToString` is a base `method` in the intrinsics; every class N# compiles overrides it with a print of its fields (§7: not C#'s type name) unless it (or a base) overrides it, and `$` calls it, so `Console.WriteLine(obj)` prints the override where there is one |
 | Boxing/unboxing (value↔`object`) | implicit | ✅ v1 | sem + lib (§4.4). Boxing a `T?` boxes its value, or is null when absent; `(int?)o` unboxes to a `T?`; a string literal's box is shared, so identical literals are one instance (ECMA 6.4.5.6) |
 | Operator overloading | `operator +` | ✅ v1 | front |
 | A member named like a type | `public Color Color { get; set; }`, a method `Item()` beside a class `Item` (members are in their type's declaration space, ECMA 7.3) | ✅ v1 | desugar: Nim allows no proc and type of one name in a module, so such a property, method or event (and a field of that name) is `nsM_Color` (`memberIdent`, and `renameMemberDecls` for the declarations); a library member named like a type of the compilation (`e.Message` beside a class `Message`) is called through its module (`System.Message(e)`), since `x.Message` would convert to the type |

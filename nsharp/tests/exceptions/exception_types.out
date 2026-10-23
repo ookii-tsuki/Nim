@@ -15,6 +15,6 @@ ArgumentOutOfRangeException
 Demo.MyErr MyErr Demo.MyErr
 true
 Box`1
-Demo.Box`1[System.String] Demo.Pair`2[System.Int32,Demo.Box`1[System.Boolean]]
+() ()
 Inner Demo.Outer+Inner
 Int32[] List`1 Int32

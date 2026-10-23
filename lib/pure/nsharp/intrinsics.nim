@@ -285,6 +285,45 @@ proc `$`*[T](x: Option[T]): string =
   ## null.
   if x.isSome: $x.get else: ""
 
+# A class or struct that does not override `ToString` prints its fields, as Nim's
+# `$` prints an object: `(Name: "Rex", Age: 3)`, base class fields first. This is
+# a deliberate departure from C#, which prints the type's name. The compiler
+# lists the fields (an auto-property shows under its own name, events and statics
+# not at all) and these say how each value is written.
+
+proc nsFieldValue*[T](x: T): string =
+  ## One field's value: a string or char quoted, null as `nil`, anything else as
+  ## it prints.
+  when T is string or T is char: result.addQuoted(x)
+  elif T is Option:
+    result = (if x.isSome: nsFieldValue(x.get) else: "nil")
+  elif T is ref or T is ptr or T is pointer:
+    result = (if x.isNil: "nil" else: $x)
+  elif (T is proc):
+    result = (if x.isNil: "nil" else: "...")
+  elif compiles($x): result = $x
+  else: result = "..."
+
+proc nsFieldAdd*[T](text: var string; name: string; value: T) =
+  ## `, name: value` onto the fields printed so far.
+  if text.len > 0: text.add ", "
+  text.add name
+  text.add ": "
+  text.add nsFieldValue(value)
+
+var nsPrinting {.threadvar.}: seq[pointer]
+template nsObjectText*(self: typed; fields: untyped): string =
+  ## `(fields)`, or `...` for an object already being printed further out, so a
+  ## cycle (`a.Next = a`) ends.
+  when self is ref:
+    let nsAt = cast[pointer](self)
+    if nsAt in nsPrinting: "..."
+    else:
+      nsPrinting.add nsAt
+      try: "(" & fields & ")"
+      finally: discard nsPrinting.pop()
+  else: "(" & fields & ")"
+
 # `.NET`'s nullable members and `??` are the *type's* business, so they are ordinary
 # procs over `Option` reached by Nim's own dot-call, the way `int.high` reaches
 # `high(int32)`. The compiler knows none of these names.
