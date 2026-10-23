@@ -1,0 +1,41 @@
+// Enums: [Flags] printing and bit operations, an underlying type, explicit and
+// implicit member values, casts of undefined values, switch over members,
+// comparison, and an enum as a dictionary key.
+using System;
+using System.Collections.Generic;
+namespace Demo
+{
+    [Flags]
+    enum Perm : byte { None = 0, Read = 1, Write = 2, Exec = 4, All = Read | Write | Exec }
+
+    enum Level { Low = -1, Mid, High = 10, Max }
+
+    class Program
+    {
+        static void Main()
+        {
+            Perm p = Perm.Read | Perm.Exec;
+            Console.WriteLine(p);
+            Console.WriteLine(p | Perm.Write);
+            Console.WriteLine(p.HasFlag(Perm.Read) + " " + p.HasFlag(Perm.Write));
+            Console.WriteLine((Perm)0);
+            Console.WriteLine((Perm)8);
+            Console.WriteLine((int)Perm.All);
+            p &= ~Perm.Read;
+            Console.WriteLine(p);
+            Console.WriteLine(Level.Mid + " " + (int)Level.Mid + " " + (int)Level.Max);
+            Level l = Level.High;
+            switch (l)
+            {
+                case Level.Low: Console.WriteLine("low"); break;
+                case Level.High: Console.WriteLine("high"); break;
+                default: Console.WriteLine("other"); break;
+            }
+            Console.WriteLine(l > Level.Mid);
+            var d = new Dictionary<Level, string>();
+            d[Level.Max] = "max";
+            Console.WriteLine(d[Level.Max]);
+            Console.WriteLine((Level)42);
+        }
+    }
+}

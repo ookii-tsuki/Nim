@@ -1,2 +1,0 @@
-C# allows `yield` only in a member returning an iterator interface.
-code: NS1624

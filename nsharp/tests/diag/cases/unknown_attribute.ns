@@ -1,0 +1,8 @@
+// An attribute names a class that must exist.
+using System;
+namespace Demo
+{
+    [Missing]
+    class Thing { }
+    class Program { static void Main() { Console.WriteLine(new Thing()); } }
+}

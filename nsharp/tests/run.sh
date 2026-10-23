@@ -112,7 +112,7 @@ fi
 
 ## The tests: a program with an expectation, or one that must not compile.
 tests=""
-for ns in "$here"/*.ns "$here"/*/*.ns; do
+for ns in "$here"/*/*.ns "$here"/modules/*/*.ns; do
   [ -f "$ns" ] || continue
   [ -f "${ns%.ns}.fail" ] || [ -f "${ns%.ns}.unsupported" ] || [ -f "${ns%.ns}.out" ] || continue
   tests="$tests $ns"

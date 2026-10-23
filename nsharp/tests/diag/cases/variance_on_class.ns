@@ -1,0 +1,7 @@
+// Only interfaces and delegates have variant type parameters.
+using System;
+namespace Demo
+{
+    class Box<out T> { }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

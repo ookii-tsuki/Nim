@@ -1,0 +1,8 @@
+Directory.CreateDirectory = result:other
+Directory.GetDirectories = result:other
+Directory.GetFiles = result:other
+DirectoryNotFoundException.GetType = result:other
+Exception.GetType = result:other
+File.ReadAllLines = result:other
+FileNotFoundException.GetType = result:other
+IOException.GetType = result:other

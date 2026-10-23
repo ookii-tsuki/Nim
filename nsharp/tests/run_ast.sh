@@ -91,7 +91,7 @@ if [ "$stale" = "1" ]; then
 fi
 
 tests=""
-for ns in "$here"/*.ns "$here"/*/*.ns; do
+for ns in "$here"/*/*.ns "$here"/modules/*/*.ns; do
   [ -f "$ns" ] || continue
   tests="$tests $ns"
   count=$((count + 1))

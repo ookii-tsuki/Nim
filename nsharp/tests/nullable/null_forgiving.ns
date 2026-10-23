@@ -1,0 +1,18 @@
+// The null-forgiving operator `x!` changes nothing at run time.
+using System;
+namespace Demo
+{
+    class Node { public Node Next; public string Name = "n"; }
+    class Program
+    {
+        static void Main()
+        {
+            string s = null;
+            Node n = new Node { Next = new Node { Name = "second" } };
+            Console.WriteLine(n.Next!.Name);
+            Console.WriteLine(n!.Name.Length);
+            string t = s!;
+            Console.WriteLine(t == null);
+        }
+    }
+}

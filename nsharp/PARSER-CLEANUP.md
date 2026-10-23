@@ -150,7 +150,7 @@ Debt deliberately carried into later stages (all listed, none silent):
   receiver's resolved type is an array, string, collection or exception. The
   previous rule applied them to every member access, so a user property named
   `Length` was rewritten to `len` and failed to compile. That is the bug this
-  stage fixes, and `nsharp/tests/p3c/typed.ns` pins it: `xs.Length` is `len`
+  stage fixes, and `nsharp/tests/types/length_and_native_ints.ns` pins it: `xs.Length` is `len`
   while `t.Length` on a user class stays `Length`. The C# compiler agrees.
 * Integer `/` -> `div` when both operands are integers, per SPEC section 7.3
   (Nim's `/` is floating point). Same test covers `7 / 2` -> `3` and
@@ -188,8 +188,7 @@ output matches the C# compiler, and the whole suite is green.
 * **New `.unsupported` test category.** A `.unsupported` marker means "valid C#
   that N# deliberately rejects". `run.sh` requires the compile to fail, and
   `run_cs.sh` requires the C# compiler to *accept* it, so the marker cannot be
-  used to hide a broken test. `p3c/virtual`, `p3c/interface` and
-  `p3c/fieldinit` use it.
+  used to hide a broken test. The tests that use it are in `nsharp/tests/unsupported/`.
 * **`looksLikeDecl` is a real rule.** It now recognises the shape of a type (a
   name, an optional generic argument list, any number of `[]` suffixes) and then
   requires an identifier followed by a declarator token, which is how C# tells a

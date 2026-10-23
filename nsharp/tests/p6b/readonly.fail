@@ -1,2 +1,0 @@
-This test must fail to compile: it assigns a readonly field outside a constructor.
-code: NS0191

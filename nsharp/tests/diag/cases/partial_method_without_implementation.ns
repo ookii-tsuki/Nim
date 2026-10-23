@@ -1,0 +1,10 @@
+// A partial method with an access modifier needs an implementation.
+using System;
+namespace Demo
+{
+    partial class Calc
+    {
+        public partial int Compute();
+    }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

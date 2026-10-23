@@ -1,2 +1,0 @@
-This test must fail to compile: it instantiates an abstract class.
-code: NS0144

@@ -1,0 +1,21 @@
+// C# requires what `using` disposes to implement IDisposable; a Dispose method alone is not enough.
+using System;
+
+namespace Demo
+{
+    class Plain
+    {
+        public void Dispose() { }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            using (var p = new Plain())
+            {
+                Console.WriteLine("x");
+            }
+        }
+    }
+}

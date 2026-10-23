@@ -1,0 +1,39 @@
+// How LINQ's operators evaluate, as .NET's do: an ordering computes each key once
+// per element per level, Zip reads its two sequences in step, a negative count
+// partitions nothing away, Min/Max of doubles see NaN, Min/Max/MinBy/MaxBy of a
+// reference type give null for an empty source, and an integer Average sums in a
+// checked long.
+using System;
+using System.Linq;
+using System.Collections.Generic;
+namespace Demo {
+class Person { public string Name; public int Age; public Person(string n, int a) { Name = n; Age = a; } }
+class Program {
+    static void T(Action f) { try { f(); } catch (Exception e) { Console.WriteLine(e.GetType().Name + ": " + e.Message); } }
+    static int calls = 0;
+    static int Tick(int x) { calls++; return x; }
+    static void Main() {
+        T(() => Console.WriteLine(string.Join(",", new[] { 1, 2, 3, 4 }.SkipLast(-1))));
+        T(() => Console.WriteLine(string.Join(",", new[] { 1, 2, 3, 4 }.TakeLast(-1)) + "|"));
+        var a = new[] { 1, 2, 3, 4 };
+        var two = new[] { 10, 20 };
+        T(() => Console.WriteLine(string.Join(",", two.Zip(a.Select(x => Tick(x)), (p, q) => p + q)) + " calls=" + calls));
+        int keys = 0;
+        var sorted = new[] { 3, 1, 4, 1 }.OrderBy(x => { keys++; return x; }).ThenByDescending(x => { keys++; return -x; }).ToList();
+        Console.WriteLine(string.Join(",", sorted) + " keys=" + keys);
+        Console.WriteLine(string.Join(",", new[] { "b", "a", "c" }.Order()) + " " + string.Join(",", new[] { 2, 9, 5 }.OrderDescending()));
+        var people = new List<Person> { new Person("x", 3), new Person("y", 1), new Person("z", 3) };
+        Console.WriteLine(string.Join(",", people.OrderByDescending(p => p.Age).ThenBy(p => p.Name).Select(p => p.Name)));
+        T(() => Console.WriteLine(new[] { 1.0, double.NaN, 3.0 }.Min()));
+        T(() => Console.WriteLine(new[] { 1.0, double.NaN, 3.0 }.Max()));
+        T(() => Console.WriteLine(new List<Person>().MinBy(p => p.Age) == null));
+        T(() => Console.WriteLine(new List<Person>().MaxBy(p => p.Age) == null));
+        T(() => Console.WriteLine(new List<int>().Min()));
+        T(() => Console.WriteLine(new string[0].Min() == null));
+        T(() => Console.WriteLine(new long[] { long.MaxValue, 1 }.Average()));
+        T(() => Console.WriteLine(new[] { 1, 2 }.Average()));
+        T(() => Console.WriteLine(new float[] { 1.5f, 2.5f }.Average()));
+        T(() => Console.WriteLine(people.Average(p => p.Age)));
+    }
+}
+}

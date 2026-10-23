@@ -75,7 +75,7 @@ proc parseFile*(fileIdx: FileIndex; cache: IdentCache; config: ConfigRef): PNode
 
 ## 3.1 Phase 0 status - ✅ complete
 
-`nim c -r nsharp/tests/hello.ns` prints `hello from N#`, and ordinary `.nim`
+`nim c -r hello.ns` on a hello-world program prints `hello from N#`, and ordinary `.nim`
 compilation is unaffected. Enable with `-d:nsharp`.
 
 **Toolchain note:** this checkout's `devel` source needs a matching compiler to
@@ -153,7 +153,7 @@ hunk to re-check on every upstream rebase.
 Phase 0 is done when this compiles and runs:
 
 ```csharp
-// nsharp/tests/hello.ns
+// hello.ns
 using System;
 
 namespace Hello
@@ -169,7 +169,7 @@ namespace Hello
 ```
 
 ```
-$ nim c -r nsharp/tests/hello.ns
+$ nim c -r hello.ns
 hello from N#
 ```
 
@@ -192,8 +192,10 @@ exported (`*`) symbol and a temporary class-qualifier drop so that
 `Class.StaticMethod(args)` and `Console.WriteLine(x)` both become `Method(args)`.
 
 Test suite: `nsharp/tests/run.sh` compiles each `.ns` and diffs stdout against the
-matching `.out`. Current tests (6/6): `hello`, `p1a/case`, `p1a/sum`, `p1a/control`,
-`p1b/fib`, `p1b/main` (two modules).
+matching `.out`. The first tests were a hello world, case-sensitive names, loops,
+recursion and a two-file program (today `syntax/case_sensitive_names`,
+`controlflow/loops_and_branches`, `methods/recursion` and
+`modules/static_class_in_other_file`).
 
 Delivered in 2a: real classes. `class C { ... }` becomes `type C = ref object`
 with its fields; a constructor `C(params) { ... }` becomes `proc newC(...): C`
@@ -236,20 +238,16 @@ parameterless constructor must name a base constructor, else it is an error
 (matching C# CS7036); this is validated using the constructor arities recorded in
 the class table.
 
-Test suite (21 total): `hello`, `p1a/*` (3), `p1b/*` (2), `p2a/counter`,
-`p2b/auto`, `p2b/shapes`, `p2c/protected`, `p2c/private` (expected failure),
-`p2d/nobase` (expected failure), `p3a/data`, `p3a/exceptions`, `p3b/callbacks`,
-`p3b/collections`, `p3b/nousing` (expected failure), `p3c/typed`,
-`p3c/virtual`, `p3c/interface`, `p3c/fieldinit`.
+The tests of these stages now live under their features (`classes/`,
+`exceptions/`, `delegates/`, `collections/`, `types/`; see `nsharp/tests/README.md`),
+and their expected failures are cases of the diagnostics gate (`diag/cases/`).
 
 A `<name>.fail` marker means both N# and C# must reject the program (an access
 violation, a missing base constructor, a conversion C# refuses). A
 `<name>.unsupported` marker means the
 program is **valid C# that N# deliberately refuses**: `run.sh` requires the N#
 compile to fail and `run_cs.sh` requires the C# compiler to accept it, so the
-marker cannot be used to hide a broken test. `p3c/virtual`, `p3c/interface` and
-`p3c/fieldinit` cover the modifiers and constructs that Stage 3 of the parser
-cleanup stopped ignoring silently. A `<name>.warn` marker is for the diagnostics
+marker cannot be used to hide a broken test. A `<name>.warn` marker is for the diagnostics
 that must be *reported and not be fatal* (the CS8632-style annotation warning):
 `run.sh` runs the test as usual and then recompiles it with warnings enabled to
 require the code, so a warning that silently disappears fails the suite.
@@ -259,8 +257,8 @@ the C#<->N# equivalence gate, unless `NS_SKIP_CS=1` is set. Because every `.ns`
 test is kept deliberately valid C#, `run_cs.sh` recompiles each one with the
 .NET SDK (one temp project, `net10.0`, `--no-incremental` per test) and requires
 the C# program's stdout to match the same `<name>.out`. A `.fail` test must be
-rejected by C# too. A sibling `.ns` with no `.out`/`.fail` (e.g. `p1b/Math.ns`)
-is a module and is compiled together with the program. The gate skips cleanly
+rejected by C# too. A sibling `.ns` with no `.out`/`.fail` (e.g.
+`modules/static_class_in_other_file/Calc.ns`) is a module and is compiled together with the program. The gate skips cleanly
 when `dotnet` is not on PATH.
 
 `nsharp/tests/run_reorder.sh` is the declaration-order gate, run by `run.sh`
@@ -278,7 +276,7 @@ cleanup, see PARSER-CLEANUP.md), run by `run.sh` unless `NS_SKIP_AST=1`. It
 builds `compiler/nsharp/tools/dumpast.nim`, a standalone tool that drives
 `parseNsModule` directly so the compiler tree stays untouched, and diffs its
 output against `nsharp/tests/ast/<name>.golden` for every `.ns` file (including
-the module-only `p1b/Math.ns` and the expected-failure tests). The dump is
+modules such as `modules/static_class_in_other_file/Calc.ns`). The dump is
 deliberately the *parse output*, not post-`sem`: the lowering fused into the
 parser is exactly what the refactor must preserve, and a program's stdout cannot
 show that. Regenerate with `run_ast.sh --update`; the output is verified
@@ -322,8 +320,8 @@ pragma node shape needs more work than it is worth right now).
 
 The gate is not a formality. It immediately found that C# prints `WriteLine` of a
 `bool` as `True`/`False`, while N# printed `true`/`false`. The prelude now has
-`bool` overloads of `WriteLine`/`Write` that match .NET, and `p1a/sum.out` was
-corrected. Anything that intentionally differs from C# must be written down in
+`bool` overloads of `WriteLine`/`Write` that match .NET, and the expected output
+was corrected. Anything that intentionally differs from C# must be written down in
 SPEC section 7.3 rather than silently baked into an expected file.
 
 Delivered in 3b: callbacks and collections.
@@ -354,7 +352,7 @@ Delivered in 3b: callbacks and collections.
   `using System;` is `import "System"` and `using System.Collections.Generic;` is
   `import "System/Collections/Generic"`, resolved under `lib/pure/ns/`, the
   namespace root the frontend puts on the search path. There is no rename table.
-  Nothing is visible without its `using`; `nsharp/tests/p3b/nousing.ns` pins that,
+  Nothing is visible without its `using`; `nsharp/tests/diag/cases/generic_list_without_using.ns` pins that,
   and the C# compiler rejects it for the same reason (CS0246).
 
 Still deferred to Phase 3: generics (3d, including `Func`/`Action`), interfaces,
@@ -404,10 +402,10 @@ rule), and static properties are not yet supported.
   diverges from the real pipeline. The nine AST goldens that changed here are the
   intended `from ... import ...` lines, the drop of the renames, and the nil checks
   and integer division the dump now agrees about, not regressions. Suite now 49
-  tests, 58 golden ASTs, 49 C# cross-checks: `p5b/members` pins that a member the
+  tests, 58 golden ASTs, 49 C# cross-checks: `types/members_resolved_by_type` pins that a member the
   module declares wins over the library's, that `(Total) - 1` is a subtraction
   because `Total` is a value even though it is capitalised, and that the library
-  answers for what the module does not declare; `p4f/qualified` pins the namespace
+  answers for what the module does not declare; `namespaces/fully_qualified_user_names` pins the namespace
   forms above.
 - **v25** - Argument-level type checking, and the `?` on an already-nullable type.
   `sema.nim` now matches a call against the *declared* parameter lists -- every
@@ -437,8 +435,8 @@ rule), and static properties are not yet supported.
   the `NSxxxx` text table had drifted out of order from the enum that indexes it, so
   four codes printed another condition's message. The suite grew a `.warn` marker for
   a diagnostic that must be reported and *not* be fatal -- `run.sh` recompiles that
-  test with warnings enabled and requires the code -- and a new `p5a/` directory whose
-  nine expected-failure tests are each cross-checked against Roslyn by code. Suite now
+  test with warnings enabled and requires the code -- and a directory of nine expected-failure
+  tests (since folded into `diag/cases/`) are each cross-checked against Roslyn by code. Suite now
   47 tests, 56 golden ASTs, 47 C# cross-checks.
 - **v23** - `?.` and `??`. Null-conditional access works on fields, dot-called methods
   and `a?[i]` indexes, and `??` supplies the absent value, so `a?.Value ?? -1` and
@@ -585,7 +583,7 @@ rule), and static properties are not yet supported.
   silent semantics (unimplemented modifiers, `interface`, static properties and
   field initialisers are reported), `looksLikeDecl` applies the real C#
   declaration rule, `>>` splitting moved into the lexer, and a parser progress
-  guard was added. New `.unsupported` test marker and `p3c/*` tests; suite now
+  guard was added. New `.unsupported` test marker and tests of the constructs it stopped ignoring; suite now
   21 tests, 22 golden ASTs, 21 C# cross-checks.
 - **v13** - Stage 1 of the parser cleanup: the frontend is now `ast.nim` +
   `parser.nim` (grammar only) + `symbols.nim` + `sema.nim` + `bcl.nim` +
@@ -607,7 +605,7 @@ rule), and static properties are not yet supported.
   gate, wired into `run.sh` (opt out with `NS_SKIP_CS=1`). It caught the
   `WriteLine(bool)` formatting difference, now fixed in the prelude.
 - **v9** - Phase 3a output cross-checked against the .NET 10 SDK (`dotnet run`);
-  added the `p3a/exceptions` test plus the value-object/`ref`-raise exception
+  added the `exceptions/custom_exceptions` test plus the value-object/`ref`-raise exception
   class model.
 - **v8** - recorded Phase 3a: enums, switch/case, arrays (seq mapping), and
   exceptions; C# `Exception` -> Nim `CatchableError`.

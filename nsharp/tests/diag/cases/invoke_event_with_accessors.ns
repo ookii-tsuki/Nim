@@ -1,0 +1,10 @@
+// An event with accessors can only be added to or removed from.
+using System;
+namespace Demo
+{
+    class B
+    {
+        public event Action E { add { } remove { } } public void Fire() { E(); }
+    }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

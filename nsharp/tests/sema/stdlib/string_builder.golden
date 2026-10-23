@@ -1,0 +1,24 @@
+using System
+using System.Text
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Exception.Message = System | string
+member StringBuilder.Length = System.Text | int
+member StringBuilder.Length = System.Text | int
+member StringBuilder.Length = System.Text | int
+member StringBuilder.Length = System.Text | int
+member StringBuilder.Length = System.Text | int
+member StringBuilder.ToString = System.Text | string
+member StringBuilder.ToString = System.Text | string
+member StringBuilder.ToString = System.Text | string
+member StringBuilder.ToString = System.Text | string
+member StringBuilder.ToString = System.Text | string
+member Type.Name = System.Reflection | string
+member Type.Name = System.Reflection | string
+member object.ToString = System | string
+member string.Replace = System | string

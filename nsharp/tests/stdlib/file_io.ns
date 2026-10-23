@@ -1,0 +1,84 @@
+// System.IO: File, Directory and Path over a scratch directory, StreamReader and
+// StreamWriter, and the exceptions and messages of missing paths.
+using System;
+using System.IO;
+namespace Demo {
+class Program {
+    static void Fails(Action f) { try { f(); } catch (Exception e) { Console.WriteLine(e.GetType().Name + ": " + e.Message.Replace("\n", "|").Replace(Path.GetTempPath(), "<tmp>/")); } }
+    static void Main() {
+        string dir = Path.Combine(Path.GetTempPath(), "nsio_test_dir_fileio");
+        if (Directory.Exists(dir)) Directory.Delete(dir, true);
+        Directory.CreateDirectory(Path.Combine(dir, "sub"));
+        Console.WriteLine(Directory.Exists(dir) + " " + File.Exists(dir));
+        string f = Path.Combine(dir, "a.txt");
+        File.WriteAllText(f, "hello\nworld\r\nlast");
+        Console.WriteLine(File.Exists(f));
+        Console.WriteLine(File.ReadAllText(f).Length);
+        string[] lines = File.ReadAllLines(f);
+        Console.WriteLine(lines.Length + " [" + string.Join("|", lines) + "]");
+        File.AppendAllText(f, "!\n");
+        Console.WriteLine(File.ReadAllLines(f)[2]);
+        File.WriteAllLines(Path.Combine(dir, "b.log"), new string[] { "x", "y" });
+        Console.WriteLine(File.ReadAllText(Path.Combine(dir, "b.log")).Replace("\n", "\\n"));
+        var names = new System.Collections.Generic.List<string> { "p", "q" };
+        File.AppendAllLines(Path.Combine(dir, "b.log"), names);
+        Console.WriteLine(File.ReadAllLines(Path.Combine(dir, "b.log")).Length);
+        File.Copy(f, Path.Combine(dir, "c.txt"));
+        try { File.Copy(f, Path.Combine(dir, "c.txt")); } catch (IOException e) { Console.WriteLine(e.GetType().Name + ": " + e.Message.Replace(dir, "<dir>")); }
+        File.Copy(f, Path.Combine(dir, "c.txt"), true);
+        File.Move(Path.Combine(dir, "c.txt"), Path.Combine(dir, "d.txt"));
+        // The order is the file system's in .NET, so it is sorted here.
+        string[] all = Directory.GetFiles(dir);
+        Array.Sort(all);
+        foreach (var p in all) Console.WriteLine(Path.GetFileName(p));
+        string[] txt = Directory.GetFiles(dir, "*.txt");
+        Array.Sort(txt);
+        foreach (var p in txt) Console.WriteLine("txt " + Path.GetFileName(p));
+        foreach (var p in Directory.GetDirectories(dir)) Console.WriteLine("dir " + Path.GetFileName(p));
+        try { File.ReadAllText(Path.Combine(dir, "nope.txt")); } catch (FileNotFoundException e) { Console.WriteLine(e.GetType().Name + ": " + e.Message.Replace(dir, "<dir>")); }
+        try { File.ReadAllText(Path.Combine(dir, "no/nope.txt")); } catch (IOException e) { Console.WriteLine(e.GetType().Name + ": " + e.Message.Replace(dir, "<dir>")); }
+        try { File.WriteAllText(Path.Combine(dir, "no/nope.txt"), "x"); } catch (DirectoryNotFoundException e) { Console.WriteLine(e.GetType().Name + ": " + e.Message.Replace(dir, "<dir>")); }
+        try { Directory.Delete(dir); } catch (IOException e) { Console.WriteLine(e.GetType().Name + ": " + e.Message.Replace(dir, "<dir>")); }
+        File.Delete(Path.Combine(dir, "d.txt"));
+        File.Delete(Path.Combine(dir, "never.txt"));
+        Console.WriteLine(File.Exists(Path.Combine(dir, "d.txt")));
+        using (var w = new StreamWriter(Path.Combine(dir, "s.txt"))) {
+            w.WriteLine("one");
+            w.Write(2);
+            w.Write('-');
+            w.WriteLine();
+            w.WriteLine("");
+            w.WriteLine("four");
+        }
+        using (var w = new StreamWriter(Path.Combine(dir, "s.txt"), true)) { w.WriteLine("five"); }
+        using (var r = new StreamReader(Path.Combine(dir, "s.txt"))) {
+            Console.WriteLine((char)r.Peek());
+            int n = 0;
+            while (!r.EndOfStream) { n++; Console.WriteLine(n + ": " + r.ReadLine()); }
+        }
+        var r2 = new StreamReader(Path.Combine(dir, "s.txt"));
+        Console.WriteLine((char)r2.Read() + "|" + r2.ReadToEnd().Length + "|" + r2.Peek());
+        r2.Close();
+        Directory.Delete(dir, true);
+        Console.WriteLine(Directory.Exists(dir));
+        Console.WriteLine(Path.Combine("a", "b", "c.txt") + " " + Path.Combine("a/", "/abs", "x") + " " + Path.Combine("", "y"));
+        Console.WriteLine(Path.Join("a", "/b") + " " + Path.GetFileName("/x/y/z.tar.gz") + " " + Path.GetExtension("/x/y/z.tar.gz"));
+        Console.WriteLine(Path.GetFileNameWithoutExtension("/x/y/z.tar.gz") + " " + Path.GetDirectoryName("/x/y/z.tar.gz") + " " + Path.GetDirectoryName("/z"));
+        Console.WriteLine("[" + Path.GetExtension("noext") + "][" + Path.GetExtension("dot.") + "][" + Path.GetExtension(".bashrc") + "][" + Path.GetExtension("a.b/c") + "]");
+        Console.WriteLine(Path.ChangeExtension("/a/b.txt", "md") + " " + Path.ChangeExtension("b", ".cs") + " " + Path.HasExtension("a.b") + " " + Path.IsPathRooted("/a") + Path.IsPathRooted("a"));
+        Console.WriteLine(Path.GetFullPath("/a/./b/../c") + " " + Path.DirectorySeparatorChar + Path.PathSeparator);
+        string moveDir = Path.Combine(Path.GetTempPath(), "nsio_test_dir_move");
+        if (Directory.Exists(moveDir)) Directory.Delete(moveDir, true);
+        Directory.CreateDirectory(moveDir);
+        File.WriteAllText(Path.Combine(moveDir, "a"), "1");
+        File.WriteAllText(Path.Combine(moveDir, "b"), "2");
+        Fails(() => File.Move(Path.Combine(moveDir, "a"), Path.Combine(moveDir, "b")));
+        Fails(() => File.Move(Path.Combine(moveDir, "a"), Path.Combine(moveDir, "no/b")));
+        var closedWriter = new StreamWriter(Path.Combine(moveDir, "closedWriter")); closedWriter.Close();
+        Fails(() => closedWriter.Write(1));
+        var closedReader = new StreamReader(Path.Combine(moveDir, "closedWriter")); closedReader.Close();
+        Fails(() => closedReader.ReadLine());
+        Directory.Delete(moveDir, true);
+    }
+}
+}

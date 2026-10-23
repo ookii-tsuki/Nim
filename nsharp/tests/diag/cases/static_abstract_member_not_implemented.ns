@@ -1,0 +1,8 @@
+// A class must implement a static abstract interface member.
+using System;
+namespace Demo
+{
+    interface IZero<T> where T : IZero<T> { static abstract T Zero { get; } }
+    class N : IZero<N> { public int V; }
+    class Program { static void Main() { Console.WriteLine(new N().V); } }
+}

@@ -1,0 +1,12 @@
+// null alone gives an anonymous type member no type.
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var p = new { A = (string)null, B = null }; Console.WriteLine(p.A);
+        }
+    }
+}

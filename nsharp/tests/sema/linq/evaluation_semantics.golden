@@ -1,0 +1,39 @@
+using System
+using System.Collections.Generic
+using System.Linq
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Exception.Message = System | string
+member List.Average = System.Linq | float
+member List.Min = System.Linq | int
+member Type.Name = System.Reflection | string
+member array.Average = System.Linq | float
+member array.Average = System.Linq | float
+member array.Average = System.Linq | float
+member array.Max = System.Linq | float
+member array.Min = System.Linq | float
+member double.NaN = System | float
+member double.NaN = System | float
+member long.MaxValue = System | int
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string

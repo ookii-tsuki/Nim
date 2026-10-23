@@ -1,2 +1,2 @@
-p3b/gendict.ns explicit-types n#-compile
-p3b/gendict.ns qualify n#-compile
+collections/dictionary.ns explicit-types n#-compile
+collections/dictionary.ns qualify n#-compile

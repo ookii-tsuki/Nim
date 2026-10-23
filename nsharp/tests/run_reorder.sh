@@ -48,7 +48,7 @@ fi
 fail=0
 count=0
 tests=""
-for ns in "$here"/*.ns "$here"/*/*.ns; do
+for ns in "$here"/*/*.ns "$here"/modules/*/*.ns; do
   [ -f "$ns" ] || continue
   [ -f "${ns%.ns}.out" ] || continue
   tests="$tests $ns"

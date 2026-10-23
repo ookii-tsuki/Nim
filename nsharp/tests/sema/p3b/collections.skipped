@@ -1,2 +1,0 @@
-Queue.Dequeue = type-parameter
-Stack.Pop = type-parameter

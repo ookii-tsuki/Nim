@@ -1,0 +1,1397 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkFromStmt
+    nkStrLit "System/Collections/Generic"
+    nkAccQuoted
+      nkIdent '$'
+    nkIdent 'Add'
+    nkIdent 'List'
+    nkAccQuoted
+      nkIdent '[]'
+    nkAccQuoted
+      nkIdent '[]='
+    nkIdent 'items'
+    nkIdent 'newList'
+  nkFromStmt
+    nkStrLit "System/Reflection"
+    nkIdent 'Name'
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkImportStmt
+    nkStrLit "System/IO"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Fails'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'f'
+        nkIdent 'Action0'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Program"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkIdent 'Fails'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'f'
+        nkIdent 'Action0'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'nsStmt'
+            nkCall
+              nkIdent 'f'
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'Exception'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkCall
+                        nkDotExpr
+                          nkIdent 'e'
+                          nkIdent 'GetType'
+                      nkIdent 'Name'
+                    nkStrLit ": "
+                  nkCall
+                    nkDotExpr
+                      nkCall
+                        nkDotExpr
+                          nkDotExpr
+                            nkIdent 'e'
+                            nkIdent 'Message'
+                          nkIdent 'Replace'
+                        nkStrLit "\n"
+                        nkStrLit "|"
+                      nkIdent 'Replace'
+                    nkCall
+                      nkIdent 'GetTempPath'
+                      nkIdent 'Path'
+                    nkStrLit "<tmp>/"
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'dir'
+          nkIdent 'string'
+          nkCall
+            nkIdent 'Combine'
+            nkIdent 'Path'
+            nkCall
+              nkIdent 'GetTempPath'
+              nkIdent 'Path'
+            nkStrLit "nsio_test_dir_fileio"
+      nkIfStmt
+        nkElifBranch
+          nkCall
+            nkIdent 'Exists'
+            nkIdent 'Directory'
+            nkIdent 'dir'
+          nkStmtList
+            nkCall
+              nkIdent 'Delete'
+              nkIdent 'Directory'
+              nkIdent 'dir'
+              nkIdent 'true'
+      nkCall
+        nkIdent 'CreateDirectory'
+        nkIdent 'Directory'
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'dir'
+          nkStrLit "sub"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkCall
+              nkIdent 'Exists'
+              nkIdent 'Directory'
+              nkIdent 'dir'
+            nkStrLit " "
+          nkCall
+            nkIdent 'Exists'
+            nkIdent 'File'
+            nkIdent 'dir'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'f'
+          nkIdent 'string'
+          nkCall
+            nkIdent 'Combine'
+            nkIdent 'Path'
+            nkIdent 'dir'
+            nkStrLit "a.txt"
+      nkCall
+        nkIdent 'WriteAllText'
+        nkIdent 'File'
+        nkIdent 'f'
+        nkStrLit "hello\nworld\r\nlast"
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Exists'
+          nkIdent 'File'
+          nkIdent 'f'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkCall
+            nkIdent 'ReadAllText'
+            nkIdent 'File'
+            nkIdent 'f'
+          nkIdent 'Length'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'lines'
+          nkBracketExpr
+            nkIdent 'NsArray'
+            nkIdent 'string'
+          nkCall
+            nkIdent 'ReadAllLines'
+            nkIdent 'File'
+            nkIdent 'f'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkDotExpr
+                nkIdent 'lines'
+                nkIdent 'Length'
+              nkStrLit " ["
+            nkCall
+              nkIdent 'Join'
+              nkStrLit "|"
+              nkIdent 'lines'
+          nkStrLit "]"
+      nkCall
+        nkIdent 'AppendAllText'
+        nkIdent 'File'
+        nkIdent 'f'
+        nkStrLit "!\n"
+      nkCall
+        nkIdent 'WriteLine'
+        nkBracketExpr
+          nkCall
+            nkIdent 'ReadAllLines'
+            nkIdent 'File'
+            nkIdent 'f'
+          nkIntLit 2
+      nkCall
+        nkIdent 'WriteAllLines'
+        nkIdent 'File'
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'dir'
+          nkStrLit "b.log"
+        nkCall
+          nkBracketExpr
+            nkIdent 'nsArrayFrom'
+            nkIdent 'string'
+          nkBracket
+            nkCall
+              nkIdent 'string'
+              nkStrLit "x"
+            nkCall
+              nkIdent 'string'
+              nkStrLit "y"
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkDotExpr
+            nkCall
+              nkIdent 'ReadAllText'
+              nkIdent 'File'
+              nkCall
+                nkIdent 'Combine'
+                nkIdent 'Path'
+                nkIdent 'dir'
+                nkStrLit "b.log"
+            nkIdent 'Replace'
+          nkStrLit "\n"
+          nkStrLit "\\n"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'names'
+          nkEmpty
+          nkBlockExpr
+            nkEmpty
+            nkStmtList
+              nkVarSection
+                nkIdentDefs
+                  nkIdent 'nsInit1'
+                  nkEmpty
+                  nkCall
+                    nkBracketExpr
+                      nkIdent 'newList'
+                      nkIdent 'string'
+              nkCall
+                nkDotExpr
+                  nkIdent 'nsInit1'
+                  nkIdent 'Add'
+                nkStrLit "p"
+              nkCall
+                nkDotExpr
+                  nkIdent 'nsInit1'
+                  nkIdent 'Add'
+                nkStrLit "q"
+              nkIdent 'nsInit1'
+      nkCall
+        nkIdent 'AppendAllLines'
+        nkIdent 'File'
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'dir'
+          nkStrLit "b.log"
+        nkIdent 'names'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkCall
+            nkIdent 'ReadAllLines'
+            nkIdent 'File'
+            nkCall
+              nkIdent 'Combine'
+              nkIdent 'Path'
+              nkIdent 'dir'
+              nkStrLit "b.log"
+          nkIdent 'Length'
+      nkCall
+        nkIdent 'Copy'
+        nkIdent 'File'
+        nkCall
+          nkIdent 'nsVal'
+          nkIdent 'f'
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'dir'
+          nkStrLit "c.txt"
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Copy'
+            nkIdent 'File'
+            nkCall
+              nkIdent 'nsVal'
+              nkIdent 'f'
+            nkCall
+              nkIdent 'Combine'
+              nkIdent 'Path'
+              nkIdent 'dir'
+              nkStrLit "c.txt"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'IOException'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkCall
+                        nkDotExpr
+                          nkIdent 'e'
+                          nkIdent 'GetType'
+                      nkIdent 'Name'
+                    nkStrLit ": "
+                  nkCall
+                    nkDotExpr
+                      nkDotExpr
+                        nkIdent 'e'
+                        nkIdent 'Message'
+                      nkIdent 'Replace'
+                    nkIdent 'dir'
+                    nkStrLit "<dir>"
+      nkCall
+        nkIdent 'Copy'
+        nkIdent 'File'
+        nkCall
+          nkIdent 'nsVal'
+          nkIdent 'f'
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'dir'
+          nkStrLit "c.txt"
+        nkIdent 'true'
+      nkCall
+        nkIdent 'Move'
+        nkIdent 'File'
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'dir'
+          nkStrLit "c.txt"
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'dir'
+          nkStrLit "d.txt"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'all'
+          nkBracketExpr
+            nkIdent 'NsArray'
+            nkIdent 'string'
+          nkCall
+            nkIdent 'GetFiles'
+            nkIdent 'Directory'
+            nkIdent 'dir'
+      nkCall
+        nkIdent 'Sort'
+        nkIdent 'all'
+      nkForStmt
+        nkIdent 'p'
+        nkIdent 'all'
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkCall
+              nkIdent 'GetFileName'
+              nkIdent 'Path'
+              nkIdent 'p'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'txt'
+          nkBracketExpr
+            nkIdent 'NsArray'
+            nkIdent 'string'
+          nkCall
+            nkIdent 'GetFiles'
+            nkIdent 'Directory'
+            nkIdent 'dir'
+            nkStrLit "*.txt"
+      nkCall
+        nkIdent 'Sort'
+        nkIdent 'txt'
+      nkForStmt
+        nkIdent 'p'
+        nkIdent 'txt'
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkInfix
+              nkIdent '+'
+              nkStrLit "txt "
+              nkCall
+                nkIdent 'GetFileName'
+                nkIdent 'Path'
+                nkIdent 'p'
+      nkForStmt
+        nkIdent 'p'
+        nkCall
+          nkIdent 'GetDirectories'
+          nkIdent 'Directory'
+          nkIdent 'dir'
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkInfix
+              nkIdent '+'
+              nkStrLit "dir "
+              nkCall
+                nkIdent 'GetFileName'
+                nkIdent 'Path'
+                nkIdent 'p'
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'ReadAllText'
+            nkIdent 'File'
+            nkCall
+              nkIdent 'Combine'
+              nkIdent 'Path'
+              nkIdent 'dir'
+              nkStrLit "nope.txt"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'FileNotFoundException'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkCall
+                        nkDotExpr
+                          nkIdent 'e'
+                          nkIdent 'GetType'
+                      nkIdent 'Name'
+                    nkStrLit ": "
+                  nkCall
+                    nkDotExpr
+                      nkDotExpr
+                        nkIdent 'e'
+                        nkIdent 'Message'
+                      nkIdent 'Replace'
+                    nkIdent 'dir'
+                    nkStrLit "<dir>"
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'ReadAllText'
+            nkIdent 'File'
+            nkCall
+              nkIdent 'Combine'
+              nkIdent 'Path'
+              nkIdent 'dir'
+              nkStrLit "no/nope.txt"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'IOException'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkCall
+                        nkDotExpr
+                          nkIdent 'e'
+                          nkIdent 'GetType'
+                      nkIdent 'Name'
+                    nkStrLit ": "
+                  nkCall
+                    nkDotExpr
+                      nkDotExpr
+                        nkIdent 'e'
+                        nkIdent 'Message'
+                      nkIdent 'Replace'
+                    nkIdent 'dir'
+                    nkStrLit "<dir>"
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'WriteAllText'
+            nkIdent 'File'
+            nkCall
+              nkIdent 'Combine'
+              nkIdent 'Path'
+              nkIdent 'dir'
+              nkStrLit "no/nope.txt"
+            nkStrLit "x"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'DirectoryNotFoundException'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkCall
+                        nkDotExpr
+                          nkIdent 'e'
+                          nkIdent 'GetType'
+                      nkIdent 'Name'
+                    nkStrLit ": "
+                  nkCall
+                    nkDotExpr
+                      nkDotExpr
+                        nkIdent 'e'
+                        nkIdent 'Message'
+                      nkIdent 'Replace'
+                    nkIdent 'dir'
+                    nkStrLit "<dir>"
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Delete'
+            nkIdent 'Directory'
+            nkIdent 'dir'
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'IOException'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkCall
+                        nkDotExpr
+                          nkIdent 'e'
+                          nkIdent 'GetType'
+                      nkIdent 'Name'
+                    nkStrLit ": "
+                  nkCall
+                    nkDotExpr
+                      nkDotExpr
+                        nkIdent 'e'
+                        nkIdent 'Message'
+                      nkIdent 'Replace'
+                    nkIdent 'dir'
+                    nkStrLit "<dir>"
+      nkCall
+        nkIdent 'Delete'
+        nkIdent 'File'
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'dir'
+          nkStrLit "d.txt"
+      nkCall
+        nkIdent 'Delete'
+        nkIdent 'File'
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'dir'
+          nkStrLit "never.txt"
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Exists'
+          nkIdent 'File'
+          nkCall
+            nkIdent 'Combine'
+            nkIdent 'Path'
+            nkIdent 'dir'
+            nkStrLit "d.txt"
+      nkBlockStmt
+        nkEmpty
+        nkStmtList
+          nkVarSection
+            nkIdentDefs
+              nkIdent 'w'
+              nkEmpty
+              nkCall
+                nkIdent 'newStreamWriter'
+                nkCall
+                  nkIdent 'Combine'
+                  nkIdent 'Path'
+                  nkIdent 'dir'
+                  nkStrLit "s.txt"
+          nkDefer
+            nkStmtList
+              nkCall
+                nkIdent 'nsDispose'
+                nkIdent 'w'
+          nkStmtList
+            nkCall
+              nkDotExpr
+                nkIdent 'w'
+                nkIdent 'WriteLine'
+              nkStrLit "one"
+            nkCall
+              nkDotExpr
+                nkIdent 'w'
+                nkIdent 'Write'
+              nkIntLit 2
+            nkCall
+              nkDotExpr
+                nkIdent 'w'
+                nkIdent 'Write'
+              nkCharLit 45
+            nkCall
+              nkDotExpr
+                nkIdent 'w'
+                nkIdent 'WriteLine'
+            nkCall
+              nkDotExpr
+                nkIdent 'w'
+                nkIdent 'WriteLine'
+              nkStrLit ""
+            nkCall
+              nkDotExpr
+                nkIdent 'w'
+                nkIdent 'WriteLine'
+              nkStrLit "four"
+      nkBlockStmt
+        nkEmpty
+        nkStmtList
+          nkVarSection
+            nkIdentDefs
+              nkIdent 'w'
+              nkEmpty
+              nkCall
+                nkIdent 'newStreamWriter'
+                nkCall
+                  nkIdent 'Combine'
+                  nkIdent 'Path'
+                  nkIdent 'dir'
+                  nkStrLit "s.txt"
+                nkIdent 'true'
+          nkDefer
+            nkStmtList
+              nkCall
+                nkIdent 'nsDispose'
+                nkIdent 'w'
+          nkStmtList
+            nkCall
+              nkDotExpr
+                nkIdent 'w'
+                nkIdent 'WriteLine'
+              nkStrLit "five"
+      nkBlockStmt
+        nkEmpty
+        nkStmtList
+          nkVarSection
+            nkIdentDefs
+              nkIdent 'r'
+              nkEmpty
+              nkCall
+                nkIdent 'newStreamReader'
+                nkCall
+                  nkIdent 'Combine'
+                  nkIdent 'Path'
+                  nkIdent 'dir'
+                  nkStrLit "s.txt"
+          nkDefer
+            nkStmtList
+              nkCall
+                nkIdent 'nsDispose'
+                nkIdent 'r'
+          nkStmtList
+            nkCall
+              nkIdent 'WriteLine'
+              nkCall
+                nkIdent 'char'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'r'
+                    nkIdent 'Peek'
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'n'
+                nkIdent 'int32'
+                nkIntLit 0
+            nkWhileStmt
+              nkPrefix
+                nkIdent 'not'
+                nkDotExpr
+                  nkIdent 'r'
+                  nkIdent 'EndOfStream'
+              nkStmtList
+                nkCommand
+                  nkIdent 'inc'
+                  nkIdent 'n'
+                nkCall
+                  nkIdent 'WriteLine'
+                  nkInfix
+                    nkIdent '+'
+                    nkInfix
+                      nkIdent '+'
+                      nkIdent 'n'
+                      nkStrLit ": "
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'r'
+                        nkIdent 'ReadLine'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'r2'
+          nkEmpty
+          nkCall
+            nkIdent 'newStreamReader'
+            nkCall
+              nkIdent 'Combine'
+              nkIdent 'Path'
+              nkIdent 'dir'
+              nkStrLit "s.txt"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkIdent 'char'
+                  nkCall
+                    nkDotExpr
+                      nkIdent 'r2'
+                      nkIdent 'Read'
+                nkStrLit "|"
+              nkDotExpr
+                nkCall
+                  nkDotExpr
+                    nkIdent 'r2'
+                    nkIdent 'ReadToEnd'
+                nkIdent 'Length'
+            nkStrLit "|"
+          nkCall
+            nkDotExpr
+              nkIdent 'r2'
+              nkIdent 'Peek'
+      nkCall
+        nkDotExpr
+          nkIdent 'r2'
+          nkIdent 'Close'
+      nkCall
+        nkIdent 'Delete'
+        nkIdent 'Directory'
+        nkIdent 'dir'
+        nkIdent 'true'
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Exists'
+          nkIdent 'Directory'
+          nkIdent 'dir'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkIdent 'Combine'
+                  nkIdent 'Path'
+                  nkStrLit "a"
+                  nkStrLit "b"
+                  nkStrLit "c.txt"
+                nkStrLit " "
+              nkCall
+                nkIdent 'Combine'
+                nkIdent 'Path'
+                nkStrLit "a/"
+                nkStrLit "/abs"
+                nkStrLit "x"
+            nkStrLit " "
+          nkCall
+            nkIdent 'Combine'
+            nkIdent 'Path'
+            nkStrLit ""
+            nkStrLit "y"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkIdent 'Join'
+                  nkIdent 'Path'
+                  nkStrLit "a"
+                  nkStrLit "/b"
+                nkStrLit " "
+              nkCall
+                nkIdent 'GetFileName'
+                nkIdent 'Path'
+                nkStrLit "/x/y/z.tar.gz"
+            nkStrLit " "
+          nkCall
+            nkIdent 'GetExtension'
+            nkIdent 'Path'
+            nkStrLit "/x/y/z.tar.gz"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkCall
+                  nkIdent 'GetFileNameWithoutExtension'
+                  nkIdent 'Path'
+                  nkStrLit "/x/y/z.tar.gz"
+                nkStrLit " "
+              nkCall
+                nkIdent 'GetDirectoryName'
+                nkIdent 'Path'
+                nkStrLit "/x/y/z.tar.gz"
+            nkStrLit " "
+          nkCall
+            nkIdent 'GetDirectoryName'
+            nkIdent 'Path'
+            nkStrLit "/z"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkInfix
+                      nkIdent '+'
+                      nkInfix
+                        nkIdent '+'
+                        nkStrLit "["
+                        nkCall
+                          nkIdent 'GetExtension'
+                          nkIdent 'Path'
+                          nkStrLit "noext"
+                      nkStrLit "]["
+                    nkCall
+                      nkIdent 'GetExtension'
+                      nkIdent 'Path'
+                      nkStrLit "dot."
+                  nkStrLit "]["
+                nkCall
+                  nkIdent 'GetExtension'
+                  nkIdent 'Path'
+                  nkStrLit ".bashrc"
+              nkStrLit "]["
+            nkCall
+              nkIdent 'GetExtension'
+              nkIdent 'Path'
+              nkStrLit "a.b/c"
+          nkStrLit "]"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkInfix
+                      nkIdent '+'
+                      nkCall
+                        nkIdent 'ChangeExtension'
+                        nkIdent 'Path'
+                        nkStrLit "/a/b.txt"
+                        nkStrLit "md"
+                      nkStrLit " "
+                    nkCall
+                      nkIdent 'ChangeExtension'
+                      nkIdent 'Path'
+                      nkStrLit "b"
+                      nkStrLit ".cs"
+                  nkStrLit " "
+                nkCall
+                  nkIdent 'HasExtension'
+                  nkIdent 'Path'
+                  nkStrLit "a.b"
+              nkStrLit " "
+            nkCall
+              nkIdent 'IsPathRooted'
+              nkIdent 'Path'
+              nkStrLit "/a"
+          nkCall
+            nkIdent 'IsPathRooted'
+            nkIdent 'Path'
+            nkStrLit "a"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkCall
+                nkIdent 'GetFullPath'
+                nkIdent 'Path'
+                nkStrLit "/a/./b/../c"
+              nkStrLit " "
+            nkDotExpr
+              nkIdent 'Path'
+              nkIdent 'DirectorySeparatorChar'
+          nkDotExpr
+            nkIdent 'Path'
+            nkIdent 'PathSeparator'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'moveDir'
+          nkIdent 'string'
+          nkCall
+            nkIdent 'Combine'
+            nkIdent 'Path'
+            nkCall
+              nkIdent 'GetTempPath'
+              nkIdent 'Path'
+            nkStrLit "nsio_test_dir_move"
+      nkIfStmt
+        nkElifBranch
+          nkCall
+            nkIdent 'Exists'
+            nkIdent 'Directory'
+            nkIdent 'moveDir'
+          nkStmtList
+            nkCall
+              nkIdent 'Delete'
+              nkIdent 'Directory'
+              nkIdent 'moveDir'
+              nkIdent 'true'
+      nkCall
+        nkIdent 'CreateDirectory'
+        nkIdent 'Directory'
+        nkIdent 'moveDir'
+      nkCall
+        nkIdent 'WriteAllText'
+        nkIdent 'File'
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'moveDir'
+          nkStrLit "a"
+        nkStrLit "1"
+      nkCall
+        nkIdent 'WriteAllText'
+        nkIdent 'File'
+        nkCall
+          nkIdent 'Combine'
+          nkIdent 'Path'
+          nkIdent 'moveDir'
+          nkStrLit "b"
+        nkStrLit "2"
+      nkCall
+        nkIdent 'Fails'
+        nkIdent 'Program'
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkCall
+              nkIdent 'Move'
+              nkIdent 'File'
+              nkCall
+                nkIdent 'Combine'
+                nkIdent 'Path'
+                nkIdent 'moveDir'
+                nkStrLit "a"
+              nkCall
+                nkIdent 'Combine'
+                nkIdent 'Path'
+                nkIdent 'moveDir'
+                nkStrLit "b"
+      nkCall
+        nkIdent 'Fails'
+        nkIdent 'Program'
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkCall
+              nkIdent 'Move'
+              nkIdent 'File'
+              nkCall
+                nkIdent 'Combine'
+                nkIdent 'Path'
+                nkIdent 'moveDir'
+                nkStrLit "a"
+              nkCall
+                nkIdent 'Combine'
+                nkIdent 'Path'
+                nkIdent 'moveDir'
+                nkStrLit "no/b"
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'closedWriter'
+          nkEmpty
+          nkCall
+            nkIdent 'newStreamWriter'
+            nkCall
+              nkIdent 'Combine'
+              nkIdent 'Path'
+              nkIdent 'moveDir'
+              nkStrLit "closedWriter"
+      nkCall
+        nkDotExpr
+          nkIdent 'closedWriter'
+          nkIdent 'Close'
+      nkCall
+        nkIdent 'Fails'
+        nkIdent 'Program'
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkCall
+              nkDotExpr
+                nkIdent 'closedWriter'
+                nkIdent 'Write'
+              nkIntLit 1
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'closedReader'
+          nkEmpty
+          nkCall
+            nkIdent 'newStreamReader'
+            nkCall
+              nkIdent 'Combine'
+              nkIdent 'Path'
+              nkIdent 'moveDir'
+              nkStrLit "closedWriter"
+      nkCall
+        nkDotExpr
+          nkIdent 'closedReader'
+          nkIdent 'Close'
+      nkCall
+        nkIdent 'Fails'
+        nkIdent 'Program'
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkCall
+              nkDotExpr
+                nkIdent 'closedReader'
+                nkIdent 'ReadLine'
+      nkCall
+        nkIdent 'Delete'
+        nkIdent 'Directory'
+        nkIdent 'moveDir'
+        nkIdent 'true'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

@@ -318,7 +318,7 @@ search path (`nsgen.nim`), so a BCL namespace is an ordinary module:
 
 Nothing is implicit: `Console.WriteLine` without `using System;`, or `List<T>`
 without `using System.Collections.Generic;`, fails to compile, which
-`nsharp/tests/p3b/nousing.ns` pins. A namespace with no module is a "cannot open
+`nsharp/tests/diag/cases/generic_list_without_using.ns` pins. A namespace with no module is a "cannot open
 file" error.
 
 #### 5.1.1 User namespaces span files (D4, revised)
@@ -999,7 +999,7 @@ Deliberately deferred, with the reason recorded:
   units. N# has no culture, so the default comparison (`string.Compare`,
   `CompareTo`, `Comparer<string>.Default`, `List<string>.Sort()`) is that one too,
   answering -1, 0 or 1; .NET's follows the current culture (`"apple"` before
-  `"Banana"`), which `p3d/unicodecompare.csout` records.
+  `"Banana"`), which `strings/unicode_comparison.csout` records.
 * **A user's class implementing a library interface** (`IReadOnlyList<int>`,
   `IComparer<string>`) converts to it through the library's generic
   `nsTo<Interface>`. That builder calls the class's own members by name, and the

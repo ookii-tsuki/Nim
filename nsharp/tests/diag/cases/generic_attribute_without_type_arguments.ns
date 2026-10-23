@@ -1,0 +1,9 @@
+// A generic attribute needs its type arguments.
+using System;
+namespace Demo
+{
+    class TagAttribute<T> : Attribute { }
+    [Tag]
+    class Gauge { }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

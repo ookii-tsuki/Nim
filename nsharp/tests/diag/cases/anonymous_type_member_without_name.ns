@@ -1,0 +1,12 @@
+// An anonymous type member needs a name.
+using System;
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var p = new { 1 + 2 }; Console.WriteLine(p);
+        }
+    }
+}

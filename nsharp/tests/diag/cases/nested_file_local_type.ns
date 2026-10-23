@@ -1,0 +1,10 @@
+// A file-local type must be declared at the top level.
+using System;
+namespace Demo
+{
+    class Outer
+    {
+        file class Inner { }
+    }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}

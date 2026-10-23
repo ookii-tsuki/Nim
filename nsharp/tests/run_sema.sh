@@ -164,7 +164,7 @@ if [ "$update" = "1" ] && [ "$have_dotnet" = "0" ]; then
 fi
 
 tests=""
-for ns in "$here"/*.ns "$here"/*/*.ns; do
+for ns in "$here"/*/*.ns "$here"/modules/*/*.ns; do
   case "$ns" in "$here"/native/*) continue ;; esac   # C++-driven: run_native.sh
   [ -f "$ns" ] || continue
   [ -f "${ns%.ns}.out" ] || continue

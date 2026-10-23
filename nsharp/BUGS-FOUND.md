@@ -2,7 +2,8 @@
 
 ## Status (2026-10-22): every finding below is fixed
 
-Each fix has a regression test under `nsharp/tests/ecma/`, whose expected output
+Each fix has a regression test under `nsharp/tests/` (in the directory of its
+feature), whose expected output
 Roslyn confirms (`run_cs.sh` now runs here: the .NET 10 SDK is installed from
 Ubuntu's archive), and every gate passes: run, AST, C#, sema (goldens from
 Roslyn), reorder, native and diagnostics.
@@ -27,23 +28,23 @@ Roslyn), reorder, native and diagnostics.
 Asked whether exceptions could carry C#'s messages, and at what cost: they now do,
 with nothing added where no exception is thrown (the checks are unchanged; the work
 is done when one is thrown, its `Message` read, or the program dies of it). Each
-item has a test under `nsharp/tests/ecma/`, checked against Roslyn.
+item has a test under `nsharp/tests/`, checked against Roslyn.
 
 | item | test |
 |---|---|
-| `Message` in .NET's words for a runtime check's defect (index, overflow, null); a failed cast or downcast names both types | `exceptionmessages` |
-| a library exception's constructor makes .NET's message: the default of a parameterless one, `(Parameter 'p')`, `ObjectDisposedException`'s object name; `InnerException` | `exceptionmessages` |
-| a user exception class starts with its nearest library base's default, or `Exception of type 'E' was thrown.` | `exceptionmessages` |
-| an exception nothing catches prints .NET's report on stderr and aborts (exit 134) | `unhandled` (new `.exit` marker in `run.sh` and `run_cs.sh`) |
-| `e.GetType()` of any exception was `System.Object`; `Type.Name` unreachable on a `var` of a library exception; `typeof(MyErr)` was `System.Object` | `exceptiontypes` |
-| `GetType()` and the default `ToString()` of a generic class lacked the arity and arguments (``Demo.Box`1[System.Int32]``) | `exceptiontypes` |
-| `p.ToString();`, `c.ToString();` (enum), `r.Equals(r);` (record), `i.ToString("D2");`, `x.GetType();` as statements did not compile | `discardcalls` |
-| `int r = 5 / z;` did not compile: a literal on the left of `/`, `%` or a shift bound the generic to Nim's `int` | `literaloperands` |
-| a `T?` printed as `some(2)` / `none(int32)`, and ignored a format spec | `nullableformat` (and `p1e/nullable.out`, which had pinned the wrong output) |
-| a local function in a loop body shared one copy of the body's variables across iterations | `localfunccells` |
-| a cast to a class, `((MyEx)e).Message`, lost its type name in sema | sema projection of `exceptionvalues` |
-| a record's positional member named like a class (`record R(int A)` beside `class A`) broke its `==` and `hash` | `discardcalls` |
-| `checked((byte)400)` wrapped (Nim never range-checks a conversion to an unsigned type), and a signed one threw `ArgumentOutOfRangeException`; both are `OverflowException` | `ownchecks` |
+| `Message` in .NET's words for a runtime check's defect (index, overflow, null); a failed cast or downcast names both types | `exceptions/exception_messages` |
+| a library exception's constructor makes .NET's message: the default of a parameterless one, `(Parameter 'p')`, `ObjectDisposedException`'s object name; `InnerException` | `exceptions/exception_messages` |
+| a user exception class starts with its nearest library base's default, or `Exception of type 'E' was thrown.` | `exceptions/exception_messages` |
+| an exception nothing catches prints .NET's report on stderr and aborts (exit 134) | `exceptions/unhandled_exception` (new `.exit` marker in `run.sh` and `run_cs.sh`) |
+| `e.GetType()` of any exception was `System.Object`; `Type.Name` unreachable on a `var` of a library exception; `typeof(MyErr)` was `System.Object` | `exceptions/exception_types` |
+| `GetType()` and the default `ToString()` of a generic class lacked the arity and arguments (``Demo.Box`1[System.Int32]``) | `exceptions/exception_types` |
+| `p.ToString();`, `c.ToString();` (enum), `r.Equals(r);` (record), `i.ToString("D2");`, `x.GetType();` as statements did not compile | `methods/discarded_call_results` |
+| `int r = 5 / z;` did not compile: a literal on the left of `/`, `%` or a shift bound the generic to Nim's `int` | `arith/literal_operands` |
+| a `T?` printed as `some(2)` / `none(int32)`, and ignored a format spec | `nullable/nullable_format` (and `nullable/nullable_values.out`, which had pinned the wrong output) |
+| a local function in a loop body shared one copy of the body's variables across iterations | `lambdas/local_function_capture` |
+| a cast to a class, `((MyEx)e).Message`, lost its type name in sema | sema projection of `exceptions/exception_values` |
+| a record's positional member named like a class (`record R(int A)` beside `class A`) broke its `==` and `hash` | `methods/discarded_call_results` |
+| `checked((byte)400)` wrapped (Nim never range-checks a conversion to an unsigned type), and a signed one threw `ArgumentOutOfRangeException`; both are `OverflowException` | `arith/checked_arithmetic_and_bounds` |
 
 The messages were first translated when `Message` was read, by matching Nim's text
 (55 ns a read). Now N# makes the common checks itself in place of Nim's (array
@@ -80,7 +81,8 @@ Still open, recorded rather than fixed:
 ### Follow-up: a review of the library commits
 
 A reviewer agent checked `b82bfcb`, `5177cf4` and `6a21c02` against .NET; the
-fixes it led to are tested by `lib2/reviewmessages` and `lib2/reviewlinqio`:
+fixes it led to are tested by `linq/evaluation_semantics` and by the argument checks
+added to the `stdlib/` tests:
 `SkipLast` with a negative count crashed; `TimeSpan * double` was typed as a
 `double`, and its constructors overflowed silently; `OrderBy` called the key
 selector in every comparison (now once per element per level, as .NET's); `Zip`
@@ -284,7 +286,7 @@ raises `OverflowDefect` for `int.MinValue / -1`.
 * Building the compiler with a compiler built from this tree
   (`nim0 c -d:nsharp compiler/nim.nim`) stops at `bcl.nim(319, 26) Error: use explicit
   initialization of 'result' for clarity [Uninit]`, because `compiler/nim.cfg` turns
-  `Uninit`/`ProveInit` into errors under `nimUseStrictDefs`. `overloads`
+  `Uninit`/`ProveInit` into errors under `nimUseStrictDefs`. `methods/overload_resolution`
   (`bcl.nim:303`) and the procs reported at `bcl.nim:305`, `parser.nim:1372`,
   `symbols.nim:142`, `lambdas.nim:324` and `sema.nim:302` need `result = …` first.
   (Built here with `--warningAsError:Uninit:off --warningAsError:ProveInit:off`.)

@@ -1,2 +1,0 @@
-This test must fail to compile: an implicit narrowing numeric conversion.
-code: NS0266

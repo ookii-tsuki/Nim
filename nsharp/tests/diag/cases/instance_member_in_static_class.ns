@@ -1,0 +1,7 @@
+// A static class declares only static members.
+using System;
+namespace Demo
+{
+    static class Util { public int One() => 1; }
+    class Program { static void Main() { Console.WriteLine("x"); } }
+}

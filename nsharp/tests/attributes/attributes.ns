@@ -1,0 +1,31 @@
+// Attribute classes and their targets, library attributes ([Serializable],
+// [STAThread]), attribute arguments on a parameter, and [Obsolete], whose use
+// warns (CS0618).
+using System;
+namespace Demo
+{
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Parameter)]
+    class TagAttribute : Attribute
+    {
+        public string Name;
+        public TagAttribute(string n) { Name = n; }
+    }
+
+    [Tag("thing"), Serializable]
+    class Thing
+    {
+        [Obsolete("use New")]
+        public int Old() => 1;
+        public int New([Tag("p")] int x) => x + 1;
+    }
+
+    class Program
+    {
+        [STAThread]
+        static void Main()
+        {
+            var t = new Thing();
+            Console.WriteLine(t.Old() + t.New(2));
+        }
+    }
+}

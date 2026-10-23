@@ -1,0 +1,32 @@
+// string.Format and Console.WriteLine's composite format: indices, alignment,
+// format specs, escaped braces, and .NET's FormatException messages; string.Join's
+// params and generic overloads.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Fails(Action f) { try { f(); } catch (Exception e) { Console.WriteLine(e.GetType().Name + ": " + e.Message.Replace("\n", "|")); } }
+        static void Main()
+        {
+            Console.WriteLine(string.Format("[{0,5}|{1,-5}|{2:F2}|{3:X4}|{{x}}|{0}]", 42, "ab", 3.14159, 255));
+            Console.WriteLine(string.Format("{0} and {1}", "one", 'c'));
+            Console.WriteLine(string.Join(",", "a", "b", "c") + " " + string.Join("-", new[] { "x", "y" }));
+            Console.WriteLine("{0}-{1}", 1, "two");
+            Console.Write("{0}!", 5);
+            Console.WriteLine();
+            foreach (var bad in new[] { "{0} {2}", "{0", "{x}", "a } b" })
+            {
+                try { Console.WriteLine(string.Format(bad, 1, 2)); }
+                catch (FormatException e) { Console.WriteLine(e.Message); }
+            }
+            // Argument checks: .NET's exception type and message.
+            Fails(() => Console.WriteLine(string.Format("a}", 1)));
+            Fails(() => Console.WriteLine(string.Format("{0:a{b}", 42)));
+            Fails(() => Console.WriteLine(string.Format("{0:{}", 42)));
+            Fails(() => Console.WriteLine(string.Format("{0:x}}b}", 42)));
+            Fails(() => Console.WriteLine(string.Format("{0:x}}}", 42)));
+        }
+    }
+}

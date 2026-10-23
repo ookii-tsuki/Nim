@@ -1,0 +1,6 @@
+// A collection expression needs a target type.
+using System;
+namespace Demo
+{
+    class Program { static void Main() { var xs = [1, 2]; Console.WriteLine(xs); } }
+}

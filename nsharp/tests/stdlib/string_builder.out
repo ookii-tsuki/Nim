@@ -1,0 +1,20 @@
+[ABC122.5---
+line
+1+2=3
+23 A ABC
+<ABC|4
+xa,b
+start StringBuilder 0
+ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')
+IndexOutOfRangeException: Index was outside the bounds of the array.
+ArgumentOutOfRangeException: repeatCount ('-1') must be a non-negative value. (Parameter 'repeatCount')|Actual value was -1.
+ArgumentOutOfRangeException: startIndex ('-1') must be a non-negative value. (Parameter 'startIndex')|Actual value was -1.
+ArgumentOutOfRangeException: length ('-1') must be a non-negative value. (Parameter 'length')|Actual value was -1.
+ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'length')
+ArgumentOutOfRangeException: startIndex ('-1') must be a non-negative value. (Parameter 'startIndex')|Actual value was -1.
+ArgumentOutOfRangeException: length ('-1') must be a non-negative value. (Parameter 'length')|Actual value was -1.
+ArgumentOutOfRangeException: Index and length must refer to a location within the string. (Parameter 'length')
+ArgumentOutOfRangeException: capacity ('-1') must be a non-negative value. (Parameter 'capacity')|Actual value was -1.
+ArgumentException: The value cannot be an empty string. (Parameter 'oldValue')
+ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'index')
+ArgumentOutOfRangeException: value ('-1') must be a non-negative value. (Parameter 'value')|Actual value was -1.

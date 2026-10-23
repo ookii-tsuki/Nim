@@ -1,0 +1,3 @@
+Array.Find = type-parameter
+Array.FindLast = type-parameter
+Exception.GetType = result:other

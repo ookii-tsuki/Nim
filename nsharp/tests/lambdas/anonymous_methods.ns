@@ -1,0 +1,25 @@
+// Anonymous methods (`delegate (int a) { ... }`), with and without a parameter
+// list, for a named delegate, Func and Action, and capturing a local.
+using System;
+namespace Demo
+{
+    class Program
+    {
+        delegate int Op(int a, int b);
+        static void Main()
+        {
+            Op add = delegate (int a, int b) { return a + b; };
+            Console.WriteLine(add(2, 3));
+            Func<int, int> sq = delegate (int x) { return x * x; };
+            Console.WriteLine(sq(4));
+            Action hello = delegate { Console.WriteLine("hello"); };
+            hello();
+            Op any = delegate { return 42; };
+            Console.WriteLine(any(1, 2));
+            int captured = 10;
+            Func<int> get = delegate () { return captured; };
+            captured = 11;
+            Console.WriteLine(get());
+        }
+    }
+}

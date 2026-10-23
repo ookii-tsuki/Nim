@@ -1,2 +1,0 @@
-This test must fail to compile: it derives from a sealed class.
-code: NS0509

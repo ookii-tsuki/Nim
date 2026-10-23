@@ -1,9 +1,0 @@
-using System;
-namespace Demo
-{
-    class B
-    {
-        public event Action E { add { } }
-    }
-    class Program { static void Main() { Console.WriteLine(1); } }
-}

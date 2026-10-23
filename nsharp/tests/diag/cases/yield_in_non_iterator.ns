@@ -1,0 +1,19 @@
+// C# allows `yield` only in a member returning an iterator interface.
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Program
+    {
+        static int Numbers()
+        {
+            yield return 1;
+        }
+
+        static void Main()
+        {
+            Console.WriteLine(Numbers());
+        }
+    }
+}

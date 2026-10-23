@@ -1,0 +1,46 @@
+// System.Text.StringBuilder: appending (chained), inserting, removing, replacing,
+// the indexer and Length, and its ToString through `object`.
+using System;
+using System.Text;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Fails(Action f) { try { f(); } catch (Exception e) { Console.WriteLine(e.GetType().Name + ": " + e.Message.Replace("\n", "|")); } }
+        static void Main()
+        {
+            var sb = new StringBuilder();
+            sb.Append("ab").Append('c').Append(12).Append(2.5).Append('-', 3);
+            sb.AppendLine().AppendLine("line");
+            sb.AppendFormat("{0}+{1}={2}", 1, 2, 3);
+            sb.Insert(0, "[").Insert(1, 7).Replace("ab", "AB").Replace('c', 'C');
+            sb.Remove(1, 1);
+            Console.WriteLine(sb.ToString());
+            Console.WriteLine(sb.Length + " " + sb[1] + " " + sb.ToString(1, 3));
+            sb[0] = '<';
+            sb.Length = 4;
+            Console.WriteLine(sb + "|" + sb.Length);
+            sb.Clear().Append("x").AppendJoin(",", "a", "b");
+            Console.WriteLine(sb);
+            var sb2 = new StringBuilder("start");
+            object o = sb2;
+            Console.WriteLine(o.ToString() + " " + sb2.GetType().Name + " " + new StringBuilder(16).Length);
+            // Argument checks: .NET's exception type and message.
+            var abc = new StringBuilder("abc");
+            Fails(() => { abc[9] = 'x'; });
+            Fails(() => Console.WriteLine(abc[9]));
+            Fails(() => abc.Append('c', -1));
+            Fails(() => abc.Remove(-1, 1));
+            Fails(() => abc.Remove(0, -1));
+            Fails(() => abc.Remove(2, 5));
+            Fails(() => abc.ToString(-1, 1));
+            Fails(() => abc.ToString(0, -1));
+            Fails(() => abc.ToString(3, 5));
+            Fails(() => new StringBuilder(-1));
+            Fails(() => abc.Replace("", "x"));
+            Fails(() => abc.Insert(9, "x"));
+            Fails(() => abc.Length = -1);
+        }
+    }
+}

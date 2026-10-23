@@ -1,0 +1,47 @@
+// The Try* members of the queues and the stack, Dictionary.Remove handing back
+// the value it removed, and removing from a dictionary while enumerating it.
+using System;
+using System.Collections.Generic;
+
+namespace Demo {
+    class Program {
+        static void Main() {
+            var q = new Queue<int>();
+            q.Enqueue(1); q.Enqueue(2);
+            int x;
+            Console.WriteLine(q.TryPeek(out x) + " " + x + " " + q.Count);
+            Console.WriteLine(q.TryDequeue(out x) + " " + x + " " + q.Count);
+            Console.WriteLine(q.TryDequeue(out x) + " " + x);
+            Console.WriteLine(q.TryDequeue(out x) + " " + x + " " + q.TryPeek(out x) + " " + x);
+
+            var s = new Stack<string>();
+            s.Push("a"); s.Push("b");
+            string t;
+            Console.WriteLine(s.TryPeek(out t) + " " + t);
+            Console.WriteLine(s.TryPop(out t) + " " + t + " " + s.Count);
+            Console.WriteLine(s.TryPop(out t) + " " + t);
+            Console.WriteLine(s.TryPop(out t) + " [" + t + "]");
+
+            var pq = new PriorityQueue<string, int>();
+            pq.Enqueue("low", 5); pq.Enqueue("high", 1);
+            string e; int p;
+            Console.WriteLine(pq.TryPeek(out e, out p) + " " + e + " " + p);
+            Console.WriteLine(pq.TryDequeue(out e, out p) + " " + e + " " + p + " " + pq.Count);
+            Console.WriteLine(pq.TryDequeue(out e, out p) + " " + e + " " + p);
+            Console.WriteLine(pq.TryDequeue(out e, out p) + " [" + e + "] " + p);
+
+            var d = new Dictionary<string, int> { { "one", 1 }, { "two", 2 } };
+            int v;
+            Console.WriteLine(d.Remove("one", out v) + " " + v + " " + d.Count);
+            Console.WriteLine(d.Remove("one", out v) + " " + v + " " + d.Count);
+            Console.WriteLine(d.Remove("two") + " " + d.Count);
+            // Removing while enumerating is allowed, as since .NET Core 3.0.
+            var d3 = new Dictionary<string, int> { { "a", 1 }, { "b", 2 }, { "c", 3 } };
+            foreach (var kv in d3) { int removed; d3.Remove(kv.Key, out removed); }
+            Console.WriteLine(d3.Count);
+            var d2 = new Dictionary<int, int> { { 1, 1 }, { 2, 2 } };
+            foreach (var k in d2.Keys) d2.Remove(k);
+            Console.WriteLine(d2.Count);
+        }
+    }
+}

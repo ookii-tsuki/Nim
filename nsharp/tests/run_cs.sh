@@ -8,7 +8,8 @@
 # behaviour instead of trusting the frontend's own expectations.
 #
 # A sibling `.ns` with neither a `.out` nor a `.fail` is treated as a module of
-# the program (like p1b/Math.ns) and is compiled together with it.
+# the program (like modules/namespace_alias/Shop.ns) and is compiled together
+# with it.
 #
 # A `.csout` beside a test records what C# produces when it legitimately differs
 # from the `.out`, for instance a bool reading `true` in N# and `True` in C#.
@@ -167,7 +168,7 @@ jobs="${NS_CS_JOBS:-$(nproc 2>/dev/null || echo 2)}"
 ## Every test runs in a slot directory of its own; each test's output is kept and
 ## printed in order, so the log reads the same however the builds interleave.
 i=0
-for ns in "$here"/*.ns "$here"/*/*.ns; do
+for ns in "$here"/*/*.ns "$here"/modules/*/*.ns; do
   case "$ns" in "$here"/native/*) continue ;; esac   # C++-driven: run_native.sh
   [ -f "$ns" ] || continue
   out="${ns%.ns}.out"

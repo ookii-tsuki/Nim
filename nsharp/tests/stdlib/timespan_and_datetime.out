@@ -1,0 +1,54 @@
+01:02:03
+2.03:04:05.6780000
+-2.03:04:05.6780000
+2.04:06:08.6780000
+2 3 4 5 678
+62.05
+00:01:30
+00:00:00.0015000
+01:15:00
+00:00:00 10675199.02:48:05.4775807 -10675199.02:48:05.4775808
+02:35:07.5000000
+49.381057749127045
+true
+-1 true
+00:00:00.0000005
+TimeSpan overflowed because the duration is too long.
+2/29/2024 1:05:09 PM
+2024-2-29 13:5:9
+Thursday 60
+true
+2025-02-28
+2023-01-29 13:05:09
+3/2/2024 1:05:09 AM
+Wednesday, February 28, 2024 11:50 PM
+Thu Feb 24, 13h 5s 000
+2024-02-29T13:05:09
+2024-02-29T13:05:09.0000000
+Thursday, February 29, 2024 | 2/29/2024 | 1:05:09 PM | 1:05 PM
+2/29/2024 1:05:09 PM
+2/29/2024 12:00:00 AM 13:05:09
+8825.13:05:09
+8825.545243055556
+true
+false true 28
+1/1/0001 12:00:00 AM | 9999-12-31T23:59:59.9999999
+Monday 621355968000000000
+2024/12/31 00:00:00.005 AM
+true
+true
+Year, Month, and Day parameters describe an un-representable DateTime.
+The added or subtracted value results in an un-representable DateTime. (Parameter 'value')
+ArgumentOutOfRangeException: TimeSpan overflowed because the duration is too long.
+ArgumentOutOfRangeException: TimeSpan overflowed because the duration is too long.
+24.20:31:23.6470000
+ArgumentOutOfRangeException: TimeSpan overflowed because the duration is too long.
+ArgumentOutOfRangeException: TimeSpan overflowed because the duration is too long.
+2
+0
+4
+ArgumentOutOfRangeException: The added or subtracted value results in an un-representable DateTime. (Parameter 'value')
+ArgumentOutOfRangeException: Years value must be between +/-10000. (Parameter 'value')
+ArgumentOutOfRangeException: Months value must be between +/-120000. (Parameter 'months')
+Thu, 29 Feb 2024 00:05:09 GMT
+Thu, 29 Feb 2024 00:05:09 GMT

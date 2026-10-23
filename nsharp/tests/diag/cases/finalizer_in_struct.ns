@@ -1,0 +1,11 @@
+// Only a class may have a finalizer.
+using System;
+namespace Demo
+{
+    struct S
+    {
+        public int V;
+        ~S() { }
+    }
+    class Program { static void Main() { Console.WriteLine(1); } }
+}
