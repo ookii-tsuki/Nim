@@ -2,7 +2,9 @@
 // prints an object (C# prints the type's name; see the .csout): base class fields
 // first, private ones too, an auto-property under its own name, events, statics
 // and constants left out, strings and chars quoted, null as null, and an object
-// already being printed as `...`.
+// already being printed, or 64 deep, as `...`. A base named with a qualifier
+// prints its fields too, and a ToString overload with parameters is not an
+// override.
 using System;
 namespace Demo {
   class Animal { public string Name; protected int legs = 4; private double weight = 3.5; }
@@ -24,6 +26,13 @@ namespace Demo {
   class Named { public string Id = "n1"; public override string ToString() => "Named " + Id; }
   class SubNamed : Named { public int Extra = 7; }
   record Rec(int A, string B);
+  class Outer { public class A { public int X = 1; } }
+  class FromNested : Outer.A { public int Z = 3; }
+  class Fmt { public int X = 1; public string ToString(string f) => "F" + f; }
+  class SubFmt : Fmt { public int Y = 2; }
+  interface IShape { }
+  class Holder { public IShape Shape; }
+  static class Util { public static int Count; }
   class Program {
     static void Main() {
       var d = new Dog { Name = "Rex" };
@@ -39,6 +48,12 @@ namespace Demo {
       Console.WriteLine(new Box<Pt>());
       Console.WriteLine(new SubNamed());
       Console.WriteLine(new Rec(1, "b"));
+      Console.WriteLine(new FromNested());
+      Console.WriteLine(new SubFmt() + " " + new SubFmt().ToString("x"));
+      Console.WriteLine(new Holder());
+      Node chain = null;
+      for (int i = 0; i < 70; i++) chain = new Node { Value = i, Next = chain };
+      Console.WriteLine(chain.ToString().Contains("Next: ...)"));
       object o = new Pt { X = 3 };
       Console.WriteLine(o.ToString() + " " + $"{new Empty()}");
     }

@@ -1042,7 +1042,7 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1051,8 +1051,7 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Shelter'
         nkEmpty
-    nkPragma
-      nkIdent 'discardable'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1080,7 +1079,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Shelter'
+        nkIdent 'Helper'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -1105,17 +1104,17 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsClone'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'RootRef'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Helper'
+        nkIdent 'Pt'
         nkEmpty
     nkPragma
-      nkIdent 'discardable'
+      nkIdent 'base'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1186,16 +1185,17 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsTypeName'
+      nkIdent 'ToString'
     nkEmpty
     nkEmpty
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Helper'
+        nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkIdent 'discardable'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1224,17 +1224,16 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsClone'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkIdent 'RootRef'
+      nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
         nkIdent 'Pt'
         nkEmpty
-    nkPragma
-      nkIdent 'base'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1247,7 +1246,7 @@ nkStmtList
       nkIdent 'string'
       nkIdentDefs
         nkIdent 'self'
-        nkIdent 'Pt'
+        nkIdent 'Dog'
         nkEmpty
     nkPragma
       nkIdent 'discardable'
@@ -1351,36 +1350,6 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsFieldText'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Shelter'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkEmpty
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsTypeName'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Pt'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkEmpty
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
       nkIdent 'nsTypeOf'
     nkEmpty
     nkEmpty
@@ -1398,7 +1367,7 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsTypeName'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1407,8 +1376,7 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Dog'
         nkEmpty
-    nkPragma
-      nkIdent 'discardable'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1453,36 +1421,6 @@ nkStmtList
       nkIdent 'Shelter'
     nkPragma
       nkIdent 'discardable'
-    nkEmpty
-    nkEmpty
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsFieldText'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Helper'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkEmpty
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsTypeName'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Dog'
-        nkEmpty
-    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -3858,46 +3796,6 @@ nkStmtList
       nkCall
         nkIdent 'initThing'
         nkIdent 'result'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsFieldText'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Shelter'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkAsgn
-        nkIdent 'result'
-        nkStrLit ""
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'ToString'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Shelter'
-        nkEmpty
-    nkPragma
-      nkIdent 'discardable'
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkIdent 'nsObjectText'
-        nkIdent 'self'
-        nkCall
-          nkIdent 'nsFieldText'
-          nkIdent 'self'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -3966,46 +3864,6 @@ nkStmtList
       nkCall
         nkIdent 'initShelter'
         nkIdent 'result'
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsFieldText'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Helper'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkAsgn
-        nkIdent 'result'
-        nkStrLit ""
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'ToString'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Helper'
-        nkEmpty
-    nkPragma
-      nkIdent 'discardable'
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkIdent 'nsObjectText'
-        nkIdent 'self'
-        nkCall
-          nkIdent 'nsFieldText'
-          nkIdent 'self'
   nkMethodDef
     nkPostfix
       nkIdent '*'

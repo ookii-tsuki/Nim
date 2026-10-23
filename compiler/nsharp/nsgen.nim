@@ -287,7 +287,8 @@ proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: str
   ## A dotted namespace maps to subdirectories.
   let nsSub = splitFile(nsPath).dir
   if nsSub.len > 0: createDir(AbsoluteDir(genDir / nsSub))
-  renderModule(module, genDir / (nsPath & ".nim"), {}, fid, config)
+  ## Private fields too: a field not exported is still the class's.
+  renderModule(module, genDir / (nsPath & ".nim"), {renderNonExportedFields}, fid, config)
 
 proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
                        mainPath: AbsoluteFile) =

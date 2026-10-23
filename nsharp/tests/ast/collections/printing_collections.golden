@@ -1014,6 +1014,114 @@ nkStmtList
             nkCall
               nkIdent 'char'
               nkCharLit 105
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'noChars'
+          nkBracketExpr
+            nkIdent 'NsArray'
+            nkIdent 'char'
+          nkNilLit
+      nkCall
+        nkIdent 'WriteLine'
+        nkIdent 'noChars'
+      nkCall
+        nkIdent 'Write'
+        nkIdent 'noChars'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'seq'
+          nkBracketExpr
+            nkIdent 'IEnumerable'
+            nkIdent 'int32'
+          nkCall
+            nkIdent 'nsToIEnumerable'
+            nkBlockExpr
+              nkEmpty
+              nkStmtList
+                nkVarSection
+                  nkIdentDefs
+                    nkIdent 'nsInit14'
+                    nkEmpty
+                    nkCall
+                      nkBracketExpr
+                        nkIdent 'newList'
+                        nkIdent 'int32'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'nsInit14'
+                    nkIdent 'Add'
+                  nkIntLit 1
+                nkCall
+                  nkDotExpr
+                    nkIdent 'nsInit14'
+                    nkIdent 'Add'
+                  nkIntLit 2
+                nkIdent 'nsInit14'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkIdent 'seq'
+            nkStrLit " "
+          nkCall
+            nkIdent 'nsFmt'
+            nkIdent 'seq'
+            nkStrLit ""
+      nkForStmt
+        nkIdent 'g'
+        nkCall
+          nkDotExpr
+            nkBlockExpr
+              nkEmpty
+              nkStmtList
+                nkVarSection
+                  nkIdentDefs
+                    nkIdent 'nsInit15'
+                    nkEmpty
+                    nkCall
+                      nkBracketExpr
+                        nkIdent 'newList'
+                        nkIdent 'int32'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'nsInit15'
+                    nkIdent 'Add'
+                  nkIntLit 1
+                nkCall
+                  nkDotExpr
+                    nkIdent 'nsInit15'
+                    nkIdent 'Add'
+                  nkIntLit 2
+                nkCall
+                  nkDotExpr
+                    nkIdent 'nsInit15'
+                    nkIdent 'Add'
+                  nkIntLit 3
+                nkIdent 'nsInit15'
+            nkIdent 'GroupBy'
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkIdent 'auto'
+              nkIdentDefs
+                nkIdent 'x'
+                nkIdent 'int32'
+                nkEmpty
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkCall
+                nkIdent 'nsMod'
+                nkIdent 'x'
+                nkIntLit 2
+        nkStmtList
+          nkCall
+            nkIdent 'WriteLine'
+            nkIdent 'g'
   nkProcDef
     nkPostfix
       nkIdent '*'

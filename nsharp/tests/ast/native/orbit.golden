@@ -278,37 +278,6 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'nsFieldText'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Entry'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkEmpty
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'ToString'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Entry'
-        nkEmpty
-    nkPragma
-      nkIdent 'discardable'
-    nkEmpty
-    nkEmpty
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
       nkIdent 'nsTypeOf'
     nkEmpty
     nkEmpty
@@ -1142,46 +1111,6 @@ nkStmtList
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Court.Tick"
-  nkProcDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'nsFieldText'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Entry'
-        nkEmpty
-    nkEmpty
-    nkEmpty
-    nkStmtList
-      nkAsgn
-        nkIdent 'result'
-        nkStrLit ""
-  nkMethodDef
-    nkPostfix
-      nkIdent '*'
-      nkIdent 'ToString'
-    nkEmpty
-    nkEmpty
-    nkFormalParams
-      nkIdent 'string'
-      nkIdentDefs
-        nkIdent 'self'
-        nkIdent 'Entry'
-        nkEmpty
-    nkPragma
-      nkIdent 'discardable'
-    nkEmpty
-    nkStmtList
-      nkCall
-        nkIdent 'nsObjectText'
-        nkIdent 'self'
-        nkCall
-          nkIdent 'nsFieldText'
-          nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'

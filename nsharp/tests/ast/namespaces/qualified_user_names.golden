@@ -1780,7 +1780,11 @@ nkStmtList
     nkStmtList
       nkAsgn
         nkIdent 'result'
-        nkStrLit ""
+        nkCall
+          nkIdent 'nsFieldText'
+          nkCall
+            nkIdent 'Base'
+            nkIdent 'self'
   nkMethodDef
     nkPostfix
       nkIdent '*'

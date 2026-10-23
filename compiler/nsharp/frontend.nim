@@ -34,7 +34,7 @@ proc compileNsSource*(source: string; fileIdx: FileIndex; cache: IdentCache;
     let dir = getNimcacheDir(config).string / NsGenDirName
     createDir(dir)
     let name = splitFile(toFullPath(config, fileIdx)).name
-    renderModule(result, dir / (name & ".lowered.nim"), {}, fileIdx, config)
+    renderModule(result, dir / (name & ".lowered.nim"), {renderNonExportedFields}, fileIdx, config)
 
 proc parseModule*(fileIdx: FileIndex; cache: IdentCache;
                   config: ConfigRef): PNode =

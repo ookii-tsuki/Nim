@@ -4718,8 +4718,10 @@ proc fieldText(l: Lowerer; n: NsNode; isClass: bool; selfDefs: PNode): PNode =
   let info = n.info
   let body = newNodeI(nkStmtList, info)
   var start: PNode = newAtom(nkStrLit, "", info)
-  if isClass and n.typ != nil and n.typ.kind == nsnTypeName and
-      l.scope.classes.hasKey(n.typ.name) and not l.scope.nativeBased(n.name):
+  ## The base as resolved (`Outer.A`, `M.Animal` and `N.G<int>` included), and
+  ## written as the class's own `of` clause writes it.
+  let base = l.scope.classes[n.name].base
+  if isClass and n.typ != nil and base.len > 0 and l.scope.classes.hasKey(base):
     start = newTree(nkCall, info, l.id("nsFieldText", info),
       newTree(nkCall, info, l.objTypeToNim(n.typ, info), l.id("self", info)))
   body.add newTree(nkAsgn, info, l.id("result", info), start)
@@ -4749,7 +4751,9 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
   var overridden = false
   for c in l.scope.chain(n.name):
     for m in l.scope.classes[c].members:
-      if m.name == "ToString" and m.isMethod and not m.isStatic: overridden = true
+      ## `ToString()` itself, not an overload such as `ToString(string format)`.
+      if m.name == "ToString" and m.isMethod and not m.isStatic and m.params.len == 0:
+        overridden = true
   let info = n.info
   let local = (if n.outer.len > 0: n.outer & "+" & n.name else: n.name)
   let full = (if l.curNamespace.len > 0: l.curNamespace & "." & local else: local)
@@ -4770,7 +4774,8 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
     ## prints this unless it declares `ToString` itself.
     overridden = false
     for m in n.sons:
-      if m.kind == nsnMethodDecl and m.name == "ToString" and not m.attrs.isStatic:
+      if m.kind == nsnMethodDecl and m.name == "ToString" and not m.attrs.isStatic and
+          m.params.len == 0:
         overridden = true
   if not overridden and n.attrs.isRecord:
     let shown = l.recordState(n).shown
@@ -4791,9 +4796,11 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
     result.add l.mkProc(l.alwaysExported("ToString", info), fp,
                         newTree(nkStmtList, info, text), info, withPragmas = true,
                         kind = (if isClass: nkMethodDef else: nkProcDef))
-  if not n.attrs.isRecord:
+  ## A static class has no instances to print.
+  let printsFields = not n.attrs.isRecord and not n.attrs.isStatic
+  if printsFields:
     result.add l.fieldText(n, isClass, selfDefs)
-  if not overridden and not n.attrs.isRecord:
+  if not overridden and printsFields:
     ## Not C#'s type name: the fields, as Nim prints an object (see `nsObjectText`).
     let fp = newNodeI(nkFormalParams, info)
     fp.add l.id("string", info)

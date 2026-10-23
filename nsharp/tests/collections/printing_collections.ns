@@ -28,5 +28,8 @@ class Program {
     Console.WriteLine(new List<int> { 3, 1 }.OrderBy(x => x).ToList());
     Console.WriteLine(new List<double> { 1.5 }.GetType());
     Console.WriteLine(new char[] { 'h', 'i' });
+    char[] noChars = null; Console.WriteLine(noChars); Console.Write(noChars);
+    IEnumerable<int> seq = new List<int> { 1, 2 }; Console.WriteLine(seq + " " + $"{seq}");
+    foreach (var g in new List<int> { 1, 2, 3 }.GroupBy(x => x % 2)) Console.WriteLine(g);
   }
 }

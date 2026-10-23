@@ -1,4 +1,5 @@
 IOrderedEnumerable.ToList = type-parameter
 List.GetType = result:other
+List.GroupBy = type-parameter
 List.OrderBy = type-parameter
 List.Where = type-parameter

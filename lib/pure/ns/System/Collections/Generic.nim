@@ -68,7 +68,7 @@ from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remov
 from ../../../nsharp/hashmap as nshash import nil
 from ../../../nsharp/intrinsics import nsNilFail, NsDisposeStack, nsDisposeRun, Type, nsTypeNamed, nsTypeOf, nsDisplay, nsGenericType, nsDynType, nsCoreLib, nsCollectionsLib,
   nsVtByKey, nsKeyOf, Equals, GetHashCode,
-  NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`, ToString, nsItemsText, nsPairsText
+  NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`, ToString, nsItemsText, nsPairsText, nsFieldValue
 export Collections
 
 # `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
@@ -158,6 +158,7 @@ type
   IEnumerable*[T] = ref object
     ## C#'s `IEnumerable<T>`: something that hands out enumerators.
     make: proc(): IEnumerator[T]
+    show: proc(): string  ## a view of a collection prints it; a query has none
   nsVT_IReadOnlyCollection*[T] = object
     fCount*: proc (o: RootRef): int32 {.nimcall.}
     fEnum*: proc (o: RootRef): IEnumerable[T] {.nimcall.}
@@ -1544,7 +1545,8 @@ template nsEnumerable*(T: typedesc; body: untyped): untyped =
 template nsSequenceView(xs: untyped; T: typedesc): untyped =
   IEnumerable[T](make: proc(): IEnumerator[T] =
     nsEnumeratorOf[T](iterator(): T {.closure.} =
-      for x in items(xs): yield x))
+      for x in items(xs): yield x),
+    show: proc(): string = nsItemsText(xs))
 
 # The compiler calls these where C# converts an array or a collection to
 # `IEnumerable<T>` implicitly, so the view is enumerated live. A Nim converter
@@ -1569,17 +1571,18 @@ template nsArgType(T: typedesc): Type =
   mixin nsTypeOf
   when compiles(nsTypeOf(T)): nsTypeOf(T) else: nsTypeNamed($T)
 proc `$`*[T](s: IEnumerable[T]): string =
-  ## A query is not run to print it (it may be endless, or its lambdas have
-  ## effects): it prints as a sequence of its element type. `ToList()` prints
-  ## the elements.
-  "System.Collections.Generic.IEnumerable`1[" & nsArgType(T).nsDisplay & "]"
+  ## A collection held as an `IEnumerable<T>` prints its elements. A query is not
+  ## run to print it (it may be endless, or its lambdas have effects): it prints
+  ## as a sequence of its element type, and `ToList()` prints the elements.
+  if s.show != nil: s.show()
+  else: "System.Collections.Generic.IEnumerable`1[" & nsArgType(T).nsDisplay & "]"
 proc ToString*[T](s: IEnumerable[T]): string = $s
 proc `$`*[T](s: IOrderedEnumerable[T]): string =
   "System.Linq.IOrderedEnumerable`1[" & nsArgType(T).nsDisplay & "]"
 proc ToString*[T](s: IOrderedEnumerable[T]): string = $s
 template nsCachedType(body: untyped): Type =
-  ## Made once per instantiation: `GetType()` and `ToString()` of a collection are
-  ## its constructed type.
+  ## Made once per instantiation: `GetType()` of a collection is its constructed
+  ## type.
   var cached {.global.}: Type = nil
   if cached.isNil: cached = body
   cached
@@ -1596,6 +1599,9 @@ proc nsTypeOf*[T](t: typedesc[Stack[T]]): Type =
   nsCachedType(nsGenericType(nsGenNs & "Stack", nsCollectionsLib, nsArgType(T)))
 proc nsTypeOf*[T](t: typedesc[LinkedList[T]]): Type =
   nsCachedType(nsGenericType(nsGenNs & "LinkedList", nsCollectionsLib, nsArgType(T)))
+proc nsTypeOf*[K, T](t: typedesc[IGrouping[K, T]]): Type =
+  nsCachedType(nsGenericType("System.Linq.IGrouping", "System.Linq, Version=10.0.0.0, " &
+    "Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", nsArgType(K), nsArgType(T)))
 proc nsTypeOf*[K, V](t: typedesc[Dictionary[K, V]]): Type =
   nsCachedType(nsGenericType(nsGenNs & "Dictionary", nsCoreLib, nsArgType(K), nsArgType(V)))
 proc nsTypeOf*[K, V](t: typedesc[SortedDictionary[K, V]]): Type =
@@ -1611,7 +1617,7 @@ proc nsTypeOf*[K, V](t: typedesc[KeyValuePair[K, V]]): Type =
   nsCachedType(nsGenericType(nsGenNs & "KeyValuePair", nsCoreLib, nsArgType(K),
                              nsArgType(V)))
 
-# `GetType()` of a collection held as an `object` (and so its `ToString()`).
+# `GetType()` of a collection held as an `object`.
 method nsDynType*[T](x: List[T]): Type = nsTypeOf(List[T])
 method nsDynType*[K, V](x: Dictionary[K, V]): Type = nsTypeOf(Dictionary[K, V])
 method nsDynType*[T](x: HashSet[T]): Type = nsTypeOf(HashSet[T])
@@ -1627,6 +1633,9 @@ method nsDynType*[E, P](x: PriorityQueue[E, P]): Type = nsTypeOf(PriorityQueue[E
 # dictionary its entries, `{"a": 1}` -- not the type's name, as C# prints
 # (`GetType()` still gives that). A `PriorityQueue`, which C# does not enumerate,
 # keeps its name.
+method ToString*[K, T](g: IGrouping[K, T]): string =
+  ## A group of `GroupBy`, which holds its elements: `(Key: "a", Elements: [1, 3])`.
+  "(Key: " & nsFieldValue(g.nsKey) & ", Elements: " & nsItemsText(g, g.nsElems) & ")"
 method ToString*[T](x: List[T]): string = nsItemsText(x)
 method ToString*[T](x: HashSet[T]): string = nsItemsText(x)
 method ToString*[T](x: Queue[T]): string = nsItemsText(x)

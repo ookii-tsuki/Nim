@@ -17,3 +17,7 @@ System.Linq.Enumerable+ListWhereIterator`1[System.Int32]
 System.Collections.Generic.List`1[System.Int32]
 System.Collections.Generic.List`1[System.Double]
 hi
+
+System.Collections.Generic.List`1[System.Int32] System.Collections.Generic.List`1[System.Int32]
+System.Linq.Grouping`2[System.Int32,System.Int32]
+System.Linq.Grouping`2[System.Int32,System.Int32]

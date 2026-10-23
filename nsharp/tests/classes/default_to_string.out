@@ -7,4 +7,8 @@
 (Value: (X: 0, Y: 0))
 Named n1
 Rec { A = 1, B = b }
+(X: 1, Z: 3)
+(X: 1, Y: 2) Fx
+(Shape: null)
+true
 (X: 3, Y: 0) ()

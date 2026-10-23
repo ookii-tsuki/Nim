@@ -1,6 +1,6 @@
-// GetType(), Name, FullName and ToString() of the library's collections, a user's
-// generic class and an array: FullName qualifies each generic argument with its
-// assembly, as .NET writes it.
+// GetType(), Name and FullName of the library's collections, a user's generic
+// class and an array, and ToString() reaching each through `object`: FullName
+// qualifies each generic argument with its assembly, as .NET writes it.
 using System;
 using System.Collections.Generic;
 namespace Demo {

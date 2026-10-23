@@ -142,9 +142,10 @@ proc nsExceptionText(e: ref Exception): string =
                "\n   --- End of inner exception stack trace ---"
 
 method ToString*(x: RootRef): string {.base, discardable.} =
-  ## C#'s `object.ToString()`: an exception's type and message, else the dynamic
-  ## type's name. Every class N# compiles overrides it with its own name, or with
-  ## the user's override.
+  ## `object.ToString()`: an exception's type and message, else the dynamic type's
+  ## name. Every class N# compiles overrides it, with a print of its fields or the
+  ## user's override, and the library's collections and arrays with their elements,
+  ## so this is reached only by a type nothing overrides it for.
   if x of Exception: nsExceptionText((ref Exception)(x))
   else: x.nsDynType.nsDisplay
 
@@ -305,6 +306,9 @@ proc nsFieldValue*[T](x: T): string =
     result = (if x.isNil: "null" else: nsValueText(x))
   elif T is ref or T is ptr or T is pointer:
     result = (if x.isNil: "null" else: $x)
+  elif T is object and compiles(x.nsObj):
+    ## An interface value: the object it holds, or null.
+    result = (if x.nsObj.isNil: "null" else: nsValueText(x.nsObj))
   elif (T is proc):
     result = (if x.isNil: "null" else: "...")
   elif compiles($x): result = $x
@@ -318,12 +322,17 @@ proc nsFieldAdd*[T](text: var string; name: string; value: T) =
   text.add nsFieldValue(value)
 
 var nsPrinting {.threadvar.}: seq[pointer]
+const nsPrintDepth = 64
+  ## How deep objects print inside one another: a longer chain (a linked list of
+  ## thousands of nodes) ends in `...`, so printing it neither recurses without
+  ## bound nor copies its text once per level.
+
 template nsGuarded*(self: typed; text: untyped): string =
   ## `text`, or `...` for an object already being printed further out, so a cycle
-  ## (`a.Next = a`, a list holding itself) ends.
+  ## (`a.Next = a`, a list holding itself) ends, or one `nsPrintDepth` levels in.
   when self is ref:
     let nsAt = cast[pointer](self)
-    if nsAt in nsPrinting: "..."
+    if nsPrinting.len >= nsPrintDepth or nsAt in nsPrinting: "..."
     else:
       nsPrinting.add nsAt
       try: text
@@ -1025,7 +1034,7 @@ proc nsIsType*[T](o: RootRef; t: typedesc[T]): bool =
 
 type
   NsMdBase* = ref object of RootObj
-    nsName: string    ## `System.Int32[,]`, what C# prints for the array
+    nsName: string    ## `System.Int32[,]`, the type's name
   NsMdArray*[T] = ref object of NsMdBase
     nsDims: seq[int]
     nsData: seq[T]
@@ -1102,7 +1111,7 @@ iterator items*[T](a: NsMdArray[T]): T =
 
 type
   NsArrayBase* = ref object of RootObj
-    nsName: proc (): string {.nimcall.}  ## `System.Int32[]`, what C# prints
+    nsName: proc (): string {.nimcall.}  ## `System.Int32[]`, the type's name
   NsArray*[T] = ref object of NsArrayBase
     nsData*: seq[T]
 
