@@ -406,7 +406,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 3
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -628,7 +629,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 4
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -850,7 +852,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 2
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -1294,7 +1297,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 3
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -1307,36 +1311,45 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkPrefix
-        nkIdent '@'
-        nkBracket
-          nkTupleConstr
-            nkStrLit "Red"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Color'
-                  nkIdent 'Red'
-          nkTupleConstr
-            nkStrLit "Green"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Color'
-                  nkIdent 'Green'
-          nkTupleConstr
-            nkStrLit "Blue"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Color'
-                  nkIdent 'Blue'
+      nkStmtList
+        nkConstSection
+          nkConstDef
+            nkIdent 'nsTable'
+            nkBracketExpr
+              nkIdent 'array'
+              nkIntLit 3
+              nkTupleConstr
+                nkIdent 'string'
+                nkIdent 'int64'
+            nkBracket
+              nkTupleConstr
+                nkStrLit "Red"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Color'
+                      nkIdent 'Red'
+              nkTupleConstr
+                nkStrLit "Green"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Color'
+                      nkIdent 'Green'
+              nkTupleConstr
+                nkStrLit "Blue"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Color'
+                      nkIdent 'Blue'
+        nkIdent 'nsTable'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1664,7 +1677,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 4
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -1677,45 +1691,54 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkPrefix
-        nkIdent '@'
-        nkBracket
-          nkTupleConstr
-            nkStrLit "None"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Perm'
-                  nkIdent 'None'
-          nkTupleConstr
-            nkStrLit "Read"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Perm'
-                  nkIdent 'Read'
-          nkTupleConstr
-            nkStrLit "Write"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Perm'
-                  nkIdent 'Write'
-          nkTupleConstr
-            nkStrLit "Exec"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Perm'
-                  nkIdent 'Exec'
+      nkStmtList
+        nkConstSection
+          nkConstDef
+            nkIdent 'nsTable'
+            nkBracketExpr
+              nkIdent 'array'
+              nkIntLit 4
+              nkTupleConstr
+                nkIdent 'string'
+                nkIdent 'int64'
+            nkBracket
+              nkTupleConstr
+                nkStrLit "None"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Perm'
+                      nkIdent 'None'
+              nkTupleConstr
+                nkStrLit "Read"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Perm'
+                      nkIdent 'Read'
+              nkTupleConstr
+                nkStrLit "Write"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Perm'
+                      nkIdent 'Write'
+              nkTupleConstr
+                nkStrLit "Exec"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Perm'
+                      nkIdent 'Exec'
+        nkIdent 'nsTable'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -2025,7 +2048,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 2
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -2038,27 +2062,36 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkPrefix
-        nkIdent '@'
-        nkBracket
-          nkTupleConstr
-            nkStrLit "A"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'uint8'
-                nkDotExpr
-                  nkIdent 'Small'
-                  nkIdent 'A'
-          nkTupleConstr
-            nkStrLit "B"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'uint8'
-                nkDotExpr
-                  nkIdent 'Small'
-                  nkIdent 'B'
+      nkStmtList
+        nkConstSection
+          nkConstDef
+            nkIdent 'nsTable'
+            nkBracketExpr
+              nkIdent 'array'
+              nkIntLit 2
+              nkTupleConstr
+                nkIdent 'string'
+                nkIdent 'int64'
+            nkBracket
+              nkTupleConstr
+                nkStrLit "A"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'uint8'
+                    nkDotExpr
+                      nkIdent 'Small'
+                      nkIdent 'A'
+              nkTupleConstr
+                nkStrLit "B"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'uint8'
+                    nkDotExpr
+                      nkIdent 'Small'
+                      nkIdent 'B'
+        nkIdent 'nsTable'
   nkProcDef
     nkPostfix
       nkIdent '*'

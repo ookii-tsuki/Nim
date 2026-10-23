@@ -1,0 +1,23 @@
+// The best common type of an implicitly typed array over classes (a base class
+// the others derive from), nullables and characters.
+using System;
+namespace Demo {
+class Animal { public virtual string N => "animal"; }
+class Dog : Animal { public override string N => "dog"; }
+interface IPet { }
+class Cat : Animal, IPet { }
+class Program {
+    static void Main() {
+        Animal an = new Animal();
+        var a = new[] { new Dog(), an };
+        Console.WriteLine(a.GetType() + " " + a[0].N + " " + a[1].N);
+        int? n = 4;
+        var b = new[] { n, 1 };
+        Console.WriteLine(b.Length + " " + b[0] + " " + b[1]);
+        var d = new[] { new Cat(), new Cat() };
+        Console.WriteLine(d.GetType());
+        var e = new[] { "x", null };
+        Console.WriteLine(e.GetType() + " " + new[] { 1, 2L, 3 }.GetType() + " " + new[] { 'a', 'b' }.GetType());
+    }
+}
+}

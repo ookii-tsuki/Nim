@@ -1,0 +1,8 @@
+DateTime.GetType = result:other
+DateTime.Now = result:other
+DayOfWeek.GetType = result:other
+DayOfWeek.Monday = result:other
+List.GetType = result:other
+TimeSpan.GetType = result:other
+TimeSpan.Zero = result:other
+object.GetType = result:other

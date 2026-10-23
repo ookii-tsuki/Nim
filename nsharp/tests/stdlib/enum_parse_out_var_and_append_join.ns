@@ -1,6 +1,6 @@
 // `Enum.TryParse<T>(s, out var x)` types x from the explicit type argument, and
-// StringBuilder.AppendJoin takes any sequence of values, with a string or char
-// separator.
+// StringBuilder.AppendJoin takes any sequence of values or any values (params
+// object[]), with a string or char separator.
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -13,6 +13,7 @@ class Program {
         var sb = new StringBuilder();
         sb.AppendJoin(", ", new[] { 1, 2, 3 }).AppendJoin('|', new List<double> { 1.5, 2 }).AppendJoin("-", "a", "b");
         sb.AppendJoin(';', "x", "y");
+        sb.AppendJoin(", ", 1, 2, 3).AppendJoin(';', 1.5, "x", 'c');
         Console.WriteLine(sb);
     }
 }

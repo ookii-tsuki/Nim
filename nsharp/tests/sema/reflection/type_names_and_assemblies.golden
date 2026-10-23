@@ -1,0 +1,23 @@
+using System
+using System.Collections.Generic
+using System.Text
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Exception.ToString = System | string
+member Type.FullName = System | string
+member Type.FullName = System | string
+member Type.FullName = System | string
+member Type.FullName = System | string
+member Type.Namespace = System | string
+member Type.Namespace = System | string
+member Type.Namespace = System | string
+member object.ToString = System | string

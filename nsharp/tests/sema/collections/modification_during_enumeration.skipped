@@ -1,0 +1,6 @@
+Dictionary.Keys = result:other
+Dictionary.Values = result:other
+Exception.GetType = result:other
+KeyValuePair.Key = type-parameter
+LinkedList.AddLast = type-parameter
+Stack.Pop = type-parameter

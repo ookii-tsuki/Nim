@@ -1,0 +1,7 @@
+Array.Empty = type-parameter
+Enumerable.Empty = type-parameter
+Enumerable.Range = result:other
+array.GetType = result:other
+g().HasValue = nullable
+long.GetType = result:other
+v.HasValue = nullable

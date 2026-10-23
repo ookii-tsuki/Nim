@@ -197,6 +197,8 @@ proc classifyType(ctx: NsCheckContext; t: NsNode): NsTypeKind =
     result = if inner in {tkInt, tkFloat, tkBool, tkChar} or struct: tkNullable else: inner
     t.setType(result, declTypeName(t.typ))
   of nsnTypeName:
+    ## The type arguments too (`Func<int?>`), which lowering spells as their kinds say.
+    for a in t.sons: discard ctx.classifyType(a)
     result = ctx.classifyName(t.name)
     if result == tkUnknown and t.sons.len > 0 or result == tkUnknown and
        ctx.surface.types.hasKey(nimTypeName(t.name) & "0"):
@@ -281,9 +283,11 @@ proc csOperatorOf*(nimOp: string): string =
   else: nimOp
 
 proc constantFitsUnsigned(e: NsNode; own, other: string): bool =
-  ## An `int`/`long` constant the other operand's unsigned type can hold.
-  e != nil and e.kind == nsnIntLit and own in ["int", "long"] and
-    other in ["uint", "ulong", "nuint"] and fitsLiteral(e.intVal, other)
+  ## A constant the other operand's unsigned type can hold (ECMA-334 10.2.11): an
+  ## `int` one into any of them, a `long` one into `ulong` only.
+  e != nil and e.kind == nsnIntLit and
+    ((own == "int" and other in ["uint", "ulong", "nuint"]) or
+     (own == "long" and other == "ulong")) and fitsLiteral(e.intVal, other)
 
 proc numName(n: NsNode): string =
   ## The C# numeric type of an expression, or "" when it is not known exactly.
@@ -814,6 +818,14 @@ proc argConv(ctx: NsCheckContext; arg, target: NsNode): NsArgConv =
      ctx.classifyType(target.typ) in NsValueTargetKinds:
     if arg.kind == nsnNull: result = acNoneOption
     elif arg.typeKind != tkNullable: result = acSome   ## a `T?` is already one
+
+proc nullableValue(ctx: NsCheckContext; v, target: NsNode) =
+  ## A value where a `T?` is wanted (a `return`, a lambda's result): `some`/`none`
+  ## with the element type, as for an argument.
+  let conv = ctx.argConv(v, target)
+  if conv != acNone and v.argConv == acNone:
+    v.argConv = conv
+    v.argConvType = declTypeName(target.typ)
 
 type
   NsArgMap = object
@@ -2343,7 +2355,9 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       else:
         kind = ctx.memberKindOfSurface(ctx.surface.kindOfName(recv), recv, n.name,
                                        tname)
-    if kind == tkUnknown: kind = tkType
+    ## A member the library declares a result for is a value of it (`DayOfWeek.Monday`
+    ## is a `DayOfWeek`), whatever its kind; anything else names a type or namespace.
+    if kind == tkUnknown and tname.len == 0: kind = tkType
     if kind == tkType and tname.len == 0 and
        (ctx.scope.classes.hasKey(n.name) or ctx.scope.enums.contains(n.name)):
       ## `Demo.Gadget`: the qualified name of a type this compilation declares.
@@ -2646,16 +2660,58 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       discard ctx.walkExpr(a)
   ## What the walked lambdas yield binds the type arguments the others left open
   ## (`T(() => 42)`): their results, and anything else still untyped, take them.
-  var reopen = false
-  for j, a in n.sons:
-    if isLambdaArg(a) and sigs[j].known:
-      let v = (if a.kind == nsnNamedArg: a.body else: a)
-      if v.kind == nsnLambda and v.typ == nil: reopen = true
-  if reopen:
-    let again = callLambdaSigs(ctx.scope, ctx.surface, n)
+  ## Repeated while it binds more: a lambda whose parameters a type argument now
+  ## gives is walked again with them (`Compose(2, a => a + 1, b => b * 1.5)`).
+  for round in 0 ..< 4:
+    var open = false
     for j, a in n.sons:
       let v = (if a.kind == nsnNamedArg: a.body else: a)
-      if isLambdaArg(a) and v.kind == nsnLambda: applySigDeep(ctx, v, again[j])
+      if isLambdaArg(a) and sigs[j].known and v.kind == nsnLambda:
+        if v.typ == nil: open = true
+        for p in v.params:
+          if p.typ == nil: open = true
+    if not open: break
+    let again = callLambdaSigs(ctx.scope, ctx.surface, n)
+    var changed = false
+    for j, a in n.sons:
+      let v = (if a.kind == nsnNamedArg: a.body else: a)
+      if not isLambdaArg(a) or v.kind != nsnLambda: continue
+      var before = (if v.typ == nil: 1 else: 0)
+      for p in v.params:
+        if p.typ == nil: inc before
+      applySigDeep(ctx, v, again[j])
+      var after = (if v.typ == nil: 1 else: 0)
+      for p in v.params:
+        if p.typ == nil: inc after
+      if after < before:
+        changed = true
+        discard ctx.walkExpr(v)
+    if not changed: break
+  if callee != nil and callee.kind == nsnMember and callee.typeArgs.len > 0 and
+     cands.len == 0:
+    ## A library method's written type arguments (`xs.Select<int, object>(f)`) have
+    ## typed its lambdas, which then tell Nim the rest; written in Nim they would
+    ## name a type class (`NsEnumerable[int32]`) where only a type can stand.
+    var lambdas = 0
+    var typed = true
+    for a in n.sons:
+      let v = (if a.kind == nsnNamedArg: a.body else: a)
+      if v.kind == nsnLambda:
+        inc lambdas
+        if v.typ == nil: typed = false
+        for p in v.params:
+          if p.typ == nil: typed = false
+    if lambdas > 0 and typed: callee.typeArgs = @[]
+  if callee != nil and callee.kind == nsnMember:
+    ## Each lambda as its delegate, for Nim, which cannot infer through two uses of
+    ## one generic delegate (`Compose(a, f, g)`), once the arguments bind them all.
+    let dts = inferredDelegateTypes(ctx.scope, ctx.surface, n)
+    for j, a in n.sons:
+      if j >= dts.len or dts[j] == nil: continue
+      let v = (if a.kind == nsnNamedArg: a.body else: a)
+      if v.kind == nsnLambda and v.conv.len == 0:
+        v.conv = "nsAsDelegate"
+        v.convType = dts[j]
   if callee != nil and callee.kind == nsnMember and cands.len == 0 and
      callee.body != nil and callee.body.typeKind != tkType and
      not ctx.scope.classes.hasKey(canonicalTypeName(callee.body.typeName)):
@@ -2691,6 +2747,17 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         n.setType(kind, declTypeName(rt))
   if callee != nil and callee.kind == nsnMember and cands.len == 0:
     ctx.libraryOutTypes(callee, n.sons)
+  if kind == tkUnknown and callee != nil and callee.kind == nsnIdent and
+     ctx.types.hasKey(callee.name) and ctx.types[callee.name].kind == tkDelegate and
+     ctx.types[callee.name].node != nil and
+     ctx.types[callee.name].node.kind in {nsnTypeName, nsnNullableType}:
+    ## `f()` of a delegate variable: its delegate's result (`Func<int?>` is an
+    ## `int?`), which a conversion of the value needs.
+    let sig = delegateSig(ctx.scope, ctx.surface, ctx.types[callee.name].node)
+    if sig.known and sig.ret != nil and sig.ret.kind != nsnVoidType:
+      kind = ctx.classifyType(sig.ret)
+      n.rtype = sig.ret
+      n.setType(kind, declTypeName(sig.ret))
   for a in n.sons:
     let v = argValue(a)
     if v != nil and v.kind == nsnOutDecl and not ctx.types.hasKey(v.name):
@@ -3038,43 +3105,72 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
           nsError(ctx.config, a.info, ndCannotConvert, kindSpelling(a), "int")
     if n.kind == nsnArrayLit and n.typ == nil:
       ## `new[] { 1.5, 2.5 }`: the element type is the elements' best common type
-      ## (ECMA-334 12.6.3.15), the one every other element converts to implicitly
-      ## (`{ long.MaxValue, 1 }` is a `long[]`); a `null` asks for a reference type.
+      ## (ECMA-334 12.6.3.15), the candidate every element converts to implicitly:
+      ## `{ long.MaxValue, 1 }` is a `long[]`, `{ dog, animal }` an `Animal[]`,
+      ## `{ n, 1 }` for an `int? n` an `int?[]`; with none, CS0826.
       var cands: seq[NsNode] = @[]
       var hasNull = false
+      var unknown = false
       for a in n.sons:
         if a.kind == nsnNull:
           hasNull = true
           continue
         let vt = valueType(a)
-        if vt == nil: continue
+        if vt == nil:
+          unknown = true
+          continue
         var seen = false
         for c in cands:
-          if c.kind == nsnTypeName and vt.kind == nsnTypeName and
-             (canonicalTypeName(c.name) == canonicalTypeName(vt.name) or
-              (numericOfSpelling(canonicalTypeName(c.name)).len > 0 and
-               numericOfSpelling(canonicalTypeName(c.name)) ==
-                 numericOfSpelling(canonicalTypeName(vt.name)))): seen = true
+          if mangleType(c) == mangleType(vt): seen = true
         if not seen: cands.add vt
-      proc typeNum(t: NsNode): string =
-        if t.kind == nsnTypeName: numericOfSpelling(canonicalTypeName(t.name)) else: ""
+      proc numOf(t: NsNode): string =
+        if t != nil and t.kind == nsnTypeName: numericOfSpelling(canonicalTypeName(t.name))
+        else: ""
+      let scope = ctx.scope
+      proc holdsNull(c: NsNode): bool =
+        ## A reference type, or a nullable value type.
+        c.kind in {nsnNullableType, nsnArrayType} or
+          (c.kind == nsnTypeName and numOf(c).len == 0 and
+           canonicalTypeName(c.name) notin ["bool", "char"] and
+           not (scope.classes.hasKey(canonicalTypeName(c.name)) and
+                scope.classes[canonicalTypeName(c.name)].decl != nil and
+                scope.classes[canonicalTypeName(c.name)].decl.classKind == ckStruct) and
+           not scope.enums.contains(canonicalTypeName(c.name)))
+      proc converts(o, c: NsNode): bool =
+        ## Whether a value of type `o` converts implicitly to `c`.
+        if mangleType(o) == mangleType(c): return true
+        if c.kind == nsnNullableType:
+          return (o.kind == nsnNullableType and converts(o.typ, c.typ)) or
+                 (o.kind != nsnNullableType and converts(o, c.typ))
+        if o.kind == nsnNullableType: return false
+        let on = numOf(o)
+        let cn = numOf(c)
+        if on.len > 0 or cn.len > 0:
+          return on.len > 0 and cn.len > 0 and implicitlyConvertible(on, cn)
+        if o.kind == nsnTypeName and c.kind == nsnTypeName:
+          let cName = canonicalTypeName(c.name)
+          if cName == "object": return true
+          return scope.implements(canonicalTypeName(o.name), cName)
+        false
       for c in cands:
-        let cn = typeNum(c)
-        var best = true
+        var best = not (hasNull and not holdsNull(c))
         for o in cands:
-          if o == c: continue
-          let on = typeNum(o)
-          if not (isNumericName(cn) and isNumericName(on) and implicitlyConvertible(on, cn)):
-            best = false
-        if hasNull and isNumericName(cn): best = false
+          if best and not converts(o, c): best = false
         if best:
           n.typ = c
           break
-      if n.typ == nil and cands.len > 0: n.typ = cands[0]
+      if n.typ == nil and not unknown:
+        nsError(ctx.config, n.info, ndNoBestArrayType)
       if n.typ != nil and (cands.len > 1 or hasNull):
         for a in n.sons:
-          ctx.markNull(a, declTypeName(n.typ), n.typ)
-          ctx.coerce(a, declTypeName(n.typ), a.info, n.typ)
+          let conv = ctx.argConv(a, n.typ)
+          if conv != acNone:
+            ## Into a `T?`: `some`/`none` with the element type, as an argument.
+            a.argConv = conv
+            a.argConvType = declTypeName(n.typ.typ)
+          else:
+            ctx.markNull(a, declTypeName(n.typ), n.typ)
+            ctx.coerce(a, declTypeName(n.typ), a.info, n.typ)
     let at = (if n.typ != nil: nsnArrayType(n.typ, n.info) else: nil)
     n.rtype = at
     n.setType(tkSequence, (if at != nil: declTypeName(at) else: ""))
@@ -3676,6 +3772,8 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         ## `Func<object>` boxes it).
         if ctx.retType.kind != nsnNullableType:
           ctx.coerce(e, declTypeName(ctx.retType), e.info, ctx.retType)
+        else:
+          ctx.nullableValue(e, ctx.retType)
     elif n.body != nil:
       ctx.walkInScope(n.body.sons)
     ctx.yieldHost = savedHost
@@ -4381,6 +4479,8 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
           ctx.checkConvertible(n.body, ctx.targetOfType(ctx.retType), n.body.info)
           if ctx.retType.kind != nsnNullableType:
             ctx.coerce(n.body, declTypeName(ctx.retType), n.body.info, ctx.retType)
+          else:
+            ctx.nullableValue(n.body, ctx.retType)
       else:
         ctx.checkThrow(n)
   else:

@@ -30,7 +30,8 @@
 import std/[os, strutils, syncio, algorithm]
 import ../System
 import Collections/Generic
-from ../../nsharp/intrinsics import NsArray, nsArrayOf, items, len, ToString, nsTypeName
+from ../../nsharp/intrinsics import NsArray, nsArrayOf, items, len, ToString, nsTypeName,
+  Type, nsTypeNamed
 
 {.push discardable.}
 
@@ -66,6 +67,9 @@ method ToString*(w: StreamWriter): string = "System.IO.StreamWriter"
 method nsTypeName*(w: StreamWriter): string = "System.IO.StreamWriter"
 method ToString*(d: DirectoryInfo): string = d.nsPath
 method nsTypeName*(d: DirectoryInfo): string = "System.IO.DirectoryInfo"
+proc nsTypeOf*(t: typedesc[StreamReader]): Type = nsTypeNamed("System.IO.StreamReader")
+proc nsTypeOf*(t: typedesc[StreamWriter]): Type = nsTypeNamed("System.IO.StreamWriter")
+proc nsTypeOf*(t: typedesc[DirectoryInfo]): Type = nsTypeNamed("System.IO.DirectoryInfo")
 
 proc Message*(e: ref FileNotFoundException): string = e.msg
   ## .NET's `FileNotFoundException` overrides `Message` (to name the file when made
@@ -260,16 +264,27 @@ proc SetCurrentDirectory*(t: typedesc[Directory]; path: string) =
   setCurrentDir(path)
 
 proc nsMatches(name, pattern: string): bool =
-  ## `*` any run, `?` one character, as a search pattern reads; `*.*` is all.
+  ## `*` any run, `?` one character, as a search pattern reads; `*.*` is all. In
+  ## linear time: on a mismatch, the last `*` takes one more character.
   if pattern == "*" or pattern == "*.*": return true
-  proc go(n, p: int): bool =
-    if p == pattern.len: return n == name.len
-    if pattern[p] == '*':
-      for k in n .. name.len:
-        if go(k, p + 1): return true
-      return false
-    n < name.len and (pattern[p] == '?' or pattern[p] == name[n]) and go(n + 1, p + 1)
-  go(0, 0)
+  var n, p = 0
+  var star = -1
+  var mark = 0
+  while n < name.len:
+    if p < pattern.len and (pattern[p] == '?' or pattern[p] == name[n]):
+      inc n
+      inc p
+    elif p < pattern.len and pattern[p] == '*':
+      star = p
+      mark = n
+      inc p
+    elif star >= 0:
+      p = star + 1
+      inc mark
+      n = mark
+    else: return false
+  while p < pattern.len and pattern[p] == '*': inc p
+  p == pattern.len
 
 proc nsEntries(path, pattern: string; dirs: bool): NsArray[string] =
   ## The entries' paths as `path` spells them, sorted by name (.NET leaves the

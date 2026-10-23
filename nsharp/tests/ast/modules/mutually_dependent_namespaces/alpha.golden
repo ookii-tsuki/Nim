@@ -293,7 +293,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 2
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -527,6 +528,27 @@ nkStmtList
           nkBracketExpr
             nkIdent 'Holder'
             nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsDynType'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
         nkEmpty
     nkEmpty
     nkEmpty
@@ -876,7 +898,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 2
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -889,27 +912,36 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkPrefix
-        nkIdent '@'
-        nkBracket
-          nkTupleConstr
-            nkStrLit "Calm"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Mood'
-                  nkIdent 'Calm'
-          nkTupleConstr
-            nkStrLit "Loud"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Mood'
-                  nkIdent 'Loud'
+      nkStmtList
+        nkConstSection
+          nkConstDef
+            nkIdent 'nsTable'
+            nkBracketExpr
+              nkIdent 'array'
+              nkIntLit 2
+              nkTupleConstr
+                nkIdent 'string'
+                nkIdent 'int64'
+            nkBracket
+              nkTupleConstr
+                nkStrLit "Calm"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Mood'
+                      nkIdent 'Calm'
+              nkTupleConstr
+                nkStrLit "Loud"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Mood'
+                      nkIdent 'Loud'
+        nkIdent 'nsTable'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1200,15 +1232,38 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsTypeNamed'
+        nkIdent 'nsGenericType'
+        nkStrLit "Alpha.Holder"
+        nkStrLit ""
         nkCall
-          nkIdent 'nsGenericName'
-          nkStrLit "Alpha.Holder"
-          nkCall
-            nkIdent 'nsDisplay'
-            nkCall
-              nkIdent 'nsTypeOf'
-              nkIdent 'T'
+          nkIdent 'nsTypeOf'
+          nkIdent 'T'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsDynType'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeOf'
+        nkCall
+          nkIdent 'typeof'
+          nkIdent 'self'
   nkMethodDef
     nkPostfix
       nkIdent '*'

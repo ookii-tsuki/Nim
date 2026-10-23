@@ -1,0 +1,23 @@
+// double.CompareTo puts NaN below every number, so Max, OrderBy and Array.Sort
+// place it as .NET does; MinBy and MaxBy over keys that are all null.
+using System;
+using System.Linq;
+using System.Collections.Generic;
+namespace Demo {
+class P { public string Name; public int Age; public P(string n, int a) { Name = n; Age = a; } }
+class Program {
+    static void Main() {
+        var d = new List<double> { 3, double.NaN, 1 };
+        Console.WriteLine(d.Max() + " " + d.Min() + " " + string.Join(",", d.OrderBy(x => x)) + " " + string.Join(",", d.OrderByDescending(x => x)));
+        Console.WriteLine(new List<double> { double.NaN, 2 }.Max() + " " + double.NaN.CompareTo(1.0) + " " + 1.0.CompareTo(double.NaN) + " " + double.NaN.CompareTo(double.NaN));
+
+        Console.WriteLine(new List<int> { 1, 2, 2 }.Average(x => x));
+        Console.WriteLine(new List<int> { 1, 2, 2 }.Average(x => (double)x));
+        var ps = new List<P> { new P(null, 1), new P(null, 2) };
+        Console.WriteLine(ps.MinBy(p => p.Name).Age + " " + ps.MaxBy(p => p.Name).Age);
+        var arr = new double[] { 2, double.NaN, 1 };
+        Array.Sort(arr);
+        Console.WriteLine(string.Join(",", arr));
+    }
+}
+}

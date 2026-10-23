@@ -16,7 +16,7 @@
 
 import std/[monotimes, syncio]
 import ../System
-from ../../nsharp/intrinsics import ToString, nsTypeName
+from ../../nsharp/intrinsics import ToString, nsTypeName, Type, nsTypeNamed
 
 {.push discardable.}
 
@@ -31,6 +31,7 @@ type
 
 method ToString*(s: Stopwatch): string = "System.Diagnostics.Stopwatch"
 method nsTypeName*(s: Stopwatch): string = "System.Diagnostics.Stopwatch"
+proc nsTypeOf*(t: typedesc[Stopwatch]): Type = nsTypeNamed("System.Diagnostics.Stopwatch")
 
 proc nsNow(): int64 = getMonoTime().ticks
 

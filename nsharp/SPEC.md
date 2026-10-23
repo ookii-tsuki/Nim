@@ -1057,6 +1057,12 @@ its format strings; `StringBuilder.Capacity`/`EnsureCapacity`/`CopyTo`; `Random`
 `DivRem`, `FusedMultiplyAdd`; a culture other than en-US; `char`'s Unicode
 categories beyond ASCII.
 
+Numeric format strings follow .NET: a letter followed only by digits is a standard
+format (an unknown letter is `FormatException`; integers also take `B`), anything
+else a custom one, with `0` `#` `.` `,` `%` `‰`, quoted and `\`-escaped literals and
+up to three `;` sections. `ArithmeticException` is the base of `OverflowException`
+and `DivideByZeroException`, as in .NET.
+
 `Convert.ToChar` of a code above 255 overflows, since N#'s `char` is a byte of
 UTF-8 text (§4.4); a bare integer literal passed to a generic `Convert` member is
 C#'s `int`, 32 bits. `DateTime`'s en-US patterns put a narrow no-break space
@@ -1090,7 +1096,7 @@ a reference type skip nulls and give null for an empty source; an integer `Sum` 
 `OverflowException`; an empty or unmatched sequence throws .NET's
 `InvalidOperationException` text. Deliberately absent: query syntax, a
 dictionary or a string as a source, the comparer overloads, `Join`, `GroupJoin`,
-`ToLookup`, `OfType`/`Cast`, the nullable-element aggregates, `Zip` into tuples.
+`ToLookup`, `OfType`/`Cast`, the nullable-element aggregates, `Zip` into tuples. `Average` with a `float` selector is a `double` (Nim does not tell the overloads apart by the delegate's result).
 
 ### 15.4 System.Diagnostics - pinned member surface
 

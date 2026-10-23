@@ -1,0 +1,5 @@
+IEnumerable.ToList = type-parameter
+List.Select = type-parameter
+long.GetType = result:other
+object.GetType = result:other
+uint.GetType = result:other

@@ -1,0 +1,20 @@
+dict clear: ok
+dict set existing: ok
+dict add: InvalidOperationException: Collection was modified; enumeration operation may not execute.
+dict trygetvalue: ok
+set remove: ok
+set clear: ok
+set add existing: ok
+set add new: InvalidOperationException: Collection was modified; enumeration operation may not execute.
+sorted dict remove: InvalidOperationException: Collection was modified after the enumerator was instantiated.
+sorted dict set: InvalidOperationException: Collection was modified after the enumerator was instantiated.
+sorted set remove: InvalidOperationException: Collection was modified after the enumerator was instantiated.
+sorted list remove: InvalidOperationException: Collection was modified after the enumerator was instantiated.
+sorted list set: InvalidOperationException: Collection was modified after the enumerator was instantiated.
+list set: InvalidOperationException: Collection was modified; enumeration operation may not execute.
+list remove: InvalidOperationException: Collection was modified; enumeration operation may not execute.
+queue: InvalidOperationException: Collection was modified; enumeration operation may not execute.
+stack: InvalidOperationException: Collection was modified after the enumerator was instantiated.
+linked: InvalidOperationException: Collection was modified after the enumerator was instantiated.
+keys remove: ok
+values set: ok

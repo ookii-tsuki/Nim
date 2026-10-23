@@ -2211,7 +2211,9 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'fa'
+            nkIdent 'nsCheckNil'
+            nkCall
+              nkIdent 'fa'
           nkIdent 'Name'
       nkVarSection
         nkIdentDefs
@@ -2293,7 +2295,9 @@ nkStmtList
         nkIdent 'WriteLine'
         nkDotExpr
           nkCall
-            nkIdent 'f2'
+            nkIdent 'nsCheckNil'
+            nkCall
+              nkIdent 'f2'
           nkIdent 'Name'
       nkVarSection
         nkIdentDefs

@@ -1,0 +1,9 @@
+using System
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member FormatException.Message = System | string
+member FormatException.Message = System | string
+member double.ToString = System | string
+member long.ToString = System | string

@@ -201,14 +201,15 @@ proc isLambda(a: NsNode): bool =
   let v = argOf(a)
   v != nil and v.kind == nsnLambda
 
-proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
-                     call: NsNode): seq[NsSig] =
-  ## For each argument of a call, the signature a lambda passed there takes.
-  result = newSeq[NsSig](call.sons.len)
-  var needed = false
-  for a in call.sons:
-    if isLambda(a): needed = true
-  if not needed: return
+type NsUserBinding = object
+  ## The type arguments a call of a method this compilation declares binds: its own
+  ## type parameters (`tps`), and its class's, which the receiver gives.
+  tps, ownerTps: seq[string]
+  ownerArgs, binding: seq[NsNode]
+
+proc userBinding(scope: NsModuleScope; surface: NsBclSurface; call: NsNode): NsUserBinding =
+  ## What the arguments bind: the written type arguments, the values', and the
+  ## results of the lambdas sema has walked.
   let callee = call.body
   let recv = (if callee != nil and callee.kind == nsnMember: callee.body else: nil)
   # a method this compilation declares: sema recorded the parameter each argument fills
@@ -232,15 +233,64 @@ proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
     let v = argOf(a)
     if a.argParam != nil and not isLambda(a):
       unify(a.argParam.typ, valueType(v), tps, binding)
-  ## A lambda already typed binds what its delegate's result names (`T(() => 42)`
-  ## binds `R` to `int`): sema asks again once the lambdas' bodies are walked.
+  ## A lambda sema has walked binds what its delegate's result names (`T(() => 42)`
+  ## binds `R` to `int`); sema asks again once the bodies are walked. Several results
+  ## for one parameter take the widest (`Pick(() => 1, () => 2.5)` is a `double`).
   for a in call.sons:
     if not isLambda(a) or a.argParam == nil: continue
+    let lam = argOf(a)
+    if lam.kind == nsnLambda and lam.typeKind != tkDelegate: continue
     var pt = a.argParam.typ
     if a.argElement and pt != nil and pt.kind == nsnArrayType: pt = pt.typ
     let raw = delegateSig(scope, surface, substitute(pt, ownerTps, ownerArgs))
-    if raw.known and raw.ret != nil:
-      unify(raw.ret, lambdaResult(argOf(a)), tps, binding)
+    if not raw.known or raw.ret == nil: continue
+    let lr = lambdaResult(lam)
+    let k = (if raw.ret.kind == nsnTypeName and raw.ret.sons.len == 0: tps.find(raw.ret.name)
+             else: -1)
+    if k >= 0 and lr != nil and binding[k] != nil and binding[k].kind == nsnTypeName and
+       lr.kind == nsnTypeName:
+      let was = numericOfSpelling(canonicalTypeName(binding[k].name))
+      let now = numericOfSpelling(canonicalTypeName(lr.name))
+      if was.len > 0 and now.len > 0 and was != now and implicitlyConvertible(was, now):
+        binding[k] = lr
+    else:
+      unify(raw.ret, lr, tps, binding)
+  NsUserBinding(tps: tps, ownerTps: ownerTps, ownerArgs: ownerArgs, binding: binding)
+
+proc inferredDelegateTypes*(scope: NsModuleScope; surface: NsBclSurface;
+                            call: NsNode): seq[NsNode] =
+  ## For each lambda argument of a call of a generic method this compilation
+  ## declares, the delegate type it fills with every type argument bound; none when
+  ## one is not. Nim cannot infer through two uses of one generic delegate
+  ## (`Compose(a, f, g)`), so lowering converts each lambda to its type.
+  if call.body == nil or call.body.kind != nsnMember: return
+  let ub = userBinding(scope, surface, call)
+  if ub.tps.len == 0: return
+  for b in ub.binding:
+    if b == nil or b.kind notin {nsnTypeName, nsnArrayType} or
+       (b.kind == nsnTypeName and b.name.startsWith("$")): return
+  result = newSeq[NsNode](call.sons.len)
+  for j, a in call.sons:
+    if not isLambda(a) or a.argParam == nil: continue
+    var pt = a.argParam.typ
+    if a.argElement and pt != nil and pt.kind == nsnArrayType: pt = pt.typ
+    result[j] = substitute(substitute(pt, ub.ownerTps, ub.ownerArgs), ub.tps, ub.binding)
+
+proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
+                     call: NsNode): seq[NsSig] =
+  ## For each argument of a call, the signature a lambda passed there takes.
+  result = newSeq[NsSig](call.sons.len)
+  var needed = false
+  for a in call.sons:
+    if isLambda(a): needed = true
+  if not needed: return
+  let callee = call.body
+  let recv = (if callee != nil and callee.kind == nsnMember: callee.body else: nil)
+  let ub = userBinding(scope, surface, call)
+  let tps = ub.tps
+  let ownerTps = ub.ownerTps
+  let ownerArgs = ub.ownerArgs
+  let binding = ub.binding
   var bound: seq[string] = @[]
   var boundTo: seq[NsNode] = @[]
   var open: seq[string] = @[]
@@ -317,6 +367,9 @@ proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
       var nb = newSeq[NsNode](m.genParams.len)
       let rt = valueType(recv)
       if rt != nil: unifyNim(m.paramTypes[0], rt, m.genParams, nb)
+      if callee.typeArgs.len == m.genParams.len:
+        ## `xs.Select<int, object>(f)`: written, every type argument is given.
+        for k in 0 ..< nb.len: nb[k] = callee.typeArgs[k]
       for j, a in call.sons:
         if not isLambda(a): unifyNim(m.paramTypes[j + 1], valueType(argOf(a)),
                                      m.genParams, nb)
@@ -344,6 +397,9 @@ proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
             if open: sig.known = false
             elif sig.ret != nil and sig.ret.kind == nsnTypeName and sig.ret.name.startsWith("$"):
               sig.ret = nil
+            elif callee.typeArgs.len == m.genParams.len:
+              ## Written, the type arguments say the result (`Select<int, object>`).
+              discard
             else:
               ## Overloads of this arity whose delegates differ (`Sum`'s `Func<T, int>`
               ## and `Func<T, double>`): the lambda's body says which, not the first.
@@ -582,7 +638,10 @@ proc libParams*(m: NsBclMember; recv: NsNode; staticCall: bool; info: NsNode):
       unifyNim(p0[1], nsnTypeName(recv.typeName, recv.info), m.genParams, nb)
   ## The method's own type arguments, written (`Enum.Parse<Color>(s)`), bind the
   ## parameters the receiver leaves, in order.
-  if info != nil and info.typeArgs.len > 0:
+  if info != nil and info.typeArgs.len == nb.len and nb.len > 0:
+    ## Every type argument written (`Select<int, object>`, the receiver's included).
+    for k in 0 ..< nb.len: nb[k] = info.typeArgs[k]
+  elif info != nil and info.typeArgs.len > 0:
     var open: seq[int] = @[]
     for k in 0 ..< nb.len:
       if nb[k] == nil: open.add k

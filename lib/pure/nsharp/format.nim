@@ -115,54 +115,204 @@ proc nsScientific(x: float; decimals: int; upper: bool): string =
   let e = parseInt(s[ei + 1 .. ^1])
   result = mant & nsExponent(e, 3, upper)
 
-proc nsCustom(x: float; spec: string): string =
-  ## A custom numeric format: `0` is a digit that is always shown, `#` one shown when
-  ## significant, `.` the decimal point, `,` in the integer part turns grouping on, and
-  ## `%` multiplies by a hundred. Anything else is copied as written.
-  var v = x
-  if '0' notin spec and '#' notin spec:
-    ## No digit placeholder: the format is all literal text, and the number shows
-    ## only by its sign.
-    return (if v < 0: "-" else: "") & spec
-  if '%' in spec: v = v * 100
-  var prefix, suffix, body = ""
+type NsDec = object
+  ## A number's decimal digits, `point` of them before the decimal point (which may
+  ## lie before or beyond them), and its sign.
+  digits: string
+  point: int
+  neg: bool
+
+proc nsDecOf(x: float): NsDec =
+  ## The shortest digits that read back as `x`, as .NET formats from.
+  result.neg = x < 0 or (x == 0 and 1.0 / x < 0)
+  var s = $abs(x)
+  var exp = 0
+  let e = s.find({'e', 'E'})
+  if e >= 0:
+    exp = parseInt(s[e + 1 .. ^1])
+    s.setLen(e)
+  let dot = s.find('.')
+  var ip = (if dot >= 0: s[0 ..< dot] else: s)
+  var fp = (if dot >= 0: s[dot + 1 .. ^1] else: "")
+  result.digits = ip & fp
+  result.point = ip.len + exp
+  var lead = 0
+  while lead < result.digits.len - 1 and result.digits[lead] == '0': inc lead
+  result.digits = result.digits[lead .. ^1]
+  result.point -= lead
+  while result.digits.len > 0 and result.digits[^1] == '0': result.digits.setLen(result.digits.len - 1)
+  if result.digits.len == 0: result.point = 0
+
+proc nsDecOf[T: SomeInteger](x: T): NsDec =
+  result.neg = x < T(0)
+  when T is SomeUnsignedInt: result.digits = $x
+  else: result.digits = (if x < T(0): ($x)[1 .. ^1] else: $x)
+  result.point = result.digits.len
+  while result.digits.len > 0 and result.digits[^1] == '0': result.digits.setLen(result.digits.len - 1)
+  if result.digits.len == 0: result.point = 0
+
+proc nsRoundTo(d: var NsDec; frac: int) =
+  ## Keeps `frac` decimals, rounding half away from zero, as a custom format does.
+  let keep = d.point + frac
+  if keep >= d.digits.len: return
+  if keep < 0:
+    d.digits = ""
+    d.point = 0
+    return
+  let up = d.digits[keep] >= '5'
+  d.digits.setLen(keep)
+  if up:
+    var i = keep - 1
+    while i >= 0 and d.digits[i] == '9':
+      d.digits[i] = '0'
+      dec i
+    if i < 0:
+      d.digits = "1" & d.digits
+      inc d.point
+    else: d.digits[i] = char(ord(d.digits[i]) + 1)
+  while d.digits.len > 0 and d.digits[^1] == '0': d.digits.setLen(d.digits.len - 1)
+  if d.digits.len == 0: d.point = 0
+
+proc nsSections(spec: string): seq[string] =
+  ## `pos;neg;zero`, a `;` in quotes or after `\` not splitting.
+  result = @[""]
   var i = 0
-  while i < spec.len and spec[i] notin {'0', '#', '.', ','}:
-    prefix.add spec[i]
+  while i < spec.len:
+    let c = spec[i]
+    if c in {'\'', '"'}:
+      let close = spec.find(c, i + 1)
+      let j = (if close < 0: spec.len - 1 else: close)
+      result[^1].add spec[i .. j]
+      i = j + 1
+      continue
+    if c == '\\' and i + 1 < spec.len:
+      result[^1].add spec[i .. i + 1]
+      i += 2
+      continue
+    if c == ';': result.add ""
+    else: result[^1].add c
     inc i
-  while i < spec.len and spec[i] in {'0', '#', '.', ','}:
-    body.add spec[i]
+
+type NsLayout = object
+  nInt, minInt, nFrac, minFrac, scale: int
+  grouping, hasPlaceholder: bool
+
+proc nsLayoutOf(sec: string): NsLayout =
+  ## What a section's placeholders ask for: the integer and fraction digits, the
+  ## grouping, and the scaling by `,` before the point, `%` and `‰`.
+  var inFrac = false
+  var firstZero = -1
+  var i = 0
+  var pendingCommas = 0
+  while i < sec.len:
+    let c = sec[i]
+    if c in {'\'', '"'}:
+      let close = sec.find(c, i + 1)
+      i = (if close < 0: sec.len else: close + 1)
+      continue
+    if c == '\\':
+      i += 2
+      continue
+    if c in {'0', '#'}:
+      result.hasPlaceholder = true
+      if inFrac:
+        inc result.nFrac
+        if c == '0': result.minFrac = result.nFrac
+      else:
+        if pendingCommas > 0 and result.nInt > 0: result.grouping = true
+        pendingCommas = 0
+        if c == '0' and firstZero < 0: firstZero = result.nInt
+        inc result.nInt
+    elif c == ',' and not inFrac: inc pendingCommas
+    elif c == '.' and not inFrac:
+      inFrac = true
+      result.scale -= 3 * pendingCommas
+      pendingCommas = 0
+    elif c == '%': result.scale += 2
+    elif c == "\u2030"[0] and sec.continuesWith("\u2030", i):
+      result.scale += 3
+      i += "\u2030".len
+      continue
     inc i
-  suffix = spec[i .. ^1]
-  let dot = body.find('.')
-  let ipat = (if dot >= 0: body[0 ..< dot] else: body)
-  let fpat = (if dot >= 0: body[dot + 1 .. ^1] else: "")
-  let grouping = ',' in ipat
-  var minInt = 0
-  for c in ipat:
-    if c == '0': inc minInt
-  var minFrac, maxFrac = 0
-  for c in fpat:
-    if c == '0':
-      inc minFrac
-      inc maxFrac
-    elif c == '#': inc maxFrac
-  var s = formatFloat(abs(v), ffDecimal, maxFrac)
-  if s.endsWith('.'): s.setLen(s.len - 1)
-  let d = s.find('.')
-  var ip = (if d >= 0: s[0 ..< d] else: s)
-  var fp = (if d >= 0: s[d + 1 .. ^1] else: "")
-  while fp.len > minFrac and fp[^1] == '0': fp.setLen(fp.len - 1)
-  while ip.len > 1 and ip[0] == '0': ip = ip[1 .. ^1]
-  if ip == "0" and minInt == 0: ip = ""
-  if ip.len < minInt: ip = repeat('0', minInt - ip.len) & ip
-  if grouping: ip = nsGroup(ip)
-  result = ip
-  if fp.len > 0: result.add "." & fp
-  if result.len == 0: result = "0"
-  let isZero = result.allCharsInSet({'0', '.', ','})
-  if v < 0 and not isZero: result = "-" & result
-  result = prefix & result & suffix
+  if not inFrac: result.scale -= 3 * pendingCommas
+  result.minInt = (if firstZero < 0: 0 else: result.nInt - firstZero)
+
+proc nsEmit(sec: string; lay: NsLayout; d: NsDec): string =
+  ## The section with its placeholders filled: integer digits right-aligned to the
+  ## integer placeholders (the first takes any extra), fraction digits in order.
+  var ip = (if d.point > 0:
+              (if d.point <= d.digits.len: d.digits[0 ..< d.point]
+               else: d.digits & repeat('0', d.point - d.digits.len))
+            else: "")
+  var fp = (if d.point >= 0: (if d.point < d.digits.len: d.digits[d.point .. ^1] else: "")
+            else: repeat('0', -d.point) & d.digits)
+  while fp.len < lay.minFrac: fp.add '0'
+  if ip.len < lay.minInt: ip = repeat('0', lay.minInt - ip.len) & ip
+  result = ""
+  var intSeen = 0
+  var fracSeen = 0
+  var inFrac = false
+  let extra = ip.len - lay.nInt
+  proc addInt(r: var string; p: int) =
+    r.add ip[p]
+    if lay.grouping and p < ip.len - 1 and (ip.len - 1 - p) mod 3 == 0: r.add ','
+  var i = 0
+  while i < sec.len:
+    let c = sec[i]
+    if c in {'\'', '"'}:
+      let close = sec.find(c, i + 1)
+      let j = (if close < 0: sec.len else: close)
+      result.add sec[i + 1 ..< j]
+      i = j + 1
+      continue
+    if c == '\\':
+      if i + 1 < sec.len: result.add sec[i + 1]
+      i += 2
+      continue
+    if c in {'0', '#'}:
+      if inFrac:
+        if fracSeen < fp.len: result.add fp[fracSeen]
+        inc fracSeen
+      else:
+        if intSeen == 0:
+          for p in 0 ..< max(extra + 1, 0):
+            if p < ip.len: result.addInt(p)
+        else:
+          let p = extra + intSeen
+          if p >= 0 and p < ip.len: result.addInt(p)
+        inc intSeen
+    elif c == '.' and not inFrac:
+      inFrac = true
+      if fp.len > 0: result.add '.'
+    elif c == ',' and not inFrac: discard
+    else: result.add c
+    inc i
+
+proc nsCustom(d0: NsDec; spec: string): string =
+  ## A custom numeric format (.NET's): `0` a digit always shown, `#` one shown when
+  ## significant, `.` the point, `,` grouping between placeholders and a division by
+  ## 1000 before the point, `%` and `‰` scaling, quoted and `\`-escaped literals,
+  ## and up to three sections, for positive, negative and zero values.
+  let secs = nsSections(spec)
+  let isZero = d0.digits.len == 0
+  var idx = 0
+  if secs.len >= 3 and isZero and secs[2].len > 0: idx = 2
+  elif d0.neg and secs.len >= 2 and secs[1].len > 0: idx = 1
+  var lay = nsLayoutOf(secs[idx])
+  var d = d0
+  d.point += lay.scale
+  nsRoundTo(d, lay.nFrac)
+  if d.digits.len == 0 and not isZero:
+    ## Rounded to zero: the zero section, or the first one, keeping the sign.
+    if secs.len >= 3 and secs[2].len > 0: idx = 2
+    elif idx == 1: idx = 0
+    if idx != 1:
+      lay = nsLayoutOf(secs[idx])
+      d = d0
+      d.point += lay.scale
+      nsRoundTo(d, lay.nFrac)
+  result = nsEmit(secs[idx], lay, d)
+  if d0.neg and idx == 0: result = "-" & result
 
 proc nsHex[T: SomeInteger](x: T; digits: int; upper: bool): string =
   ## `X`: two's complement of the value's own width, as .NET does for a negative one.
@@ -173,10 +323,16 @@ proc nsHex[T: SomeInteger](x: T; digits: int; upper: bool): string =
   if not upper: result = result.toLowerAscii
   if result.len < digits: result = repeat('0', digits - result.len) & result
 
+proc nsIsStandard(spec: string): bool =
+  ## A letter followed only by digits is a standard format; anything else is custom.
+  if spec.len == 0 or spec[0] notin Letters: return false
+  for i in 1 ..< spec.len:
+    if spec[i] notin Digits: return false
+  true
+
 proc nsStandardLetter(spec: string; valid: set[char]) =
-  ## A letter followed only by digits is a standard format, which must be one the
-  ## type has; anything else is a custom format.
-  if spec[0] in Letters and spec[1 .. ^1].allCharsInSet(Digits) and spec[0] notin valid:
+  ## A standard format must be one the type has.
+  if spec[0] notin valid:
     raise newException(ValueError, "Format specifier was invalid.")
 
 proc nsBinary[T: SomeInteger](x: T; digits: int): string =
@@ -192,6 +348,7 @@ proc nsBinary[T: SomeInteger](x: T; digits: int): string =
 
 proc nsFormatNumber*[T: SomeInteger](x: T; spec: string): string =
   if spec.len == 0: return $x
+  if not nsIsStandard(spec): return nsCustom(nsDecOf(x), spec)
   nsStandardLetter(spec, {'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f', 'G', 'g',
                           'N', 'n', 'P', 'p', 'R', 'r', 'X', 'x'})
   let k = spec[0]
@@ -216,11 +373,16 @@ proc nsFormatNumber*[T: SomeInteger](x: T; spec: string): string =
   of 'C':
     let body = nsGroupFixed(nsFixedInt($abs(BiggestInt(x)), nsPrecision(spec, 2)))
     result = (if BiggestInt(x) < 0: "-$" else: "$") & body
-  else: result = nsCustom(float(x), spec)
+  else: result = nsCustom(nsDecOf(x), spec)
 
 proc nsFormatNumber*[T: SomeFloat](x: T; spec: string): string =
   let v = float(x)
   if spec.len == 0: return $x
+  if not nsIsStandard(spec):
+    if v != v: return "NaN"
+    if v == Inf: return "∞"
+    if v == NegInf: return "-∞"
+    return nsCustom(nsDecOf(v), spec)
   nsStandardLetter(spec, {'C', 'c', 'E', 'e', 'F', 'f', 'G', 'g', 'N', 'n', 'P', 'p',
                           'R', 'r'})
   let k = spec[0]
@@ -235,9 +397,7 @@ proc nsFormatNumber*[T: SomeFloat](x: T; spec: string): string =
   of 'C':
     let body = nsGroupFixed(nsFixed(abs(v), nsPrecision(spec, 2)))
     result = (if v < 0: "-$" else: "$") & body
-  of 'D', 'X':
-    raise newException(ValueError, "Format specifier was invalid.")
-  else: result = nsCustom(v, spec)
+  else: result = nsCustom(nsDecOf(v), spec)
 
 proc nsAlign*(s: string; width: int): string =
   ## `{x,8}` right-aligns in eight columns and `{x,-8}` left-aligns.

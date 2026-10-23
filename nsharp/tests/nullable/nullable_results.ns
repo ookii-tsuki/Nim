@@ -1,0 +1,23 @@
+// A value where an int? is the result: a lambda for a Func<int?>, a method's
+// return; and, beside them, a long constant with a uint (a long, not a uint) and
+// Array.Empty<T>() next to Enumerable.Empty<T>().
+using System;
+using System.Linq;
+class Program {
+    static void Main() {
+        uint a = uint.MaxValue;
+        Console.WriteLine(a + 1L);
+        Console.WriteLine((a + 1L).GetType());
+        Console.WriteLine(a + 1);
+        ulong u = 5;
+        Console.WriteLine(u + 5000000000);
+        var e = Array.Empty<string>();
+        Console.WriteLine(e.Length + " " + e.GetType());
+        Console.WriteLine(Enumerable.Empty<int>().Count() + " " + Enumerable.Range(1, 3).Sum());
+        Func<int?> fn = () => null;
+        int? v = fn();
+        Console.WriteLine(v.HasValue);
+        Func<int?> g = () => 4;
+        Console.WriteLine(g() + " " + g().HasValue);
+    }
+}

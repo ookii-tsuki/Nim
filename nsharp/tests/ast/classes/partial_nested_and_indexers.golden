@@ -1008,7 +1008,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 2
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -2286,7 +2287,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 2
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -2299,27 +2301,36 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkPrefix
-        nkIdent '@'
-        nkBracket
-          nkTupleConstr
-            nkStrLit "Small"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Kind'
-                  nkIdent 'Small'
-          nkTupleConstr
-            nkStrLit "Large"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Kind'
-                  nkIdent 'Large'
+      nkStmtList
+        nkConstSection
+          nkConstDef
+            nkIdent 'nsTable'
+            nkBracketExpr
+              nkIdent 'array'
+              nkIntLit 2
+              nkTupleConstr
+                nkIdent 'string'
+                nkIdent 'int64'
+            nkBracket
+              nkTupleConstr
+                nkStrLit "Small"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Kind'
+                      nkIdent 'Small'
+              nkTupleConstr
+                nkStrLit "Large"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Kind'
+                      nkIdent 'Large'
+        nkIdent 'nsTable'
   nkProcDef
     nkPostfix
       nkIdent '*'

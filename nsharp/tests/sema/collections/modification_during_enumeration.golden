@@ -1,0 +1,18 @@
+using System
+using System.Collections.Generic
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Dictionary.Clear = System.Collections.Generic | void
+member Dictionary.Remove = System.Collections.Generic | bool
+member Dictionary.TryAdd = System.Collections.Generic | bool
+member Exception.Message = System | string
+member HashSet.Add = System.Collections.Generic | bool
+member HashSet.Add = System.Collections.Generic | bool
+member HashSet.Clear = System.Collections.Generic | void
+member HashSet.Remove = System.Collections.Generic | bool
+member List.Remove = System.Collections.Generic | bool
+member Queue.Enqueue = System.Collections.Generic | void
+member SortedDictionary.Remove = System.Collections.Generic | bool
+member SortedList.Remove = System.Collections.Generic | bool
+member SortedSet.Remove = System.Collections.Generic | bool
+member Type.Name = System.Reflection | string

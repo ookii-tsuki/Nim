@@ -1,0 +1,28 @@
+using System
+using System.Collections.Generic
+using System.Linq
+member Array.Sort = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member List.Average = System.Linq | float
+member List.Average = System.Linq | float
+member List.Max = System.Linq | float
+member List.Max = System.Linq | float
+member List.Min = System.Linq | float
+member double.CompareTo = System | int
+member double.CompareTo = System | int
+member double.CompareTo = System | int
+member double.NaN = System | float
+member double.NaN = System | float
+member double.NaN = System | float
+member double.NaN = System | float
+member double.NaN = System | float
+member double.NaN = System | float
+member double.NaN = System | float
+member string.Join = System | string
+member string.Join = System | string
+member string.Join = System | string

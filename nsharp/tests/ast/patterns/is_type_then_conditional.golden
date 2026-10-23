@@ -522,7 +522,9 @@ nkStmtList
             nkCall
               nkIdent 'nsIsType'
               nkIdent 'b'
-              nkIdent 'int32'
+              nkBracketExpr
+                nkIdent 'Option'
+                nkIdent 'int32'
             nkStrLit "boxed int"
           nkElseExpr
             nkStrLit "other"
@@ -533,7 +535,9 @@ nkStmtList
             nkCall
               nkIdent 'nsIsType'
               nkIdent 'p'
-              nkIdent 'int32'
+              nkBracketExpr
+                nkIdent 'Option'
+                nkIdent 'int32'
             nkStrLit "yes"
           nkElseExpr
             nkStrLit "no"

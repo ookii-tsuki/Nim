@@ -406,16 +406,20 @@ nkStmtList
       nkCall
         nkIdent 'T'
         nkIdent 'Program'
-        nkLambda
-          nkEmpty
-          nkEmpty
-          nkEmpty
-          nkFormalParams
+        nkCall
+          nkBracketExpr
+            nkIdent 'Func1'
             nkIdent 'int32'
-          nkEmpty
-          nkEmpty
-          nkStmtList
-            nkIntLit 42
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkIdent 'int32'
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkIntLit 42
       nkCall
         nkIdent 'T'
         nkIdent 'Program'
@@ -435,17 +439,21 @@ nkStmtList
       nkCall
         nkIdent 'T'
         nkIdent 'Program'
-        nkLambda
-          nkEmpty
-          nkEmpty
-          nkEmpty
-          nkFormalParams
+        nkCall
+          nkBracketExpr
+            nkIdent 'Func1'
             nkIdent 'float64'
-          nkEmpty
-          nkEmpty
-          nkStmtList
-            nkReturnStmt
-              nkFloatLit 2.5
+          nkLambda
+            nkEmpty
+            nkEmpty
+            nkEmpty
+            nkFormalParams
+              nkIdent 'float64'
+            nkEmpty
+            nkEmpty
+            nkStmtList
+              nkReturnStmt
+                nkFloatLit 2.5
       nkCall
         nkIdent 'WriteLine'
         nkCall
@@ -454,45 +462,55 @@ nkStmtList
           nkCall
             nkIdent 'int32'
             nkIntLit 3
-          nkLambda
-            nkEmpty
-            nkEmpty
-            nkEmpty
-            nkFormalParams
+          nkCall
+            nkBracketExpr
+              nkIdent 'Func2'
               nkIdent 'int32'
-              nkIdentDefs
-                nkIdent 'x'
+              nkIdent 'int32'
+            nkLambda
+              nkEmpty
+              nkEmpty
+              nkEmpty
+              nkFormalParams
                 nkIdent 'int32'
-                nkEmpty
-            nkEmpty
-            nkEmpty
-            nkStmtList
-              nkInfix
-                nkIdent '*'
-                nkIdent 'x'
-                nkIntLit 2
+                nkIdentDefs
+                  nkIdent 'x'
+                  nkIdent 'int32'
+                  nkEmpty
+              nkEmpty
+              nkEmpty
+              nkStmtList
+                nkInfix
+                  nkIdent '*'
+                  nkIdent 'x'
+                  nkIntLit 2
       nkCall
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Apply'
           nkIdent 'Program'
           nkStrLit "ab"
-          nkLambda
-            nkEmpty
-            nkEmpty
-            nkEmpty
-            nkFormalParams
+          nkCall
+            nkBracketExpr
+              nkIdent 'Func2'
+              nkIdent 'string'
               nkIdent 'int32'
-              nkIdentDefs
-                nkIdent 's'
-                nkIdent 'string'
-                nkEmpty
-            nkEmpty
-            nkEmpty
-            nkStmtList
-              nkDotExpr
-                nkIdent 's'
-                nkIdent 'Length'
+            nkLambda
+              nkEmpty
+              nkEmpty
+              nkEmpty
+              nkFormalParams
+                nkIdent 'int32'
+                nkIdentDefs
+                  nkIdent 's'
+                  nkIdent 'string'
+                  nkEmpty
+              nkEmpty
+              nkEmpty
+              nkStmtList
+                nkDotExpr
+                  nkIdent 's'
+                  nkIdent 'Length'
       nkVarSection
         nkIdentDefs
           nkIdent 'm'

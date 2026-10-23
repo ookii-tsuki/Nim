@@ -1,0 +1,32 @@
+// Which changes end an enumeration, as .NET 10 decides: removing from or clearing a
+// Dictionary or HashSet, or replacing a value, does not; adding does. Stack,
+// LinkedList and the sorted collections throw with their own message.
+using System;
+using System.Collections.Generic;
+namespace Demo {
+class Program {
+    static void T(string what, Action f) { try { f(); Console.WriteLine(what + ": ok"); } catch (Exception e) { Console.WriteLine(what + ": " + e.GetType().Name + ": " + e.Message); } }
+    static void Main() {
+        T("dict clear", () => { var d = new Dictionary<int, int> { { 1, 1 }, { 2, 2 } }; foreach (var kv in d) d.Clear(); });
+        T("dict set existing", () => { var d = new Dictionary<int, int> { { 1, 1 }, { 2, 2 } }; foreach (var kv in d) d[kv.Key] = 5; });
+        T("dict add", () => { var d = new Dictionary<int, int> { { 1, 1 } }; foreach (var kv in d) d[9] = 5; });
+        T("dict trygetvalue", () => { var d = new Dictionary<int, int> { { 1, 1 } }; foreach (var kv in d) d.TryAdd(1, 3); });
+        T("set remove", () => { var s = new HashSet<int> { 1, 2, 3 }; foreach (var x in s) s.Remove(x); });
+        T("set clear", () => { var s = new HashSet<int> { 1, 2, 3 }; foreach (var x in s) s.Clear(); });
+        T("set add existing", () => { var s = new HashSet<int> { 1, 2 }; foreach (var x in s) s.Add(1); });
+        T("set add new", () => { var s = new HashSet<int> { 1, 2 }; foreach (var x in s) s.Add(7); });
+        T("sorted dict remove", () => { var d = new SortedDictionary<int, int> { { 1, 1 }, { 2, 2 } }; foreach (var kv in d) d.Remove(kv.Key); });
+        T("sorted dict set", () => { var d = new SortedDictionary<int, int> { { 1, 1 }, { 2, 2 } }; foreach (var kv in d) d[kv.Key] = 3; });
+        T("sorted set remove", () => { var s = new SortedSet<int> { 1, 2 }; foreach (var x in s) s.Remove(x); });
+        T("sorted list remove", () => { var d = new SortedList<int, int> { { 1, 1 }, { 2, 2 } }; foreach (var kv in d) d.Remove(kv.Key); });
+        T("sorted list set", () => { var d = new SortedList<int, int> { { 1, 1 }, { 2, 2 } }; foreach (var kv in d) d[kv.Key] = 3; });
+        T("list set", () => { var l = new List<int> { 1, 2 }; foreach (var x in l) l[0] = 3; });
+        T("list remove", () => { var l = new List<int> { 1, 2 }; foreach (var x in l) l.Remove(x); });
+        T("queue", () => { var q = new Queue<int>(new[] { 1, 2 }); foreach (var x in q) q.Enqueue(3); });
+        T("stack", () => { var q = new Stack<int>(new[] { 1, 2 }); foreach (var x in q) q.Pop(); });
+        T("linked", () => { var q = new LinkedList<int>(new[] { 1, 2 }); foreach (var x in q) q.AddLast(3); });
+        T("keys remove", () => { var d = new Dictionary<int, int> { { 1, 1 }, { 2, 2 } }; foreach (var k in d.Keys) d.Remove(k); });
+        T("values set", () => { var d = new Dictionary<int, int> { { 1, 1 }, { 2, 2 } }; foreach (var v in d.Values) d[1] = 4; });
+    }
+}
+}

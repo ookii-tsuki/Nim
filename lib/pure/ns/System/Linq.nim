@@ -478,6 +478,8 @@ proc Average*(source: NsEnumerable[float32]): float32 =
   ## A `float` source averages to a `float`, summed in `double`.
   float32(nsMean(source))
 proc Average*[T; N: SomeNumber](source: NsEnumerable[T]; selector: Func2[T, N]): float =
+  ## A `double`, even for a `float` selector, where .NET's overload gives a `float`:
+  ## an overload by the delegate's result would not be told apart (SPEC 15.3).
   var n = 0
   var total: (when N is SomeInteger: int64 else: float)
   for x in items(source):
@@ -625,7 +627,8 @@ proc Repeat*[T](element: T; count: int32): IEnumerable[T] {.nsStatic: "Enumerabl
                          "Specified argument was out of the range of valid values.")
   nsEnumerable(T):
     for i in 0'i32 ..< count: yield element
-proc Empty*[T](): IEnumerable[T] {.nsStatic: "Enumerable".} =
+proc Empty*[T](t: typedesc[Enumerable]): IEnumerable[T] =
+  ## Over the type, so that it is not `Array.Empty<T>()`, which drops its qualifier.
   nsEnumerable(T):
     discard
 

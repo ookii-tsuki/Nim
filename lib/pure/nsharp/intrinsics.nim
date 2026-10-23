@@ -14,14 +14,144 @@ import std/hashes
 from std/cmdline import paramStr
 export hashes
 
+# --- System.Type -----------------------------------------------------------------
+#
+# A type is known by its name, as `ToString()` writes it (``List`1[System.Int32]``),
+# and by its assembly; `FullName` qualifies each generic argument with the
+# argument's assembly, as .NET does, and is made once per `Type`.
+
+const
+  nsCoreLib* = "System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e"
+    ## .NET 10's core library: the built-in types and most of the library's.
+  nsCollectionsLib* = "System.Collections, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+    ## The collections .NET moved out of the core library (`Stack<T>`, `SortedSet<T>`...).
+
+type
+  Type* = ref object of RootObj
+    ## C#'s `System.Type`.
+    nsFull: string   ## the display name
+    nsQual: string   ## `FullName`, once made ("" before)
+    nsAsm: string    ## the assembly; "" for the program's own, or a library one named `System.*`
+    nsArgs: seq[Type] ## a constructed generic type's arguments, for `FullName`
+
+var nsProgramAsm = ""
+proc nsProgramAssembly(): string =
+  ## The assembly a program's own types are in, as .NET names it: the program's
+  ## name (`dotnet` names the assembly after the project), version 1.0.0.0.
+  if nsProgramAsm.len == 0:
+    var name = $paramStr(0)
+    let slash = name.rfind('/')
+    if slash >= 0: name = name[slash + 1 .. ^1]
+    if name.endsWith(".exe"): name.setLen(name.len - 4)
+    nsProgramAsm = name & ", Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+  nsProgramAsm
+
+proc nsTypeNamed*(full: string; assembly = ""): Type = Type(nsFull: full, nsAsm: assembly)
+proc nsDisplay*(t: Type): string = t.nsFull
+  ## The name as `ToString()` gives it, and generic arguments are written in it:
+  ## ``System.Collections.Generic.List`1[System.Int32]``.
+proc nsAssembly(t: Type): string =
+  if t.nsAsm.len > 0: t.nsAsm
+  elif t.nsFull.startsWith("System."): nsCoreLib
+  else: nsProgramAssembly()
+
+proc nsQualified(display: string): string =
+  ## `FullName` from a display name alone (a type the program names only by its
+  ## `nsTypeName`): each generic argument qualified by where its name says it is.
+  let tick = display.find('`')
+  if tick < 0: return display
+  let open = display.find('[', tick)
+  if open < 0: return display
+  var args: seq[string] = @[]
+  var depth = 0
+  var start = open + 1
+  var close = -1
+  for i in open ..< display.len:
+    case display[i]
+    of '[': inc depth
+    of ']':
+      dec depth
+      if depth == 0:
+        close = i
+        break
+    of ',':
+      if depth == 1:
+        args.add display[start ..< i]
+        start = i + 1
+    else: discard
+  if close < 0: return display
+  args.add display[start ..< close]
+  result = display[0 .. open]
+  for k, a in args:
+    if k > 0: result.add ','
+    result.add '[' & nsQualified(a) & ", " & nsTypeNamed(a).nsAssembly & ']'
+  result.add display[close .. ^1]
+
+proc FullName*(t: Type): string =
+  ## Made on first use, so a program that never asks pays nothing (and a host
+  ## without a `main` never needs the program's name).
+  if t.nsQual.len == 0:
+    if t.nsArgs.len == 0: t.nsQual = nsQualified(t.nsFull)
+    else:
+      var qual = t.nsFull[0 .. t.nsFull.find('[')]
+      for i, a in t.nsArgs:
+        if i > 0: qual.add ','
+        qual.add '[' & a.FullName & ", " & a.nsAssembly & ']'
+      qual.add ']'
+      t.nsQual = qual
+  t.nsQual
+
+proc nsGenericType*(base, assembly: string; args: varargs[Type]): Type =
+  ## A constructed generic type, ``System.Collections.Generic.List`1[System.Int32]``,
+  ## from its arguments' types, which say their own assemblies.
+  var display = base & "`" & $args.len & "["
+  for i, a in args:
+    if i > 0: display.add ','
+    display.add a.nsFull
+  display.add ']'
+  Type(nsFull: display, nsAsm: assembly, nsArgs: @args)
+
+proc Namespace*(t: Type): string =
+  ## What comes before the type's own name, its generic arguments aside.
+  var base = t.nsFull
+  for stop in ['`', '[']:
+    let i = base.find(stop)
+    if i >= 0: base.setLen(i)
+  let i = base.rfind('.')
+  if i >= 0: base[0 ..< i] else: ""
+
 method nsTypeName*(x: RootRef): string {.base.} = "System.Object"
-  ## The dynamic type's name; every class N# lowers overrides it, as do the
-  ## library's collections.
+  ## The dynamic type's name, which every class N# lowers, and each class of the
+  ## library, overrides.
+method nsDynType*(x: RootRef): Type {.base.} = nsTypeNamed(x.nsTypeName)
+  ## `GetType()` of a class value: a generic class overrides it to say its type
+  ## arguments' assemblies too.
+
+var nsExceptionName*: proc (e: ref Exception): string {.nimcall.} = nil
+  ## An exception's .NET type name, which `System` knows (see its
+  ## `nsExceptionTypeName`). An exception type takes no method: the defects .NET's
+  ## exceptions alias are declared in Nim's `system`, whose types cannot.
+
+proc nsExceptionText(e: ref Exception): string =
+  ## `Exception.ToString()`: the type and message, then each inner exception's, as
+  ## .NET writes it (without the stack traces N# does not keep).
+  result = (if nsExceptionName != nil: nsExceptionName(e) else: "System.Exception")
+  if e.msg.len > 0: result.add ": " & e.msg
+  if e.parent != nil:
+    result.add "\n ---> " & nsExceptionText(e.parent) &
+               "\n   --- End of inner exception stack trace ---"
 
 method ToString*(x: RootRef): string {.base, discardable.} =
-  ## C#'s `object.ToString()`: the dynamic type's name. Every class N# compiles
-  ## overrides it with its own name, or with the user's override.
-  x.nsTypeName
+  ## C#'s `object.ToString()`: an exception's type and message, else the dynamic
+  ## type's name. Every class N# compiles overrides it with its own name, or with
+  ## the user's override.
+  if x of Exception: nsExceptionText((ref Exception)(x))
+  else: x.nsDynType.nsDisplay
+
+method ToString*(t: Type): string = t.nsFull
+proc nsTypeOf*(t: typedesc[Type]): Type = nsTypeNamed("System.Type")
+proc `==`*(a, b: Type): bool =
+  if a.isNil or b.isNil: a.isNil and b.isNil else: a.nsFull == b.nsFull
 
 proc ToString*[T: not RootRef](x: T): string {.discardable.} = $x
   ## A value's `ToString()` is its `$`.
@@ -310,7 +440,7 @@ proc nsIfaceCast*[T](v: T; src: RootRef): T =
   if src != nil and v.nsObj == nil:
     when compiles(nsTypeOf(T)):
       raise newException(ObjectConversionDefect, "Unable to cast object of type '" &
-        src.nsTypeName & "' to type '" & nsTypeOf(T).nsDisplay & "'.")
+        src.nsDynType.nsDisplay & "' to type '" & nsTypeOf(T).nsDisplay & "'.")
     else:
       raise newException(ObjectConversionDefect, "Specified cast is not valid.")
   v
@@ -582,81 +712,6 @@ proc `==`*[D: proc](e: seq[D]; n: typeof(nil)): bool = e.len == 0
 # it lowers and the library for the built-in ones; `x.GetType()` asks a class
 # value for its dynamic type's name, through a `method` every class overrides.
 
-type
-  Type* = ref object of RootObj
-    ## C#'s `System.Type`: a type, known by its namespace-qualified name.
-    nsFull: string
-
-proc nsTypeNamed*(full: string): Type = Type(nsFull: full)
-proc nsDisplay*(t: Type): string = t.nsFull
-  ## The name as `ToString()` gives it, and generic arguments are written in it:
-  ## ``System.Collections.Generic.List`1[System.Int32]``.
-
-proc nsProgramAssembly(): string =
-  ## The assembly a program's own types are in, as .NET names it: the program's
-  ## name (`dotnet` names the assembly after the project), version 1.0.0.0.
-  var name = $paramStr(0)
-  let slash = name.rfind('/')
-  if slash >= 0: name = name[slash + 1 .. ^1]
-  if name.endsWith(".exe"): name.setLen(name.len - 4)
-  name & ", Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-
-proc nsAssemblyOf(display: string): string =
-  ## The assembly a type is in, as .NET 10 places the ones N#'s library declares:
-  ## the collections .NET moved out of the core library are in `System.Collections`.
-  var base = display
-  for stop in ['`', '[']:
-    let i = base.find(stop)
-    if i >= 0: base.setLen(i)
-  const collections = ["Queue", "Stack", "LinkedList", "SortedSet", "SortedDictionary",
-                       "SortedList", "PriorityQueue"]
-  if base.startsWith("System.Collections.Generic.") and
-     base["System.Collections.Generic.".len .. ^1] in collections:
-    "System.Collections, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
-  elif base.startsWith("System."):
-    "System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e"
-  else: nsProgramAssembly()
-
-proc nsQualified(display: string): string =
-  ## `FullName`: the display name with each generic argument assembly-qualified,
-  ## ``List`1[[System.Int32, System.Private.CoreLib, ...]]``, as .NET writes it.
-  let tick = display.find('`')
-  if tick < 0: return display
-  let open = display.find('[', tick)
-  if open < 0: return display
-  var args: seq[string] = @[]
-  var depth = 0
-  var start = open + 1
-  var close = -1
-  for i in open ..< display.len:
-    case display[i]
-    of '[': inc depth
-    of ']':
-      dec depth
-      if depth == 0:
-        close = i
-        break
-    of ',':
-      if depth == 1:
-        args.add display[start ..< i]
-        start = i + 1
-    else: discard
-  if close < 0: return display
-  args.add display[start ..< close]
-  result = display[0 .. open]
-  for k, a in args:
-    if k > 0: result.add ','
-    result.add '[' & nsQualified(a) & ", " & nsAssemblyOf(a) & ']'
-  result.add display[close .. ^1]
-
-proc FullName*(t: Type): string = nsQualified(t.nsFull)
-proc Namespace*(t: Type): string =
-  let i = t.nsFull.rfind('.')
-  if i >= 0: t.nsFull[0 ..< i] else: ""
-method ToString*(t: Type): string = t.nsFull
-proc `==`*(a, b: Type): bool =
-  if a.isNil or b.isNil: a.isNil and b.isNil else: a.nsFull == b.nsFull
-
 proc nsTypeOf*(t: typedesc[int8]): Type = nsTypeNamed("System.SByte")
 proc nsTypeOf*(t: typedesc[uint8]): Type = nsTypeNamed("System.Byte")
 proc nsTypeOf*(t: typedesc[int16]): Type = nsTypeNamed("System.Int16")
@@ -676,10 +731,6 @@ proc nsTypeOf*(t: typedesc[string]): Type = nsTypeNamed("System.String")
 proc nsTypeOf*(t: typedesc[RootRef]): Type = nsTypeNamed("System.Object")
 
 
-var nsExceptionName*: proc (e: ref Exception): string {.nimcall.} = nil
-  ## An exception's .NET type name, which `System` knows (see its
-  ## `nsExceptionTypeName`). An exception type takes no method: the defects .NET's
-  ## exceptions alias are declared in Nim's `system`, whose types cannot.
 proc nsAdoptException*(e: ref Exception) =
   ## An exception as the program first sees it, in a `catch`: a defect Nim's
   ## runtime raised (a check N# leaves to Nim, such as a string's index) is named as
@@ -705,7 +756,7 @@ proc GetType*(x: RootRef): Type {.discardable.} =
   if x of Exception and nsExceptionName != nil:
     nsTypeNamed(nsExceptionName((ref Exception)(x)))
   else:
-    nsTypeNamed(x.nsTypeName)
+    x.nsDynType
 proc GetType*[T: not RootRef](x: T): Type {.discardable.} = nsTypeOf(T)
   ## A value's type is its static one.
 
@@ -879,8 +930,12 @@ proc nsAsValue*[T](o: RootRef; t: typedesc[T]): T =
     if o != nil and o of NsBox[T]: NsBox[T](o).v else: default(T)
 
 proc nsIsType*[T](o: RootRef; t: typedesc[T]): bool =
-  ## `o is T`: a reference of that class, or a box of that value type.
+  ## `o is T`: a reference of that class, or a box of that value type; `o is T?`
+  ## tests for a box of `T`, since a boxed nullable is a boxed value (8.3.12).
   when T is RootRef: o != nil and o of T
+  elif T is Option:
+    type E = typeof(default(T).get)
+    o != nil and o of NsBox[E]
   else: o != nil and o of NsBox[T]
 
 # --- multi-dimensional arrays ---------------------------------------------------

@@ -1,0 +1,14 @@
+using System
+using System.Linq
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member IEnumerable.Count = System.Linq | int
+member IEnumerable.Sum = System.Linq | int
+member array.Length = System | int
+member uint.MaxValue = System | int

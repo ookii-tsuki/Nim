@@ -283,6 +283,27 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsDynType'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Pet'
+          nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -413,6 +434,28 @@ nkStmtList
       nkIdent 'discardable'
     nkEmpty
     nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Stray'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -480,7 +523,7 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsDynType'
     nkEmpty
     nkGenericParams
       nkIdentDefs
@@ -488,15 +531,14 @@ nkStmtList
         nkEmpty
         nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'Type'
       nkIdentDefs
         nkIdent 'self'
         nkBracketExpr
           nkIdent 'Stray'
           nkIdent 'T'
         nkEmpty
-    nkPragma
-      nkIdent 'discardable'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -742,15 +784,12 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsTypeNamed'
+        nkIdent 'nsGenericType'
+        nkStrLit "Demo.Pet"
+        nkStrLit ""
         nkCall
-          nkIdent 'nsGenericName'
-          nkStrLit "Demo.Pet"
-          nkCall
-            nkIdent 'nsDisplay'
-            nkCall
-              nkIdent 'nsTypeOf'
-              nkIdent 'T'
+          nkIdent 'nsTypeOf'
+          nkIdent 'T'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -775,15 +814,12 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsTypeNamed'
+        nkIdent 'nsGenericType'
+        nkStrLit "Demo.Stray"
+        nkStrLit ""
         nkCall
-          nkIdent 'nsGenericName'
-          nkStrLit "Demo.Stray"
-          nkCall
-            nkIdent 'nsDisplay'
-            nkCall
-              nkIdent 'nsTypeOf'
-              nkIdent 'T'
+          nkIdent 'nsTypeOf'
+          nkIdent 'T'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -854,6 +890,32 @@ nkStmtList
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsDynType'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Pet'
+          nkIdent 'T'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeOf'
+        nkCall
+          nkIdent 'typeof'
+          nkIdent 'self'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -989,6 +1051,36 @@ nkStmtList
           nkDotExpr
             nkIdent 'self'
             nkIdent 'Tag'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Stray'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsGenericName'
+        nkStrLit "Demo.Stray"
+        nkCall
+          nkIdent 'nsDisplay'
+          nkCall
+            nkIdent 'nsTypeOf'
+            nkIdent 'T'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1069,7 +1161,7 @@ nkStmtList
   nkMethodDef
     nkPostfix
       nkIdent '*'
-      nkIdent 'ToString'
+      nkIdent 'nsDynType'
     nkEmpty
     nkGenericParams
       nkIdentDefs
@@ -1077,25 +1169,21 @@ nkStmtList
         nkEmpty
         nkEmpty
     nkFormalParams
-      nkIdent 'string'
+      nkIdent 'Type'
       nkIdentDefs
         nkIdent 'self'
         nkBracketExpr
           nkIdent 'Stray'
           nkIdent 'T'
         nkEmpty
-    nkPragma
-      nkIdent 'discardable'
+    nkEmpty
     nkEmpty
     nkStmtList
       nkCall
-        nkIdent 'nsGenericName'
-        nkStrLit "Demo.Stray"
+        nkIdent 'nsTypeOf'
         nkCall
-          nkIdent 'nsDisplay'
-          nkCall
-            nkIdent 'nsTypeOf'
-            nkIdent 'T'
+          nkIdent 'typeof'
+          nkIdent 'self'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -1143,6 +1231,18 @@ nkStmtList
         nkCall
           nkIdent 'compiles'
           nkCall
+            nkIdent 'nsDynType'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Pet'
+                nkIdent 'int32'
+              nkNilLit
+  nkStaticStmt
+    nkStmtList
+      nkDiscardStmt
+        nkCall
+          nkIdent 'compiles'
+          nkCall
             nkIdent 'nsTypeName'
             nkCall
               nkBracketExpr
@@ -1168,6 +1268,18 @@ nkStmtList
           nkIdent 'compiles'
           nkCall
             nkIdent 'ToString'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Stray'
+                nkIdent 'string'
+              nkNilLit
+  nkStaticStmt
+    nkStmtList
+      nkDiscardStmt
+        nkCall
+          nkIdent 'compiles'
+          nkCall
+            nkIdent 'nsDynType'
             nkCall
               nkBracketExpr
                 nkIdent 'Stray'

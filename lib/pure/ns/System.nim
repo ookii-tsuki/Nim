@@ -9,7 +9,8 @@ from std/unicode import nil
 # interfaces (`Array.Sort` takes an `IComparer<T>`), as .NET's namespaces may.
 import System/Collections/Generic {.cyclic.}
 from ../nsharp/intrinsics import NsBoxed, nsBoxEquals, nsBoxHash, Equals, GetHashCode, NsArray, nsArrayOf, len,
-  items, `[]`, `[]=`, nsFormatValue, nsAlign, nsBox, nsNoValue, nsExceptionName, ToString, nsTypeName, nsStamped, nsAdoptException, nsEnumName
+  items, `[]`, `[]=`, nsFormatValue, nsAlign, nsBox, nsNoValue, nsExceptionName, ToString, nsTypeName, nsStamped, nsAdoptException, nsEnumName,
+  Type, nsTypeNamed, nsTypeOf
 
 # `{.nsStatic: "T".}` and `{.nsInterface.}`: see `nsharp/pragmas`.
 from ../nsharp/pragmas import nsStatic, nsInterface
@@ -299,7 +300,12 @@ template NegativeInfinity*[T: SomeFloat](t: typedesc[T]): T = T(system.NegInf)
 
 # `IComparable<T>.CompareTo` on the built-in types.
 proc CompareTo*[T: SomeInteger](a, b: T): int32 = int32(cmp(a, b))
-proc CompareTo*[T: SomeFloat](a, b: T): int32 = int32(cmp(a, b))
+proc CompareTo*[T: SomeFloat](a, b: T): int32 =
+  ## NaN is less than every number and equal to itself, as `double.CompareTo` has it,
+  ## so a sort or `Max` places it.
+  if a != a: (if b != b: 0'i32 else: -1'i32)
+  elif b != b: 1'i32
+  else: int32(cmp(a, b))
 proc CompareTo*(a, b: char): int32 = int32(cmp(a, b))
 proc CompareTo*(a, b: bool): int32 = int32(cmp(a, b))
 
@@ -855,6 +861,7 @@ type
 
 method ToString*(r: Random): string = "System.Random"
 method nsTypeName*(r: Random): string = "System.Random"
+proc nsTypeOf*(t: typedesc[Random]): Type = nsTypeNamed("System.Random")
 
 proc nsActualValue*(param, value, rule: string): ref ArgumentOutOfRangeException =
   ## .NET's message for an argument out of range that it names with its value:
@@ -967,6 +974,8 @@ proc Copy*[T](sourceArray: NsArray[T]; sourceIndex: int32; destinationArray: NsA
       destinationArray.nsData[int(destinationIndex) + k] = sourceArray.nsData[int(sourceIndex) + k]
 proc Copy*[T](sourceArray, destinationArray: NsArray[T]; length: int32) {.nsStatic: "Array".} =
   Copy(sourceArray, 0, destinationArray, 0, length)
+proc Empty*[T](): NsArray[T] {.nsStatic: "Array".} = nsArrayOf(newSeq[T]())
+  ## `Array.Empty<T>()`: an array of no elements.
 proc Fill*[T](a: NsArray[T]; value: T) {.nsStatic: "Array".} =
   for x in a.nsData.mitems: x = value
 proc Clear*[T](a: NsArray[T]) {.nsStatic: "Array".} =
@@ -1444,6 +1453,7 @@ proc ToString*(s: TimeSpan): string =
   let frac = rest mod nsTicksPerSecond
   if frac != 0: result.add "." & nsPad(frac, 7)
 proc `$`*(s: TimeSpan): string = s.ToString
+proc nsTypeOf*(t: typedesc[TimeSpan]): Type = nsTypeNamed("System.TimeSpan")
 
 # --- System.DateTime ------------------------------------------------------------
 #
@@ -1477,22 +1487,28 @@ proc `==`*(a, b: DayOfWeek): bool = int32(a) == int32(b)
 proc `<`*(a, b: DayOfWeek): bool = int32(a) < int32(b)
 proc `<=`*(a, b: DayOfWeek): bool = int32(a) <= int32(b)
 proc hash*(a: DayOfWeek): Hash = hash(int32(a))
-proc nsEnumMembers*(t: typedesc[DayOfWeek]): seq[(string, int64)] =
-  for i, n in nsDayNames: result.add (n, int64(i))
+proc nsEnumMembers*(t: typedesc[DayOfWeek]): array[7, (string, int64)] =
+  const table = [("Sunday", 0'i64), ("Monday", 1'i64), ("Tuesday", 2'i64),
+                 ("Wednesday", 3'i64), ("Thursday", 4'i64), ("Friday", 5'i64),
+                 ("Saturday", 6'i64)]
+  table
 proc nsEnumIsFlags*(t: typedesc[DayOfWeek]): bool = false
 proc `$`*(a: DayOfWeek): string = nsEnumName(int64(a), nsEnumMembers(DayOfWeek), false)
 proc ToString*(a: DayOfWeek): string = $a
+proc nsTypeOf*(t: typedesc[DayOfWeek]): Type = nsTypeNamed("System.DayOfWeek")
 
 template Unspecified*(t: typedesc[DateTimeKind]): DateTimeKind = DateTimeKind(0)
 template Utc*(t: typedesc[DateTimeKind]): DateTimeKind = DateTimeKind(1)
 template Local*(t: typedesc[DateTimeKind]): DateTimeKind = DateTimeKind(2)
 proc `==`*(a, b: DateTimeKind): bool = int32(a) == int32(b)
 proc hash*(a: DateTimeKind): Hash = hash(int32(a))
-proc nsEnumMembers*(t: typedesc[DateTimeKind]): seq[(string, int64)] =
-  @[("Unspecified", 0'i64), ("Utc", 1'i64), ("Local", 2'i64)]
+proc nsEnumMembers*(t: typedesc[DateTimeKind]): array[3, (string, int64)] =
+  const table = [("Unspecified", 0'i64), ("Utc", 1'i64), ("Local", 2'i64)]
+  table
 proc nsEnumIsFlags*(t: typedesc[DateTimeKind]): bool = false
 proc `$`*(a: DateTimeKind): string = nsEnumName(int64(a), nsEnumMembers(DateTimeKind), false)
 proc ToString*(a: DateTimeKind): string = $a
+proc nsTypeOf*(t: typedesc[DateTimeKind]): Type = nsTypeNamed("System.DateTimeKind")
 
 const
   nsMaxDateTicks = 3_155_378_975_999_999_999'i64  ## 9999-12-31 23:59:59.9999999
@@ -1732,6 +1748,7 @@ proc ToString*(d: DateTime): string = nsFormatDate(d, "G")
 proc ToString*(d: DateTime; format: string): string =
   nsFormatDate(d, if format.len == 0: "G" else: format)
 proc `$`*(d: DateTime): string = d.ToString
+proc nsTypeOf*(t: typedesc[DateTime]): Type = nsTypeNamed("System.DateTime")
 proc ToShortDateString*(d: DateTime): string = nsFormatDate(d, "d")
 proc ToLongDateString*(d: DateTime): string = nsFormatDate(d, "D")
 proc ToShortTimeString*(d: DateTime): string = nsFormatDate(d, "t")

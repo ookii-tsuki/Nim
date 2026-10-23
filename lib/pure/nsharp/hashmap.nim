@@ -186,6 +186,27 @@ proc put*[K, V](m: var NsHashMap[K, V]; k: K; v: sink V; overwrite: bool): bool 
   m.buckets[b] = int32(index + 1)
   true
 
+proc take*[K, V](m: var NsHashMap[K, V]; k: K; value: var V): bool =
+  ## Removes `k` and hands back its value, in one lookup; false (and `value`
+  ## untouched) when it is not there.
+  if m.buckets.len == 0: return false
+  let h = m.hashOf(k)
+  let b = m.bucketOf(h)
+  var last = -1
+  var i = int(m.buckets[b]) - 1
+  while i >= 0:
+    if m.entries[i].hashCode == h and m.same(m.entries[i].key, k):
+      if last < 0: m.buckets[b] = m.entries[i].next + 1
+      else: m.entries[last].next = m.entries[i].next
+      value = move(m.entries[i].value)
+      m.entries[i] = NsEntry[K, V](next: StartOfFreeList - m.freeList)
+      m.freeList = int32(i)
+      inc m.freeCount
+      return true
+    last = i
+    i = int(m.entries[i].next)
+  false
+
 proc remove*[K, V](m: var NsHashMap[K, V]; k: K): bool =
   if m.buckets.len == 0: return false
   let h = m.hashOf(k)

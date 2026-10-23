@@ -66,7 +66,7 @@ import ../Collections
 from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remove,
   copyOfSet, nsKeyHash, withComparer, initLike
 from ../../../nsharp/hashmap as nshash import nil
-from ../../../nsharp/intrinsics import nsNilFail, NsDisposeStack, nsDisposeRun, Type, nsTypeNamed, nsTypeOf, nsDisplay, nsGenericName, nsTypeName,
+from ../../../nsharp/intrinsics import nsNilFail, NsDisposeStack, nsDisposeRun, Type, nsTypeNamed, nsTypeOf, nsDisplay, nsGenericType, nsDynType, nsCoreLib, nsCollectionsLib,
   nsVtByKey, nsKeyOf, Equals, GetHashCode,
   NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
 export Collections
@@ -320,6 +320,9 @@ type
 
 const
   modifiedMsg = "Collection was modified; enumeration operation may not execute."
+  modifiedAfterMsg = "Collection was modified after the enumerator was instantiated."
+    ## The text of the collections .NET keeps in `System.Collections` (`Stack<T>`,
+    ## `LinkedList<T>`, the sorted ones).
   indexMsg = "Index was out of range. Must be non-negative and less than the " &
              "size of the collection. (Parameter 'index')"
 
@@ -327,6 +330,8 @@ template touch(c: untyped) = inc c.version
 
 template checkVersion(c: untyped; v: int) =
   if c.version != v: raise newException(InvalidOperationException, modifiedMsg)
+template checkVersionAfter(c: untyped; v: int) =
+  if c.version != v: raise newException(InvalidOperationException, modifiedAfterMsg)
 
 template checkIndex(i, len: int) =
   if i < 0 or i >= len: raise newException(ArgumentOutOfRangeException, indexMsg)
@@ -453,6 +458,10 @@ proc sortedSetOf[T](s: seq[T]): SortedSet[T] =
   result.data = deduplicate(result.data, isSorted = true)
 proc queueOf[T](s: seq[T]): Queue[T] = Queue[T](data: toDeque(s))
 proc stackOf[T](s: seq[T]): Stack[T] = Stack[T](data: s)
+proc AddLast*[T](l: LinkedList[T]; x: T): LinkedListNode[T]
+proc linkedListOf[T](s: seq[T]): LinkedList[T] =
+  result = LinkedList[T]()
+  for x in s: discard result.AddLast(x)
 
 template fromEnumerable(ctor, build: untyped) =
   proc ctor*[T](collection: openArray[T]): auto = build(@collection)
@@ -471,6 +480,7 @@ fromEnumerable(newHashSet, hashSetOf)
 fromEnumerable(newSortedSet, sortedSetOf)
 fromEnumerable(newQueue, queueOf)
 fromEnumerable(newStack, stackOf)
+fromEnumerable(newLinkedList, linkedListOf)
 
 proc newLinkedListNode*[T](value: T): LinkedListNode[T] =
   LinkedListNode[T](Value: value)
@@ -650,8 +660,9 @@ proc `[]`*[K, V](t: Dictionary[K, V]; k: K): V =
   if p == nil: raise keyMissing(k)
   p[]
 proc `[]=`*[K, V](t: Dictionary[K, V]; k: K; v: sink V) =
-  discard t.data.put(k, v, true)
-  touch t
+  ## Replacing a value leaves an enumeration going, as since .NET Core 3.0; adding
+  ## a key does not.
+  if t.data.put(k, v, true): touch t
 
 iterator items*[K, V](t: Dictionary[K, V]): KeyValuePair[K, V] =
   let v = t.version
@@ -666,8 +677,8 @@ proc TryAdd*[K, V](t: Dictionary[K, V]; k: K; v: V): bool =
   result = t.data.put(k, v, false)
   if result: touch t
 proc Clear*[K, V](t: Dictionary[K, V]) =
+  ## An enumeration in progress then ends, as on .NET: nothing is left to read.
   nshash.clear(t.data)
-  touch t
 proc ContainsKey*[K, V](t: Dictionary[K, V]; k: K): bool {.inline.} =
   nshash.contains(t.data, k)
 proc ContainsValue*[K, V](t: Dictionary[K, V]; v: V): bool =
@@ -685,13 +696,8 @@ proc Remove*[K, V](t: Dictionary[K, V]; k: K): bool =
   t.data.remove(k)
 proc Remove*[K, V](t: Dictionary[K, V]; k: K; value: var V): bool =
   ## Removes the entry under `k`, handing back its value; the default when none.
-  let p = t.data.getPtr(k)
-  if p == nil:
-    value = default(V)
-    return false
-  value = p[]
-  discard t.data.remove(k)
-  true
+  result = nshash.take(t.data, k, value)
+  if not result: value = default(V)
 proc TryGetValue*[K, V](t: Dictionary[K, V]; k: K; value: var V): bool =
   ## The value under `k` when there is one; `value` is the default when not.
   let p = t.data.getPtr(k)
@@ -723,18 +729,16 @@ proc Add*[T](s: HashSet[T]; x: T): bool =
   result = s.data.put(x, true, false)
   if result: touch s
 proc Clear*[T](s: HashSet[T]) =
+  ## Removing leaves an enumeration going, as on .NET; only an addition stops it.
   nshash.clear(s.data)
-  touch s
 proc Contains*[T](s: HashSet[T]; x: T): bool = nshash.contains(s.data, x)
 proc Remove*[T](s: HashSet[T]; x: T): bool =
-  result = s.data.remove(x)
-  if result: touch s
+  s.data.remove(x)
 proc RemoveWhere*[T](s: HashSet[T]; match: Predicate[T]): int32 =
   var gone: seq[T] = @[]
   for x in nshash.keys(s.data):
     if match(x): gone.add x
   for x in gone: discard s.data.remove(x)
-  if gone.len > 0: touch s
   int32(gone.len)
 proc CopyTo*[T](s: HashSet[T]; arr: NsArray[T]) =
   var i = 0
@@ -751,8 +755,10 @@ proc ToArray*[T](s: HashSet[T]): NsArray[T] =
   for x in nshash.keys(s.data): xs.add x
   nsArrayOf(xs)
 proc UnionWith*[T](s: HashSet[T]; other: NsEnumerable[T]) =
-  for x in snapshot(other): discard s.data.put(x, true, false)
-  touch s
+  var added = false
+  for x in snapshot(other):
+    if s.data.put(x, true, false): added = true
+  if added: touch s
 proc IntersectWith*[T](s: HashSet[T]; other: NsEnumerable[T]) =
   if nshash.len(s.data) == 0: return
   var keep = s.data.initLike(bool)
@@ -760,22 +766,18 @@ proc IntersectWith*[T](s: HashSet[T]; other: NsEnumerable[T]) =
   if nshash.len(keep) == 0:
     ## .NET clears the set then, which also forgets the free places.
     nshash.clear(s.data)
-    touch s
     return
   var gone: seq[T] = @[]
   for x in nshash.keys(s.data):
     if not nshash.contains(keep, x): gone.add x
   for x in gone: discard s.data.remove(x)
-  touch s
 proc ExceptWith*[T](s: HashSet[T]; other: NsEnumerable[T]) =
   when other is HashSet[T]:
     if other == s:
       nshash.clear(s.data)
-      touch s
       return
   if nshash.len(s.data) == 0: return
   for x in snapshot(other): discard s.data.remove(x)
-  touch s
 proc nsSameComparer[T](a, b: HashSet[T]): bool =
   ## .NET's `EqualityComparersAreEqual`: both default, or equal comparers.
   if a.comparer.nsObj == nil or b.comparer.nsObj == nil:
@@ -865,7 +867,7 @@ iterator items*[T](s: SortedSet[T]): T =
   let v = s.version
   var i = 0
   while true:
-    checkVersion(s, v)
+    checkVersionAfter(s, v)
     if i >= s.data.len: break
     yield s.data[i]
     inc i
@@ -996,7 +998,7 @@ template sortedItems(t: untyped; K, V: typedesc) =
   let v = t.version
   var i = 0
   while true:
-    checkVersion(t, v)
+    checkVersionAfter(t, v)
     if i >= t.keys.len: break
     yield KeyValuePair[K, V](Key: t.keys[i], Value: t.vals[i])
     inc i
@@ -1197,7 +1199,7 @@ iterator items*[T](s: Stack[T]): T =
   let v = s.version
   var i = s.data.high
   while true:
-    checkVersion(s, v)
+    checkVersionAfter(s, v)
     if i < 0: break
     yield s.data[i]
     dec i
@@ -1254,7 +1256,7 @@ iterator items*[T](l: LinkedList[T]): T =
   let v = l.version
   var n = l.head
   while true:
-    checkVersion(l, v)
+    checkVersionAfter(l, v)
     if n == nil: break
     yield n.Value
     n = n.next
@@ -1562,51 +1564,55 @@ proc nsToIEnumerable*[T](xs: LinkedList[T]): IEnumerable[T] = nsSequenceView(xs,
 # `typeof(List<int>)`: .NET's name, the type arguments' names in brackets.
 
 const nsGenNs = "System.Collections.Generic."
-template nsArgName(T: typedesc): string =
-  ## A type argument's .NET name; a type with none (a native C++ one) by Nim's.
+template nsArgType(T: typedesc): Type =
+  ## A type argument's type; one with no .NET name (a native C++ type) by Nim's.
   mixin nsTypeOf
-  when compiles(nsTypeOf(T)): nsTypeOf(T).nsDisplay else: $T
-proc nsTypeOf*[T](t: typedesc[List[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "List", nsArgName(T)))
-proc nsTypeOf*[T](t: typedesc[HashSet[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "HashSet", nsArgName(T)))
-proc nsTypeOf*[T](t: typedesc[SortedSet[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "SortedSet", nsArgName(T)))
-proc nsTypeOf*[T](t: typedesc[Queue[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "Queue", nsArgName(T)))
-proc nsTypeOf*[T](t: typedesc[Stack[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "Stack", nsArgName(T)))
-proc nsTypeOf*[T](t: typedesc[LinkedList[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "LinkedList", nsArgName(T)))
-proc nsTypeOf*[K, V](t: typedesc[Dictionary[K, V]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "Dictionary", nsArgName(K), nsArgName(V)))
-proc nsTypeOf*[K, V](t: typedesc[SortedDictionary[K, V]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "SortedDictionary", nsArgName(K),
-                            nsArgName(V)))
-proc nsTypeOf*[K, V](t: typedesc[SortedList[K, V]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "SortedList", nsArgName(K),
-                            nsArgName(V)))
-proc nsTypeOf*[E, P](t: typedesc[PriorityQueue[E, P]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "PriorityQueue", nsArgName(E),
-                            nsArgName(P)))
-proc nsTypeOf*[K, V](t: typedesc[KeyValuePair[K, V]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "KeyValuePair", nsArgName(K),
-                            nsArgName(V)))
+  when compiles(nsTypeOf(T)): nsTypeOf(T) else: nsTypeNamed($T)
+template nsCachedType(body: untyped): Type =
+  ## Made once per instantiation: `GetType()` and `ToString()` of a collection are
+  ## its constructed type.
+  var cached {.global.}: Type = nil
+  if cached.isNil: cached = body
+  cached
 
-# `GetType()` of a collection held as an `object` (and so its `ToString()`): the
-# dynamic type, as a user's class names its own.
-method nsTypeName*[T](x: List[T]): string = nsTypeOf(List[T]).nsDisplay
-method nsTypeName*[K, V](x: Dictionary[K, V]): string = nsTypeOf(Dictionary[K, V]).nsDisplay
-method nsTypeName*[T](x: HashSet[T]): string = nsTypeOf(HashSet[T]).nsDisplay
-method nsTypeName*[T](x: Queue[T]): string = nsTypeOf(Queue[T]).nsDisplay
-method nsTypeName*[T](x: Stack[T]): string = nsTypeOf(Stack[T]).nsDisplay
-method nsTypeName*[T](x: LinkedList[T]): string = nsTypeOf(LinkedList[T]).nsDisplay
-method nsTypeName*[T](x: SortedSet[T]): string = nsTypeOf(SortedSet[T]).nsDisplay
-method nsTypeName*[K, V](x: SortedDictionary[K, V]): string =
-  nsTypeOf(SortedDictionary[K, V]).nsDisplay
-method nsTypeName*[K, V](x: SortedList[K, V]): string = nsTypeOf(SortedList[K, V]).nsDisplay
-method nsTypeName*[E, P](x: PriorityQueue[E, P]): string =
-  nsTypeOf(PriorityQueue[E, P]).nsDisplay
+proc nsTypeOf*[T](t: typedesc[List[T]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "List", nsCoreLib, nsArgType(T)))
+proc nsTypeOf*[T](t: typedesc[HashSet[T]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "HashSet", nsCoreLib, nsArgType(T)))
+proc nsTypeOf*[T](t: typedesc[SortedSet[T]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "SortedSet", nsCollectionsLib, nsArgType(T)))
+proc nsTypeOf*[T](t: typedesc[Queue[T]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "Queue", nsCoreLib, nsArgType(T)))
+proc nsTypeOf*[T](t: typedesc[Stack[T]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "Stack", nsCollectionsLib, nsArgType(T)))
+proc nsTypeOf*[T](t: typedesc[LinkedList[T]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "LinkedList", nsCollectionsLib, nsArgType(T)))
+proc nsTypeOf*[K, V](t: typedesc[Dictionary[K, V]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "Dictionary", nsCoreLib, nsArgType(K), nsArgType(V)))
+proc nsTypeOf*[K, V](t: typedesc[SortedDictionary[K, V]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "SortedDictionary", nsCollectionsLib, nsArgType(K),
+                             nsArgType(V)))
+proc nsTypeOf*[K, V](t: typedesc[SortedList[K, V]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "SortedList", nsCollectionsLib, nsArgType(K),
+                             nsArgType(V)))
+proc nsTypeOf*[E, P](t: typedesc[PriorityQueue[E, P]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "PriorityQueue", nsCollectionsLib, nsArgType(E),
+                             nsArgType(P)))
+proc nsTypeOf*[K, V](t: typedesc[KeyValuePair[K, V]]): Type =
+  nsCachedType(nsGenericType(nsGenNs & "KeyValuePair", nsCoreLib, nsArgType(K),
+                             nsArgType(V)))
+
+# `GetType()` of a collection held as an `object` (and so its `ToString()`).
+method nsDynType*[T](x: List[T]): Type = nsTypeOf(List[T])
+method nsDynType*[K, V](x: Dictionary[K, V]): Type = nsTypeOf(Dictionary[K, V])
+method nsDynType*[T](x: HashSet[T]): Type = nsTypeOf(HashSet[T])
+method nsDynType*[T](x: Queue[T]): Type = nsTypeOf(Queue[T])
+method nsDynType*[T](x: Stack[T]): Type = nsTypeOf(Stack[T])
+method nsDynType*[T](x: LinkedList[T]): Type = nsTypeOf(LinkedList[T])
+method nsDynType*[T](x: SortedSet[T]): Type = nsTypeOf(SortedSet[T])
+method nsDynType*[K, V](x: SortedDictionary[K, V]): Type = nsTypeOf(SortedDictionary[K, V])
+method nsDynType*[K, V](x: SortedList[K, V]): Type = nsTypeOf(SortedList[K, V])
+method nsDynType*[E, P](x: PriorityQueue[E, P]): Type = nsTypeOf(PriorityQueue[E, P])
 
 # --- classes implementing `IEnumerable<T>` / `IEnumerator<T>` --------------------
 #

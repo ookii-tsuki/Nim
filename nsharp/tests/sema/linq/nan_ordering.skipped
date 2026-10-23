@@ -1,0 +1,4 @@
+List.MaxBy = type-parameter
+List.MinBy = type-parameter
+List.OrderBy = type-parameter
+List.OrderByDescending = type-parameter

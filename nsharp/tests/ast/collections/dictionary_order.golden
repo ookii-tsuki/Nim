@@ -291,7 +291,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 4
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -756,7 +757,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 4
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -769,45 +771,54 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkPrefix
-        nkIdent '@'
-        nkBracket
-          nkTupleConstr
-            nkStrLit "Clubs"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Suit'
-                  nkIdent 'Clubs'
-          nkTupleConstr
-            nkStrLit "Diamonds"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Suit'
-                  nkIdent 'Diamonds'
-          nkTupleConstr
-            nkStrLit "Hearts"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Suit'
-                  nkIdent 'Hearts'
-          nkTupleConstr
-            nkStrLit "Spades"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Suit'
-                  nkIdent 'Spades'
+      nkStmtList
+        nkConstSection
+          nkConstDef
+            nkIdent 'nsTable'
+            nkBracketExpr
+              nkIdent 'array'
+              nkIntLit 4
+              nkTupleConstr
+                nkIdent 'string'
+                nkIdent 'int64'
+            nkBracket
+              nkTupleConstr
+                nkStrLit "Clubs"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Suit'
+                      nkIdent 'Clubs'
+              nkTupleConstr
+                nkStrLit "Diamonds"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Suit'
+                      nkIdent 'Diamonds'
+              nkTupleConstr
+                nkStrLit "Hearts"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Suit'
+                      nkIdent 'Hearts'
+              nkTupleConstr
+                nkStrLit "Spades"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Suit'
+                      nkIdent 'Spades'
+        nkIdent 'nsTable'
   nkProcDef
     nkPostfix
       nkIdent '*'

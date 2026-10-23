@@ -239,7 +239,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 2
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -655,7 +656,8 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkBracketExpr
-        nkIdent 'seq'
+        nkIdent 'array'
+        nkIntLit 2
         nkTupleConstr
           nkIdent 'string'
           nkIdent 'int64'
@@ -668,27 +670,36 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkStmtList
-      nkPrefix
-        nkIdent '@'
-        nkBracket
-          nkTupleConstr
-            nkStrLit "Red"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Color'
-                  nkIdent 'Red'
-          nkTupleConstr
-            nkStrLit "Green"
-            nkCall
-              nkIdent 'int64'
-              nkCall
-                nkIdent 'int32'
-                nkDotExpr
-                  nkIdent 'Color'
-                  nkIdent 'Green'
+      nkStmtList
+        nkConstSection
+          nkConstDef
+            nkIdent 'nsTable'
+            nkBracketExpr
+              nkIdent 'array'
+              nkIntLit 2
+              nkTupleConstr
+                nkIdent 'string'
+                nkIdent 'int64'
+            nkBracket
+              nkTupleConstr
+                nkStrLit "Red"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Color'
+                      nkIdent 'Red'
+              nkTupleConstr
+                nkStrLit "Green"
+                nkCall
+                  nkIdent 'int64'
+                  nkCall
+                    nkIdent 'int32'
+                    nkDotExpr
+                      nkIdent 'Color'
+                      nkIdent 'Green'
+        nkIdent 'nsTable'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -911,6 +922,21 @@ nkStmtList
         nkCharLit 59
         nkStrLit "x"
         nkStrLit "y"
+      nkCall
+        nkDotExpr
+          nkCall
+            nkDotExpr
+              nkIdent 'sb'
+              nkIdent 'AppendJoin'
+            nkStrLit ", "
+            nkIntLit 1
+            nkIntLit 2
+            nkIntLit 3
+          nkIdent 'AppendJoin'
+        nkCharLit 59
+        nkFloatLit 1.5
+        nkStrLit "x"
+        nkCharLit 99
       nkCall
         nkIdent 'WriteLine'
         nkIdent 'sb'

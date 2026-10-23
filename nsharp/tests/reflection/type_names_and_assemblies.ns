@@ -1,0 +1,28 @@
+// Namespace and FullName of constructed generic types, each argument qualified
+// with its own assembly (Stack<T> is in System.Collections, Queue<T> in the core
+// library); typeof and GetType() of the library's own types; ToString() of an
+// exception, held as itself or as an object, with its inner exception.
+using System;
+using System.Text;
+using System.Collections.Generic;
+namespace Demo {
+class Box<T> { }
+class Program {
+    static void Main() {
+        Console.WriteLine(typeof(List<int>).Namespace + " | " + typeof(Box<string>).Namespace + " | " + typeof(int).Namespace);
+        Console.WriteLine(typeof(List<Queue<int>>).FullName);
+        Console.WriteLine(typeof(List<Stack<int>>).FullName);
+        Console.WriteLine(typeof(DateTime) + " " + DateTime.Now.GetType() + " " + TimeSpan.Zero.GetType() + " " + DayOfWeek.Monday.GetType());
+        Console.WriteLine(typeof(List<DateTime>) + " " + typeof(List<StringBuilder>) + " " + typeof(List<Random>) + " " + typeof(List<Type>));
+        Console.WriteLine(typeof(List<DateTime>).FullName);
+        object e = new InvalidOperationException("boom");
+        Console.WriteLine(e.ToString());
+        var e2 = new Exception("outer", new ArgumentException("inner", "p"));
+        Console.WriteLine(e2.ToString());
+        Console.WriteLine(e2);
+        object b = new Box<List<int>>();
+        Console.WriteLine(b.GetType().FullName);
+        Console.WriteLine(new List<int>().GetType() + " " + new SortedSet<string>());
+    }
+}
+}

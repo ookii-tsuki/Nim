@@ -1,0 +1,1320 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkFromStmt
+    nkStrLit "System/Reflection"
+    nkIdent 'Name'
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'T'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'what'
+        nkIdent 'string'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'f'
+        nkIdent 'Action0'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Program"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkIdent 'T'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'what'
+        nkIdent 'string'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'f'
+        nkIdent 'Action0'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'nsStmt'
+            nkCall
+              nkIdent 'f'
+          nkCall
+            nkIdent 'WriteLine'
+            nkInfix
+              nkIdent '+'
+              nkIdent 'what'
+              nkStrLit ": ok"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'Exception'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkInfix
+                      nkIdent '+'
+                      nkInfix
+                        nkIdent '+'
+                        nkIdent 'what'
+                        nkStrLit ": "
+                      nkDotExpr
+                        nkCall
+                          nkDotExpr
+                            nkIdent 'e'
+                            nkIdent 'GetType'
+                        nkIdent 'Name'
+                    nkStrLit ": "
+                  nkDotExpr
+                    nkIdent 'e'
+                    nkIdent 'Message'
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "dict clear"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'd'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit1'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newDictionary'
+                            nkIdent 'int32'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit1'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit1'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                      nkIntLit 2
+                    nkIdent 'nsInit1'
+            nkForStmt
+              nkIdent 'kv'
+              nkIdent 'd'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 'd'
+                    nkIdent 'Clear'
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "dict set existing"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'd'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit2'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newDictionary'
+                            nkIdent 'int32'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit2'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit2'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                      nkIntLit 2
+                    nkIdent 'nsInit2'
+            nkForStmt
+              nkIdent 'kv'
+              nkIdent 'd'
+              nkStmtList
+                nkAsgn
+                  nkBracketExpr
+                    nkIdent 'd'
+                    nkDotExpr
+                      nkIdent 'kv'
+                      nkIdent 'Key'
+                  nkIntLit 5
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "dict add"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'd'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit3'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newDictionary'
+                            nkIdent 'int32'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit3'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                      nkIntLit 1
+                    nkIdent 'nsInit3'
+            nkForStmt
+              nkIdent 'kv'
+              nkIdent 'd'
+              nkStmtList
+                nkAsgn
+                  nkBracketExpr
+                    nkIdent 'd'
+                    nkIntLit 9
+                  nkIntLit 5
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "dict trygetvalue"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'd'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit4'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newDictionary'
+                            nkIdent 'int32'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit4'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                      nkIntLit 1
+                    nkIdent 'nsInit4'
+            nkForStmt
+              nkIdent 'kv'
+              nkIdent 'd'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 'd'
+                    nkIdent 'TryAdd'
+                  nkIntLit 1
+                  nkIntLit 3
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "set remove"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 's'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit5'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newHashSet'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit5'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit5'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit5'
+                        nkIdent 'Add'
+                      nkIntLit 3
+                    nkIdent 'nsInit5'
+            nkForStmt
+              nkIdent 'x'
+              nkIdent 's'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 's'
+                    nkIdent 'Remove'
+                  nkIdent 'x'
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "set clear"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 's'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit6'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newHashSet'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit6'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit6'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit6'
+                        nkIdent 'Add'
+                      nkIntLit 3
+                    nkIdent 'nsInit6'
+            nkForStmt
+              nkIdent 'x'
+              nkIdent 's'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 's'
+                    nkIdent 'Clear'
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "set add existing"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 's'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit7'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newHashSet'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit7'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit7'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                    nkIdent 'nsInit7'
+            nkForStmt
+              nkIdent 'x'
+              nkIdent 's'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 's'
+                    nkIdent 'Add'
+                  nkIntLit 1
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "set add new"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 's'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit8'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newHashSet'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit8'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit8'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                    nkIdent 'nsInit8'
+            nkForStmt
+              nkIdent 'x'
+              nkIdent 's'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 's'
+                    nkIdent 'Add'
+                  nkIntLit 7
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "sorted dict remove"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'd'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit9'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newSortedDictionary'
+                            nkIdent 'int32'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit9'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit9'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                      nkIntLit 2
+                    nkIdent 'nsInit9'
+            nkForStmt
+              nkIdent 'kv'
+              nkIdent 'd'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 'd'
+                    nkIdent 'Remove'
+                  nkDotExpr
+                    nkIdent 'kv'
+                    nkIdent 'Key'
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "sorted dict set"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'd'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit10'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newSortedDictionary'
+                            nkIdent 'int32'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit10'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit10'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                      nkIntLit 2
+                    nkIdent 'nsInit10'
+            nkForStmt
+              nkIdent 'kv'
+              nkIdent 'd'
+              nkStmtList
+                nkAsgn
+                  nkBracketExpr
+                    nkIdent 'd'
+                    nkDotExpr
+                      nkIdent 'kv'
+                      nkIdent 'Key'
+                  nkIntLit 3
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "sorted set remove"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 's'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit11'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newSortedSet'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit11'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit11'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                    nkIdent 'nsInit11'
+            nkForStmt
+              nkIdent 'x'
+              nkIdent 's'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 's'
+                    nkIdent 'Remove'
+                  nkIdent 'x'
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "sorted list remove"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'd'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit12'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newSortedList'
+                            nkIdent 'int32'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit12'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit12'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                      nkIntLit 2
+                    nkIdent 'nsInit12'
+            nkForStmt
+              nkIdent 'kv'
+              nkIdent 'd'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 'd'
+                    nkIdent 'Remove'
+                  nkDotExpr
+                    nkIdent 'kv'
+                    nkIdent 'Key'
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "sorted list set"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'd'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit13'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newSortedList'
+                            nkIdent 'int32'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit13'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit13'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                      nkIntLit 2
+                    nkIdent 'nsInit13'
+            nkForStmt
+              nkIdent 'kv'
+              nkIdent 'd'
+              nkStmtList
+                nkAsgn
+                  nkBracketExpr
+                    nkIdent 'd'
+                    nkDotExpr
+                      nkIdent 'kv'
+                      nkIdent 'Key'
+                  nkIntLit 3
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "list set"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'l'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit14'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newList'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit14'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit14'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                    nkIdent 'nsInit14'
+            nkForStmt
+              nkIdent 'x'
+              nkIdent 'l'
+              nkStmtList
+                nkAsgn
+                  nkBracketExpr
+                    nkIdent 'l'
+                    nkIntLit 0
+                  nkIntLit 3
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "list remove"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'l'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit15'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newList'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit15'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit15'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                    nkIdent 'nsInit15'
+            nkForStmt
+              nkIdent 'x'
+              nkIdent 'l'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 'l'
+                    nkIdent 'Remove'
+                  nkIdent 'x'
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "queue"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'q'
+                nkEmpty
+                nkCall
+                  nkBracketExpr
+                    nkIdent 'newQueue'
+                    nkIdent 'int32'
+                  nkCall
+                    nkBracketExpr
+                      nkIdent 'nsArrayFrom'
+                      nkIdent 'int32'
+                    nkBracket
+                      nkCall
+                        nkIdent 'int32'
+                        nkIntLit 1
+                      nkCall
+                        nkIdent 'int32'
+                        nkIntLit 2
+            nkForStmt
+              nkIdent 'x'
+              nkIdent 'q'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 'q'
+                    nkIdent 'Enqueue'
+                  nkIntLit 3
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "stack"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'q'
+                nkEmpty
+                nkCall
+                  nkBracketExpr
+                    nkIdent 'newStack'
+                    nkIdent 'int32'
+                  nkCall
+                    nkBracketExpr
+                      nkIdent 'nsArrayFrom'
+                      nkIdent 'int32'
+                    nkBracket
+                      nkCall
+                        nkIdent 'int32'
+                        nkIntLit 1
+                      nkCall
+                        nkIdent 'int32'
+                        nkIntLit 2
+            nkForStmt
+              nkIdent 'x'
+              nkIdent 'q'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 'q'
+                    nkIdent 'Pop'
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "linked"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'q'
+                nkEmpty
+                nkCall
+                  nkBracketExpr
+                    nkIdent 'newLinkedList'
+                    nkIdent 'int32'
+                  nkCall
+                    nkBracketExpr
+                      nkIdent 'nsArrayFrom'
+                      nkIdent 'int32'
+                    nkBracket
+                      nkCall
+                        nkIdent 'int32'
+                        nkIntLit 1
+                      nkCall
+                        nkIdent 'int32'
+                        nkIntLit 2
+            nkForStmt
+              nkIdent 'x'
+              nkIdent 'q'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 'q'
+                    nkIdent 'AddLast'
+                  nkIntLit 3
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "keys remove"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'd'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit16'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newDictionary'
+                            nkIdent 'int32'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit16'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit16'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                      nkIntLit 2
+                    nkIdent 'nsInit16'
+            nkForStmt
+              nkIdent 'k'
+              nkDotExpr
+                nkIdent 'd'
+                nkIdent 'Keys'
+              nkStmtList
+                nkCall
+                  nkDotExpr
+                    nkIdent 'd'
+                    nkIdent 'Remove'
+                  nkIdent 'k'
+      nkCall
+        nkIdent 'T'
+        nkIdent 'Program'
+        nkStrLit "values set"
+        nkLambda
+          nkEmpty
+          nkEmpty
+          nkEmpty
+          nkFormalParams
+            nkEmpty
+          nkEmpty
+          nkEmpty
+          nkStmtList
+            nkVarSection
+              nkIdentDefs
+                nkIdent 'd'
+                nkEmpty
+                nkBlockExpr
+                  nkEmpty
+                  nkStmtList
+                    nkVarSection
+                      nkIdentDefs
+                        nkIdent 'nsInit17'
+                        nkEmpty
+                        nkCall
+                          nkBracketExpr
+                            nkIdent 'newDictionary'
+                            nkIdent 'int32'
+                            nkIdent 'int32'
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit17'
+                        nkIdent 'Add'
+                      nkIntLit 1
+                      nkIntLit 1
+                    nkCall
+                      nkDotExpr
+                        nkIdent 'nsInit17'
+                        nkIdent 'Add'
+                      nkIntLit 2
+                      nkIntLit 2
+                    nkIdent 'nsInit17'
+            nkForStmt
+              nkIdent 'v'
+              nkDotExpr
+                nkIdent 'd'
+                nkIdent 'Values'
+              nkStmtList
+                nkAsgn
+                  nkBracketExpr
+                    nkIdent 'd'
+                    nkIntLit 1
+                  nkIntLit 4
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

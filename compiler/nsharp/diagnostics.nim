@@ -29,6 +29,7 @@ type
     ndConstructorRequired
     ndParserStalled
     ndCannotConvert
+    ndNoBestArrayType
     ndCannotConvertNull
     ndArgumentNoOverload
     ndArgumentCannotConvert
@@ -191,6 +192,7 @@ const
                         " parameterless constructor"),
     ndParserStalled: (code: "9001", msg: "the parser made no progress; skipping the token"),
     ndCannotConvert: (code: "0029", msg: "Cannot implicitly convert type '$1' to '$2'"),
+    ndNoBestArrayType: (code: "0826", msg: "No best type found for implicitly-typed array"),
     ndCannotConvertNull: (code: "0037", msg: "Cannot convert null to '$1' because it is a" &
                         " non-nullable value type"),
     ndArgumentNoOverload: (code: "1501", msg: "No overload for method '$1' takes $2 arguments"),

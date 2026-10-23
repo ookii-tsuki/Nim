@@ -1,0 +1,26 @@
+// Type inference through lambdas: a literal's own type (7L, 3000000000), a type
+// argument one lambda's result binds for the next lambda's parameter, the widest of
+// several results, and explicit type arguments on a LINQ method.
+using System;
+using System.Linq;
+using System.Collections.Generic;
+namespace Demo {
+class Program {
+    static R Run<R>(Func<R> f) => f();
+    static C Compose<A, B, C>(A a, Func<A, B> f, Func<B, C> g) => g(f(a));
+    static T Pick<T>(bool c, Func<T> a, Func<T> b) => c ? a() : b();
+    static void Main() {
+        var r = Run(() => 7L); Console.WriteLine(r.GetType() + " " + r);
+        var r2 = Run(() => { return 7L; }); Console.WriteLine(r2.GetType());
+        var r3 = Run(() => 3000000000); Console.WriteLine(r3.GetType());
+        Console.WriteLine(Compose(2, a => a + 1, b => b * 1.5));
+        var c2 = Compose("ab", a => a.Length, b => b * 2L); Console.WriteLine(c2.GetType() + " " + c2);
+        Console.WriteLine(Pick(false, () => 1, () => 2.5));
+        int x = 3;
+        Console.WriteLine(Pick(true, () => x, () => 2.5));
+        var objs = new List<int> { 1, 2 }.Select<int, object>(v => v).ToList();
+        Console.WriteLine(objs[0].GetType() + " " + objs.Count);
+        Console.WriteLine(Run(() => "s") + Run(() => 'c'));
+    }
+}
+}

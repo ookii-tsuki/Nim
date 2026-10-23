@@ -1,0 +1,18 @@
+// Custom numeric formats as .NET reads them: placeholders, literals between digits,
+// quoted and escaped text, grouping and scaling commas, % and per-mille, sections
+// for negative and zero values (a negative rounding to zero keeps its sign),
+// rounding half away from zero over the shortest digits, and a custom format that
+// begins with a standard letter.
+using System;
+class Program {
+    static void P(double v, string f) { try { Console.WriteLine(f + " | " + v.ToString(f)); } catch (FormatException e) { Console.WriteLine(f + " | " + e.Message); } }
+    static void I(long v, string f) { try { Console.WriteLine(f + " | " + v.ToString(f)); } catch (FormatException e) { Console.WriteLine(f + " | " + e.Message); } }
+    static void Main() {
+        I(5, "E2x"); I(-5, "pos;neg"); I(0, "pos;neg;zero"); I(5, "pos;neg;zero"); I(-5, "0;(0)"); I(-5, "0.0;;z");
+        I(1234, "00-00"); I(123456789, "#,##0"); I(1234567, "#,##0,"); I(1234567, "0,,"); I(42, "'0'#"); I(42, "\\#0"); I(42, "Price 0"); I(42, "Xyz");
+        I(7, "000"); I(7, "##"); I(0, "##"); I(0, "#.##"); I(5, "0.00"); I(1234, "0"); I(-1234, "0"); I(1234, "#,#"); I(1234, "0,0.0");
+        P(1234.5678, "0.00"); P(1234.5678, "#,##0.0#"); P(0.5, "0%"); P(0.125, "#0.0‰"); P(-0.001, "0"); P(-0.0, "0.0"); P(-0.0, "abc"); P(1.5, "0.#;neg"); P(-1.5, "0.#;neg"); P(-0.04, "0.0;(0.0)"); P(0.04, "0.0;(0.0);zero");
+        P(3.14159, "0.000 'pi'"); P(3.14159, "\"[\"0.0\"]\""); P(5, "#.##"); P(0.5, "#.##"); P(12.345, "00.0000"); P(1e10, "#,0"); P(0.000123, "0.######"); P(9.995, "0.00"); P(2.5, "0"); P(3.5, "0"); P(-2.5, "0");
+        P(5, "E2x"); P(5, "Xyz"); P(5, "D"); P(5, "d2");
+    }
+}

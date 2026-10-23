@@ -16,7 +16,8 @@
 import std/strutils
 import ../System
 import Collections/Generic
-from ../../nsharp/intrinsics import ToString, nsTypeName
+from ../../nsharp/intrinsics import ToString, nsTypeName, Type, nsTypeNamed, nsBox,
+  nsFormatValue
 
 
 {.push discardable.}
@@ -94,6 +95,18 @@ proc AppendJoin*(sb: StringBuilder; separator: string; values: varargs[string]):
 proc AppendJoin*(sb: StringBuilder; separator: char; values: varargs[string]): StringBuilder =
   sb.nsText.add values.join($separator)
   sb
+proc nsJoinBoxed(sb: StringBuilder; separator: string; values: openArray[RootRef]) =
+  for i, v in values:
+    if i > 0: sb.nsText.add separator
+    if v != nil: sb.nsText.add nsFormatValue(v, "")
+proc AppendJoin*(sb: StringBuilder; separator: string; values: varargs[RootRef, nsBox]): StringBuilder =
+  ## `AppendJoin(string, params object[])`: each value as `ToString()` renders it, a
+  ## null as nothing.
+  sb.nsJoinBoxed(separator, values)
+  sb
+proc AppendJoin*(sb: StringBuilder; separator: char; values: varargs[RootRef, nsBox]): StringBuilder =
+  sb.nsJoinBoxed($separator, values)
+  sb
 proc AppendJoin*[T](sb: StringBuilder; separator: string; values: NsEnumerable[T]): StringBuilder =
   ## `AppendJoin<T>(string, IEnumerable<T>)`: each element as `string.Join` renders it.
   sb.nsText.add Join(separator, values)
@@ -133,6 +146,7 @@ proc Clear*(sb: StringBuilder): StringBuilder =
 
 method ToString*(sb: StringBuilder): string = sb.nsText
 method nsTypeName*(sb: StringBuilder): string = "System.Text.StringBuilder"
+proc nsTypeOf*(t: typedesc[StringBuilder]): Type = nsTypeNamed("System.Text.StringBuilder")
 proc ToString*(sb: StringBuilder; startIndex, length: int32): string =
   if startIndex < 0: nsNegative("startIndex", startIndex)
   if length < 0: nsNegative("length", length)

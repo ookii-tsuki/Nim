@@ -77,6 +77,47 @@ Recorded as open at first, and since fixed (tests named in brackets):
   declared, which catches `OverflowException` and `DivideByZeroException` as in
   .NET [`stdlib/numeric_format_letters`].
 
+### Follow-up: a second review (bugs, quality, performance)
+
+A reviewer agent checked `4ace076`, `515f49a`, `b64a17b` and `6a21c02`. Fixed, with
+the tests named:
+
+* Lambda inference: a literal's own type (`Run(() => 7L)`), a type argument one
+  lambda binds for the next (`Compose(2, a => a + 1, b => b * 1.5)`, which Nim
+  cannot infer, so each lambda is converted to its delegate type), the widest of
+  several results, and explicit type arguments on a library method
+  (`Select<int, object>`) [`generics/lambda_inference_chains`].
+* Best common type: a base class, nullables, `null`, and CS0826 when there is
+  none [`arrays/best_common_type`].
+* A custom numeric format beginning with a standard letter was read as standard;
+  sections (`;`), quoted and escaped literals, literals between digits, scaling
+  commas, per-mille, and rounding half away from zero over the shortest digits
+  were missing [`stdlib/custom_numeric_formats`].
+* `Type.Namespace` of a generic type; `Queue<T>` named as in `System.Collections`;
+  `typeof` and `GetType()` of `DateTime`, `TimeSpan`, `DayOfWeek`, `StringBuilder`
+  and the other library types; `var d = DayOfWeek.Monday; d.ToString()` dropped
+  its receiver; `ToString()` of an exception printed `System.Object`
+  [`reflection/type_names_and_assemblies`].
+* NaN: `Max`, `OrderBy` and `Array.Sort` follow `double.CompareTo`
+  [`linq/nan_ordering`].
+* Replacing a dictionary value, clearing a dictionary or set, and removing from a
+  set no longer end an enumeration; `Stack`, `LinkedList` and the sorted
+  collections throw their own message; `new LinkedList<T>(collection)`
+  [`collections/modification_during_enumeration`].
+* `AppendJoin(", ", 1, 2, 3)` (`params object[]`)
+  [`stdlib/enum_parse_out_var_and_append_join`].
+* Older: `uint + 1L` stayed a `uint`; `Func<int?> f = () => 4` and
+  `int? F() { return 4; }` did not compile, and `Func<int?>`'s result lost its
+  nullability; `Array.Empty<T>()` bound to `Enumerable.Empty<T>()`
+  [`nullable/nullable_results`].
+* Performance: `FullName` is made once per `Type`, a collection's type once per
+  instantiation; an enum's members are a constant array rather than a new `seq` per
+  call; `Dictionary.Remove(k, out v)` takes one lookup; a directory search pattern
+  matches in linear time.
+
+Kept as they are: `Average` with a `float` selector returns `double` (SPEC 15.3);
+`new int?[] { ... }`, an explicitly typed array of nullables, does not parse yet.
+
 What stays as it is, by design (SPEC 7.3): a bool prints `true` and a whole
 double `7.0` where C# writes `True` and `7`; a null `string` is `""`; `decimal` is
 not in the core (D7); `goto` is out.

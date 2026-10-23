@@ -1344,6 +1344,7 @@ nkStmtList
                 nkBracketExpr
                   nkIdent 'Empty'
                   nkIdent 'int32'
+                nkIdent 'Enumerable'
               nkIdent 'Count'
       nkCall
         nkIdent 'WriteLine'

@@ -344,7 +344,17 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   of nsnNullableType:
     ## A value type needs `Option`; a reference is nullable already, so `Node?` is
     ## just `Node`, which is how C# reads it.
-    if t.typeKind == tkNullable:
+    var valueTyped = t.typeKind == tkNullable
+    if t.typeKind == tkUnknown and t.typ != nil and t.typ.kind == nsnTypeName and
+       t.typ.sons.len == 0:
+      ## Inside a type argument (`Func<int?>`), which sema does not classify: a
+      ## built-in value type, or a struct or enum this compilation declares.
+      let inner = canonicalTypeName(t.typ.name)
+      valueTyped = isNumericName(inner) or inner in ["bool", "char"] or
+        l.scope.enums.contains(inner) or
+        (l.scope.classes.hasKey(inner) and l.scope.classes[inner].decl != nil and
+         l.scope.classes[inner].decl.classKind == ckStruct)
+    if valueTyped:
       result = newTree(nkBracketExpr, info, l.id("Option", info),
                        l.typeToNim(t.typ, info))
     else:
@@ -974,7 +984,12 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
         ## `Comparer<int>.Create(f)`: the generic type, instantiated.
         qt = newTree(nkBracketExpr, n.info, qt)
         for a in callee.body.typeArgs: qt.add l.typeToNim(a, n.info)
-      result = newTree(nkCall, n.info, l.id(callee.name, n.info), qt)
+      ## The member's own type arguments (`Enumerable.Empty<int>()`), written.
+      var head = l.id(callee.name, n.info)
+      if callee.typeArgs.len > 0:
+        head = newTree(nkBracketExpr, n.info, head)
+        for t in callee.typeArgs: head.add l.typeToNim(t, n.info)
+      result = newTree(nkCall, n.info, head, qt)
       for a in l.argsToNim(n): result.add a
       return
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
@@ -1644,7 +1659,8 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       if n.typ != nil and n.typ.kind == nsnTypeName and e.kind != nsnNull:
         br.add newTree(nkCall, e.info, convCallee(l.typeToNim(n.typ, e.info)), l.expr(e))
       else:
-        br.add l.expr(e)
+        ## A nullable element type: `some`/`none` as sema chose, as for an argument.
+        br.add l.wrappedArg(e)
     result = newTree(nkPrefix, n.info, l.id("@", n.info), br)
     if n.intVal <= 1:
       ## A `T[]`: the library's array over those elements.
@@ -1850,6 +1866,9 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     ## A lifted numeric conversion between nullables: `int?` to `long?`.
     result = newTree(nkCall, n.info, l.id("nsOptAs", n.info), result,
                      l.typeToNim(n.convType, n.info))
+  elif n.conv == "nsAsDelegate":
+    ## A lambda as the delegate type its parameter has, every type argument bound.
+    result = newTree(nkCall, n.info, l.typeToNim(n.convType, n.info), result)
   elif n.conv == "nsVariant":
     ## A variant conversion: the type arguments are references either way, so the
     ## value is reinterpreted as the target instantiation.
@@ -3506,7 +3525,8 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
   of nsnLock: result = l.lockToNim(n)
   of nsnReturn:
     result = newNodeI(nkReturnStmt, n.info)
-    result.add (if n.body == nil: empty(n.info) else: l.expr(n.body))
+    ## `return 4` from an `int?` member: `some`, as sema chose.
+    result.add (if n.body == nil: empty(n.info) else: l.wrappedArg(n.body))
   of nsnBreak:
     ## A `break` that leaves a switch names the switch's block.
     result = newNodeI(nkBreakStmt, n.info)
@@ -3519,7 +3539,9 @@ proc stmtInner(l: Lowerer; n: NsNode): PNode =
       result = newNodeI(nkContinueStmt, n.info)
       result.add empty(n.info)
   of nsnThrow: result = l.throwToNim(n)
-  else: result = l.expr(n)
+  else:
+    ## A lambda's expression body into a `T?` result is `some`, as sema chose.
+    result = (if n.argConv != acNone: l.wrappedArg(n) else: l.expr(n))
 
 # --- declaration helpers ----------------------------------------------------
 
@@ -3636,9 +3658,16 @@ proc lowerEnum(l: Lowerer; n: NsNode; into: var seq[PNode]) =
       newTree(nkIdentDefs, info, l.id("t", info), newTree(nkBracketExpr, info,
         l.id("typedesc", info), copyTree(e)), empty(info))),
       newTree(nkStmtList, info, body), info)
-  into.add onType("nsEnumMembers", newTree(nkBracketExpr, info, l.id("seq", info),
-      newTree(nkTupleConstr, info, l.id("string", info), l.id("int64", info))),
-    newTree(nkPrefix, info, l.id("@", info), copyTree(table)))
+  ## A constant array: reading it costs no allocation (string literals are shared).
+  let tableTy = newTree(nkBracketExpr, info, l.id("array", info),
+    newIntNode(nkIntLit, table.len),
+    newTree(nkTupleConstr, info, l.id("string", info), l.id("int64", info)))
+  let tableConst = newTree(nkConstSection, info, newTree(nkConstDef, info,
+    l.id("nsTable", info), copyTree(tableTy),
+    (if table.len > 0: copyTree(table)
+     else: newTree(nkCall, info, l.id("default", info), copyTree(tableTy)))))
+  into.add onType("nsEnumMembers", tableTy,
+    newTree(nkStmtList, info, tableConst, l.id("nsTable", info)))
   into.add onType("nsEnumIsFlags", l.id("bool", info),
     l.id(if n.hasAttribute("Flags"): "true" else: "false", info))
   let ts = op("ToString", l.id("string", info), @[single(copyTree(e))],
@@ -4741,14 +4770,25 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
                         withPragmas = true, kind = (if isClass: nkMethodDef else: nkProcDef))
   ## `typeof(C)` and, for a class, the dynamic type `GetType()` reads.
   if n.typeParams.len > 0:
-    let call = copyTree(typeName)
+    ## Built from the arguments' types, which say their assemblies (`FullName`).
+    let call = newTree(nkCall, info, l.id("nsGenericType", info), newAtom(nkStrLit, full, info),
+                       newAtom(nkStrLit, "", info))
+    for t in l.clsTypeParams:
+      call.add newTree(nkCall, info, l.id("nsTypeOf", info), l.id(t, info))
     let pd = l.mkProc(l.alwaysExported("nsTypeOf", info),
       newTree(nkFormalParams, info, l.id("Type", info), newTree(nkIdentDefs, info,
         l.id("t", info), newTree(nkBracketExpr, info, l.id("typedesc", info),
                                  l.clsType(n.name, info)), empty(info))),
-      newTree(nkStmtList, info, newTree(nkCall, info, l.id("nsTypeNamed", info), call)), info)
+      newTree(nkStmtList, info, call), info)
     pd[2] = l.genericParams(l.clsTypeParams, info)
     result.add pd
+    if isClass:
+      ## `GetType()` of an instance: the constructed type, its arguments' too.
+      result.add l.mkProc(l.alwaysExported("nsDynType", info),
+        newTree(nkFormalParams, info, l.id("Type", info), copyTree(selfDefs)),
+        newTree(nkStmtList, info, newTree(nkCall, info, l.id("nsTypeOf", info),
+          newTree(nkCall, info, l.id("typeof", info), l.id("self", info)))), info,
+        kind = nkMethodDef)
   else:
     result.add l.mkProc(l.alwaysExported("nsTypeOf", info),
       newTree(nkFormalParams, info, l.id("Type", info), newTree(nkIdentDefs, info,
