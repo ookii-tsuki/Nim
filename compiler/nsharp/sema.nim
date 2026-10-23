@@ -250,7 +250,11 @@ proc memberKindOfSurface(ctx: NsCheckContext; rk: NsTypeKind; recv, name: string
              else: m.ret)
     return ctx.surface.kindOfSpelling(m.ret)
   if rk == tkNullable: return ctx.classifyName(recv)
-  if m.isStatic: return rk
+  if m.isStatic:
+    ## `long.MaxValue` is a `long`, named so that what holds it can tell.
+    let num = numericOfSpelling(canonicalTypeName(recv))
+    if num.len > 0: tname = num
+    return rk
   tkUnknown
 
 # --- numeric conversions ----------------------------------------------------
@@ -2183,12 +2187,23 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ctx.unknownName(n)
     result = tkUnknown
 
+proc typeLiteralReceiver(r: NsNode) =
+  ## `42.ToString("x")`: an integer literal as a receiver is C#'s `int`, where
+  ## Nim's untyped literal would fit every integer overload of the member.
+  if r == nil or r.conv.len > 0: return
+  var lit = r
+  while lit != nil and lit.kind == nsnUnary and lit.name in ["-", "+"]:
+    lit = lit.body
+  if lit != nil and lit.kind == nsnIntLit and lit.typeName in ["", "int"]:
+    r.conv = "int"
+
 proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## Member access. The receiver's resolved type decides what the member means, and
   ## the declaration that owns it -- this module's, or the prelude's -- decides what
   ## it yields. No member name is special-cased.
   ctx.receiver = n.body
   var rk = ctx.walkExpr(n.body)
+  typeLiteralReceiver(n.body)
   ## C#'s "Color Color" rule (§12.8.7.2): a field, property, local or parameter
   ## named as its own type stands for the type when what follows is one of the
   ## type's static members -- an enum's members, a class's statics and consts.
@@ -2444,6 +2459,7 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if callee != nil and callee.kind == nsnMember:
     ctx.receiver = callee.body
     let rk = ctx.walkExpr(callee.body)
+    typeLiteralReceiver(callee.body)
     if rk == tkType:
       ## `Class.Method(...)` or `Namespace.Method(...)`: lowering drops the
       ## qualifier, and the result type is the method's if the class is known.
@@ -2628,6 +2644,18 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         if pt != nil: ctx.coerce(v, declTypeName(pt), v.info, pt)
         continue
       discard ctx.walkExpr(a)
+  ## What the walked lambdas yield binds the type arguments the others left open
+  ## (`T(() => 42)`): their results, and anything else still untyped, take them.
+  var reopen = false
+  for j, a in n.sons:
+    if isLambdaArg(a) and sigs[j].known:
+      let v = (if a.kind == nsnNamedArg: a.body else: a)
+      if v.kind == nsnLambda and v.typ == nil: reopen = true
+  if reopen:
+    let again = callLambdaSigs(ctx.scope, ctx.surface, n)
+    for j, a in n.sons:
+      let v = (if a.kind == nsnNamedArg: a.body else: a)
+      if isLambdaArg(a) and v.kind == nsnLambda: applySigDeep(ctx, v, again[j])
   if callee != nil and callee.kind == nsnMember and cands.len == 0 and
      callee.body != nil and callee.body.typeKind != tkType and
      not ctx.scope.classes.hasKey(canonicalTypeName(callee.body.typeName)):
@@ -3009,12 +3037,44 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
           ## An array's length is a number (CS0029).
           nsError(ctx.config, a.info, ndCannotConvert, kindSpelling(a), "int")
     if n.kind == nsnArrayLit and n.typ == nil:
-      ## `new[] { 1.5, 2.5 }`: the element type is the elements'.
+      ## `new[] { 1.5, 2.5 }`: the element type is the elements' best common type
+      ## (ECMA-334 12.6.3.15), the one every other element converts to implicitly
+      ## (`{ long.MaxValue, 1 }` is a `long[]`); a `null` asks for a reference type.
+      var cands: seq[NsNode] = @[]
+      var hasNull = false
       for a in n.sons:
+        if a.kind == nsnNull:
+          hasNull = true
+          continue
         let vt = valueType(a)
-        if vt != nil:
-          n.typ = vt
+        if vt == nil: continue
+        var seen = false
+        for c in cands:
+          if c.kind == nsnTypeName and vt.kind == nsnTypeName and
+             (canonicalTypeName(c.name) == canonicalTypeName(vt.name) or
+              (numericOfSpelling(canonicalTypeName(c.name)).len > 0 and
+               numericOfSpelling(canonicalTypeName(c.name)) ==
+                 numericOfSpelling(canonicalTypeName(vt.name)))): seen = true
+        if not seen: cands.add vt
+      proc typeNum(t: NsNode): string =
+        if t.kind == nsnTypeName: numericOfSpelling(canonicalTypeName(t.name)) else: ""
+      for c in cands:
+        let cn = typeNum(c)
+        var best = true
+        for o in cands:
+          if o == c: continue
+          let on = typeNum(o)
+          if not (isNumericName(cn) and isNumericName(on) and implicitlyConvertible(on, cn)):
+            best = false
+        if hasNull and isNumericName(cn): best = false
+        if best:
+          n.typ = c
           break
+      if n.typ == nil and cands.len > 0: n.typ = cands[0]
+      if n.typ != nil and (cands.len > 1 or hasNull):
+        for a in n.sons:
+          ctx.markNull(a, declTypeName(n.typ), n.typ)
+          ctx.coerce(a, declTypeName(n.typ), a.info, n.typ)
     let at = (if n.typ != nil: nsnArrayType(n.typ, n.info) else: nil)
     n.rtype = at
     n.setType(tkSequence, (if at != nil: declTypeName(at) else: ""))
@@ -3612,6 +3672,10 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       if ctx.retType != nil and ctx.retType.kind != nsnVoidType:
         ## `() => "s"` for a `Func<int>` (CS0029).
         ctx.checkConvertible(e, ctx.targetOfType(ctx.retType), e.info)
+        ## ... and the result converts as a `return`'s does (`() => 42` for a
+        ## `Func<object>` boxes it).
+        if ctx.retType.kind != nsnNullableType:
+          ctx.coerce(e, declTypeName(ctx.retType), e.info, ctx.retType)
     elif n.body != nil:
       ctx.walkInScope(n.body.sons)
     ctx.yieldHost = savedHost

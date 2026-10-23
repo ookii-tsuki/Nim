@@ -15,6 +15,7 @@
 
 import std/strutils
 import ../System
+import Collections/Generic
 from ../../nsharp/intrinsics import ToString, nsTypeName
 
 
@@ -89,6 +90,16 @@ proc AppendFormat*(sb: StringBuilder; format: string; args: varargs[RootRef, nsB
 
 proc AppendJoin*(sb: StringBuilder; separator: string; values: varargs[string]): StringBuilder =
   sb.nsText.add values.join(separator)
+  sb
+proc AppendJoin*(sb: StringBuilder; separator: char; values: varargs[string]): StringBuilder =
+  sb.nsText.add values.join($separator)
+  sb
+proc AppendJoin*[T](sb: StringBuilder; separator: string; values: NsEnumerable[T]): StringBuilder =
+  ## `AppendJoin<T>(string, IEnumerable<T>)`: each element as `string.Join` renders it.
+  sb.nsText.add Join(separator, values)
+  sb
+proc AppendJoin*[T](sb: StringBuilder; separator: char; values: NsEnumerable[T]): StringBuilder =
+  sb.nsText.add Join(separator, values)
   sb
 
 proc Insert*(sb: StringBuilder; index: int32; value: string): StringBuilder =

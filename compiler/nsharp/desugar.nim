@@ -4704,7 +4704,7 @@ proc objectToString(l: Lowerer; n: NsNode; isClass: bool): seq[PNode] =
   if n.typeParams.len > 0:
     typeName = newTree(nkCall, info, l.id("nsGenericName", info), newAtom(nkStrLit, full, info))
     for t in l.clsTypeParams:
-      typeName.add newTree(nkCall, info, l.id("FullName", info),
+      typeName.add newTree(nkCall, info, l.id("nsDisplay", info),
                            newTree(nkCall, info, l.id("nsTypeOf", info), l.id(t, info)))
   if n.attrs.isRecord:
     ## `R { A = 1, B = x }`: the type's own name and its public members. A record

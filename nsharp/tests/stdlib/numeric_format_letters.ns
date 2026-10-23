@@ -1,0 +1,30 @@
+// Standard numeric format letters: the ones integers and doubles accept (B, the
+// binary format, for integers), an unknown letter throwing FormatException, a custom
+// format with no digit placeholder printing only its text, a literal receiver
+// (`42.ToString(s)`, `(-1).ToString("b")`), and ArithmeticException, which
+// Math.Sign(NaN) throws and which catches overflow and division by zero.
+using System;
+class Program {
+    static void Main() {
+        try { Math.Sign(double.NaN); } catch (ArithmeticException e) { Console.WriteLine(e.GetType().Name + ": " + e.Message); }
+        try { checked { int m = int.MaxValue; m++; } } catch (ArithmeticException e) { Console.WriteLine(e.GetType().Name + " caught as ArithmeticException"); }
+        try { int z = 0; Console.WriteLine(1 / z); } catch (ArithmeticException e) { Console.WriteLine(e.GetType().Name + " caught as ArithmeticException"); }
+        Console.WriteLine(new ArithmeticException().Message + " | " + Math.Sign(-2.5));
+        string ok = "", okd = "";
+        for (char c = 'A'; c <= 'Z'; c++) {
+            foreach (var s in new[] { c.ToString(), char.ToLower(c).ToString() }) {
+                try { 42.ToString(s); ok += s; } catch (FormatException) { }
+                try { 1.5.ToString(s); okd += s; } catch (FormatException) { }
+            }
+        }
+        Console.WriteLine(ok); Console.WriteLine(okd);
+        Console.WriteLine(5.ToString("B") + " " + (-1).ToString("b") + " " + ((byte)5).ToString("B8") + " " + 255L.ToString("b4"));
+        Console.WriteLine((-42).ToString("ab") + " " + 0.ToString("q x") + " " + (-0.5).ToString("zz"));
+        foreach (var s in new[] { "a1", "x2", "q99", "Z0", "ab", "a b", "a1x", "#a", "D12", "" })
+        {
+            try { Console.WriteLine(s + " -> " + 42.ToString(s)); } catch (FormatException e) { Console.WriteLine(s + " -> " + e.Message); }
+        }
+        try { Console.WriteLine(string.Format("{0:a}", 42)); } catch (FormatException e) { Console.WriteLine(e.Message); }
+        try { Console.WriteLine($"{1.5:Q}"); } catch (FormatException e) { Console.WriteLine(e.Message); }
+    }
+}

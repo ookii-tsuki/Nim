@@ -1172,7 +1172,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Alpha.Holder"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
@@ -1205,7 +1205,7 @@ nkStmtList
           nkIdent 'nsGenericName'
           nkStrLit "Alpha.Holder"
           nkCall
-            nkIdent 'FullName'
+            nkIdent 'nsDisplay'
             nkCall
               nkIdent 'nsTypeOf'
               nkIdent 'T'
@@ -1234,7 +1234,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Alpha.Holder"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'

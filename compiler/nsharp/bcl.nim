@@ -92,7 +92,7 @@ const
   ]
 
   ## Nim types the prelude builds on, and how N# classifies them.
-  NsNimKinds*: array[39, NsTypeEntry] = [
+  NsNimKinds*: array[40, NsTypeEntry] = [
     ("int8", tkInt), ("int16", tkInt), ("int32", tkInt), ("int64", tkInt),
     ("uint8", tkInt), ("uint16", tkInt), ("uint32", tkInt), ("uint64", tkInt),
     ("int", tkInt), ("uint", tkInt),
@@ -108,7 +108,7 @@ const
     ("OverflowDefect", tkException), ("IndexDefect", tkException),
     ("DivByZeroDefect", tkException), ("ObjectConversionDefect", tkException),
     ("RangeDefect", tkException), ("KeyError", tkException),
-    ("ValueError", tkException),
+    ("ValueError", tkException), ("ArithmeticDefect", tkException),
   ]
 
   ## A generic constraint, and the key a member declared over it is filed under.
@@ -498,7 +498,8 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string) =
   if name.len == 0: return
   let renamed = name.startsWith("nsM_") and name.len > 4
   if renamed: name = name[4 .. ^1]
-  var constraints = initTable[string, string]()
+  ## In declaration order, which explicit type arguments (`M<int>()`) follow.
+  var constraints = initOrderedTable[string, string]()
   if n[2] != nil and n[2].kind == nkGenericParams:
     for i in 0 ..< n[2].len:
       let gp = n[2][i]

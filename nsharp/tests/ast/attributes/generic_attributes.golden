@@ -407,7 +407,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Demo.TagAttribute"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
@@ -440,7 +440,7 @@ nkStmtList
           nkIdent 'nsGenericName'
           nkStrLit "Demo.TagAttribute"
           nkCall
-            nkIdent 'FullName'
+            nkIdent 'nsDisplay'
             nkCall
               nkIdent 'nsTypeOf'
               nkIdent 'T'
@@ -469,7 +469,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Demo.TagAttribute"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'

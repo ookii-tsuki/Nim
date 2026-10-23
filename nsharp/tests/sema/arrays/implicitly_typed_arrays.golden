@@ -1,0 +1,12 @@
+using System
+using System.Linq
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member array.Length = System | int
+member array.Length = System | int
+member array.Sum = System.Linq | float
+member long.MaxValue = System | int

@@ -1,0 +1,19 @@
+// `Enum.TryParse<T>(s, out var x)` types x from the explicit type argument, and
+// StringBuilder.AppendJoin takes any sequence of values, with a string or char
+// separator.
+using System;
+using System.Text;
+using System.Collections.Generic;
+namespace Demo {
+enum Color { Red, Green }
+class Program {
+    static void Main() {
+        if (Enum.TryParse<Color>("Green", out var c)) Console.WriteLine(c);
+        Console.WriteLine(Enum.TryParse<Color>("Nope", out var d) + " " + d);
+        var sb = new StringBuilder();
+        sb.AppendJoin(", ", new[] { 1, 2, 3 }).AppendJoin('|', new List<double> { 1.5, 2 }).AppendJoin("-", "a", "b");
+        sb.AppendJoin(';', "x", "y");
+        Console.WriteLine(sb);
+    }
+}
+}

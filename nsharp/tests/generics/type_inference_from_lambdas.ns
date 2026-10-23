@@ -1,0 +1,23 @@
+// A generic method's type arguments inferred from a lambda's result, as C# does:
+// `T(() => 42)` binds R to int; `Apply(3, x => x * 2)` binds A from the argument,
+// then R from what the lambda yields.
+using System;
+using System.Collections.Generic;
+namespace Demo {
+class Program {
+    static void T<R>(Func<R> f) { Console.WriteLine(f()); }
+    static R Apply<A, R>(A x, Func<A, R> f) => f(x);
+    static List<R> Map<A, R>(List<A> xs, Func<A, R> f) { var r = new List<R>(); foreach (var x in xs) r.Add(f(x)); return r; }
+    static void Main() {
+        T(() => 42);
+        T(() => "s" + 1);
+        T(() => { return 2.5; });
+        Console.WriteLine(Apply(3, x => x * 2));
+        Console.WriteLine(Apply("ab", s => s.Length));
+        var m = Map(new List<int> { 1, 2 }, x => "n" + x);
+        Console.WriteLine(m[1] + " " + m.Count);
+        var n = Apply(2, x => x > 1);
+        Console.WriteLine(n);
+    }
+}
+}

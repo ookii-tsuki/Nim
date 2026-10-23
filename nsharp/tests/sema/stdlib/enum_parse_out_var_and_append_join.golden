@@ -1,0 +1,8 @@
+using System
+using System.Collections.Generic
+using System.Text
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Enum.TryParse = System | bool
+member Enum.TryParse = System | bool

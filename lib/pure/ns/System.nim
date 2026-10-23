@@ -29,6 +29,9 @@ type
   ArgumentOutOfRangeException* = RangeDefect
   KeyNotFoundException* = KeyError
   FormatException* = ValueError
+  ArithmeticException* = ArithmeticDefect
+    ## The base of `OverflowException` and `DivideByZeroException`, as in .NET:
+    ## Nim's defects for them derive from `ArithmeticDefect`.
 
   SystemException* = object of CatchableError
   ApplicationException* = object of SystemException
@@ -127,6 +130,7 @@ proc nsNetName(nimName: string): string =
   of "RangeDefect", "ArgumentOutOfRangeException": "System.ArgumentOutOfRangeException"
   of "KeyError", "KeyNotFoundException": "System.Collections.Generic.KeyNotFoundException"
   of "ValueError", "FormatException": "System.FormatException"
+  of "ArithmeticDefect", "ArithmeticException": "System.ArithmeticException"
   of "SystemException", "ApplicationException", "ArgumentException",
      "ArgumentNullException", "InvalidOperationException", "NotSupportedException",
      "NotImplementedException", "ObjectDisposedException", "UnauthorizedAccessException":
@@ -166,6 +170,7 @@ proc nsDefaultMessage*[T: Exception](e: ref T): string =
   elif T is InvalidCastException: "Specified cast is not valid."
   elif T is OverflowException: "Arithmetic operation resulted in an overflow."
   elif T is DivideByZeroException: "Attempted to divide by zero."
+  elif T is ArithmeticException: "Overflow or underflow in the arithmetic operation."
   else:
     ## The types of namespaces that build on this one, which it cannot name.
     case nsExceptionTypeName(e)
@@ -749,7 +754,12 @@ proc Max*(a, b: float): float {.nsStatic: "Math".} = max(a, b)
 proc Min*(a, b: int32): int32 {.nsStatic: "Math".} = min(a, b)
 proc Min*(a, b: float): float {.nsStatic: "Math".} = min(a, b)
 proc Sign*(x: int32): int32 {.nsStatic: "Math".} = int32(cmp(x, int32(0)))
-proc Sign*(x: float): int32 {.nsStatic: "Math".} = int32(cmp(x, float(0)))
+proc Sign*(x: float): int32 {.nsStatic: "Math".} =
+  ## NaN has no sign: .NET throws `ArithmeticException`.
+  if x != x:
+    raise nsStamped(ArithmeticException,
+      "Function does not accept floating point Not-a-Number values.", "System.ArithmeticException")
+  int32(cmp(x, float(0)))
 proc Abs*[T: SomeSignedInt](x: T): T {.nsStatic: "Math".} = nsAbsInt(x)
 proc Max*[T: SomeNumber](a, b: T): T {.nsStatic: "Math".} = max(a, b)
 proc Min*[T: SomeNumber](a, b: T): T {.nsStatic: "Math".} = min(a, b)

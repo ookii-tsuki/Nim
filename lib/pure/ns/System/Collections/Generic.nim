@@ -66,7 +66,7 @@ import ../Collections
 from ../../../nsharp/hashmap import NsHashMap, initNsHashMap, getPtr, put, remove,
   copyOfSet, nsKeyHash, withComparer, initLike
 from ../../../nsharp/hashmap as nshash import nil
-from ../../../nsharp/intrinsics import nsNilFail, NsDisposeStack, nsDisposeRun, Type, nsTypeNamed, nsTypeOf, FullName, nsGenericName,
+from ../../../nsharp/intrinsics import nsNilFail, NsDisposeStack, nsDisposeRun, Type, nsTypeNamed, nsTypeOf, nsDisplay, nsGenericName, nsTypeName,
   nsVtByKey, nsKeyOf, Equals, GetHashCode,
   NsArray, NsArrayBase, nsArrayOf, len, items, `[]`, `[]=`
 export Collections
@@ -97,16 +97,16 @@ type
     version: int
     comparer: IEqualityComparer[T]
       ## The comparer it was made with; an empty one is the default.
-  SortedSet*[T] = ref object
+  SortedSet*[T] = ref object of NsCollectionBase
     ## C#'s `SortedSet<T>`: a sorted array, searched by bisection.
     data: seq[T]
     version: int
-  SortedDictionary*[K, V] = ref object
+  SortedDictionary*[K, V] = ref object of NsCollectionBase
     ## C#'s `SortedDictionary<K,V>`: parallel sorted arrays of keys and values.
     keys: seq[K]
     vals: seq[V]
     version: int
-  SortedList*[K, V] = ref object
+  SortedList*[K, V] = ref object of NsCollectionBase
     ## C#'s `SortedList<K,V>`: the same store as `SortedDictionary`, indexable.
     keys: seq[K]
     vals: seq[V]
@@ -142,7 +142,7 @@ type
     dict: Dictionary[K, V]
     sorted: SortedDictionary[K, V]
     list: SortedList[K, V]
-  PriorityQueue*[E, P] = ref object
+  PriorityQueue*[E, P] = ref object of NsCollectionBase
     ## C#'s `PriorityQueue<TElement,TPriority>`: a min-heap on the priority. It is
     ## the 4-ary heap .NET uses, so equal priorities leave in .NET's order too.
     nodes: seq[(E, P)]
@@ -1562,26 +1562,51 @@ proc nsToIEnumerable*[T](xs: LinkedList[T]): IEnumerable[T] = nsSequenceView(xs,
 # `typeof(List<int>)`: .NET's name, the type arguments' names in brackets.
 
 const nsGenNs = "System.Collections.Generic."
+template nsArgName(T: typedesc): string =
+  ## A type argument's .NET name; a type with none (a native C++ one) by Nim's.
+  mixin nsTypeOf
+  when compiles(nsTypeOf(T)): nsTypeOf(T).nsDisplay else: $T
 proc nsTypeOf*[T](t: typedesc[List[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "List", nsTypeOf(T).FullName))
+  nsTypeNamed(nsGenericName(nsGenNs & "List", nsArgName(T)))
 proc nsTypeOf*[T](t: typedesc[HashSet[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "HashSet", nsTypeOf(T).FullName))
+  nsTypeNamed(nsGenericName(nsGenNs & "HashSet", nsArgName(T)))
 proc nsTypeOf*[T](t: typedesc[SortedSet[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "SortedSet", nsTypeOf(T).FullName))
+  nsTypeNamed(nsGenericName(nsGenNs & "SortedSet", nsArgName(T)))
 proc nsTypeOf*[T](t: typedesc[Queue[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "Queue", nsTypeOf(T).FullName))
+  nsTypeNamed(nsGenericName(nsGenNs & "Queue", nsArgName(T)))
 proc nsTypeOf*[T](t: typedesc[Stack[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "Stack", nsTypeOf(T).FullName))
+  nsTypeNamed(nsGenericName(nsGenNs & "Stack", nsArgName(T)))
 proc nsTypeOf*[T](t: typedesc[LinkedList[T]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "LinkedList", nsTypeOf(T).FullName))
+  nsTypeNamed(nsGenericName(nsGenNs & "LinkedList", nsArgName(T)))
 proc nsTypeOf*[K, V](t: typedesc[Dictionary[K, V]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "Dictionary", nsTypeOf(K).FullName, nsTypeOf(V).FullName))
+  nsTypeNamed(nsGenericName(nsGenNs & "Dictionary", nsArgName(K), nsArgName(V)))
 proc nsTypeOf*[K, V](t: typedesc[SortedDictionary[K, V]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "SortedDictionary", nsTypeOf(K).FullName,
-                            nsTypeOf(V).FullName))
+  nsTypeNamed(nsGenericName(nsGenNs & "SortedDictionary", nsArgName(K),
+                            nsArgName(V)))
+proc nsTypeOf*[K, V](t: typedesc[SortedList[K, V]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "SortedList", nsArgName(K),
+                            nsArgName(V)))
+proc nsTypeOf*[E, P](t: typedesc[PriorityQueue[E, P]]): Type =
+  nsTypeNamed(nsGenericName(nsGenNs & "PriorityQueue", nsArgName(E),
+                            nsArgName(P)))
 proc nsTypeOf*[K, V](t: typedesc[KeyValuePair[K, V]]): Type =
-  nsTypeNamed(nsGenericName(nsGenNs & "KeyValuePair", nsTypeOf(K).FullName,
-                            nsTypeOf(V).FullName))
+  nsTypeNamed(nsGenericName(nsGenNs & "KeyValuePair", nsArgName(K),
+                            nsArgName(V)))
+
+# `GetType()` of a collection held as an `object` (and so its `ToString()`): the
+# dynamic type, as a user's class names its own.
+method nsTypeName*[T](x: List[T]): string = nsTypeOf(List[T]).nsDisplay
+method nsTypeName*[K, V](x: Dictionary[K, V]): string = nsTypeOf(Dictionary[K, V]).nsDisplay
+method nsTypeName*[T](x: HashSet[T]): string = nsTypeOf(HashSet[T]).nsDisplay
+method nsTypeName*[T](x: Queue[T]): string = nsTypeOf(Queue[T]).nsDisplay
+method nsTypeName*[T](x: Stack[T]): string = nsTypeOf(Stack[T]).nsDisplay
+method nsTypeName*[T](x: LinkedList[T]): string = nsTypeOf(LinkedList[T]).nsDisplay
+method nsTypeName*[T](x: SortedSet[T]): string = nsTypeOf(SortedSet[T]).nsDisplay
+method nsTypeName*[K, V](x: SortedDictionary[K, V]): string =
+  nsTypeOf(SortedDictionary[K, V]).nsDisplay
+method nsTypeName*[K, V](x: SortedList[K, V]): string = nsTypeOf(SortedList[K, V]).nsDisplay
+method nsTypeName*[E, P](x: PriorityQueue[E, P]): string =
+  nsTypeOf(PriorityQueue[E, P]).nsDisplay
 
 # --- classes implementing `IEnumerable<T>` / `IEnumerator<T>` --------------------
 #

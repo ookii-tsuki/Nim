@@ -548,14 +548,14 @@ nkStmtList
           nkVarSection
             nkIdentDefs
               nkIdent 'big'
-              nkEmpty
+              nkIdent 'int32'
               nkDotExpr
                 nkIdent 'int32'
                 nkIdent 'MaxValue'
           nkVarSection
             nkIdentDefs
               nkIdent 'sum'
-              nkEmpty
+              nkIdent 'int32'
               nkBlockExpr
                 nkEmpty
                 nkStmtList

@@ -1,0 +1,20 @@
+ArithmeticException: Function does not accept floating point Not-a-Number values.
+OverflowException caught as ArithmeticException
+DivideByZeroException caught as ArithmeticException
+Overflow or underflow in the arithmetic operation. | -1
+BbCcDdEeFfGgNnPpRrXx
+CcEeFfGgNnPpRr
+101 11111111111111111111111111111111 00000101 11111111
+-ab q x -zz
+a1 -> Format specifier was invalid.
+x2 -> 2a
+q99 -> Format specifier was invalid.
+Z0 -> Format specifier was invalid.
+ab -> ab
+a b -> a b
+a1x -> a1x
+#a -> 42a
+D12 -> 000000000042
+ -> 42
+Format specifier was invalid.
+Format specifier was invalid.

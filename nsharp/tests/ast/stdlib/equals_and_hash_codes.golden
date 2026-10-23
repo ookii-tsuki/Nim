@@ -438,13 +438,17 @@ nkStmtList
                                     nkIdent '+'
                                     nkCall
                                       nkDotExpr
-                                        nkIntLit 3
+                                        nkCall
+                                          nkIdent 'int32'
+                                          nkIntLit 3
                                         nkIdent 'Equals'
                                       nkIntLit 3
                                     nkStrLit " "
                                   nkCall
                                     nkDotExpr
-                                      nkIntLit 3
+                                      nkCall
+                                        nkIdent 'int32'
+                                        nkIntLit 3
                                       nkIdent 'Equals'
                                     nkIntLit 4
                                 nkStrLit " "
@@ -562,9 +566,11 @@ nkStmtList
                                     nkStrLit " "
                                   nkCall
                                     nkDotExpr
-                                      nkPrefix
-                                        nkIdent '-'
-                                        nkIntLit 3
+                                      nkCall
+                                        nkIdent 'int32'
+                                        nkPrefix
+                                          nkIdent '-'
+                                          nkIntLit 3
                                       nkIdent 'GetHashCode'
                                 nkStrLit " "
                               nkCall
@@ -736,7 +742,9 @@ nkStmtList
                 nkIdent '+'
                 nkCall
                   nkDotExpr
-                    nkIntLit 5
+                    nkCall
+                      nkIdent 'int32'
+                      nkIntLit 5
                     nkIdent 'CompareTo'
                   nkIntLit 3
                 nkStrLit " "

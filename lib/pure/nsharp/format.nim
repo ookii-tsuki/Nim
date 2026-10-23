@@ -120,6 +120,10 @@ proc nsCustom(x: float; spec: string): string =
   ## significant, `.` the decimal point, `,` in the integer part turns grouping on, and
   ## `%` multiplies by a hundred. Anything else is copied as written.
   var v = x
+  if '0' notin spec and '#' notin spec:
+    ## No digit placeholder: the format is all literal text, and the number shows
+    ## only by its sign.
+    return (if v < 0: "-" else: "") & spec
   if '%' in spec: v = v * 100
   var prefix, suffix, body = ""
   var i = 0
@@ -169,8 +173,27 @@ proc nsHex[T: SomeInteger](x: T; digits: int; upper: bool): string =
   if not upper: result = result.toLowerAscii
   if result.len < digits: result = repeat('0', digits - result.len) & result
 
+proc nsStandardLetter(spec: string; valid: set[char]) =
+  ## A letter followed only by digits is a standard format, which must be one the
+  ## type has; anything else is a custom format.
+  if spec[0] in Letters and spec[1 .. ^1].allCharsInSet(Digits) and spec[0] notin valid:
+    raise newException(ValueError, "Format specifier was invalid.")
+
+proc nsBinary[T: SomeInteger](x: T; digits: int): string =
+  ## `B`: the bits of the value's own width, as .NET does for a negative one.
+  var u = cast[uint64](int64(x)) and
+          (if sizeof(T) >= 8: high(uint64) else: (1'u64 shl (8 * sizeof(T))) - 1)
+  result = ""
+  while u != 0:
+    result.insert($char(ord('0') + int(u and 1)), 0)
+    u = u shr 1
+  if result.len == 0: result = "0"
+  if result.len < digits: result = repeat('0', digits - result.len) & result
+
 proc nsFormatNumber*[T: SomeInteger](x: T; spec: string): string =
   if spec.len == 0: return $x
+  nsStandardLetter(spec, {'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f', 'G', 'g',
+                          'N', 'n', 'P', 'p', 'R', 'r', 'X', 'x'})
   let k = spec[0]
   let upper = k in {'A'..'Z'}
   case toUpperAscii(k)
@@ -181,6 +204,7 @@ proc nsFormatNumber*[T: SomeInteger](x: T; spec: string): string =
     if a.len < p: a = repeat('0', p - a.len) & a
     result = (if BiggestInt(x) < 0 and T isnot SomeUnsignedInt: "-" else: "") & a
   of 'X': result = nsHex(x, nsPrecision(spec, 0), upper)
+  of 'B': result = nsBinary(x, nsPrecision(spec, 0))
   of 'F': result = nsFixedInt($x, nsPrecision(spec, 2))
   of 'N': result = nsGroupFixed(nsFixedInt($x, nsPrecision(spec, 2)))
   of 'E': result = nsScientific(float(x), nsPrecision(spec, 6), upper)
@@ -197,6 +221,8 @@ proc nsFormatNumber*[T: SomeInteger](x: T; spec: string): string =
 proc nsFormatNumber*[T: SomeFloat](x: T; spec: string): string =
   let v = float(x)
   if spec.len == 0: return $x
+  nsStandardLetter(spec, {'C', 'c', 'E', 'e', 'F', 'f', 'G', 'g', 'N', 'n', 'P', 'p',
+                          'R', 'r'})
   let k = spec[0]
   let upper = k in {'A'..'Z'}
   case toUpperAscii(k)

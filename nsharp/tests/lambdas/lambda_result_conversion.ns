@@ -1,0 +1,22 @@
+// A lambda's result converts to its delegate's result type: for a Func<object> a
+// value is boxed, whether the body is an expression or returns one.
+using System;
+using System.Collections.Generic;
+namespace Demo {
+class Program {
+    static void T(Func<object> f) { try { Console.WriteLine(f()); } catch (Exception e) { Console.WriteLine(e.GetType().Name); } }
+    static object Twice(Func<object> f) => f();
+    static void Main() {
+        Func<object> a = () => 42;
+        Console.WriteLine(a() + " " + a().GetType());
+        T(() => 2.5);
+        T(() => "s");
+        T(() => { return 'c'; });
+        T(() => new List<int> { 1 }.Count);
+        Console.WriteLine(Twice(() => true));
+        Func<int, object> g = x => x * 2;
+        Console.WriteLine(g(21));
+        T(() => int.Parse("x"));
+    }
+}
+}

@@ -1,0 +1,10 @@
+using System
+using System.Collections.Generic
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member List.Count = System.Collections.Generic | int
+member Type.Name = System.Reflection | string
+member int.Parse = System | int

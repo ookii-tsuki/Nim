@@ -53,30 +53,33 @@ directly, and what Nim's runtime still raises is renamed once where a `catch` ta
 it: `Message` reads the field. A thrown, caught and read index error went from
 about 200 ns to about 100 ns; the checked access itself costs what it did.
 
-Still open, recorded rather than fixed:
+Recorded as open at first, and since fixed (tests named in brackets):
 
-* `GetType()` of a library collection (`List<int>`) is `System.Object`, and a
-  generic type's `FullName` does not assembly-qualify its arguments as .NET does.
-* The documented divergences stand: float and bool spelling, a null `string` being
-  `""`, `decimal`, `goto`. (`string.Format`, value `Equals`/`GetHashCode`,
-  `Random` and LINQ method syntax have since been written; SPEC §15.)
-* Found while testing the library (language, not library):
-  * `static void T<R>(Func<R> f)` called as `T(() => 42)`: the type argument is not
-    inferred from the lambda's result (`undeclared identifier: 'R'`). Writing
-    `T<int>(...)` works.
-  * `Func<object> f = () => 42;` (or a lambda passed for a `Func<object>`): the
-    result is not boxed (`got 'int literal(42)' ... expected 'RootRef'`).
-  * `new[] { long.MaxValue, 1 }`: the implicitly typed array does not take the
-    best common type (`conversion from int64 to int32 is invalid`).
-  * `new[] { "b", null }`: `null` in an implicitly typed `string[]` (the null-string
-    rule is not applied there).
-  * `sb.AppendJoin(", ", ints)`: only `string` values are taken (.NET has
-    `AppendJoin<T>`); `Enum.TryParse("x", out var c)` is NS9999.
-  * `42.ToString("a")` / `{0:a}`: an invalid standard numeric format letter is
-    used as a custom format instead of throwing `FormatException`.
-  * `Math.Sign(double.NaN)` returns 0; .NET throws `ArithmeticException`, a type
-    N# does not declare because its overflow and division defects do not derive
-    from it.
+* `GetType()` of a library collection was `System.Object` (as was its
+  `ToString()`), and `FullName` of a generic type did not assembly-qualify its
+  arguments as .NET does [`reflection/collection_types`]. `SortedSet`,
+  `SortedDictionary`, `SortedList` and `PriorityQueue` were not classes, so one
+  held as an `object` did not compile.
+* `static void T<R>(Func<R> f)` called as `T(() => 42)`: the type argument was
+  not inferred from the lambda's result [`generics/type_inference_from_lambdas`].
+* `Func<object> f = () => 42;`: the result was not boxed
+  [`lambdas/lambda_result_conversion`].
+* `new[] { long.MaxValue, 1 }` did not take the best common type, and `null` in an
+  implicitly typed `string[]` did not compile [`arrays/implicitly_typed_arrays`].
+* `sb.AppendJoin(", ", ints)` took only strings; `Enum.TryParse<Color>(s, out var
+  c)` was NS9999 [`stdlib/enum_parse_out_var_and_append_join`]. (Without the
+  type argument C# itself rejects it, CS0411.)
+* `42.ToString("a")`: an unknown standard format letter was used as a custom
+  format, a custom format without a digit placeholder still printed the number,
+  `B` (binary) was missing, and `42.ToString(s)` with a literal receiver was an
+  ambiguous Nim call [`stdlib/numeric_format_letters`].
+* `Math.Sign(double.NaN)` returned 0; it throws `ArithmeticException`, now
+  declared, which catches `OverflowException` and `DivideByZeroException` as in
+  .NET [`stdlib/numeric_format_letters`].
+
+What stays as it is, by design (SPEC 7.3): a bool prints `true` and a whole
+double `7.0` where C# writes `True` and `7`; a null `string` is `""`; `decimal` is
+not in the core (D7); `goto` is out.
 
 ### Follow-up: a review of the library commits
 

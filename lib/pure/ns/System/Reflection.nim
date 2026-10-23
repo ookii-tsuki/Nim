@@ -10,7 +10,7 @@ import ../../nsharp/intrinsics
 proc Name*(t: Type): string =
   ## The name without namespace or enclosing types: `Outer+Inner` is `Inner`, and
   ## a constructed generic type keeps its arity but not its arguments (``Box`1``).
-  result = t.FullName
+  result = t.nsDisplay
   let args = result.find('[')
   if args > 0 and result.find('`') in 0 ..< args: result = result[0 ..< args]
   let i = max(result.rfind('.'), result.rfind('+'))

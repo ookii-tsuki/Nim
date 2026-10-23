@@ -1,0 +1,22 @@
+// `new[] { ... }` takes the elements' best common type (ECMA-334 12.6.3.15): long
+// for an int beside a long, double for ints beside a double, string with a null.
+using System;
+using System.Linq;
+namespace Demo {
+class Program {
+    static void Main() {
+        var a = new[] { long.MaxValue, 1 };
+        Console.WriteLine(a.GetType() + " " + a[1] + " " + a.Length);
+        var b = new[] { 1, 2.5, 3 };
+        Console.WriteLine(b.GetType() + " " + b.Sum());
+        var c = new[] { "b", null, "a" };
+        Console.WriteLine(c.GetType() + " " + c.Length + " " + (c[1] == null));
+        var d = new[] { (byte)1, 300 };
+        Console.WriteLine(d.GetType() + " " + d[1]);
+        var e = new[] { 'x', 66 };
+        Console.WriteLine(e.GetType() + " " + e[0]);
+        var f = new[] { 1f, 2.0 };
+        Console.WriteLine(f.GetType());
+    }
+}
+}

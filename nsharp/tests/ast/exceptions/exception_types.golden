@@ -873,7 +873,7 @@ nkStmtList
           nkIdent 'nsGenericName'
           nkStrLit "Demo.Box"
           nkCall
-            nkIdent 'FullName'
+            nkIdent 'nsDisplay'
             nkCall
               nkIdent 'nsTypeOf'
               nkIdent 'T'
@@ -908,12 +908,12 @@ nkStmtList
           nkIdent 'nsGenericName'
           nkStrLit "Demo.Pair"
           nkCall
-            nkIdent 'FullName'
+            nkIdent 'nsDisplay'
             nkCall
               nkIdent 'nsTypeOf'
               nkIdent 'A'
           nkCall
-            nkIdent 'FullName'
+            nkIdent 'nsDisplay'
             nkCall
               nkIdent 'nsTypeOf'
               nkIdent 'B'
@@ -1003,7 +1003,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Demo.Box"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
@@ -1032,7 +1032,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Demo.Box"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
@@ -1138,12 +1138,12 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Demo.Pair"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'A'
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'B'
@@ -1174,12 +1174,12 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Demo.Pair"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'A'
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'B'

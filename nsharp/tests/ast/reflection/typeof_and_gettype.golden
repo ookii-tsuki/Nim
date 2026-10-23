@@ -1964,7 +1964,9 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIntLit 3
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 3
             nkIdent 'GetType'
       nkCall
         nkIdent 'WriteLine'

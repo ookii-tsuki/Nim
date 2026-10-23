@@ -201,6 +201,13 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
             m = o
             break
         if m.name.len > 0: break
+      if m.name.len == 0:
+        ## A member any value has (`ToString`), declared over a type parameter.
+        for o in surface.members.getOrDefault(NsParamKey):
+          if o.name == n.name and not o.isStatic and
+             (arity < 0 or o.paramTypes.len == arity + 1):
+            m = o
+            break
       if m.name.len > 0 and recv.len > 0 and not m.isStatic:
         ## The overload the receiver selected, where sema chose one (`Sum` of a
         ## `double[]`); the declaration's result otherwise.

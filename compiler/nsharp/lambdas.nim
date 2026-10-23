@@ -23,6 +23,9 @@ type
     params*: seq[NsNode]
     ret*: NsNode
 
+proc lambdaResult*(lam: NsNode): NsNode
+  ## The type a lambda yields; see its body below.
+
 proc nimToCs*(t: PNode; names: seq[string]; args: seq[NsNode];
              info: NsNode): NsNode =
   ## A Nim type from the prelude as a C# type node, its generic parameters replaced.
@@ -229,6 +232,30 @@ proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
     let v = argOf(a)
     if a.argParam != nil and not isLambda(a):
       unify(a.argParam.typ, valueType(v), tps, binding)
+  ## A lambda already typed binds what its delegate's result names (`T(() => 42)`
+  ## binds `R` to `int`): sema asks again once the lambdas' bodies are walked.
+  for a in call.sons:
+    if not isLambda(a) or a.argParam == nil: continue
+    var pt = a.argParam.typ
+    if a.argElement and pt != nil and pt.kind == nsnArrayType: pt = pt.typ
+    let raw = delegateSig(scope, surface, substitute(pt, ownerTps, ownerArgs))
+    if raw.known and raw.ret != nil:
+      unify(raw.ret, lambdaResult(argOf(a)), tps, binding)
+  var bound: seq[string] = @[]
+  var boundTo: seq[NsNode] = @[]
+  var open: seq[string] = @[]
+  for i, b in binding:
+    if b != nil:
+      bound.add tps[i]
+      boundTo.add b
+    else: open.add tps[i]
+  proc mentions(t: NsNode; names: seq[string]): bool =
+    if t == nil or names.len == 0: return false
+    if t.kind == nsnTypeName and t.sons.len == 0 and t.name in names: return true
+    if mentions(t.typ, names): return true
+    for x in t.sons:
+      if mentions(x, names): return true
+    false
   var anyParam = false
   for j, a in call.sons:
     if not isLambda(a) or a.argParam == nil: continue
@@ -236,11 +263,12 @@ proc callLambdaSigs*(scope: NsModuleScope; surface: NsBclSurface;
     var pt = a.argParam.typ
     if a.argElement and pt != nil and pt.kind == nsnArrayType: pt = pt.typ
     pt = substitute(pt, ownerTps, ownerArgs)
-    var known = true
-    for b in binding:
-      if b == nil: known = false
-    if known: pt = substitute(pt, tps, binding)
+    pt = substitute(pt, bound, boundTo)
     result[j] = delegateSig(scope, surface, pt)
+    ## A type the arguments have not bound yet is left for the lambda to say.
+    for p in result[j].params.mitems:
+      if mentions(p, open): p = nil
+    if mentions(result[j].ret, open): result[j].ret = nil
   if anyParam or recv == nil: return
   if recv.typeKind == tkType:
     ## A static library member (`Array.Sort(xs, (a, b) => ...)`): its parameters are
@@ -364,7 +392,6 @@ proc libResultType*(surface: NsBclSurface; recv: NsNode; name: string;
   nil
 
 proc libIterElement*(surface: NsBclSurface; coll: NsNode): NsNode
-proc lambdaResult*(lam: NsNode): NsNode
 proc unifyDelegateResult(surface: NsBclSurface; pt: PNode; lam: NsNode;
                          names: seq[string]; binding: var seq[NsNode])
 
@@ -553,6 +580,14 @@ proc libParams*(m: NsBclMember; recv: NsNode; staticCall: bool; info: NsNode):
     elif overType and staticCall and recv != nil and recv.typeName.len > 0 and p0.len == 2:
       ## `int.TryParse(...)` over `typedesc[T]`: the qualifier is `T`.
       unifyNim(p0[1], nsnTypeName(recv.typeName, recv.info), m.genParams, nb)
+  ## The method's own type arguments, written (`Enum.Parse<Color>(s)`), bind the
+  ## parameters the receiver leaves, in order.
+  if info != nil and info.typeArgs.len > 0:
+    var open: seq[int] = @[]
+    for k in 0 ..< nb.len:
+      if nb[k] == nil: open.add k
+    if open.len == info.typeArgs.len:
+      for i, k in open: nb[k] = info.typeArgs[i]
   ## A generic parameter the receiver does not bind is `$T`: the arguments bind it.
   for k in 0 ..< nb.len:
     if nb[k] == nil: nb[k] = nsnTypeName("$" & m.genParams[k], info.info)

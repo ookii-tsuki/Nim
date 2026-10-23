@@ -747,7 +747,7 @@ nkStmtList
           nkIdent 'nsGenericName'
           nkStrLit "Demo.Pet"
           nkCall
-            nkIdent 'FullName'
+            nkIdent 'nsDisplay'
             nkCall
               nkIdent 'nsTypeOf'
               nkIdent 'T'
@@ -780,7 +780,7 @@ nkStmtList
           nkIdent 'nsGenericName'
           nkStrLit "Demo.Stray"
           nkCall
-            nkIdent 'FullName'
+            nkIdent 'nsDisplay'
             nkCall
               nkIdent 'nsTypeOf'
               nkIdent 'T'
@@ -850,7 +850,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Demo.Pet"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
@@ -956,7 +956,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Demo.Pet"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
@@ -1092,7 +1092,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Demo.Stray"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
@@ -1121,7 +1121,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Demo.Stray"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'

@@ -834,7 +834,7 @@ nkStmtList
           nkIdent 'nsGenericName'
           nkStrLit "Repo"
           nkCall
-            nkIdent 'FullName'
+            nkIdent 'nsDisplay'
             nkCall
               nkIdent 'nsTypeOf'
               nkIdent 'T'
@@ -927,7 +927,7 @@ nkStmtList
           nkIdent 'nsGenericName'
           nkStrLit "Wrapper"
           nkCall
-            nkIdent 'FullName'
+            nkIdent 'nsDisplay'
             nkCall
               nkIdent 'nsTypeOf'
               nkIdent 'T'
@@ -977,7 +977,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Repo"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
@@ -1006,7 +1006,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Repo"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
@@ -1237,7 +1237,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Wrapper"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'
@@ -1266,7 +1266,7 @@ nkStmtList
         nkIdent 'nsGenericName'
         nkStrLit "Wrapper"
         nkCall
-          nkIdent 'FullName'
+          nkIdent 'nsDisplay'
           nkCall
             nkIdent 'nsTypeOf'
             nkIdent 'T'

@@ -1,0 +1,15 @@
+// GetType(), Name, FullName and ToString() of the library's collections, a user's
+// generic class and an array: FullName qualifies each generic argument with its
+// assembly, as .NET writes it.
+using System;
+using System.Collections.Generic;
+namespace Demo {
+class Box<T> { }
+class Program {
+    static void Main() {
+        object[] xs = { new List<int>(), new Dictionary<string, List<int>>(), new HashSet<int>(), new Queue<int>(), new Stack<int>(), new LinkedList<int>(), new SortedSet<int>(), new SortedDictionary<int, int>(), new Box<int>(), new int[0] };
+        foreach (var x in xs) Console.WriteLine(x.GetType() + " | " + x.GetType().Name + " | " + x.GetType().FullName + " | " + x);
+
+    }
+}
+}
