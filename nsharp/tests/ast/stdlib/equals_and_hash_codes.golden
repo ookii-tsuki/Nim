@@ -739,9 +739,7 @@ nkStmtList
                                     nkDotExpr
                                       nkCall
                                         nkIdent 'int32'
-                                        nkPrefix
-                                          nkIdent '-'
-                                          nkIntLit 3
+                                        nkIntLit -3
                                       nkIdent 'GetHashCode'
                                 nkStrLit " "
                               nkCall
@@ -753,9 +751,7 @@ nkStmtList
                             nkDotExpr
                               nkCall
                                 nkIdent 'int16'
-                                nkPrefix
-                                  nkIdent '-'
-                                  nkIntLit 2
+                                nkIntLit -2
                               nkIdent 'GetHashCode'
                         nkStrLit " "
                       nkCall

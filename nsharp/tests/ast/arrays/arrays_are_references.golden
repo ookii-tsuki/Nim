@@ -1086,9 +1086,7 @@ nkStmtList
         nkBracketExpr
           nkIdent 'c'
           nkIntLit 0
-        nkPrefix
-          nkIdent '-'
-          nkIntLit 1
+        nkIntLit -1
       nkCall
         nkIdent 'WriteLine'
         nkInfix

@@ -397,9 +397,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'n'
           nkIdent 'int32'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 5
+          nkIntLit -5
       nkVarSection
         nkIdentDefs
           nkIdent 's'
@@ -433,9 +431,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'min'
           nkIdent 'int32'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 2147483648
+          nkIntLit -2147483648
       nkCommand
         nkIdent 'dec'
         nkIdent 'min'

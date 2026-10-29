@@ -501,9 +501,7 @@ nkStmtList
             nkIdent 'pq'
             nkIdent 'EnqueueDequeue'
           nkStrLit "first"
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 1
+          nkIntLit -1
       nkWhileStmt
         nkInfix
           nkIdent '>'
@@ -566,9 +564,7 @@ nkStmtList
         nkDotExpr
           nkIdent 'll'
           nkIdent 'AddFirst'
-        nkPrefix
-          nkIdent '-'
-          nkIntLit 1
+        nkIntLit -1
       nkCall
         nkIdent 'WriteLine'
         nkDotExpr

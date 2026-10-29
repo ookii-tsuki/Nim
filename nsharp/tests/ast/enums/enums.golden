@@ -182,9 +182,7 @@ nkStmtList
         nkIdent 'Level'
         nkCall
           nkIdent 'int32'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 1
+          nkIntLit -1
   nkTemplateDef
     nkPostfix
       nkIdent '*'

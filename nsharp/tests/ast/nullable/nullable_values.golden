@@ -637,9 +637,7 @@ nkStmtList
                 nkCall
                   nkIdent 'nsAbsent'
                   nkIdent 'nsCond'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkCall
                   nkIdent 'nsPresent'
@@ -659,9 +657,7 @@ nkStmtList
                 nkCall
                   nkIdent 'nsAbsent'
                   nkIdent 'nsCond'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkCall
                   nkIdent 'nsPresent'
@@ -714,9 +710,7 @@ nkStmtList
                 nkCall
                   nkIdent 'nsAbsent'
                   nkIdent 'nsCond'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkCall
                   nkIdent 'nsPresent'
@@ -760,9 +754,7 @@ nkStmtList
                 nkCall
                   nkIdent 'nsAbsent'
                   nkIdent 'nsCond'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkCall
                   nkIdent 'nsPresent'
@@ -938,9 +930,7 @@ nkStmtList
                 nkCall
                   nkIdent 'nsAbsent'
                   nkIdent 'nsCond'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkCall
                   nkIdent 'nsPresent'
@@ -993,9 +983,7 @@ nkStmtList
                 nkCall
                   nkIdent 'nsAbsent'
                   nkIdent 'nsCond'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkCall
                   nkIdent 'nsPresent'
@@ -1029,9 +1017,7 @@ nkStmtList
                 nkCall
                   nkIdent 'nsAbsent'
                   nkIdent 'nsCond'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkCall
                   nkIdent 'nsPresent'

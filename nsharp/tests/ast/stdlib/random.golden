@@ -303,9 +303,7 @@ nkStmtList
                     nkDotExpr
                       nkIdent 'r'
                       nkIdent 'Next'
-                    nkPrefix
-                      nkIdent '-'
-                      nkIntLit 50
+                    nkIntLit -50
                     nkIntLit 50
                 nkStrLit " "
               nkCall
@@ -384,9 +382,7 @@ nkStmtList
                     nkDotExpr
                       nkCall
                         nkIdent 'newRandom'
-                        nkPrefix
-                          nkIdent '-'
-                          nkIntLit 3
+                        nkIntLit -3
                       nkIdent 'Next'
                     nkIntLit 1000
                 nkStrLit " "
@@ -440,9 +436,7 @@ nkStmtList
             nkDotExpr
               nkIdent 'r'
               nkIdent 'Next'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 1
+            nkIntLit -1
         nkExceptBranch
           nkInfix
             nkIdent 'as'

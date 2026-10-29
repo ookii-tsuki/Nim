@@ -2105,9 +2105,7 @@ nkStmtList
                 nkIdent 'named'
               nkIdent 'key'
           nkElseExpr
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 1
+            nkIntLit -1
   nkProcDef
     nkPostfix
       nkIdent '*'

@@ -1989,9 +1989,7 @@ nkStmtList
           nkCall
             nkIdent 'newPoint'
             nkIntLit 3
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 4
+            nkIntLit -4
       nkCall
         nkIdent 'WriteLine'
         nkCall

@@ -748,9 +748,7 @@ nkStmtList
           nkCall
             nkIdent 'Resize'
             nkIdent 'a'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 1
+            nkIntLit -1
         nkExceptBranch
           nkInfix
             nkIdent 'as'
@@ -804,9 +802,7 @@ nkStmtList
             nkCall
               nkIdent 'Copy'
               nkIdent 'small'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
               nkIdent 'other'
               nkIntLit 0
               nkIntLit 1
@@ -830,9 +826,7 @@ nkStmtList
               nkIdent 'small'
               nkIntLit 0
               nkIdent 'other'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
               nkIntLit 1
       nkCall
         nkIdent 'Fails'
@@ -855,9 +849,7 @@ nkStmtList
               nkIntLit 0
               nkIdent 'other'
               nkIntLit 0
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
       nkCall
         nkIdent 'Fails'
         nkIdent 'Program'
@@ -876,9 +868,7 @@ nkStmtList
             nkCall
               nkIdent 'Resize'
               nkIdent 'small'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
       nkCall
         nkIdent 'Fails'
         nkIdent 'Program'
@@ -897,9 +887,7 @@ nkStmtList
             nkCall
               nkIdent 'Reverse'
               nkIdent 'small'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
               nkIntLit 1
       nkCall
         nkIdent 'Fails'
@@ -920,9 +908,7 @@ nkStmtList
               nkIdent 'Reverse'
               nkIdent 'small'
               nkIntLit 0
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
       nkCall
         nkIdent 'Fails'
         nkIdent 'Program'
@@ -941,9 +927,7 @@ nkStmtList
             nkCall
               nkIdent 'Clear'
               nkIdent 'small'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
               nkIntLit 1
       nkCall
         nkIdent 'Fails'

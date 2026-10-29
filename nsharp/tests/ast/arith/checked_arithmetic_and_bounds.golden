@@ -378,9 +378,7 @@ nkStmtList
           nkIdentDefs
             nkIdent 'neg'
             nkIdent 'int32'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 1
+            nkIntLit -1
         nkVarSection
           nkIdentDefs
             nkIdent 'big'
@@ -991,9 +989,7 @@ nkStmtList
           nkIdentDefs
             nkIdent 'm1'
             nkIdent 'int32'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 1
+            nkIntLit -1
         nkVarSection
           nkIdentDefs
             nkIdent 'ok'

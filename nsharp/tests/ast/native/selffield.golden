@@ -204,6 +204,236 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkIdent 'nsPlot_Seeds'
+  nkCall
+    nkIdent 'nsHandleProcs'
+    nkIdent 'NsH_Node'
+    nkIdent 'Node'
+    nkStrLit "toybox.hpp"
+    nkStrLit "static_cast<bool>(#)"
+    nkStrLit "Toybox::NodeRef<'1>()"
+    nkStrLit "#.operator->()"
+  nkCall
+    nkIdent 'nsObjProcs'
+    nkIdent 'NsH_Stage'
+    nkIdent 'Stage'
+  nkStmtList
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsSelfOf_Node'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Node'
+          nkIdent 'Node'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Node'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->me"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+  nkStmtList
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Begin'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Stage'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Begin(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsBaseCall_Stage_Begin'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Stage'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Toybox::Stage::Begin(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Spawn'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'T'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Stage'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'ns_T'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->template Spawn<'**2>(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkIdent 'nsPlace_Stage'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Stage'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Toybox::Stage()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newStage'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Stage'
+          nkIdent 'Stage'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Stage'
+        nkCall
+          nkIdent 'nsPlace_Stage'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Stage'
+              nkIdent 'Stage'
+            nkIdent 'nsB'
+  nkStmtList
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Play'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Director'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'ns_T'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "Toybox::Director::Play<'**2>(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+  nkStmtList
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Print'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Console'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'text'
+          nkIdent 'cstring'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "Toybox::Console::Print(\"%s\", @)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
   nkProcDef
     nkIdent 'nsStaticInitPlot'
     nkEmpty
@@ -414,236 +644,22 @@ nkStmtList
     nkEmpty
   nkCall
     nkIdent 'nsStaticInitPlot'
-  nkStmtList
-    nkCall
-      nkIdent 'nsHandleProcs'
-      nkIdent 'NsH_Node'
-      nkIdent 'Node'
-      nkStrLit "toybox.hpp"
-      nkStrLit "static_cast<bool>(#)"
-      nkStrLit "Toybox::NodeRef<'1>()"
-      nkStrLit "#.operator->()"
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'nsSelfOf_Node'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Node'
-          nkIdent 'Node'
-        nkIdentDefs
-          nkIdent 'self'
-          nkPtrTy
-            nkIdent 'Node'
-          nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "#->me"
-        nkExprColonExpr
-          nkIdent 'header'
-          nkStrLit "toybox.hpp"
-      nkEmpty
-      nkEmpty
-  nkStmtList
-    nkCall
-      nkIdent 'nsObjProcs'
-      nkIdent 'NsH_Stage'
-      nkIdent 'Stage'
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'Begin'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
-        nkIdentDefs
-          nkIdent 'self'
-          nkPtrTy
-            nkIdent 'Stage'
-          nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "#->Begin(@)"
-        nkExprColonExpr
-          nkIdent 'header'
-          nkStrLit "toybox.hpp"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'nsBaseCall_Stage_Begin'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
-        nkIdentDefs
-          nkIdent 'self'
-          nkPtrTy
-            nkIdent 'Stage'
-          nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "#->Toybox::Stage::Begin(@)"
-        nkExprColonExpr
-          nkIdent 'header'
-          nkStrLit "toybox.hpp"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'Spawn'
-      nkEmpty
-      nkGenericParams
-        nkIdentDefs
-          nkIdent 'T'
-          nkEmpty
-          nkEmpty
-      nkFormalParams
-        nkIdent 'T'
-        nkIdentDefs
-          nkIdent 'self'
-          nkPtrTy
-            nkIdent 'Stage'
-          nkEmpty
-        nkIdentDefs
-          nkIdent 'ns_T'
-          nkBracketExpr
-            nkIdent 'typedesc'
-            nkIdent 'T'
-          nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "#->template Spawn<'**2>(@)"
-        nkExprColonExpr
-          nkIdent 'header'
-          nkStrLit "toybox.hpp"
-        nkIdent 'discardable'
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkIdent 'nsPlace_Stage'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
-        nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
-            nkIdent 'Stage'
-          nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Toybox::Stage()"
-        nkExprColonExpr
-          nkIdent 'header'
-          nkStrLit "toybox.hpp"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newStage'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Stage'
-          nkIdent 'Stage'
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Stage'
-        nkCall
-          nkIdent 'nsPlace_Stage'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Stage'
-              nkIdent 'Stage'
-            nkIdent 'nsB'
-  nkStmtList
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'Play'
-      nkEmpty
-      nkGenericParams
-        nkIdentDefs
-          nkIdent 'T'
-          nkEmpty
-          nkEmpty
-      nkFormalParams
-        nkEmpty
-        nkIdentDefs
-          nkIdent 't'
-          nkBracketExpr
-            nkIdent 'typedesc'
-            nkIdent 'Director'
-          nkEmpty
-        nkIdentDefs
-          nkIdent 'ns_T'
-          nkBracketExpr
-            nkIdent 'typedesc'
-            nkIdent 'T'
-          nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "Toybox::Director::Play<'**2>(@)"
-        nkExprColonExpr
-          nkIdent 'header'
-          nkStrLit "toybox.hpp"
-      nkEmpty
-      nkEmpty
-  nkStmtList
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'Print'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
-        nkIdentDefs
-          nkIdent 't'
-          nkBracketExpr
-            nkIdent 'typedesc'
-            nkIdent 'Console'
-          nkEmpty
-        nkIdentDefs
-          nkIdent 'text'
-          nkIdent 'cstring'
-          nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "Toybox::Console::Print(\"%s\", @)"
-        nkExprColonExpr
-          nkIdent 'header'
-          nkStrLit "toybox.hpp"
-      nkEmpty
-      nkEmpty
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
   nkProcDef
     nkPostfix
       nkIdent '*'

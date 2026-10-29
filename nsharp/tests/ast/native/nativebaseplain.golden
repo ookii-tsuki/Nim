@@ -68,6 +68,64 @@ nkStmtList
         nkOfInherit
           nkIdent 'Plain'
         nkRecList
+  nkCall
+    nkIdent 'nsObjProcs'
+    nkIdent 'NsH_Thing'
+    nkIdent 'Thing'
+  nkStmtList
+    nkProcDef
+      nkIdent 'nsPlace_Thing'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Thing'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Game::Thing()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "game.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newThing'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Thing'
+          nkIdent 'Thing'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Thing'
+        nkCall
+          nkIdent 'nsPlace_Thing'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Thing'
+              nkIdent 'Thing'
+            nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -345,61 +403,7 @@ nkStmtList
       nkCall
         nkIdent 'initPlain'
         nkIdent 'result'
-  nkStmtList
-    nkCall
-      nkIdent 'nsObjProcs'
-      nkIdent 'NsH_Thing'
-      nkIdent 'Thing'
-    nkProcDef
-      nkIdent 'nsPlace_Thing'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
-        nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
-            nkIdent 'Thing'
-          nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Game::Thing()"
-        nkExprColonExpr
-          nkIdent 'header'
-          nkStrLit "game.hpp"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newThing'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Thing'
-          nkIdent 'Thing'
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Thing'
-        nkCall
-          nkIdent 'nsPlace_Thing'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Thing'
-              nkIdent 'Thing'
-            nkIdent 'nsB'
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"

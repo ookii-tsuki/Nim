@@ -508,9 +508,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'r'
           nkIdent 'int32'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 1
+          nkIntLit -1
       nkTryStmt
         nkStmtList
           nkAsgn

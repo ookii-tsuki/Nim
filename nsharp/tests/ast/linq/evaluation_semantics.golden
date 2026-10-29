@@ -806,9 +806,7 @@ nkStmtList
                           nkIdent 'int32'
                           nkIntLit 4
                     nkIdent 'SkipLast'
-                  nkPrefix
-                    nkIdent '-'
-                    nkIntLit 1
+                  nkIntLit -1
       nkCall
         nkIdent 'T'
         nkIdent 'Program'
@@ -851,9 +849,7 @@ nkStmtList
                             nkIdent 'int32'
                             nkIntLit 4
                       nkIdent 'TakeLast'
-                    nkPrefix
-                      nkIdent '-'
-                      nkIntLit 1
+                    nkIntLit -1
                 nkStrLit "|"
       nkVarSection
         nkIdentDefs

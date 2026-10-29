@@ -319,9 +319,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'neg'
           nkIdent 'int32'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 1
+          nkIntLit -1
       nkCall
         nkIdent 'WriteLine'
         nkCall
@@ -372,9 +370,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'sb'
           nkIdent 'int8'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 128
+          nkIntLit -128
       nkCommand
         nkIdent 'dec'
         nkIdent 'sb'

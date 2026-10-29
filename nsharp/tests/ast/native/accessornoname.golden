@@ -57,11 +57,11 @@ nkStmtList
         nkEmpty
         nkEmpty
         nkRecList
+  nkCall
+    nkIdent 'nsObjProcs'
+    nkIdent 'NsH_Body'
+    nkIdent 'Body'
   nkStmtList
-    nkCall
-      nkIdent 'nsObjProcs'
-      nkIdent 'NsH_Body'
-      nkIdent 'Body'
     nkProcDef
       nkIdent 'nsPlace_Body'
       nkEmpty
@@ -115,3 +115,7 @@ nkStmtList
               nkIdent 'NsH_Body'
               nkIdent 'Body'
             nkIdent 'nsB'
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"

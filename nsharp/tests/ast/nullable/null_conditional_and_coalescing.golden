@@ -649,9 +649,7 @@ nkStmtList
                   nkIdent '=='
                   nkIdent 'nsCond'
                   nkNilLit
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkDotExpr
                   nkIdent 'nsCond'
@@ -677,9 +675,7 @@ nkStmtList
                   nkIdent '=='
                   nkIdent 'nsCond'
                   nkNilLit
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkDotExpr
                   nkIdent 'nsCond'
@@ -700,9 +696,7 @@ nkStmtList
                   nkIdent '=='
                   nkIdent 'nsCond'
                   nkNilLit
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkDotExpr
                   nkCall
@@ -728,9 +722,7 @@ nkStmtList
                   nkIdent '=='
                   nkIdent 'nsCond'
                   nkNilLit
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkDotExpr
                   nkCall
@@ -756,9 +748,7 @@ nkStmtList
                   nkIdent '=='
                   nkIdent 'nsCond'
                   nkNilLit
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkBlockExpr
                   nkEmpty
@@ -776,9 +766,7 @@ nkStmtList
                           nkIdent '=='
                           nkIdent 'nsCond'
                           nkNilLit
-                        nkPrefix
-                          nkIdent '-'
-                          nkIntLit 1
+                        nkIntLit -1
                       nkElseExpr
                         nkDotExpr
                           nkIdent 'nsCond'
@@ -815,9 +803,7 @@ nkStmtList
                   nkIdent '=='
                   nkIdent 'nsCond'
                   nkNilLit
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkBlockExpr
                   nkEmpty
@@ -835,9 +821,7 @@ nkStmtList
                           nkIdent '=='
                           nkIdent 'nsCond'
                           nkNilLit
-                        nkPrefix
-                          nkIdent '-'
-                          nkIntLit 1
+                        nkIntLit -1
                       nkElseExpr
                         nkDotExpr
                           nkIdent 'nsCond'
@@ -896,9 +880,7 @@ nkStmtList
                   nkIdent '=='
                   nkIdent 'nsCond'
                   nkNilLit
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkDotExpr
                   nkIdent 'nsCond'
@@ -921,9 +903,7 @@ nkStmtList
                   nkIdent '=='
                   nkIdent 'nsCond'
                   nkNilLit
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
               nkElseExpr
                 nkDotExpr
                   nkIdent 'nsCond'

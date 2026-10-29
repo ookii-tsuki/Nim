@@ -511,9 +511,7 @@ nkStmtList
           nkDotExpr
             nkCall
               nkIdent 'newTimeSpan'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 5
+              nkIntLit -5
             nkIdent 'Duration'
       nkTryStmt
         nkStmtList
@@ -644,9 +642,7 @@ nkStmtList
               nkDotExpr
                 nkIdent 'd'
                 nkIdent 'AddMonths'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 13
+              nkIntLit -13
             nkIdent 'ToString'
           nkStrLit "yyyy-MM-dd HH:mm:ss"
       nkCall

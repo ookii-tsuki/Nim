@@ -447,9 +447,7 @@ nkStmtList
       nkCall
         nkIdent 'I'
         nkIdent 'Program'
-        nkPrefix
-          nkIdent '-'
-          nkIntLit 5
+        nkIntLit -5
         nkStrLit "pos;neg"
       nkCall
         nkIdent 'I'
@@ -464,16 +462,12 @@ nkStmtList
       nkCall
         nkIdent 'I'
         nkIdent 'Program'
-        nkPrefix
-          nkIdent '-'
-          nkIntLit 5
+        nkIntLit -5
         nkStrLit "0;(0)"
       nkCall
         nkIdent 'I'
         nkIdent 'Program'
-        nkPrefix
-          nkIdent '-'
-          nkIntLit 5
+        nkIntLit -5
         nkStrLit "0.0;;z"
       nkCall
         nkIdent 'I'
@@ -548,9 +542,7 @@ nkStmtList
       nkCall
         nkIdent 'I'
         nkIdent 'Program'
-        nkPrefix
-          nkIdent '-'
-          nkIntLit 1234
+        nkIntLit -1234
         nkStrLit "0"
       nkCall
         nkIdent 'I'

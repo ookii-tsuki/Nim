@@ -659,9 +659,7 @@ nkStmtList
             nkNilLit
           nkStmtList
             nkReturnStmt
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
       nkVarSection
         nkIdentDefs
           nkIdent 's'
@@ -714,9 +712,7 @@ nkStmtList
               nkIdent '=='
               nkIdent 'xs'
               nkNilLit
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 1
+            nkIntLit -1
           nkElseExpr
             nkDotExpr
               nkIdent 'xs'

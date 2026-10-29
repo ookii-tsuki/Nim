@@ -1537,9 +1537,7 @@ nkStmtList
                           nkIdent 'true'
                   nkIdent 'x'
                 nkElseExpr
-                  nkPrefix
-                    nkIdent '-'
-                    nkIntLit 1
+                  nkIntLit -1
               nkStrLit " "
             nkIfExpr
               nkElifExpr
@@ -1565,9 +1563,7 @@ nkStmtList
                         nkIdent 'true'
                 nkIdent 'y'
               nkElseExpr
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
       nkVarSection
         nkIdentDefs
           nkIdent 'np'

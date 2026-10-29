@@ -284,9 +284,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'i'
           nkIdent 'int32'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 1
+          nkIntLit -1
       nkCall
         nkIdent 'WriteLine'
         nkInfix
@@ -317,9 +315,7 @@ nkStmtList
               nkCall
                 nkIdent 'int64'
                 nkIdent 'u'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
             nkStrLit "u > -1"
           nkElseExpr
             nkStrLit "u <= -1"
@@ -361,9 +357,7 @@ nkStmtList
           nkIdent 'nsShr'
           nkCall
             nkIdent 'int32'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 16
+            nkIntLit -16
           nkIdent 'count'
       nkCall
         nkIdent 'WriteLine'
@@ -371,9 +365,7 @@ nkStmtList
           nkIdent 'nsUShr'
           nkCall
             nkIdent 'int32'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 16
+            nkIntLit -16
           nkIntLit 2
       nkCall
         nkIdent 'WriteLine'
@@ -393,9 +385,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'x'
           nkIdent 'int32'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 16
+          nkIntLit -16
       nkAsgn
         nkIdent 'x'
         nkCall
@@ -441,9 +431,7 @@ nkStmtList
             nkCall
               nkIdent 'nsFmod'
               nkFloatLit 7.5
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 2
+              nkIntLit -2
             nkIntLit 10
       nkVarSection
         nkIdentDefs

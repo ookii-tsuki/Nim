@@ -392,9 +392,7 @@ nkStmtList
               nkIdent 'e'
             nkStmtList
               nkReturnStmt
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
   nkProcDef
     nkIdent 'Digit'
     nkEmpty
@@ -648,9 +646,7 @@ nkStmtList
         nkCall
           nkIdent 'Guarded'
           nkIdent 'Program'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 5
+          nkIntLit -5
   nkProcDef
     nkPostfix
       nkIdent '*'

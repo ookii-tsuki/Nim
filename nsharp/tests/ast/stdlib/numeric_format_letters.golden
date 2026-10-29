@@ -524,9 +524,7 @@ nkStmtList
                     nkDotExpr
                       nkCall
                         nkIdent 'int32'
-                        nkPrefix
-                          nkIdent '-'
-                          nkIntLit 1
+                        nkIntLit -1
                       nkIdent 'ToString'
                     nkStrLit "b"
                 nkStrLit " "
@@ -557,9 +555,7 @@ nkStmtList
                   nkDotExpr
                     nkCall
                       nkIdent 'int32'
-                      nkPrefix
-                        nkIdent '-'
-                        nkIntLit 42
+                      nkIntLit -42
                     nkIdent 'ToString'
                   nkStrLit "ab"
                 nkStrLit " "

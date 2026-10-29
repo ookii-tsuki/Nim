@@ -1379,9 +1379,7 @@ nkStmtList
                   nkIdent 'Append'
                 nkIntLit 10
               nkIdent 'Prepend'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 1
+            nkIntLit -1
       nkCall
         nkIdent 'WriteLine'
         nkCall

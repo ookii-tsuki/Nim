@@ -92,3 +92,7 @@ nkStmtList
                 nkIdent 'factor'
                 nkIdent 'len'
             nkIdent 't'
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"

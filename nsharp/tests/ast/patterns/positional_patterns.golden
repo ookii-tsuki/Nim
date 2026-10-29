@@ -1976,9 +1976,7 @@ nkStmtList
           nkIdent 'Program'
           nkCall
             nkIdent 'newPoint'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 1
+            nkIntLit -1
             nkIntLit 5
       nkBlockStmt
         nkEmpty

@@ -480,6 +480,42 @@ nkStmtList
         nkEmpty
         nkEmpty
         nkRecList
+  nkCall
+    nkIdent 'nsHandleProcs'
+    nkIdent 'NsH_Trait'
+    nkIdent 'Trait'
+    nkStrLit "toybox.hpp"
+    nkStrLit "static_cast<bool>(#)"
+    nkStrLit "Toybox::TraitRef<'1>()"
+    nkStrLit "#.operator->()"
+  nkCall
+    nkIdent 'nsHandleProcs'
+    nkIdent 'NsH_Node'
+    nkIdent 'Node'
+    nkStrLit "toybox.hpp"
+    nkStrLit "static_cast<bool>(#)"
+    nkStrLit "Toybox::NodeRef<'1>()"
+    nkStrLit "#.operator->()"
+  nkCall
+    nkIdent 'nsObjProcs'
+    nkIdent 'NsH_Stage'
+    nkIdent 'Stage'
+  nkCall
+    nkIdent 'nsHandleProcs'
+    nkIdent 'NsH_Timer'
+    nkIdent 'Timer'
+    nkStrLit "toybox.hpp"
+    nkStrLit "Toybox::Timers::Alive(#)"
+    nkStrLit "Toybox::TimerId<'1>::None()"
+    nkStrLit "#.Get()"
+  nkCall
+    nkIdent 'nsObjProcs'
+    nkIdent 'NsH_Palette'
+    nkIdent 'Palette'
+  nkCall
+    nkIdent 'nsObjProcs'
+    nkIdent 'NsH_Grid'
+    nkIdent 'Grid'
   nkStmtList
     nkProcDef
       nkPostfix
@@ -627,14 +663,6 @@ nkStmtList
       nkEmpty
       nkEmpty
   nkStmtList
-    nkCall
-      nkIdent 'nsHandleProcs'
-      nkIdent 'NsH_Trait'
-      nkIdent 'Trait'
-      nkStrLit "toybox.hpp"
-      nkStrLit "static_cast<bool>(#)"
-      nkStrLit "Toybox::TraitRef<'1>()"
-      nkStrLit "#.operator->()"
   nkStmtList
     nkProcDef
       nkPostfix
@@ -880,14 +908,6 @@ nkStmtList
             nkIdent 'self'
   nkStmtList
   nkStmtList
-    nkCall
-      nkIdent 'nsHandleProcs'
-      nkIdent 'NsH_Node'
-      nkIdent 'Node'
-      nkStrLit "toybox.hpp"
-      nkStrLit "static_cast<bool>(#)"
-      nkStrLit "Toybox::NodeRef<'1>()"
-      nkStrLit "#.operator->()"
     nkProcDef
       nkPostfix
         nkIdent '*'
@@ -1167,10 +1187,6 @@ nkStmtList
               nkIdent 'result'
             nkIdent 'self'
   nkStmtList
-    nkCall
-      nkIdent 'nsObjProcs'
-      nkIdent 'NsH_Stage'
-      nkIdent 'Stage'
     nkProcDef
       nkPostfix
         nkIdent '*'
@@ -1467,14 +1483,6 @@ nkStmtList
       nkEmpty
       nkEmpty
   nkStmtList
-    nkCall
-      nkIdent 'nsHandleProcs'
-      nkIdent 'NsH_Timer'
-      nkIdent 'Timer'
-      nkStrLit "toybox.hpp"
-      nkStrLit "Toybox::Timers::Alive(#)"
-      nkStrLit "Toybox::TimerId<'1>::None()"
-      nkStrLit "#.Get()"
     nkProcDef
       nkPostfix
         nkIdent '*'
@@ -1591,10 +1599,6 @@ nkStmtList
       nkEmpty
       nkEmpty
   nkStmtList
-    nkCall
-      nkIdent 'nsObjProcs'
-      nkIdent 'NsH_Palette'
-      nkIdent 'Palette'
     nkProcDef
       nkIdent 'nsPlace_Palette'
       nkEmpty
@@ -3056,10 +3060,6 @@ nkStmtList
             nkIdent 'sep'
             nkIdent 'b'
   nkStmtList
-    nkCall
-      nkIdent 'nsObjProcs'
-      nkIdent 'NsH_Grid'
-      nkIdent 'Grid'
     nkProcDef
       nkIdent 'nsPlace_Grid'
       nkEmpty
@@ -3304,3 +3304,63 @@ nkStmtList
               nkIdent 'NsH_Grid'
               nkIdent 'Grid'
             nkIdent 'nsB'
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"

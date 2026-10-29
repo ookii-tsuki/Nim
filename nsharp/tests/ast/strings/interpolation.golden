@@ -323,9 +323,7 @@ nkStmtList
                   nkIdent 'nsFmt'
                   nkIdent 'name'
                   nkStrLit ""
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 6
+                nkIntLit -6
             nkStrLit "] {lit} "
           nkCall
             nkIdent 'nsFmt'
@@ -411,9 +409,7 @@ nkStmtList
                 nkStrLit " "
               nkCall
                 nkIdent 'nsFmt'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 7
+                nkIntLit -7
                 nkStrLit "D3"
             nkStrLit " "
           nkCall

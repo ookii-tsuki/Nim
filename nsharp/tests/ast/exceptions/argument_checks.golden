@@ -283,9 +283,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'n'
           nkIdent 'int32'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 3
+          nkIntLit -3
       nkCall
         nkIdent 'ThrowIfNull'
         nkIdent 'ArgumentNullException'
@@ -496,9 +494,7 @@ nkStmtList
             nkIdent 'ThrowIfGreaterThan'
             nkIdent 'ArgumentOutOfRangeException'
             nkIdent 'n'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 5
+            nkIntLit -5
             nkStrLit "n"
         nkExceptBranch
           nkInfix
@@ -620,9 +616,7 @@ nkStmtList
             nkIdent 'ThrowIfEqual'
             nkIdent 'ArgumentOutOfRangeException'
             nkIdent 'n'
-            nkPrefix
-              nkIdent '-'
-              nkIntLit 3
+            nkIntLit -3
             nkStrLit "n"
         nkExceptBranch
           nkInfix

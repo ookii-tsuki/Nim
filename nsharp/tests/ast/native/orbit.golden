@@ -577,9 +577,7 @@ nkStmtList
                 nkIntLit 0
               nkCall
                 nkIdent 'float32'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 2
+                nkIntLit -2
             nkIdent 'dt'
         nkAsgn
           nkIdent 'nsP_m'

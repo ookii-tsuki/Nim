@@ -54,3 +54,7 @@ nkStmtList
         nkIdent 'discardable'
       nkEmpty
       nkEmpty
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"

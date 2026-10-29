@@ -1433,9 +1433,7 @@ nkStmtList
               nkAsgn
                 nkBracketExpr
                   nkIdent 'nsInit1'
-                  nkPrefix
-                    nkIdent '-'
-                    nkIntLit 1
+                  nkIntLit -1
                 nkIntLit 1
               nkAsgn
                 nkBracketExpr
@@ -1466,15 +1464,11 @@ nkStmtList
         nkDotExpr
           nkIdent 'neg'
           nkIdent 'Remove'
-        nkPrefix
-          nkIdent '-'
-          nkIntLit 1
+        nkIntLit -1
       nkAsgn
         nkBracketExpr
           nkIdent 'neg'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 2
+          nkIntLit -2
         nkIntLit 5
       nkCall
         nkIdent 'Show'
@@ -1537,9 +1531,7 @@ nkStmtList
             nkIdent 'words'
             nkIdent 'GetValueOrDefault'
           nkStrLit "zebra"
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 1
+          nkIntLit -1
       nkTryStmt
         nkStmtList
           nkCall

@@ -827,9 +827,7 @@ nkStmtList
               nkCall
                 nkIdent 'ToByte'
                 nkIdent 'Convert'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
       nkCall
         nkIdent 'T'
         nkIdent 'Program'
@@ -871,9 +869,7 @@ nkStmtList
               nkCall
                 nkIdent 'ToUInt32'
                 nkIdent 'Convert'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
       nkCall
         nkIdent 'T'
         nkIdent 'Program'
@@ -1062,9 +1058,7 @@ nkStmtList
               nkCall
                 nkIdent 'ToChar'
                 nkIdent 'Convert'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
       nkCall
         nkIdent 'T'
         nkIdent 'Program'
@@ -1219,9 +1213,7 @@ nkStmtList
               nkCall
                 nkIdent 'ToString'
                 nkIdent 'Convert'
-                nkPrefix
-                  nkIdent '-'
-                  nkIntLit 1
+                nkIntLit -1
                 nkIntLit 16
       nkCall
         nkIdent 'T'

@@ -66,6 +66,15 @@ nkStmtList
         nkOfInherit
           nkIdent 'Unit'
         nkRecList
+  nkCall
+    nkIdent 'nsHandleProcs'
+    nkIdent 'NsH_Unit'
+    nkIdent 'Unit'
+    nkStrLit "game.hpp"
+    nkStrLit "static_cast<bool>(#)"
+    nkStrLit "Game::UnitRef<'1>()"
+    nkStrLit "#.operator->()"
+  nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -106,15 +115,10 @@ nkStmtList
         nkStrLit "Me()"
     nkEmpty
     nkEmpty
-  nkStmtList
-    nkCall
-      nkIdent 'nsHandleProcs'
-      nkIdent 'NsH_Unit'
-      nkIdent 'Unit'
-      nkStrLit "game.hpp"
-      nkStrLit "static_cast<bool>(#)"
-      nkStrLit "Game::UnitRef<'1>()"
-      nkStrLit "#.operator->()"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
   nkProcDef
     nkPostfix
       nkIdent '*'

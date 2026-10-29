@@ -274,9 +274,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'd'
           nkIdent 'int32'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 1
+          nkIntLit -1
       nkTryStmt
         nkStmtList
           nkCall
@@ -330,9 +328,7 @@ nkStmtList
         nkIdentDefs
           nkIdent 'ld'
           nkIdent 'int64'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 1
+          nkIntLit -1
       nkTryStmt
         nkStmtList
           nkCall
@@ -378,9 +374,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'Abs'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 5
+          nkIntLit -5
       nkCall
         nkIdent 'WriteLine'
         nkCall
@@ -404,9 +398,7 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkIdent 'nsDiv'
-          nkPrefix
-            nkIdent '-'
-            nkIntLit 7
+          nkIntLit -7
           nkIntLit 2
   nkProcDef
     nkPostfix

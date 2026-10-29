@@ -596,9 +596,7 @@ nkStmtList
                 nkIdent 'abc'
                 nkIdent 'Append'
               nkCharLit 99
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
       nkCall
         nkIdent 'Fails'
         nkIdent 'Program'
@@ -618,9 +616,7 @@ nkStmtList
               nkDotExpr
                 nkIdent 'abc'
                 nkIdent 'Remove'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
               nkIntLit 1
       nkCall
         nkIdent 'Fails'
@@ -642,9 +638,7 @@ nkStmtList
                 nkIdent 'abc'
                 nkIdent 'Remove'
               nkIntLit 0
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
       nkCall
         nkIdent 'Fails'
         nkIdent 'Program'
@@ -685,9 +679,7 @@ nkStmtList
               nkDotExpr
                 nkIdent 'abc'
                 nkIdent 'ToString'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
               nkIntLit 1
       nkCall
         nkIdent 'Fails'
@@ -709,9 +701,7 @@ nkStmtList
                 nkIdent 'abc'
                 nkIdent 'ToString'
               nkIntLit 0
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
       nkCall
         nkIdent 'Fails'
         nkIdent 'Program'
@@ -750,9 +740,7 @@ nkStmtList
           nkStmtList
             nkCall
               nkIdent 'newStringBuilder'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
       nkCall
         nkIdent 'Fails'
         nkIdent 'Program'
@@ -814,9 +802,7 @@ nkStmtList
               nkDotExpr
                 nkIdent 'abc'
                 nkIdent 'Length'
-              nkPrefix
-                nkIdent '-'
-                nkIntLit 1
+              nkIntLit -1
   nkProcDef
     nkPostfix
       nkIdent '*'

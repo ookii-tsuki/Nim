@@ -557,9 +557,7 @@ nkStmtList
           nkReturnStmt
             nkIdent 'x'
       nkReturnStmt
-        nkPrefix
-          nkIdent '-'
-          nkIntLit 1
+        nkIntLit -1
   nkProcDef
     nkIdent 'Main'
     nkEmpty

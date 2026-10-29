@@ -2428,9 +2428,7 @@ nkStmtList
                         nkCall
                           nkIdent 'Classify'
                           nkIdent 'Program'
-                          nkPrefix
-                            nkIdent '-'
-                            nkIntLit 5
+                          nkIntLit -5
                         nkStrLit " "
                       nkCall
                         nkIdent 'Classify'
