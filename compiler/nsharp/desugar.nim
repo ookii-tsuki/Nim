@@ -1880,6 +1880,11 @@ proc expr(l: Lowerer; n: NsNode): PNode =
     elif l.checked and n.name == "-" and n.typeKind == tkInt and n.body != nil and
          n.body.typeKind == tkInt and n.body.kind != nsnIntLit:
       result = newTree(nkCall, n.info, l.id("nsCkNeg", n.info), l.expr(n.body))
+    elif n.name == "-" and n.body != nil and n.body.kind == nsnIntLit and
+         n.body.typeName == "" and n.body.strVal.len == 0:
+      ## One negative literal: `-(2147483648)` would read the literal first, which
+      ## where Nim's `int` is 32 bits (`--cpu:mipsel`, `i386`) is an `int64`.
+      result = newAtom(nkIntLit, -n.body.intVal, n.info)
     else:
       result = newTree(nkPrefix, n.info, l.id(n.name, n.info), l.expr(n.body))
   of nsnIncDec:

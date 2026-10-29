@@ -984,6 +984,20 @@ members, which then do what .NET's do on a platform without one:
 | `new Random()` | seeded from a per-instance counter, there being no clock |
 | `System.IO` | what the C library's file calls do (usually nothing without a filesystem) |
 
+A cross compiler is Nim's usual `--cpu`/`--gcc.exe` setup. For the PlayStation 2's
+EE with the PS2DEV toolchain (32-bit `int`, newlib, ps2sdk's startup code):
+
+```sh
+nim c --os:any --cpu:mipsel --threads:off -d:useMalloc -d:release \
+  --cc:gcc --gcc.exe:mips64r5900el-ps2-elf-gcc --gcc.linkerexe:mips64r5900el-ps2-elf-gcc \
+  --passC:"-D_EE -G0 -I$PS2SDK/ee/include -I$PS2SDK/common/include" \
+  --passL:"-T$PS2SDK/ee/startup/linkfile -L$PS2SDK/ee/lib -Wl,-zmax-page-size=128" \
+  -o:game.elf game.ns
+```
+
+`Math` results that come from the C library (`Cbrt`, `Sin`, ...) are its, as .NET's
+are the platform's: they may differ in the last digit from one target to another.
+
 `--os:standalone` (no C library at all) is rejected: Nim's `system` has no
 exception handling there, which C# cannot do without. `nsharp/tests/platform/`
 runs under `--os:any` (a `<name>.flags` file adds options to a test's builds).

@@ -598,17 +598,12 @@ NIM_STATIC_ASSERT(sizeof(NI) == sizeof(void*) && NIM_INTBITS == sizeof(NI)*8, "P
   #define nimMulInt64(a, b, res) __builtin_smulll_overflow(a, b, (long long int*)res)
 
   #if NIM_INTBITS == 32
-    #if ((defined(__arm__) && !defined(__unix__)) || defined(__riscv) || (defined(__xtensa__) && !defined(__unix__))) && defined(__GNUC__)
-      /* arm-none-eabi-gcc, riscv32-unknown-elf-gcc and xtensa-esp-elf-gcc targets
-         define int32_t as long int */
-      #define nimAddInt(a, b, res) __builtin_saddl_overflow(a, b, res)
-      #define nimSubInt(a, b, res) __builtin_ssubl_overflow(a, b, res)
-      #define nimMulInt(a, b, res) __builtin_smull_overflow(a, b, res)
-    #else
-      #define nimAddInt(a, b, res) __builtin_sadd_overflow(a, b, res)
-      #define nimSubInt(a, b, res) __builtin_ssub_overflow(a, b, res)
-      #define nimMulInt(a, b, res) __builtin_smul_overflow(a, b, res)
-    #endif
+    /* int32_t is int on some targets and long int on others (arm-none-eabi,
+       riscv32-unknown-elf, xtensa-esp-elf, mips64r5900el-ps2-elf, ...): the
+       type-generic builtins take either */
+    #define nimAddInt(a, b, res) __builtin_add_overflow(a, b, res)
+    #define nimSubInt(a, b, res) __builtin_sub_overflow(a, b, res)
+    #define nimMulInt(a, b, res) __builtin_mul_overflow(a, b, res)
   #else
     /* map it to the 'long long' variant */
     #define nimAddInt(a, b, res) __builtin_saddll_overflow(a, b, (long long int*)res)

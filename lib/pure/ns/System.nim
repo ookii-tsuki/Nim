@@ -2070,7 +2070,7 @@ proc nsFormatDate(d: DateTime; format: string): string =
       else:
         let w = nsDayNames[int((d.nsTicks div nsTicksPerDay + 1) mod 7)]
         result.add(if n == 3: w[0 .. 2] else: w)
-    of 'h': result.add nsPad((if h mod 12 == 0: 12 else: h mod 12), min(n, 2))
+    of 'h': result.add nsPad((if h mod 12 == 0: 12'i64 else: h mod 12), min(n, 2))
     of 'H': result.add nsPad(h, min(n, 2))
     of 'm': result.add nsPad(d.nsTicks div nsTicksPerMinute mod 60, min(n, 2))
     of 's': result.add nsPad(d.nsTicks div nsTicksPerSecond mod 60, min(n, 2))
