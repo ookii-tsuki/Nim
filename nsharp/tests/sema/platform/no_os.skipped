@@ -1,0 +1,5 @@
+DateTime.AddDays = result:other
+DateTime.Now = result:other
+DateTime.UtcNow = result:other
+List.Select = type-parameter
+Stopwatch.StartNew = result:other

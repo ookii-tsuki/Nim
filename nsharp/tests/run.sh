@@ -41,7 +41,7 @@ run_one() {
   if [ -f "$failmark" ] || [ -f "$unsupmark" ]; then
     marker="$failmark"
     [ -f "$unsupmark" ] && marker="$unsupmark"
-    if "$NIM" c --hints:off --warnings:off --lib:"$lib" --nimcache:"$cache" \
+    if "$NIM" c --hints:off --warnings:off --lib:"$lib" --nimcache:"$cache" $(ns_flags "$ns") \
           -o:"$bin" "$ns" > "$log" 2>&1; then
       echo "FAIL (compiled but should not): ${ns#$root/}"
       return 1
@@ -58,7 +58,7 @@ run_one() {
     return 0
   fi
 
-  if ! "$NIM" c --hints:off --warnings:off --lib:"$lib" --nimcache:"$cache" \
+  if ! "$NIM" c --hints:off --warnings:off --lib:"$lib" --nimcache:"$cache" $(ns_flags "$ns") \
         -o:"$bin" "$ns" > "$log" 2>&1; then
     echo "COMPILE FAIL: ${ns#$root/}"
     cat "$log"
@@ -92,7 +92,7 @@ run_one() {
   warnmark="${ns%.ns}.warn"
   [ -f "$warnmark" ] || return 0
   want="$(sed -n 's/^code: *//p' "$warnmark" | head -1)"
-  if ! "$NIM" c --hints:off --lib:"$lib" --nimcache:"$cache" -o:"$bin" "$ns" \
+  if ! "$NIM" c --hints:off --lib:"$lib" --nimcache:"$cache" $(ns_flags "$ns") -o:"$bin" "$ns" \
         > "$tmp/warn.log" 2>&1; then
     echo "FAIL (warning expected, but the compile failed): ${ns#$root/}"
     sed -n '1,5p' "$tmp/warn.log"

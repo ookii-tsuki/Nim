@@ -1,0 +1,12 @@
+10,20,30
+1
+empty (Parameter 's')
+true
+true
+true
+2024-03-01
+DateTime.Now: Operation is not supported on this platform.
+DateTime.UtcNow: Operation is not supported on this platform.
+Stopwatch: Operation is not supported on this platform.
+Environment.TickCount64: Operation is not supported on this platform.
+Environment.CurrentDirectory: Operation is not supported on this platform.

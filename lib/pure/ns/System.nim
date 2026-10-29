@@ -3,7 +3,8 @@
 # Members are ordinary Nim procs: an instance member is reached by Nim's
 # dot-call, a static one through the qualifier the frontend drops.
 
-import std/[syncio, strutils, math, hashes, algorithm, times, typetraits, os, monotimes, cpuinfo]
+import std/[syncio, strutils, math, hashes, algorithm, typetraits, os]
+import ../nsharp/platform
 from std/unicode import nil
 # `System.Collections.Generic` builds on this namespace, and this one names its
 # interfaces (`Array.Sort` takes an `IComparer<T>`), as .NET's namespaces may.
@@ -1230,8 +1231,14 @@ proc newRandom*(seed: int32): Random {.nsHidden.} =
 
 proc newRandom*(): Random {.nsHidden.} =
   new(result)
-  let t = getTime()
-  result.nsSeed(cast[int32](t.toUnix xor t.nanosecond))
+  when nsNoOs:
+    ## No clock to seed from: each instance still gets its own sequence.
+    var nsRandomCount {.global.} = 0'u32
+    nsRandomCount += 1
+    result.nsSeed(cast[int32](nsRandomCount * 2654435761'u32 xor uint32(cast[uint](result) and 0xFFFF_FFFF'u)))
+  else:
+    let t = nsUnixNow()
+    result.nsSeed(cast[int32](t.seconds xor t.nanoseconds))
 
 proc nsSample(r: Random): int32 =
   var a = r.nsNext + 1
@@ -1608,22 +1615,32 @@ proc Exit*(t: typedesc[Environment]; exitCode: int32) =
   nsExit(cint(exitCode))
 proc GetCommandLineArgs*(t: typedesc[Environment]): NsArray[string] =
   ## The program's path, then its arguments.
-  var xs = @[getAppFilename()]
+  var xs = @[(when nsNoOs: paramStr(0) else: getAppFilename())]
   for i in 1 .. paramCount(): xs.add paramStr(i)
   nsArrayOf(xs)
 proc GetEnvironmentVariable*(t: typedesc[Environment]; variable: string): string =
-  ## The variable's value; null (N#'s empty string) when it is not set.
-  getEnv(variable)
+  ## The variable's value; null (N#'s empty string) when it is not set, as
+  ## every variable is without an OS.
+  when nsNoOs: "" else: getEnv(variable)
 proc SetEnvironmentVariable*(t: typedesc[Environment]; variable, value: string) =
   ## A null or empty value removes the variable, as in .NET.
-  if value.len == 0: delEnv(variable) else: putEnv(variable, value)
+  when nsNoOs: raise nsNewException(PlatformNotSupportedException)
+  else:
+    if value.len == 0: delEnv(variable) else: putEnv(variable, value)
+proc TickCount64*(t: typedesc[Environment]): int64 =
+  ## Milliseconds since an arbitrary start (the monotonic clock's).
+  when nsNoOs: raise nsNewException(PlatformNotSupportedException)
+  else: nsMonoNanoseconds() div 1_000_000
 proc TickCount*(t: typedesc[Environment]): int32 =
-  ## Milliseconds since an arbitrary start (the monotonic clock's), wrapping.
-  cast[int32](uint32(getMonoTime().ticks div 1_000_000))
-proc TickCount64*(t: typedesc[Environment]): int64 = getMonoTime().ticks div 1_000_000
-proc ProcessorCount*(t: typedesc[Environment]): int32 = int32(max(1, countProcessors()))
-proc CurrentDirectory*(t: typedesc[Environment]): string = getCurrentDir()
-proc UserName*(t: typedesc[Environment]): string = getEnv("USER")
+  ## `TickCount64`, wrapping.
+  cast[int32](uint32(TickCount64(Environment) and 0xFFFF_FFFF'i64))
+proc ProcessorCount*(t: typedesc[Environment]): int32 =
+  when nsNoOs: 1'i32 else: int32(max(1, nsProcessorCount()))
+proc CurrentDirectory*(t: typedesc[Environment]): string =
+  when nsNoOs: raise nsNewException(PlatformNotSupportedException)
+  else: getCurrentDir()
+proc UserName*(t: typedesc[Environment]): string =
+  when nsNoOs: "" else: getEnv("USER")
 
 # --- System.TimeSpan ------------------------------------------------------------
 #
@@ -1913,14 +1930,18 @@ proc newDateTime*(year, month, day, hour, minute, second: int32; kind: DateTimeK
            nsKind: int32(kind))
 
 proc UtcNow*(t: typedesc[DateTime]): DateTime =
-  let n = getTime()
-  DateTime(nsTicks: nsUnixEpochTicks + n.toUnix * nsTicksPerSecond + n.nanosecond div 100,
-           nsKind: 1)
+  when nsNoOs: raise nsNewException(PlatformNotSupportedException)
+  else:
+    let n = nsUnixNow()
+    DateTime(nsTicks: nsUnixEpochTicks + n.seconds * nsTicksPerSecond + n.nanoseconds div 100,
+             nsKind: 1)
 proc Now*(t: typedesc[DateTime]): DateTime =
-  let n = times.now()
-  let local = n.toTime.toUnix - n.utcOffset
-  DateTime(nsTicks: nsUnixEpochTicks + local * nsTicksPerSecond + n.nanosecond div 100,
-           nsKind: 2)
+  when nsNoOs: raise nsNewException(PlatformNotSupportedException)
+  else:
+    let n = nsUnixNow()
+    let local = n.seconds - nsUtcOffset()
+    DateTime(nsTicks: nsUnixEpochTicks + local * nsTicksPerSecond + n.nanoseconds div 100,
+             nsKind: 2)
 proc Today*(t: typedesc[DateTime]): DateTime =
   let n = Now(DateTime)
   DateTime(nsTicks: n.nsTicks - n.nsTicks mod nsTicksPerDay, nsKind: 2)
@@ -2064,7 +2085,7 @@ proc nsFormatDate(d: DateTime; format: string): string =
     of 'K':
       if d.nsKind == 1: result.add 'Z'
       elif d.nsKind == 2:
-        let off = -times.now().utcOffset div 60
+        let off = when nsNoOs: 0 else: -nsUtcOffset() div 60
         result.add (if off < 0: "-" else: "+") & nsPad(abs(off) div 60, 2) & ":" & nsPad(abs(off) mod 60, 2)
     of '\'', '"':
       var j = i + 1

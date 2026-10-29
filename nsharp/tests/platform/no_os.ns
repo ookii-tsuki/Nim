@@ -1,0 +1,44 @@
+// Built with `--os:any`: no OS under the program, only a C library. The language
+// and the library still work; the members that need a clock or a working
+// directory throw PlatformNotSupportedException, as .NET's do on a platform
+// without one.
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+
+namespace Demo {
+  class Program {
+    static int Parse(string s) {
+      if (s.Length == 0) throw new ArgumentException("empty", nameof(s));
+      return int.Parse(s);
+    }
+
+    static void Try(string what, Action a) {
+      try { a(); Console.WriteLine(what + ": works"); }
+      catch (PlatformNotSupportedException e) { Console.WriteLine(what + ": " + e.Message); }
+    }
+
+    static void Main() {
+      var xs = new List<int> { 3, 1, 2 };
+      xs.Sort();
+      Console.WriteLine(string.Join(",", xs.Select(x => x * 10)));
+      var d = new Dictionary<string, int> { ["a"] = 1 };
+      Console.WriteLine(d["a"]);
+      try { Parse(""); }
+      catch (ArgumentException e) { Console.WriteLine(e.Message); }
+
+      Console.WriteLine(Environment.ProcessorCount >= 1);
+      Console.WriteLine(Environment.GetEnvironmentVariable("NS_NOT_SET") == null);
+      int n = new Random().Next(10);
+      Console.WriteLine(n >= 0 && n < 10);
+      Console.WriteLine(new DateTime(2024, 2, 29).AddDays(1).ToString("yyyy-MM-dd"));
+
+      Try("DateTime.Now", () => { var t = DateTime.Now; });
+      Try("DateTime.UtcNow", () => { var t = DateTime.UtcNow; });
+      Try("Stopwatch", () => { var s = Stopwatch.StartNew(); });
+      Try("Environment.TickCount64", () => { var t = Environment.TickCount64; });
+      Try("Environment.CurrentDirectory", () => { var c = Environment.CurrentDirectory; });
+    }
+  }
+}

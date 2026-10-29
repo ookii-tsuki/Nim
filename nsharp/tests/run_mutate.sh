@@ -74,7 +74,7 @@ run_one() {
     mkdir -p "$d"
     cp "$tmp/m/$mut.ns" "$d/$(basename "$ns")"
     for sib in $sibs; do cp "$sib" "$d/"; done
-    if ! timeout 180 "$NIM" c --hints:off --warnings:off --lib:"$lib" \
+    if ! timeout 180 "$NIM" c --hints:off --warnings:off --lib:"$lib" $(ns_flags "$ns") \
           --nimcache:"$(ns_nimcache "$root" "$ns" "_mut_$mut")" \
           -o:"$d/bin" "$d/$(basename "$ns")" > "$d/log" 2>&1; then
       code="$(grep -m1 -o 'Error: NS[0-9]*' "$d/log" | sed 's/Error: //')"

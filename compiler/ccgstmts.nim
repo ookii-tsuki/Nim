@@ -1195,7 +1195,9 @@ proc borrowCurrentException(p: BProc): Snippet =
   ## inlined, so its prototype only declares `Exception` forward; the full
   ## type is requested here.
   let prc = magicsys.getCompilerProc(p.module.g.graph, "nimBorrowCurrentException")
-  discard getTypeDesc(p.module, prc.typ.returnType.elementType)
+  # Absent where `system` has no exception handling (`--os:standalone`):
+  # `cgsymValue` then reports that the system module needs it.
+  if prc != nil: discard getTypeDesc(p.module, prc.typ.returnType.elementType)
   result = cCall(cgsymValue(p.module, "nimBorrowCurrentException"))
 
 proc genTryCpp(p: BProc, t: PNode, d: var TLoc) =

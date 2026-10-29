@@ -1,0 +1,12 @@
+10,20,30
+1
+empty (Parameter 's')
+True
+True
+True
+2024-03-01
+DateTime.Now: works
+DateTime.UtcNow: works
+Stopwatch: works
+Environment.TickCount64: works
+Environment.CurrentDirectory: works

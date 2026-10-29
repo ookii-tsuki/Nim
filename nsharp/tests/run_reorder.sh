@@ -22,7 +22,7 @@ run_one() {
   exp="${ns%.ns}.out"
   tmp="$(mktemp -d "${TMPDIR:-/tmp}/ns_reorder.XXXXXX")"
   trap 'rm -rf "$tmp"' EXIT
-  if ! "$NIM" c --hints:off --warnings:off --lib:"$lib" -d:nsReverseDecls \
+  if ! "$NIM" c --hints:off --warnings:off --lib:"$lib" -d:nsReverseDecls $(ns_flags "$ns") \
         --nimcache:"$(ns_nimcache "$root" "$ns" _rev)" -o:"$tmp/bin" "$ns" \
         > "$tmp/compile.log" 2>&1; then
     echo "REORDER COMPILE FAIL: ${ns#$root/}"

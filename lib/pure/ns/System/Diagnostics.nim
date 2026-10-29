@@ -14,7 +14,8 @@
 #
 # Deliberately absent: `Process`, `Trace`, listeners, `Debugger`, `StackTrace`.
 
-import std/[monotimes, syncio]
+import std/syncio
+import ../../nsharp/platform
 import ../System
 from ../../nsharp/pragmas import nsHidden
 from ../../nsharp/intrinsics import ToString, nsTypeName, Type, nsTypeNamed
@@ -34,7 +35,10 @@ method ToString*(s: Stopwatch): string = "System.Diagnostics.Stopwatch"
 method nsTypeName*(s: Stopwatch): string {.nsHidden.} = "System.Diagnostics.Stopwatch"
 proc nsTypeOf*(t: typedesc[Stopwatch]): Type {.nsHidden.} = nsTypeNamed("System.Diagnostics.Stopwatch")
 
-proc nsNow(): int64 = getMonoTime().ticks
+proc nsNow(): int64 =
+  ## Without an OS there is no clock to time with.
+  when nsNoOs: raise nsNewException(PlatformNotSupportedException)
+  else: nsMonoNanoseconds()
 
 proc newStopwatch*(): Stopwatch {.nsHidden.} = Stopwatch()
 

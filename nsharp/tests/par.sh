@@ -28,6 +28,13 @@ ns_nimcache() {
   printf '%s/%s/%s%s' "${NS_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/ns-gates}" "$_key" "$_name" "$3"
 }
 
+ns_flags() {
+  ## ns_flags FILE: the compiler options a test asks for in `<name>.flags` (a
+  ## target, say `--os:any`), added to its every build; none without one.
+  [ -f "${1%.ns}.flags" ] && cat "${1%.ns}.flags"
+  return 0
+}
+
 ns_par_each() {
   ## ns_par_each OUTDIR FILE...: runs `<this gate> --one FILE` for each FILE, up to
   ## ns_jobs at once, then prints their output in order. Returns non-zero if any

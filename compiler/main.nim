@@ -266,6 +266,11 @@ proc mainCommand*(graph: ModuleGraph) =
       ## The library's own N#-only state (`system`'s `Exception.nsExtra`), for
       ## every command (`c`, `cpp`, `check`, `js`).
       defineSymbol(conf.symbols, "nsharp")
+      if conf.target.targetOS == osStandalone:
+        ## `system` has no exception handling there, and C# cannot do without
+        ## it; `--os:any` is the target without an OS that N# supports.
+        rawMessage(conf, errGenerated,
+          "N# needs exception handling, which --os:standalone lacks; use --os:any")
 
   proc customizeForBackend(backend: TBackend) =
     ## Sets backend specific options but don't compile to backend yet in

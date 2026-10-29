@@ -1,0 +1,25 @@
+using System
+using System.Collections.Generic
+using System.Diagnostics
+using System.Linq
+member ArgumentException.Message = System | string
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member DateTime.ToString = System | string
+member Environment.CurrentDirectory = System | string
+member Environment.GetEnvironmentVariable = System | string
+member Environment.ProcessorCount = System | int
+member Environment.TickCount64 = System | int
+member List.Sort = System.Collections.Generic | void
+member PlatformNotSupportedException.Message = System | string
+member Random.Next = System | int
+member int.Parse = System | int
+member string.Join = System | string
+member string.Length = System | int

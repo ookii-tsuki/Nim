@@ -967,6 +967,27 @@ binding (`Toybox.ns`) and C++-driven tests (`run_native.sh`).
 | C bindings (`[Native]` over a C struct and its functions) | 🔜 later | a C struct is a Nim `importc` object (`{.inheritable, pure.}` to derive it as a plain struct: no `of`, no methods, so no native virtuals); functions are `importc` procs, and handles are whatever the C API uses (an id, a pointer). An N# type deriving a C struct would hold Nim-managed fields as in C++, but C has no destructor to run them, so the binding names the C call that frees one (`Free = "ns_free"`) |
 | `[StructLayout]` ABI match, `IntPtr` | 🔜 later | |
 
+### 14.3 Targets without an OS
+
+`--os:any` (with `--threads:off -d:useMalloc`) builds a program that needs only a C
+library, such as newlib or picolibc on a microcontroller: `malloc`, `memcpy`,
+`fwrite` and the like, plus `libm`, which the library links there. The language and
+the library work as elsewhere; console output goes wherever the C library's
+`write` sends it. What needs an OS (`lib/pure/nsharp/platform.nim`) keeps its
+members, which then do what .NET's do on a platform without one:
+
+| Member | Without an OS |
+|---|---|
+| `DateTime.Now`, `UtcNow`, `Today`; `Stopwatch`; `Environment.TickCount`, `TickCount64`, `CurrentDirectory`, `SetEnvironmentVariable` | throw `PlatformNotSupportedException` |
+| `Environment.GetEnvironmentVariable`, `UserName` | null: there is no environment |
+| `Environment.ProcessorCount` | 1 |
+| `new Random()` | seeded from a per-instance counter, there being no clock |
+| `System.IO` | what the C library's file calls do (usually nothing without a filesystem) |
+
+`--os:standalone` (no C library at all) is rejected: Nim's `system` has no
+exception handling there, which C# cannot do without. `nsharp/tests/platform/`
+runs under `--os:any` (a `<name>.flags` file adds options to a test's builds).
+
 ---
 
 ## 15. Standard library surface (the "N# BCL-lite")
