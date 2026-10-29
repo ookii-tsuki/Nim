@@ -111,6 +111,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.Count()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -127,6 +130,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.Length()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -242,7 +248,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -379,6 +388,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.Count()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -397,6 +409,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.Length()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -535,7 +550,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

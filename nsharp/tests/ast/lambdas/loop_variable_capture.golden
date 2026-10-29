@@ -94,7 +94,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -223,7 +226,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -287,7 +293,10 @@ nkStmtList
                       nkEmpty
                       nkFormalParams
                         nkIdent 'int32'
-                      nkEmpty
+                      nkPragma
+                        nkExprColonExpr
+                          nkIdent 'nsFrame'
+                          nkStrLit "Program.<Main>b__0()"
                       nkEmpty
                       nkStmtList
                         nkBracketExpr
@@ -379,7 +388,10 @@ nkStmtList
                       nkEmpty
                       nkFormalParams
                         nkIdent 'int32'
-                      nkEmpty
+                      nkPragma
+                        nkExprColonExpr
+                          nkIdent 'nsFrame'
+                          nkStrLit "Program.<Main>b__1()"
                       nkEmpty
                       nkStmtList
                         nkInfix
@@ -461,7 +473,10 @@ nkStmtList
                           nkEmpty
                           nkFormalParams
                             nkIdent 'int32'
-                          nkEmpty
+                          nkPragma
+                            nkExprColonExpr
+                              nkIdent 'nsFrame'
+                              nkStrLit "Program.<Main>b__2()"
                           nkEmpty
                           nkStmtList
                             nkBracketExpr
@@ -528,7 +543,10 @@ nkStmtList
                   nkEmpty
                   nkFormalParams
                     nkIdent 'int32'
-                  nkEmpty
+                  nkPragma
+                    nkExprColonExpr
+                      nkIdent 'nsFrame'
+                      nkStrLit "Program.<Main>b__3()"
                   nkEmpty
                   nkStmtList
                     nkIdent 'i'
@@ -618,7 +636,10 @@ nkStmtList
                       nkEmpty
                       nkFormalParams
                         nkEmpty
-                      nkEmpty
+                      nkPragma
+                        nkExprColonExpr
+                          nkIdent 'nsFrame'
+                          nkStrLit "Program.<Main>b__4()"
                       nkEmpty
                       nkStmtList
                         nkCall
@@ -732,7 +753,10 @@ nkStmtList
                           nkEmpty
                           nkFormalParams
                             nkIdent 'string'
-                          nkEmpty
+                          nkPragma
+                            nkExprColonExpr
+                              nkIdent 'nsFrame'
+                              nkStrLit "Program.<Main>b__5()"
                           nkEmpty
                           nkStmtList
                             nkInfix
@@ -818,7 +842,10 @@ nkStmtList
                         nkBracketExpr
                           nkIdent 'Func1'
                           nkIdent 'int32'
-                      nkEmpty
+                      nkPragma
+                        nkExprColonExpr
+                          nkIdent 'nsFrame'
+                          nkStrLit "Program.<Main>b__7()"
                       nkEmpty
                       nkStmtList
                         nkCall
@@ -844,7 +871,10 @@ nkStmtList
                                   nkEmpty
                                   nkFormalParams
                                     nkIdent 'int32'
-                                  nkEmpty
+                                  nkPragma
+                                    nkExprColonExpr
+                                      nkIdent 'nsFrame'
+                                      nkStrLit "Program.<Main>b__6()"
                                   nkEmpty
                                   nkStmtList
                                     nkBracketExpr
@@ -933,7 +963,10 @@ nkStmtList
                       nkEmpty
                       nkFormalParams
                         nkEmpty
-                      nkEmpty
+                      nkPragma
+                        nkExprColonExpr
+                          nkIdent 'nsFrame'
+                          nkStrLit "Program.<Main>b__8()"
                       nkEmpty
                       nkStmtList
                         nkCommand
@@ -1029,7 +1062,10 @@ nkStmtList
                         nkEmpty
                         nkFormalParams
                           nkEmpty
-                        nkEmpty
+                        nkPragma
+                          nkExprColonExpr
+                            nkIdent 'nsFrame'
+                            nkStrLit "Program.<Main>b__9()"
                         nkEmpty
                         nkStmtList
                           nkAsgn

@@ -213,7 +213,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'PriceChangedEventArgs'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PriceChangedEventArgs.get_Before()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -230,7 +233,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PriceChangedEventArgs.set_Before(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -245,7 +251,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'PriceChangedEventArgs'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PriceChangedEventArgs.get_After()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -262,7 +271,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PriceChangedEventArgs.set_After(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -289,7 +301,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PriceChangedEventArgs..ctor(Int32 before, Int32 after)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -314,6 +329,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -391,7 +409,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Stock'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -408,7 +429,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock.set_Name(String value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -429,7 +453,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock..ctor(String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -448,6 +475,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -462,7 +492,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Stock'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock.get_Price()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -481,7 +514,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock.set_Price(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -496,7 +532,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Stock'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock.Close()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -574,7 +613,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.OnClosed()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -583,7 +625,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -734,7 +779,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'PriceChangedEventArgs'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PriceChangedEventArgs.get_Before()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -753,7 +801,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PriceChangedEventArgs.set_Before(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -772,7 +823,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'PriceChangedEventArgs'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PriceChangedEventArgs.get_After()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -791,7 +845,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PriceChangedEventArgs.set_After(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -822,7 +879,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PriceChangedEventArgs..ctor(Int32 before, Int32 after)"
     nkEmpty
     nkStmtList
       nkCall
@@ -860,6 +920,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -972,7 +1035,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Stock'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock.get_Name()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -991,7 +1057,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock.set_Name(String value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -1016,7 +1085,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock..ctor(String name)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1065,6 +1137,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1086,7 +1161,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Stock'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock.get_Price()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1109,7 +1187,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock.set_Price(Int32 value)"
     nkEmpty
     nkStmtList
       nkIfStmt
@@ -1176,7 +1257,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Stock'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Stock.Close()"
     nkEmpty
     nkStmtList
       nkIfStmt
@@ -1281,7 +1365,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.OnClosed()"
     nkEmpty
     nkStmtList
       nkCommand
@@ -1295,7 +1382,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkCall
@@ -1313,7 +1403,10 @@ nkStmtList
               nkIdent 'n'
               nkIdent 'string'
               nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__0(String n)"
           nkEmpty
           nkStmtList
             nkCall
@@ -1349,7 +1442,10 @@ nkStmtList
                 nkIdent 'e'
                 nkIdent 'PriceChangedEventArgs'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__1(RootRef sender, PriceChangedEventArgs e)"
             nkEmpty
             nkStmtList
               nkCall
@@ -1405,7 +1501,10 @@ nkStmtList
               nkIdent 'e'
               nkIdent 'PriceChangedEventArgs'
               nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__2(RootRef sender, PriceChangedEventArgs e)"
           nkEmpty
           nkStmtList
             nkIfStmt
@@ -1523,7 +1622,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__3()"
             nkEmpty
             nkStmtList
               nkCall
@@ -1540,7 +1642,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__4()"
             nkEmpty
             nkStmtList
               nkCall
@@ -1557,7 +1662,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__5()"
             nkEmpty
             nkStmtList
               nkCall
@@ -1584,7 +1692,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__6(Int32 x)"
             nkEmpty
             nkStmtList
               nkInfix
@@ -1606,7 +1717,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__7(Int32 x)"
             nkEmpty
             nkStmtList
               nkInfix
@@ -1634,7 +1748,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__8()"
             nkEmpty
             nkStmtList
               nkCall

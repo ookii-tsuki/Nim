@@ -147,7 +147,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Ring'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Ring.get_Count()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -166,7 +169,10 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Ring.get_Item(Int32 i)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -292,6 +298,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Data()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -314,6 +323,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Show(Int32[] xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -322,7 +334,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -466,7 +481,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Ring'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Ring.get_Count()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -491,7 +509,10 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Ring.get_Item(Int32 i)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -662,6 +683,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Data()"
     nkEmpty
     nkStmtList
       nkCommand
@@ -710,6 +734,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Show(Int32[] xs)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -748,7 +775,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

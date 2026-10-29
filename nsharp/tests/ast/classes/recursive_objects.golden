@@ -145,7 +145,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Node..ctor(Node l, Node r, String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -176,6 +179,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -192,6 +198,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Node.Count()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -275,6 +284,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Make(Int32 d)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -283,7 +295,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -457,7 +472,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Node..ctor(Node l, Node r, String name)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -503,6 +521,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -528,6 +549,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Node.Count()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -656,6 +680,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Make(Int32 d)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -697,7 +724,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

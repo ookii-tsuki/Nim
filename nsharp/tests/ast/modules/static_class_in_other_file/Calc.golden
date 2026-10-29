@@ -108,6 +108,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Math.Calc.Add(Int32 a, Int32 b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -134,6 +137,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Math.Calc.Mul(Int32 a, Int32 b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -280,6 +286,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Math.Calc.Add(Int32 a, Int32 b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -311,6 +320,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Math.Calc.Mul(Int32 a, Int32 b)"
     nkEmpty
     nkStmtList
       nkReturnStmt

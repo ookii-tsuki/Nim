@@ -1,0 +1,5 @@
+AggregateException.Flatten = result:other
+AggregateException.GetBaseException = result:other
+AggregateException.InnerException = result:other
+AggregateException.InnerExceptions = result:other
+Exception.GetType = result:other

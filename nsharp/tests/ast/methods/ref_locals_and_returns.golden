@@ -122,6 +122,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Store.Find(Int32 v)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -138,6 +141,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Store.Show()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -268,6 +274,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.First(Int32[] xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -276,7 +285,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -425,6 +437,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Store.Find(Int32 v)"
     nkEmpty
     nkStmtList
       nkBlockStmt
@@ -489,6 +504,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Store.Show()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -684,6 +702,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.First(Int32[] xs)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -698,7 +719,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkProcDef
@@ -710,6 +734,9 @@ nkStmtList
             nkIdent 'int32'
         nkPragma
           nkIdent 'discardable'
+          nkExprColonExpr
+            nkIdent 'nsFrame'
+            nkStrLit "Demo.Program.<Main>g__Max|0()"
         nkEmpty
         nkEmpty
       nkVarSection
@@ -858,6 +885,9 @@ nkStmtList
             nkIdent 'int32'
         nkPragma
           nkIdent 'discardable'
+          nkExprColonExpr
+            nkIdent 'nsFrame'
+            nkStrLit "Demo.Program.<Main>g__Max|1()"
         nkEmpty
         nkStmtList
           nkVarSection

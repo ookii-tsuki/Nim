@@ -4,6 +4,11 @@ nkStmtList
   nkFromStmt
     nkStrLit "System/Collections"
     nkIdent 'MoveNext'
+    nkAccQuoted
+      nkIdent '[]'
+    nkAccQuoted
+      nkIdent '[]='
+    nkIdent 'items'
   nkPragma
     nkIdent 'push'
     nkExprColonExpr
@@ -107,6 +112,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Fin()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -125,6 +133,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Nested()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -143,6 +154,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Plain()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -159,6 +173,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.First()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -167,7 +184,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -306,6 +326,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Fin()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -365,6 +388,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Nested()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -457,6 +483,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Plain()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -481,6 +510,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.First()"
     nkEmpty
     nkStmtList
       nkForStmt
@@ -501,7 +533,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkForStmt

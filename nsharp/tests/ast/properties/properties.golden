@@ -139,7 +139,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -158,7 +161,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.set_Name(String value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -173,7 +179,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.get_Age()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -192,7 +201,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.set_Age(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -207,7 +219,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.get_Id()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -224,7 +239,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.set_Id(String value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -239,7 +257,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.get_Tag()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -256,7 +277,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.set_Tag(String value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -271,7 +295,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -284,6 +311,9 @@ nkStmtList
       nkIdent 'Person'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -302,7 +332,10 @@ nkStmtList
         nkIdent 't'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.Retag(String t)"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -319,6 +352,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -407,7 +443,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -550,7 +589,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.get_Name()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -571,7 +613,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.set_Name(String value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -590,7 +635,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.get_Age()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -611,7 +659,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.set_Age(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -630,7 +681,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.get_Id()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -649,7 +703,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.set_Id(String value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -668,7 +725,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.get_Tag()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -687,7 +747,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.set_Tag(String value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -706,7 +769,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person..ctor()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -741,6 +807,9 @@ nkStmtList
       nkIdent 'Person'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -765,7 +834,10 @@ nkStmtList
         nkIdent 't'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.Retag(String t)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -787,6 +859,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -918,7 +993,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

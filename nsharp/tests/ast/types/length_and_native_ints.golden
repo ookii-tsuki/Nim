@@ -113,7 +113,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Thing'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Thing.get_Length()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -132,7 +135,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Thing.set_Length(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -248,7 +254,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -390,7 +399,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Thing'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Thing.get_Length()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -411,7 +423,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Thing.set_Length(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -552,7 +567,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

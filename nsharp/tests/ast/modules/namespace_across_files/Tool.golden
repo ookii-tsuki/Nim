@@ -108,6 +108,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Company.Products.Tool.IsNamed(Gadget g, String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -252,6 +255,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Company.Products.Tool.IsNamed(Gadget g, String name)"
     nkEmpty
     nkStmtList
       nkReturnStmt

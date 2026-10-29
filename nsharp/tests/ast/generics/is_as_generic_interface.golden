@@ -518,6 +518,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntBox.Get()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -532,7 +535,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntBox'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntBox.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -725,6 +731,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.StrBox.Get()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -969,7 +978,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Wrap`1..ctor(T v)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -994,6 +1006,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1016,6 +1031,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Wrap`1.Get()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1273,7 +1291,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1823,7 +1844,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Wrap`1..ctor(T v)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1853,6 +1877,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1882,6 +1909,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Wrap`1.Get()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2399,6 +2429,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntBox.Get()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2415,7 +2448,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntBox'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntBox.get_Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2713,6 +2749,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.StrBox.Get()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3155,7 +3194,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

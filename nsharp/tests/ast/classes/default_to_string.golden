@@ -621,7 +621,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Dog'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Dog.get_Age()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -640,7 +643,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Dog.set_Age(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -655,7 +661,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Dog'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Dog.get_Upper()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1241,6 +1250,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Named.ToString()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1518,7 +1530,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Rec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec.get_A()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1537,7 +1552,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec.set_A(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1552,7 +1570,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Rec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec.get_B()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1571,7 +1592,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec.set_B(String value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1598,7 +1622,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec..ctor(Int32 A, String B)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1623,6 +1650,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1647,7 +1677,10 @@ nkStmtList
         nkVarTy
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec.Deconstruct(Int32& A, String& B)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -2052,6 +2085,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Fmt.ToString(String f)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -2502,7 +2538,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -3405,7 +3444,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Dog'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Dog.get_Age()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -3426,7 +3468,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Dog.set_Age(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -3445,7 +3490,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Dog'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Dog.get_Upper()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3932,6 +3980,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Named.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -4331,7 +4382,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Rec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec.get_A()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -4352,7 +4406,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec.set_A(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -4371,7 +4428,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Rec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec.get_B()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -4392,7 +4452,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec.set_B(String value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -4423,7 +4486,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec..ctor(Int32 A, String B)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -4458,6 +4524,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -4490,7 +4559,10 @@ nkStmtList
         nkVarTy
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Rec.Deconstruct(Int32& A, String& B)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -4939,6 +5011,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Fmt.ToString(String f)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -5434,7 +5509,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

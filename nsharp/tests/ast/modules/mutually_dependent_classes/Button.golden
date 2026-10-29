@@ -104,6 +104,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "UI.Button.IsOdd(Int32 n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -244,6 +247,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "UI.Button.IsOdd(Int32 n)"
     nkEmpty
     nkStmtList
       nkIfStmt

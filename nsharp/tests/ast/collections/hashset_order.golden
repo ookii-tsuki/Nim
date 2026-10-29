@@ -110,7 +110,10 @@ nkStmtList
           nkIdent 'HashSet'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Show(String label, HashSet`1 s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -129,6 +132,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Make()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -137,7 +143,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -282,7 +291,10 @@ nkStmtList
           nkIdent 'HashSet'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Show(String label, HashSet`1 s)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -344,6 +356,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Make()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -405,7 +420,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -690,7 +708,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__0(Int32 x)"
             nkEmpty
             nkStmtList
               nkInfix

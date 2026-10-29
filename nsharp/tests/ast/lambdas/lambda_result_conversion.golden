@@ -109,7 +109,10 @@ nkStmtList
           nkIdent 'Func1'
           nkIdent 'RootRef'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.T(Func`1 f)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -132,6 +135,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Twice(Func`1 f)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -140,7 +146,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -281,7 +290,10 @@ nkStmtList
           nkIdent 'Func1'
           nkIdent 'RootRef'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.T(Func`1 f)"
     nkEmpty
     nkStmtList
       nkTryStmt
@@ -328,6 +340,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Twice(Func`1 f)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -341,7 +356,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -356,7 +374,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkIdent 'RootRef'
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__0()"
             nkEmpty
             nkStmtList
               nkCall
@@ -385,7 +406,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkIdent 'RootRef'
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__1()"
           nkEmpty
           nkStmtList
             nkCall
@@ -400,7 +424,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkIdent 'RootRef'
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__2()"
           nkEmpty
           nkStmtList
             nkCall
@@ -415,7 +442,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkIdent 'RootRef'
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__3()"
           nkEmpty
           nkStmtList
             nkReturnStmt
@@ -431,7 +461,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkIdent 'RootRef'
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__4()"
           nkEmpty
           nkStmtList
             nkCall
@@ -466,7 +499,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkIdent 'RootRef'
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__5()"
             nkEmpty
             nkStmtList
               nkCall
@@ -489,7 +525,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__6(Int32 x)"
             nkEmpty
             nkStmtList
               nkCall
@@ -512,7 +551,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkIdent 'RootRef'
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__7()"
           nkEmpty
           nkStmtList
             nkCall

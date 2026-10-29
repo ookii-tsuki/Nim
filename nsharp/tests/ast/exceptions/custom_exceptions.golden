@@ -70,7 +70,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.AppException..ctor(String m)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -90,6 +93,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -161,7 +167,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -248,13 +257,16 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.AppException..ctor(String m)"
     nkEmpty
     nkStmtList
-      nkAsgn
-        nkDotExpr
-          nkIdent 'self'
-          nkIdent 'msg'
+      nkCall
+        nkIdent 'nsInitException'
+        nkIdent 'self'
+        nkIdent 'Exception'
         nkIdent 'm'
   nkProcDef
     nkPostfix
@@ -273,6 +285,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -377,7 +392,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkTryStmt

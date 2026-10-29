@@ -117,7 +117,10 @@ nkStmtList
         nkIdent 'name'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Widget.OnRenamed(String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -132,7 +135,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Widget'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Widget..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -145,6 +151,9 @@ nkStmtList
       nkIdent 'Widget'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -163,7 +172,10 @@ nkStmtList
         nkIdent 'n'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Widget.Rename(String n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -176,7 +188,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Widget'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Widget.OnCreated()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -193,6 +208,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Widget.Describe()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -281,7 +299,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -425,7 +446,10 @@ nkStmtList
         nkIdent 'name'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Widget.OnRenamed(String name)"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -440,7 +464,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Widget'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Widget..ctor()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -462,6 +489,9 @@ nkStmtList
       nkIdent 'Widget'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -486,7 +516,10 @@ nkStmtList
         nkIdent 'n'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Widget.Rename(String n)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -509,7 +542,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Widget'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Widget.OnCreated()"
     nkEmpty
     nkStmtList
       nkCall
@@ -529,6 +565,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Widget.Describe()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -639,7 +678,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

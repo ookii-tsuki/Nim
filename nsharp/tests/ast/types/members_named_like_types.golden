@@ -1122,7 +1122,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.get_P()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1141,7 +1144,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.set_P(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1156,7 +1162,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.get_Color()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1175,7 +1184,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'Color'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.set_Color(Color value)"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1193,6 +1205,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.Item()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1211,6 +1226,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.Make()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1229,6 +1247,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.Message()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1594,6 +1615,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Crate.Item()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1602,7 +1626,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -2922,7 +2949,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.get_P()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -2943,7 +2973,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.set_P(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -2962,7 +2995,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.get_Color()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -2983,7 +3019,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'Color'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.set_Color(Color value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -3005,6 +3044,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.Item()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3025,6 +3067,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.Make()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3046,6 +3091,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.Message()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3298,6 +3346,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Crate.Item()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3596,7 +3647,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

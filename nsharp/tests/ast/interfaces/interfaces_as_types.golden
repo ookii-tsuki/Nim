@@ -714,6 +714,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Shape.Area()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -730,6 +733,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Shape.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -750,6 +756,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Shape.Describe(Int32 precision)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -974,7 +983,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Circle..ctor(Double r)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -993,6 +1005,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1042,7 +1057,10 @@ nkStmtList
         nkIdent 'factor'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Circle.Scale(Double factor)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1183,7 +1201,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Square..ctor(Double s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1202,6 +1223,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1218,6 +1242,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Circle.Area()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1247,7 +1274,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Circle.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1353,7 +1383,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Label.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1372,7 +1405,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Label.set_Name(String value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1481,6 +1517,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Square.Area()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1503,6 +1542,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Program.Total(IShape[] shapes)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1521,7 +1563,10 @@ nkStmtList
         nkIdent 'n'
         nkIdent 'INamed'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Program.Print(INamed n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1530,7 +1575,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -2352,6 +2400,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Shape.Area()"
     nkEmpty
     nkStmtList
       nkRaiseStmt
@@ -2373,6 +2424,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Shape.get_Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2395,6 +2449,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Shape.Describe(Int32 precision)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2915,7 +2972,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Circle..ctor(Double r)"
     nkEmpty
     nkStmtList
       nkCall
@@ -2942,6 +3002,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2965,6 +3028,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Circle.Area()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2991,7 +3057,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Circle.get_Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3012,7 +3081,10 @@ nkStmtList
         nkIdent 'factor'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Circle.Scale(Double factor)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -3343,7 +3415,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Square..ctor(Double s)"
     nkEmpty
     nkStmtList
       nkCall
@@ -3370,6 +3445,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -3393,6 +3471,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Square.Area()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3631,7 +3712,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Label.get_Name()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -3652,7 +3736,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Label.set_Name(String value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -3807,6 +3894,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Program.Total(IShape[] shapes)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -3847,7 +3937,10 @@ nkStmtList
         nkIdent 'n'
         nkIdent 'INamed'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Program.Print(INamed n)"
     nkEmpty
     nkStmtList
       nkCall
@@ -3864,7 +3957,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

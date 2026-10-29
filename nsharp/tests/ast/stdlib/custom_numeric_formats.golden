@@ -106,7 +106,10 @@ nkStmtList
         nkIdent 'f'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.P(Double v, String f)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -129,7 +132,10 @@ nkStmtList
         nkIdent 'f'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.I(Int64 v, String f)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -138,7 +144,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -281,7 +290,10 @@ nkStmtList
         nkIdent 'f'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.P(Double v, String f)"
     nkEmpty
     nkStmtList
       nkTryStmt
@@ -340,7 +352,10 @@ nkStmtList
         nkIdent 'f'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.I(Int64 v, String f)"
     nkEmpty
     nkStmtList
       nkTryStmt
@@ -385,7 +400,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

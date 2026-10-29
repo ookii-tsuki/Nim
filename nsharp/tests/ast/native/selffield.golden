@@ -331,7 +331,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Garden.Entry.Start()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -345,6 +348,9 @@ nkStmtList
         nkIdent 'exportc'
         nkStrLit "nsStart"
       nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -905,7 +911,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Garden.Entry.Start()"
     nkEmpty
     nkStmtList
       nkCall
@@ -925,6 +934,9 @@ nkStmtList
         nkIdent 'exportc'
         nkStrLit "nsStart"
       nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkTryStmt

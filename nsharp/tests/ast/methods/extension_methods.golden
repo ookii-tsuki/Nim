@@ -186,6 +186,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Tools.StringExt.Shout(String s, Int32 n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -202,6 +205,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Tools.StringExt.IsBlank(String s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -300,6 +306,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Tools.ListExt.Second[T](List`1 xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -318,6 +327,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Tools.ListExt.Total(List`1 xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -451,7 +463,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point..ctor(Int32 x, Int32 y)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -476,6 +491,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -524,6 +542,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PointExt.Manhattan(Point p)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -544,6 +565,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PointExt.Scale(Point p, Int32 k)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -560,6 +584,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PointExt.Describe(Point p)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -654,6 +681,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.Next()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -670,6 +700,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.Twice(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -785,7 +818,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -886,6 +922,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Tools.StringExt.Shout(String s, Int32 n)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -913,6 +952,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Tools.StringExt.IsBlank(String s)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1036,6 +1078,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Tools.ListExt.Second[T](List`1 xs)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1058,6 +1103,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Tools.ListExt.Total(List`1 xs)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1243,7 +1291,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point..ctor(Int32 x, Int32 y)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1278,6 +1329,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1338,6 +1392,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PointExt.Manhattan(Point p)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1373,6 +1430,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PointExt.Scale(Point p, Int32 k)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1406,6 +1466,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.PointExt.Describe(Point p)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1540,6 +1603,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.Next()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1572,6 +1638,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.Twice(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1713,7 +1782,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

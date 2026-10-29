@@ -1,0 +1,17 @@
+One or more errors occurred. (a) (One or more errors occurred. (b) (c))
+2 a 3
+a b c 
+custom (x)
+One or more errors occurred. (l) | l
+One or more errors occurred. 0
+[System.AggregateException: One or more errors occurred. (a) (One or more errors occurred. (b) (c))
+ ---> System.Exception: a
+   --- End of inner exception stack trace ---
+ ---> (Inner Exception #1) System.AggregateException: One or more errors occurred. (b) (c)
+ ---> System.Exception: b
+   --- End of inner exception stack trace ---
+ ---> (Inner Exception #1) System.Exception: c<---
+<---
+]
+1 b
+AggregateException True

@@ -212,6 +212,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Helper.Twice(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -382,7 +385,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt.get_X()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -401,7 +407,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt.set_X(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -416,7 +425,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt.get_Y()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -435,7 +447,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt.set_Y(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -462,7 +477,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt..ctor(Int32 X, Int32 Y)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -487,6 +505,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -511,7 +532,10 @@ nkStmtList
         nkVarTy
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt.Deconstruct(Int32& X, Int32& Y)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -914,7 +938,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1057,6 +1084,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Helper.Twice(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1364,7 +1394,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt.get_X()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -1385,7 +1418,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt.set_X(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -1404,7 +1440,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt.get_Y()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -1425,7 +1464,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt.set_Y(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -1456,7 +1498,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt..ctor(Int32 X, Int32 Y)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1491,6 +1536,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1523,7 +1571,10 @@ nkStmtList
         nkVarTy
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pt.Deconstruct(Int32& X, Int32& Y)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2113,7 +2164,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

@@ -114,6 +114,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Split(String s, String& head, Int32& rest)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -146,7 +149,10 @@ nkStmtList
         nkVarTy
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Pair[T](T x, T& a, T& b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -155,7 +161,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -306,6 +315,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Split(String s, String& head, Int32& rest)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -361,7 +373,10 @@ nkStmtList
         nkVarTy
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Pair[T](T x, T& a, T& b)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -376,7 +391,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkStmtList
@@ -530,7 +548,10 @@ nkStmtList
                 nkIdent '_'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__0(Int32 a, Int32 _)"
             nkEmpty
             nkStmtList
               nkIdent 'a'
@@ -556,7 +577,10 @@ nkStmtList
                 nkIdent '_'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__1(Int32 _, Int32 _)"
             nkEmpty
             nkStmtList
               nkIntLit 7

@@ -159,7 +159,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Geometry.Point..ctor(Int32 x, Int32 y)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -184,6 +187,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -200,6 +206,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Geometry.Point.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -254,6 +263,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Geometry.Units.ToMillis(Int32 cm)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -369,7 +381,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -508,7 +523,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Geometry.Point..ctor(Int32 x, Int32 y)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -543,6 +561,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -567,6 +588,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Geometry.Point.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -643,6 +667,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Geometry.Units.ToMillis(Int32 cm)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -786,7 +813,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

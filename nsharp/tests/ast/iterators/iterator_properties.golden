@@ -131,7 +131,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Range..ctor(Int32 lo, Int32 hi)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -156,6 +159,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -172,7 +178,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Range'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Range.get_Values()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -193,7 +202,10 @@ nkStmtList
         nkIdent 'step'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Range.get_Item(Int32 step)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -273,7 +285,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.get_Numbers()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -282,7 +297,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -443,7 +461,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Range..ctor(Int32 lo, Int32 hi)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -478,6 +499,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -502,7 +526,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Range'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Range.get_Values()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -552,7 +579,10 @@ nkStmtList
         nkIdent 'step'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Range.get_Item(Int32 step)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -677,7 +707,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.get_Numbers()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -696,7 +729,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkForStmt

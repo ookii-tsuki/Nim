@@ -159,6 +159,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Animal.Sound()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -176,6 +179,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Animal.Kind()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -489,6 +495,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pet`1.Sound()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -772,6 +781,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Dog.Sound()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -780,7 +792,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1190,6 +1205,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pet`1.Sound()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1514,6 +1532,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Animal.Sound()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1533,6 +1554,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Animal.Kind()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1663,6 +1687,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Dog.Sound()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1784,7 +1811,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

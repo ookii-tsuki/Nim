@@ -130,7 +130,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Shrink()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -154,6 +157,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.ThroughRef(Int32[]& a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -180,6 +186,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Try(String what, Func`1 f)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -194,7 +203,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Sums()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -203,7 +215,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -340,7 +355,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Shrink()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -372,6 +390,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.ThroughRef(Int32[]& a)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -442,6 +463,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Try(String what, Func`1 f)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -490,7 +514,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Sums()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -778,7 +805,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkCall
@@ -794,7 +824,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkIdent 'int32'
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__0()"
           nkEmpty
           nkStmtList
             nkVarSection
@@ -894,7 +927,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__1()"
             nkEmpty
             nkStmtList
               nkAsgn
@@ -913,7 +949,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkIdent 'int32'
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__2()"
           nkEmpty
           nkStmtList
             nkVarSection
@@ -971,7 +1010,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkIdent 'int32'
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__3()"
           nkEmpty
           nkStmtList
             nkCall
@@ -990,7 +1032,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkIdent 'int32'
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__4()"
           nkEmpty
           nkStmtList
             nkVarSection

@@ -125,6 +125,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.B.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -141,6 +144,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.B.Bump()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -264,6 +270,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.Special.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -282,6 +291,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.Special.Wrap()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -432,6 +444,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.B.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -450,6 +465,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.B.Bump()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -611,6 +629,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.Special.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -631,6 +652,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.Special.Wrap()"
     nkEmpty
     nkStmtList
       nkReturnStmt

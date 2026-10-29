@@ -229,6 +229,9 @@ nkStmtList
           nkIntLit 0
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Sum(Int32[] xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -254,6 +257,9 @@ nkStmtList
           nkIntLit 0
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Count(Object[] xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -276,7 +282,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Show[T](T x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -285,7 +294,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -559,6 +571,9 @@ nkStmtList
           nkIntLit 0
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Sum(Int32[] xs)"
     nkEmpty
     nkStmtList
       nkIfStmt
@@ -612,6 +627,9 @@ nkStmtList
           nkIntLit 0
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Count(Object[] xs)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -648,7 +666,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Show[T](T x)"
     nkEmpty
     nkStmtList
       nkCall
@@ -667,7 +688,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

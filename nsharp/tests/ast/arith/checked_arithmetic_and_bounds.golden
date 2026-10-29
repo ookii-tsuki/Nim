@@ -111,7 +111,10 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Action0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Try(String what, Action a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -120,7 +123,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -263,7 +269,10 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Action0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Try(String what, Action a)"
     nkEmpty
     nkStmtList
       nkTryStmt
@@ -310,7 +319,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -389,7 +401,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__0()"
           nkEmpty
           nkStmtList
             nkCall
@@ -407,7 +422,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__1()"
           nkEmpty
           nkStmtList
             nkAsgn
@@ -425,7 +443,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__2()"
           nkEmpty
           nkStmtList
             nkCall
@@ -443,7 +464,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__3()"
           nkEmpty
           nkStmtList
             nkCall
@@ -463,7 +487,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__4()"
           nkEmpty
           nkStmtList
             nkCall
@@ -481,7 +508,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__5()"
           nkEmpty
           nkStmtList
             nkCall
@@ -518,7 +548,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__6()"
           nkEmpty
           nkStmtList
             nkCall
@@ -559,7 +592,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__7()"
           nkEmpty
           nkStmtList
             nkCall
@@ -596,7 +632,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__8()"
           nkEmpty
           nkStmtList
             nkCall
@@ -633,7 +672,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__9()"
           nkEmpty
           nkStmtList
             nkCall
@@ -670,7 +712,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__10()"
           nkEmpty
           nkStmtList
             nkCall
@@ -707,7 +752,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__11()"
           nkEmpty
           nkStmtList
             nkCall
@@ -743,7 +791,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__12()"
           nkEmpty
           nkStmtList
             nkStmtList
@@ -785,7 +836,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__13()"
           nkEmpty
           nkStmtList
             nkStmtList
@@ -812,7 +866,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__14()"
           nkEmpty
           nkStmtList
             nkStmtList
@@ -842,7 +899,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__16()"
           nkEmpty
           nkStmtList
             nkStmtList
@@ -871,7 +931,10 @@ nkStmtList
                         nkIdent 'x'
                         nkIdent 'int32'
                         nkEmpty
-                    nkEmpty
+                    nkPragma
+                      nkExprColonExpr
+                        nkIdent 'nsFrame'
+                        nkStrLit "Program.<Main>b__15(Int32 x)"
                     nkEmpty
                     nkStmtList
                       nkCall
@@ -925,7 +988,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__17()"
           nkEmpty
           nkStmtList
             nkCall
@@ -962,7 +1028,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__18()"
           nkEmpty
           nkStmtList
             nkCall
@@ -999,7 +1068,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__19()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1036,7 +1108,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__20()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1073,7 +1148,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__21()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1110,7 +1188,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__22()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1208,7 +1289,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Program.<Main>b__23()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1375,7 +1459,8 @@ nkStmtList
                 nkIdent 'Exception'
               nkStmtList
                 nkRaiseStmt
-                  nkEmpty
+                  nkCall
+                    nkIdent 'getCurrentException'
         nkExceptBranch
           nkInfix
             nkIdent 'as'

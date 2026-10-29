@@ -4,6 +4,11 @@ nkStmtList
   nkFromStmt
     nkStrLit "System/Collections"
     nkIdent 'MoveNext'
+    nkAccQuoted
+      nkIdent '[]'
+    nkAccQuoted
+      nkIdent '[]='
+    nkIdent 'items'
   nkPragma
     nkIdent 'push'
     nkExprColonExpr
@@ -181,7 +186,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Range..ctor(Int32 lo, Int32 hi)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -206,6 +214,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -224,6 +235,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Range.GetEnumerator()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -307,7 +321,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Countdown..ctor(Int32 n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -326,6 +343,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -342,6 +362,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Countdown.GetEnumerator()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -425,7 +448,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.CountdownEnumerator..ctor(Int32 start)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -444,6 +470,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -460,6 +489,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.CountdownEnumerator.MoveNext()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -474,7 +506,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'CountdownEnumerator'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.CountdownEnumerator.get_Current()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -556,7 +591,10 @@ nkStmtList
         nkIdent 's'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag.Add(String s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -575,6 +613,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag.Shouted()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -704,6 +745,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Evens(Int32 limit)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -734,6 +778,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Repeat[T](T x, Int32 n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -752,6 +799,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Noisy()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -770,6 +820,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Guarded()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -792,6 +845,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Sum(IEnumerable`1 xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -800,7 +856,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -961,7 +1020,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Range..ctor(Int32 lo, Int32 hi)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -996,6 +1058,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1022,6 +1087,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Range.GetEnumerator()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1154,7 +1222,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Countdown..ctor(Int32 n)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1178,6 +1249,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1201,6 +1275,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Countdown.GetEnumerator()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1310,7 +1387,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.CountdownEnumerator..ctor(Int32 start)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1337,6 +1417,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1360,6 +1443,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.CountdownEnumerator.MoveNext()"
     nkEmpty
     nkStmtList
       nkCommand
@@ -1386,7 +1472,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'CountdownEnumerator'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.CountdownEnumerator.get_Current()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1492,7 +1581,10 @@ nkStmtList
         nkIdent 's'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag.Add(String s)"
     nkEmpty
     nkStmtList
       nkCall
@@ -1518,6 +1610,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag.Shouted()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1693,6 +1788,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Evens(Int32 limit)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1757,6 +1855,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Repeat[T](T x, Int32 n)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1800,6 +1901,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Noisy()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1837,6 +1941,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Guarded()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1900,6 +2007,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Sum(IEnumerable`1 xs)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1925,7 +2035,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkProcDef
@@ -1942,6 +2055,9 @@ nkStmtList
             nkEmpty
         nkPragma
           nkIdent 'discardable'
+          nkExprColonExpr
+            nkIdent 'nsFrame'
+            nkStrLit "Demo.Program.<Main>g__Squares|0(Int32 n)"
         nkEmpty
         nkEmpty
       nkForStmt
@@ -2198,6 +2314,9 @@ nkStmtList
             nkEmpty
         nkPragma
           nkIdent 'discardable'
+          nkExprColonExpr
+            nkIdent 'nsFrame'
+            nkStrLit "Demo.Program.<Main>g__Squares|1(Int32 n)"
         nkEmpty
         nkStmtList
           nkAsgn

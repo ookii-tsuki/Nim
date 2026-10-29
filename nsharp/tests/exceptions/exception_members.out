@@ -1,0 +1,55 @@
+[System.Exception: x
+ ---> System.ArgumentException: inner (Parameter 'p')
+   --- End of inner exception stack trace ---]
+true true true
+Exception -2146233088 [Exception of type 'System.Exception' was thrown.]
+SystemException -2146233087 [System error.]
+ApplicationException -2146232832 [Error in the application.]
+ArgumentException -2147024809 [Value does not fall within the expected range.]
+ArgumentNullException -2147467261 [Value cannot be null.]
+ArgumentOutOfRangeException -2146233086 [Specified argument was out of the range of valid values.]
+InvalidOperationException -2146233079 [Operation is not valid due to the current state of the object.]
+NotSupportedException -2146233067 [Specified method is not supported.]
+NotImplementedException -2147467263 [The method or operation is not implemented.]
+ObjectDisposedException -2146232798 [Cannot access a disposed object.
+Object name: 'o'.]
+UnauthorizedAccessException -2147024891 [Attempted to perform an unauthorized operation.]
+KeyNotFoundException -2146232969 [The given key was not present in the dictionary.]
+FormatException -2146233033 [One of the identified items was in an invalid format.]
+IndexOutOfRangeException -2146233080 [Index was outside the bounds of the array.]
+NullReferenceException -2147467261 [Object reference not set to an instance of an object.]
+InvalidCastException -2147467262 [Specified cast is not valid.]
+OverflowException -2146233066 [Arithmetic operation resulted in an overflow.]
+DivideByZeroException -2147352558 [Attempted to divide by zero.]
+ArithmeticException -2147024362 [Overflow or underflow in the arithmetic operation.]
+IOException -2146232800 [I/O error occurred.]
+FileNotFoundException -2147024894 [Unable to find the specified file.]
+DirectoryNotFoundException -2147024893 [Attempted to access a path that is not on the disk.]
+EndOfStreamException -2147024858 [Attempted to read past the end of the stream.]
+PathTooLongException -2147024690 [The specified file name or path is too long, or a component of the specified path is too long.]
+TimeoutException -2146233083 [The operation has timed out.]
+OperationCanceledException -2146233029 [The operation was canceled.]
+PlatformNotSupportedException -2146233031 [Operation is not supported on this platform.]
+AggregateException -2146233088 [One or more errors occurred.]
+MyEx 42 [mine]
+true false 0
+System.Private.CoreLib
+1 2 true true
+k=1
+j=v
+Item has already been added. Key in dictionary: 'j'  Key being added: 'j'
+1 false
+Src http://h
+p [m (Parameter 'p')]
+p [Value cannot be null. (Parameter 'p')]
+p [msg (Parameter 'p')]
+p 5 [too big (Parameter 'p')
+Actual value was 5.]
+p true [Specified argument was out of the range of valid values. (Parameter 'p')]
+true [m]
+m (Parameter 'arg') / arg / -2147024809
+deep solo
+obj [gone
+Object name: 'obj'.]
+f.txt [nope]
+true -2147024894

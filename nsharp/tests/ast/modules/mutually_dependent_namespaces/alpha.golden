@@ -436,6 +436,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.A.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -456,6 +459,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.A.Greet(B b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -634,7 +640,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.Holder`1..ctor(T item)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -659,6 +668,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -681,6 +693,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.Holder`1.Show()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1141,6 +1156,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.A.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1163,6 +1181,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.A.Greet(B b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1419,7 +1440,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.Holder`1..ctor(T item)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1449,6 +1473,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1478,6 +1505,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.Holder`1.Show()"
     nkEmpty
     nkStmtList
       nkReturnStmt

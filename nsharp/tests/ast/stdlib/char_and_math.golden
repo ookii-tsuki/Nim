@@ -105,7 +105,10 @@ nkStmtList
         nkIdent 'f'
         nkIdent 'Action0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Fails(Action f)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -114,7 +117,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -253,7 +259,10 @@ nkStmtList
         nkIdent 'f'
         nkIdent 'Action0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Fails(Action f)"
     nkEmpty
     nkStmtList
       nkTryStmt
@@ -299,7 +308,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkForStmt
@@ -628,7 +640,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__0()"
           nkEmpty
           nkStmtList
             nkCall

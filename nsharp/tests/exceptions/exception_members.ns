@@ -1,0 +1,70 @@
+// The rest of System.Exception: Source (null until thrown, then the throwing
+// assembly), HelpLink, HResult (.NET's value for each type, or one a derived
+// class's constructor sets), Data, GetBaseException, ToString with an inner
+// exception, and the argument, disposed-object and file exceptions' ParamName,
+// ActualValue, ObjectName and FileName; the default messages of the types
+// declared with them.
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+namespace Demo {
+  class MyEx : Exception { public MyEx() : base("mine") { HResult = 42; } }
+  class MyArgEx : ArgumentException {
+    public MyArgEx() : base("m", "arg") { }
+    public string Describe() => Message + " / " + ParamName + " / " + HResult;
+  }
+  class Program {
+    static void Thrower() { throw new InvalidOperationException("bad"); }
+    static void Main() {
+      var never = new Exception("x", new ArgumentException("inner", "p"));
+      Console.WriteLine("[" + never.ToString() + "]");
+      Console.WriteLine((never.StackTrace == null) + " " + (never.Source == null) + " " + (never.HelpLink == null));
+      Exception[] all = { new Exception(), new SystemException(), new ApplicationException(), new ArgumentException(),
+        new ArgumentNullException(), new ArgumentOutOfRangeException(), new InvalidOperationException(),
+        new NotSupportedException(), new NotImplementedException(), new ObjectDisposedException("o"),
+        new UnauthorizedAccessException(), new KeyNotFoundException(), new FormatException(),
+        new IndexOutOfRangeException(), new NullReferenceException(), new InvalidCastException(),
+        new OverflowException(), new DivideByZeroException(), new ArithmeticException(), new IOException(),
+        new FileNotFoundException(), new DirectoryNotFoundException(), new EndOfStreamException(),
+        new PathTooLongException(), new TimeoutException(), new OperationCanceledException(),
+        new PlatformNotSupportedException(), new AggregateException(), new MyEx() };
+      foreach (var e in all) Console.WriteLine(e.GetType().Name + " " + e.HResult + " [" + e.Message + "]");
+      try { Thrower(); }
+      catch (Exception e) { Console.WriteLine((e.Source != null) + " " + (e.Source == "System.Private.CoreLib") + " " + e.Data.Count); }
+      try { int[] a = new int[1]; a[2] = 0; } catch (Exception e) { Console.WriteLine(e.Source); }
+      var d = new Exception("d");
+      d.Data["k"] = 1;
+      d.Data.Add("j", "v");
+      Console.WriteLine(d.Data["k"] + " " + d.Data.Count + " " + d.Data.Contains("j") + " " + (d.Data["missing"] == null));
+      foreach (DictionaryEntry de in d.Data) Console.WriteLine(de.Key + "=" + de.Value);
+      try { d.Data.Add("j", "again"); } catch (ArgumentException e) { Console.WriteLine(e.Message); }
+      d.Data.Remove("k");
+      Console.WriteLine(d.Data.Count + " " + d.Data.Contains("k"));
+      d.Source = "Src";
+      d.HelpLink = "http://h";
+      Console.WriteLine(d.Source + " " + d.HelpLink);
+      var ae = new ArgumentException("m", "p");
+      Console.WriteLine(ae.ParamName + " [" + ae.Message + "]");
+      var an = new ArgumentNullException("p");
+      Console.WriteLine(an.ParamName + " [" + an.Message + "]");
+      var an2 = new ArgumentNullException("p", "msg");
+      Console.WriteLine(an2.ParamName + " [" + an2.Message + "]");
+      var ar = new ArgumentOutOfRangeException("p", 5, "too big");
+      Console.WriteLine(ar.ParamName + " " + ar.ActualValue + " [" + ar.Message + "]");
+      var ar2 = new ArgumentOutOfRangeException("p");
+      Console.WriteLine(ar2.ParamName + " " + (ar2.ActualValue == null) + " [" + ar2.Message + "]");
+      var ae0 = new ArgumentException("m");
+      Console.WriteLine((ae0.ParamName == null) + " [" + ae0.Message + "]");
+      Console.WriteLine(new MyArgEx().Describe());
+      var g = new Exception("o", new Exception("i", new Exception("deep")));
+      Console.WriteLine(g.GetBaseException().Message + " " + new Exception("solo").GetBaseException().Message);
+      var od = new ObjectDisposedException("obj", "gone");
+      Console.WriteLine(od.ObjectName + " [" + od.Message + "]");
+      var fnf = new FileNotFoundException("nope", "f.txt");
+      Console.WriteLine(fnf.FileName + " [" + fnf.Message + "]");
+      try { File.ReadAllText("no-such-file.txt"); }
+      catch (FileNotFoundException e) { Console.WriteLine(e.FileName.EndsWith("no-such-file.txt") + " " + e.HResult); }
+    }
+  }
+}

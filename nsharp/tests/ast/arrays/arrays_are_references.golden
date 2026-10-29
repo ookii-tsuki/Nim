@@ -130,7 +130,10 @@ nkStmtList
             nkIdent 'NsArray'
             nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Holder..ctor(Int32[] items)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -151,6 +154,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -165,7 +171,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Holder'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Holder.Bump()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -257,7 +266,10 @@ nkStmtList
         nkIdent 'j'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Swap(Int32[] a, Int32 i, Int32 j)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -282,7 +294,10 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Fill(Double[] dst, Double v)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -308,6 +323,9 @@ nkStmtList
           nkIntLit 0
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Sum(Int32[] xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -337,6 +355,9 @@ nkStmtList
           nkIntLit 0
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.First[T](T[] xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -345,7 +366,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -495,7 +519,10 @@ nkStmtList
             nkIdent 'NsArray'
             nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Holder..ctor(Int32[] items)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -521,6 +548,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -542,7 +572,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Holder'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Holder.Bump()"
     nkEmpty
     nkStmtList
       nkBlockStmt
@@ -682,7 +715,10 @@ nkStmtList
         nkIdent 'j'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Swap(Int32[] a, Int32 i, Int32 j)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -726,7 +762,10 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Fill(Double[] dst, Double v)"
     nkEmpty
     nkStmtList
       nkBlockStmt
@@ -782,6 +821,9 @@ nkStmtList
           nkIntLit 0
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Sum(Int32[] xs)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -842,6 +884,9 @@ nkStmtList
           nkIntLit 0
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.First[T](T[] xs)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -854,7 +899,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

@@ -98,7 +98,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Foo()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -113,7 +116,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.foo()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -122,7 +128,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -257,7 +266,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Foo()"
     nkEmpty
     nkStmtList
       nkCall
@@ -275,7 +287,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.foo()"
     nkEmpty
     nkStmtList
       nkCall
@@ -287,7 +302,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

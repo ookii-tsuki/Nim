@@ -222,6 +222,7 @@ type
     intVal*: BiggestInt
     floatVal*: BiggestFloat
     strVal*: string
+    srcText*: string          ## a call argument as written (`[CallerArgumentExpression]`)
     typ*: NsNode              ## declared / return / base / element type
     attrs*: NsAttrs
     params*: seq[NsNode]      ## parameter list (methods, ctors, delegates, lambdas)

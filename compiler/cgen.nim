@@ -1238,6 +1238,18 @@ when defined(icCanRaiseLog):
 
 include ccgcalls, "ccgstmts.nim"
 
+when defined(nsharp):
+  proc nsFrameName(prc: PSym): string =
+    ## The name N# gives a proc's stack frame, `{.nsFrame: "Demo.Program.Main()".}`:
+    ## the C# member it lowers, as .NET's stack traces name it.
+    result = ""
+    let n = prc.ast
+    if n == nil or n.len <= pragmasPos or n[pragmasPos].kind != nkPragma: return
+    for e in n[pragmasPos]:
+      if e.kind == nkExprColonExpr and e.len == 2 and e[0].kind == nkSym and
+         e[0].sym.name.s == "nsFrame" and e[1].kind in {nkStrLit..nkTripleStrLit}:
+        return e[1].strVal
+
 proc initFrame(p: BProc, procname, filename: Rope): Rope =
   # XXX cbuilder
   const frameDefines = """
@@ -1925,6 +1937,11 @@ proc genProcLvl3*(m: BModule, prc: PSym) =
     assignParam(p, param, prc.typ.returnType)
   closureSetup(p, prc)
   icProfStart(tGenBody)
+  when defined(nsharp):
+    if p.config.isNsharpProject:
+      ## A frame starts at line 0, so a body written on the declaration's own line
+      ## (C#'s `void Run() { a(); }`) records its line as well.
+      p.lastLineInfo = unknownLineInfo
   genProcBody(p, procBody)
   if resultCleanup != nil:
     let body = move(p.s(cpsStmts).buf)
@@ -1963,6 +1980,9 @@ proc genProcLvl3*(m: BModule, prc: PSym) =
         if optStackTrace in prc.options:
           generatedProc.add(extract(p.s(cpsLocals)))
           var procname = makeCString(prc.name.s)
+          when defined(nsharp):
+            let frame = nsFrameName(prc)
+            if frame.len > 0: procname = makeCString(frame)
           generatedProc.add(initFrame(p, procname, quotedFilename(p.config, prc.info)))
         else:
           generatedProc.add(extract(p.s(cpsLocals)))

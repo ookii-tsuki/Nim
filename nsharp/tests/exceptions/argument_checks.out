@@ -1,0 +1,24 @@
+s [Value cannot be null. (Parameter 's')]
+ArgumentException [The value cannot be an empty string. (Parameter '""')]
+[The value cannot be an empty string or composed entirely of whitespace. (Parameter '"  "')]
+n -3 [n ('-3') must be a non-negative value. (Parameter 'n')
+Actual value was -3.]
+[0 ('0') must be a non-zero value. (Parameter '0')
+Actual value was 0.]
+[n ('-3') must be a non-negative and non-zero value. (Parameter 'n')
+Actual value was -3.]
+[n ('-3') must be less than or equal to '-5'. (Parameter 'n')
+Actual value was -3.]
+[n + 1 ('-2') must be less than '-2'. (Parameter 'n + 1')
+Actual value was -2.]
+[n ('-3') must be greater than or equal to '0'. (Parameter 'n')
+Actual value was -3.]
+[n ('-3') must be greater than '-3'. (Parameter 'n')
+Actual value was -3.]
+[n ('-3') must not be equal to '-3'. (Parameter 'n')
+Actual value was -3.]
+[n ('-3') must be equal to '7'. (Parameter 'n')
+Actual value was -3.]
+[Cannot access a disposed object.
+Object name: 'System.Object'.] System.Object
+done

@@ -108,6 +108,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Sum(IReadOnlyList`1 xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -130,6 +133,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Total(IEnumerable`1 xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -154,7 +160,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Grow(ICollection`1 c, String x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -175,7 +184,10 @@ nkStmtList
           nkIdent 'IReadOnlyCollection'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Describe(IReadOnlyCollection`1 c)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -203,6 +215,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Lookup(IReadOnlyDictionary`2 d, String k)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -211,7 +226,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -354,6 +372,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Sum(IReadOnlyList`1 xs)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -410,6 +431,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Total(IEnumerable`1 xs)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -451,7 +475,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Grow(ICollection`1 c, String x)"
     nkEmpty
     nkStmtList
       nkCall
@@ -500,7 +527,10 @@ nkStmtList
           nkIdent 'IReadOnlyCollection'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Describe(IReadOnlyCollection`1 c)"
     nkEmpty
     nkStmtList
       nkCall
@@ -536,6 +566,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Lookup(IReadOnlyDictionary`2 d, String k)"
     nkEmpty
     nkStmtList
       nkStmtList
@@ -580,7 +613,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

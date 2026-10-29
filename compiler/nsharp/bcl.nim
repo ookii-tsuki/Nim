@@ -47,6 +47,10 @@ type
                           ## (`Sum<T>(Func<T, N>)` is `int Sum(Func<T, int>)`, ...)
     viaUnion*: bool       ## filed under this receiver as a member of a type class it
                           ## is one of: a C# extension method, seen with its `using`
+    callerArgs*: seq[tuple[param, source: int]]
+      ## `paramName {.nsCallerArgument: "argument".}`: the parameter (counted from
+      ## the receiver) that a call leaving it out passes the named argument's text
+      ## to, as C#'s `[CallerArgumentExpression]` does
     hidden*: bool         ## declared `{.nsHidden.}`: a helper the generated code
                           ## calls (`nsBox`, `newList`, `items`), which the frontend
                           ## knows but N# source cannot name
@@ -215,6 +219,14 @@ proc declaredName(n: PNode): string =
   of nkSym: result = n.sym.name.s
   else: result = ""
 
+proc csTypeName*(s: NsBclSurface; nim: string): string =
+  ## A library type's C# name: one C# overloads by arity is declared with its
+  ## arity as a suffix (`IDictionary0`, `Func2`), which C# does not write.
+  result = nim
+  if nim.len > 1 and nim[^1] in {'0'..'9'} and s.types.hasKey(nim) and
+     s.types[nim].genParams.len == ord(nim[^1]) - ord('0'):
+    result = nim[0 ..< nim.len - 1]
+
 proc headSpelling*(n: PNode): string =
   ## The type a written type is headed by: `Table[K, V]` is `Table`.
   if n == nil: return ""
@@ -242,9 +254,13 @@ proc constraintSpelling(n: PNode): string =
   else: result = headSpelling(n)
 
 proc typeClassKeyOf(spelling: string): string =
-  ## A type class through its own table, a concrete type by name.
+  ## A type class through its own table, a concrete type by name; `ref X` over one
+  ## of the library's types (`[T: ref ArgumentException]`) is that type's member,
+  ## and so its subtypes' too.
   for r in NsTypeClassKeys:
     if r.cs == spelling: return r.nim
+  if spelling.startsWith("ref ") and spelling.len > 4 and spelling != "ref object":
+    return spelling[4 .. ^1]
   spelling
 
 proc kindOfSpelling*(s: NsBclSurface; nim: string): NsTypeKind =
@@ -566,10 +582,26 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string; hidden: bool) =
     let c = constraints[recv]
     recv = (if c.len > 0: c else: NsParamKey)
   var ptypes: seq[PNode] = @[]
+  var pnames: seq[string] = @[]
+  var callerOf: seq[tuple[param: int, source: string]] = @[]
   for i in 1 ..< fp.len:
     let defs = fp[i]
     if defs.kind != nkIdentDefs: continue
-    for k in 0 ..< defs.len - 2: ptypes.add defs[defs.len - 2]
+    for k in 0 ..< defs.len - 2:
+      var pn = defs[k]
+      if pn.kind == nkPragmaExpr and pn.len > 1:
+        for e in pn[1]:
+          if e.kind == nkExprColonExpr and e.len == 2 and
+             declaredName(e[0]) == "nsCallerArgument" and
+             e[1].kind in {nkStrLit..nkTripleStrLit}:
+            callerOf.add (param: ptypes.len, source: e[1].strVal)
+        pn = pn[0]
+      pnames.add declaredName(pn)
+      ptypes.add defs[defs.len - 2]
+  var callerArgs: seq[tuple[param, source: int]] = @[]
+  for c in callerOf:
+    let src = pnames.find(c.source)
+    if src >= 0: callerArgs.add (param: c.param, source: src)
   var gps: seq[string] = @[]
   for k in constraints.keys: gps.add k
   s.noteMember NsBclMember(name: name, path: module, recv: typeClassKeyOf(recv),
@@ -580,6 +612,7 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string; hidden: bool) =
                            isVirtual: n.kind == nkMethodDef,
                            genParams: gps, paramTypes: ptypes,
                            qualifier: nsStaticOf(n), hidden: hidden,
+                           callerArgs: callerArgs,
                            retType: (if fp[0].kind == nkEmpty: nil else: fp[0]))
   let qualifier = nsStaticOf(n)
   if qualifier.len > 0 and not hidden and (typ: qualifier, member: name, module: module) notin s.staticDecls:

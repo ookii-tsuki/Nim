@@ -16,6 +16,8 @@ type
   NsParser = object
     toks: seq[NsToken]
     pos: int
+    src: string             ## the source, for an argument's text as written
+    lineStarts: seq[int]    ## each line's offset in `src`
     config: ConfigRef
     fileIdx: FileIndex
     condSeq: int            ## counts `?.` markers, so each chain link gets its own
@@ -458,12 +460,23 @@ proc typeShapeEnd(p: NsParser; start: int): int =
 
 proc parseArgumentInner(p: var NsParser): NsNode
 
+proc offsetOf(p: NsParser; t: NsToken): int =
+  ## A token's offset in the source; lines and columns count from 1.
+  if t.line < 1 or t.line > p.lineStarts.len: return p.src.len
+  min(p.lineStarts[t.line - 1] + t.col - 1, p.src.len)
+
 proc parseArgument(p: var NsParser): NsNode =
-  ## A call argument may be a lambda even inside a switch arm's guard.
+  ## A call argument may be a lambda even inside a switch arm's guard. Its text as
+  ## written is kept, for a parameter that receives it (`[CallerArgumentExpression]`).
   let saved = p.inGuard
   p.inGuard = false
+  let first = p.peek
   result = p.parseArgumentInner()
   p.inGuard = saved
+  if result != nil and p.src.len > 0:
+    let a = p.offsetOf(first)
+    let b = p.offsetOf(p.peek)
+    if a < b: result.srcText = p.src[a ..< b].strip(leading = false)
 
 proc parseArgumentInner(p: var NsParser): NsNode =
   ## One call argument: `e`, `name: e`, `ref x`, `out x`, `out int x`, `out var x`,
@@ -2634,7 +2647,10 @@ proc parseNsModule*(source: string; fileIdx: FileIndex;
       else:
         nsWarn(config, newLineInfo(fileIdx, t.line, t.col), ndWarningDirective, msg)
     else: kept.add t
-  var p = NsParser(toks: kept, pos: 0, config: config,
+  var lineStarts = @[0]
+  for i, c in source:
+    if c == '\n': lineStarts.add i + 1
+  var p = NsParser(toks: kept, pos: 0, config: config, src: source, lineStarts: lineStarts,
                    fileIdx: fileIdx, surface: bclSurface(config),
                    aliases: initHashSet[string](),
                    typeAliases: initTable[string, NsNode]())

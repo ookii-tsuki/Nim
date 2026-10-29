@@ -1987,6 +1987,37 @@ proc libraryHas(ctx: NsCheckContext; recv: string; kind: NsTypeKind; name: strin
     if m.name == name and not m.hidden: return true
   ctx.scope.extensions.hasKey(name)
 
+proc fillCallerArgs(ctx: NsCheckContext; n: NsNode; recv, name: string) =
+  ## A library parameter marked `{.nsCallerArgument: "argument".}` that the call
+  ## leaves out receives the named argument's text as written, as C#'s
+  ## `[CallerArgumentExpression]` does: `ThrowIfNull(s)` passes `"s"`.
+  var keys = @[recv, ctx.surface.nimSpellingOf(recv)]
+  for key in keys:
+    for m in ctx.surface.members.getOrDefault(key):
+      if m.name != name or m.callerArgs.len == 0: continue
+      ## A member over a receiver (a `typedesc` or a value) counts it as the first
+      ## parameter; one filed by `{.nsStatic.}` has none.
+      let offset = (if m.qualifier.len > 0: 0 else: 1)
+      for c in m.callerArgs:
+        let at = c.param - offset
+        let src = c.source - offset
+        if at == n.sons.len and src >= 0 and src < n.sons.len and
+           n.sons[src].srcText.len > 0:
+          n.sons.add nsnStrLit(n.sons[src].srcText, n.info)
+          n.sons[^1].setType(tkString, "string")
+          return
+
+proc libraryBaseHas(ctx: NsCheckContext; name: string): bool =
+  ## Whether the enclosing class inherits a visible member `name` from a library
+  ## type it derives from: `Message`, `HResult` in a class deriving from `Exception`.
+  if ctx.clsName.len == 0: return false
+  for b in ctx.scope.baseChain(ctx.clsName):
+    if ctx.scope.classes.hasKey(b): continue
+    let k = ctx.surface.kindOfName(b)
+    if ctx.libraryHas(b, k, name): return true
+    if k == tkException and ctx.libraryHas("Exception", tkException, name): return true
+  false
+
 proc checkConstCall(ctx: NsCheckContext; n: NsNode) =
   ## In a const member function, `this` reaches only const members (NS9917).
   if ctx.constBody.len == 0 or n.body == nil or n.body.kind != nsnThis: return
@@ -2033,7 +2064,10 @@ proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
          ctx.scope.findMemberInfo(cn, n.name).name.len == 0 and
          not ctx.libraryHas("Exception", tkException, n.name) and
          not ctx.libraryHas("object", tkClass, n.name):
-        nsError(ctx.config, n.info, ndNoMember, cn, n.name)
+        var found = false
+        for b in ctx.scope.baseChain(cn):
+          if ctx.libraryHas(b, tkException, n.name): found = true
+        if not found: nsError(ctx.config, n.info, ndNoMember, cn, n.name)
       return
     let m = ctx.scope.findMemberInfo(cn, n.name)
     if m.name.len == 0:
@@ -2090,13 +2124,17 @@ proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
       nsError(ctx.config, n.info, ndNoMember, spelled, n.name)
   elif rk == tkException:
     ## A library exception (`ArgumentException`), or a class deriving from one:
-    ## its own members, or the library's.
+    ## its own members, or those of the library types it derives from.
     if ctx.scope.classes.hasKey(cn) and ctx.scope.findMemberInfo(cn, n.name).name.len > 0:
       discard
-    elif not ctx.libraryHas(cn, rk, n.name) and
-       not ctx.libraryHas("Exception", tkException, n.name) and
-       not ctx.libraryHas("object", tkClass, n.name):
-      nsError(ctx.config, n.info, ndNoMember, cn, n.name)
+    else:
+      var found = ctx.libraryHas(cn, rk, n.name) or
+                  ctx.libraryHas("Exception", tkException, n.name) or
+                  ctx.libraryHas("object", tkClass, n.name)
+      if not found and ctx.scope.classes.hasKey(cn):
+        for b in ctx.scope.baseChain(cn):
+          if ctx.libraryHas(b, rk, n.name): found = true
+      if not found: nsError(ctx.config, n.info, ndNoMember, cn, n.name)
   elif recv.rtype != nil and recv.rtype.kind == nsnArrayType:
     ## An array is the library's `NsArray` (`NsMdArray` with more than one
     ## dimension): `Length`, `Clone`, and LINQ's extensions where `System.Linq`
@@ -2219,6 +2257,14 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       n.body = nsn(nsnThis, n.info)
       n.body.strVal = "implicit"   ## written as a bare name
       return ctx.walkExpr(n)
+  if ctx.clsName.len > 0 and not ctx.isStaticCtx and n.name notin ctx.members and
+     not ctx.types.hasKey(n.name) and ctx.libraryBaseHas(n.name):
+    ## A member the class inherits from a library type (`HResult = 42` in an
+    ## exception's constructor) is `this.name` too.
+    n.kind = nsnMember
+    n.body = nsn(nsnThis, n.info)
+    n.body.strVal = "implicit"
+    return ctx.walkExpr(n)
   if ctx.types.hasKey(n.name):
     let info = ctx.types[n.name]
     n.setType(info.kind, info.name)
@@ -2510,6 +2556,12 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     elif not ctx.isStaticCtx:
       callee.kind = nsnMember
       callee.body = nsn(nsnThis, callee.info)
+  elif callee != nil and callee.kind == nsnIdent and ctx.clsName.len > 0 and
+       not ctx.isStaticCtx and not ctx.types.hasKey(callee.name) and
+       callee.name notin ctx.members and ctx.libraryBaseHas(callee.name):
+    ## A method the class inherits from a library type: `this.M(args)`.
+    callee.kind = nsnMember
+    callee.body = nsn(nsnThis, callee.info)
   if callee != nil and callee.kind == nsnMember:
     ctx.receiver = callee.body
     let rk = ctx.walkExpr(callee.body)
@@ -2523,6 +2575,8 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       if not foreign:
         ctx.checkStaticMember(owner, callee.name, callee.info)
         kind = ctx.memberKind(owner, callee.name)
+        if not ctx.scope.classes.hasKey(owner):
+          ctx.fillCallerArgs(n, owner, callee.name)
       if kind == tkUnknown:
         ## A static member of a library type: `String.Concat`, `Array.IndexOf`.
         kind = ctx.memberKindOfSurface(ctx.surface.kindOfName(owner), owner,
@@ -4141,6 +4195,21 @@ proc walkForeach(ctx: var NsCheckContext; n: NsNode) =
     ## `foreach (var x in xs)` over an array: `x` has the element type.
     elemName = elemName[0 ..< elemName.len - 2]
     elemKind = (if elemName.endsWith("[]"): tkSequence else: ctx.classifyName(elemName))
+  elif n.typ == nil and n.body.rtype != nil and n.body.rtype.kind == nsnArrayType and
+       n.body.rtype.typ != nil:
+    ## Over an array a library member returned (`s.Split(',')`).
+    elemType = n.body.rtype.typ
+    elemKind = ctx.classifyType(elemType)
+    elemName = declTypeName(elemType)
+  elif n.typ == nil and n.body.rtype != nil and n.body.rtype.kind == nsnTypeName and
+       n.body.rtype.sons.len == 1 and n.body.rtype.sons[0] != nil and
+       not ctx.scope.classes.hasKey(n.body.rtype.name) and
+       ctx.surface.types.hasKey(ctx.surface.nimSpellingOf(n.body.rtype.name)):
+    ## Over what a library member returned, a collection of one element type
+    ## (`s.Split(',')`, `e.InnerExceptions`): `x` has that type.
+    elemType = n.body.rtype.sons[0]
+    elemKind = ctx.classifyType(elemType)
+    elemName = declTypeName(elemType)
   ctx.pushScope()
   ctx.declare(n.name, elemKind, elemName, elemType)
   if n.name.len > 0: ctx.types[n.name].iterVar = true

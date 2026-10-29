@@ -353,7 +353,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1..ctor(T v)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -378,6 +381,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -400,6 +406,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1.Get()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -424,7 +433,10 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1.Set(T v)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -457,6 +469,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1.Map[U](Func`2 f)"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -479,6 +494,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -631,7 +649,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'V'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pair`2..ctor(K k, V v)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -664,6 +685,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -806,7 +830,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Item..ctor(String n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -825,6 +852,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -841,6 +871,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Item.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -932,6 +965,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Max[T](T a, T b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -964,7 +1000,10 @@ nkStmtList
         nkIdent 'j'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Swap[T](List`1 xs, Int32 i, Int32 j)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -991,6 +1030,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Names[T](List`1 items)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1017,6 +1059,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.First[T](T[] xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1025,7 +1070,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1332,7 +1380,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1..ctor(T v)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1369,6 +1420,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1398,6 +1452,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1.Get()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1426,7 +1483,10 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1.Set(T v)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1464,6 +1524,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1.Map[U](Func`2 f)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1496,6 +1559,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1674,7 +1740,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'V'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Pair`2..ctor(K k, V v)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1717,6 +1786,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1753,6 +1825,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Max[T](T a, T b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1799,7 +1874,10 @@ nkStmtList
         nkIdent 'j'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Swap[T](List`1 xs, Int32 i, Int32 j)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1845,6 +1923,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Names[T](List`1 items)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1896,6 +1977,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.First[T](T[] xs)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2313,7 +2397,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Item..ctor(String n)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2337,6 +2424,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2360,6 +2450,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Item.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2428,7 +2521,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

@@ -1,0 +1,29 @@
+// AggregateException: its message names each inner exception's, InnerException is
+// the first, InnerExceptions holds them all, Flatten unnests, GetBaseException
+// goes down through one-exception aggregates, Handle rethrows those not handled,
+// and ToString numbers the inner exceptions after the first.
+using System;
+using System.Collections.Generic;
+namespace Demo {
+  class Program {
+    static void Main() {
+      var agg = new AggregateException(new Exception("a"), new AggregateException(new Exception("b"), new Exception("c")));
+      Console.WriteLine(agg.Message);
+      Console.WriteLine(agg.InnerExceptions.Count + " " + agg.InnerException.Message + " " + agg.Flatten().InnerExceptions.Count);
+      foreach (var e in agg.Flatten().InnerExceptions) Console.Write(e.Message + " ");
+      Console.WriteLine();
+      Console.WriteLine(new AggregateException("custom", new Exception("x")).Message);
+      var one = new AggregateException(new List<Exception> { new Exception("l") });
+      Console.WriteLine(one.Message + " | " + one.GetBaseException().Message);
+      Console.WriteLine(new AggregateException().Message + " " + new AggregateException().InnerExceptions.Count);
+      Console.WriteLine("[" + agg.ToString() + "]");
+      try {
+        agg.Flatten().Handle(e => e.Message != "b");
+      } catch (AggregateException left) {
+        Console.WriteLine(left.InnerExceptions.Count + " " + left.InnerException.Message);
+      }
+      try { throw agg; }
+      catch (Exception e) { Console.WriteLine(e.GetType().Name + " " + (e is AggregateException)); }
+    }
+  }
+}

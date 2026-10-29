@@ -1,0 +1,6 @@
+ArgumentOutOfRangeException.ActualValue = result:other
+DictionaryEntry.Key = result:other
+DictionaryEntry.Value = result:other
+Exception.Data = result:other
+Exception.GetBaseException = result:other
+Exception.GetType = result:other

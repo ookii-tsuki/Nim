@@ -119,6 +119,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Helper.Twice(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -234,7 +237,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main(String[] args)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -377,6 +383,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Helper.Twice(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -518,7 +527,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main(String[] args)"
     nkEmpty
     nkStmtList
       nkLetSection
@@ -543,6 +555,9 @@ nkStmtList
             nkEmpty
         nkPragma
           nkIdent 'discardable'
+          nkExprColonExpr
+            nkIdent 'nsFrame'
+            nkStrLit "Program.<Main>g__Add|0(Int32 a, Int32 b)"
         nkEmpty
         nkEmpty
       nkVarSection
@@ -610,6 +625,9 @@ nkStmtList
             nkEmpty
         nkPragma
           nkIdent 'discardable'
+          nkExprColonExpr
+            nkIdent 'nsFrame'
+            nkStrLit "Program.<Main>g__Add|1(Int32 a, Int32 b)"
         nkEmpty
         nkStmtList
           nkReturnStmt

@@ -808,15 +808,62 @@ statement drops its result through the intrinsics' `nsStmt`.
 | `catch { }` catch-all | - | ✅ v1 | front |
 | Custom exceptions `class E : Exception` | user types | ✅ v1 | front |
 | `when` catch filters | conditional | ✅ v1 | desugar (see §7) |
-| `InnerException`, `Message` | std props | 🔜 later | lib |
-| Stack traces | - | ✅ v1 | free (Nim) |
+| `Message`, `InnerException`, `StackTrace`, `Source`, `HelpLink`, `HResult`, `Data`, `GetBaseException`, `ToString` | std props | ✅ v1 | lib (below) |
+| Stack traces | - | ✅ v1 | lib + cgen (below) |
 | `try`/`finally` only | - | ✅ v1 | front |
-| Re-throw `throw;` | rethrow | ✅ v1 | front |
+| Re-throw `throw;` | rethrow | ✅ v1 | front: `raise getCurrentException()`, so the trace goes on (below) |
+| `[CallerArgumentExpression]` | an argument's text | ✅ v1 for the library | parser + sema (below) |
 | No checked exceptions | - | ✅ v1 | free |
 
 **Note:** Nim exceptions are object hierarchies with a base type, so C#'s
 `Exception`-derived hierarchy maps directly. Nim's exception handling is already
 refined (the `cnif`/cgen machinery is exception-aware), so this is cheap.
+
+**What an exception holds.** `System.Exception` is Nim's own `Exception`, so the
+state .NET keeps beyond the message and inner exception -- `Source`, `HelpLink`,
+`HResult` set by a derived constructor, `Data`, an argument exception's
+`ParamName` and `ActualValue`, `ObjectDisposedException.ObjectName`,
+`FileNotFoundException.FileName`, an `AggregateException`'s inner exceptions --
+is the intrinsics' `NsExceptionState`, kept in one field `system` adds to
+`Exception` for N# programs only (`nsExtra`, under the `nsharp` symbol the
+compiler defines for an N# project), and made the first time one of them is set.
+`HResult` is otherwise .NET's value for the nearest library type; `Source` is null
+until thrown, then the program's name, or `System.Private.CoreLib` for the
+library's own throws. `Data` is the non-generic `IDictionary`
+(`System.Collections`, `ListDictionaryInternal` at run time). A derived class's
+`: base(args)` goes through the library's constructors, so it gets the same
+message, inner exception and parameter name `new` would. `AggregateException`
+(`InnerExceptions` as a `ReadOnlyCollection<Exception>`, `Flatten`, `Handle`,
+`GetBaseException`), `TimeoutException`, `OperationCanceledException`,
+`PlatformNotSupportedException` and `System.IO.PathTooLongException` are declared,
+with .NET's default messages.
+
+**Stack traces.** `StackTrace`, `ToString()`, `Environment.StackTrace` and the
+unhandled-exception report write a frame as .NET does:
+`   at Demo.Program.Run(Int32 n) in /path/Program.ns:line 12`, innermost first. Each
+member's procs carry `{.nsFrame: "..."}` (see `nsharp/pragmas`), which the code
+generator records as the frame's name in place of the Nim proc's: a method with
+its CLR parameter types and a generic method's `[T]`, `get_X`/`set_X`, `..ctor`,
+`op_Addition`, `get_Item`; a proc with no C# counterpart (an allocator) records no
+frame. A `catch` cuts the trace at the method catching it (`nsAdoptException`), as
+.NET's covers only the frames from the throw to the catch; `throw;` keeps it and
+goes on with it to the next catch, `throw e;` starts it again. Divergences: a
+lambda is `<Main>b__0`, a local function `<Main>g__Local|1`, numbered in source
+order where .NET uses its own ordinals (`<>c.<Main>b__8_0`); the path is the
+`.ns` file's; a build without stack traces (`-d:release`, `-d:danger`) has an empty
+`StackTrace`, and then a thrown exception's `Source` is null too.
+
+**Argument checks.** `ArgumentNullException.ThrowIfNull`,
+`ArgumentException.ThrowIfNullOrEmpty`/`ThrowIfNullOrWhiteSpace`,
+`ArgumentOutOfRangeException.ThrowIfNegative`/`Zero`/`NegativeOrZero`/
+`GreaterThan`/`GreaterThanOrEqual`/`LessThan`/`LessThanOrEqual`/`Equal`/`NotEqual`
+and `ObjectDisposedException.ThrowIf` name the parameter after the argument's
+text, as C#'s `[CallerArgumentExpression]` does: the parser keeps each call
+argument's source text, and a library parameter marked
+`{.nsCallerArgument: "argument".}` that a call leaves out receives it. A user's own
+`[CallerArgumentExpression]` parameter is not filled yet. A null string is the
+empty one in N#, so `ThrowIfNull` throws for `""` and `ThrowIfNullOrEmpty` says it
+is empty.
 
 ---
 
@@ -918,7 +965,7 @@ stdlib so C# idioms feel native. All ✅ rows are `lib` (no compiler change).
 | C# type / API | Disposition | Maps to (Nim) |
 |---|---|---|
 | `Console.WriteLine/Write/ReadLine` | ✅ v1 | `stdout.writeLine`/`readLine` |
-| `string` members `.Length`, `.Substring`, `.IndexOf`, `.ToUpper/Lower`, `.Split`, `.Trim`, `.Contains`, `.Replace`, `.StartsWith`… | ✅ v1 | `lib` wrappers on Nim `string` |
+| `string` members `.Length`, `.Substring`, `.IndexOf`, `.LastIndexOf`, `.ToUpper/Lower`, `.Split`, `.Trim`, `.Contains`, `.Replace`, `.StartsWith`… | ✅ v1 | `lib` wrappers on Nim `string` |
 | `string.Format`, `Join`, `IsNullOrEmpty` | ✅ v1 | `lib`; `Format` (and `Console.WriteLine(format, args)`, `StringBuilder.AppendFormat`) is .NET's composite format -- `{index[,alignment][:format]}`, `{{`/`}}`, each argument boxed (`varargs[RootRef, nsBox]`) and formatted as an interpolation hole, a malformed format throwing .NET's `FormatException` text; `Join` takes `params string[]`, an array of any element type, any collection or a dictionary's `Keys`/`Values`, with a `string` or `char` separator, each element as string concatenation renders it |
 | `string.RuneCount` / `.Runes` (char count) | ✅ v1 | `lib` (N# helper; `.Length` is bytes, §4.4) |
 | `T.Parse(s)`, `T.TryParse(s, out x)` on every integer type, `float`/`double`, `bool`, `char`; `double.IsNaN`/`IsInfinity`/`IsPositiveInfinity`/`IsNegativeInfinity`/`IsFinite` | ✅ v1 | `lib/pure/ns/System.nim`, over `typedesc[T]`; .NET's rules under en-US, the culture N# follows: an integer is white space, a sign and digits, a floating-point number also takes a point, an exponent, `,` group separators and `NaN`/`∞`, one too large becoming an infinity; `FormatException` / `OverflowException` with .NET's messages. A library member over a `typedesc` keeps its qualifier (`Parse(int32, s)`), and a member the library does not declare on a built-in type is CS0117 |
@@ -1070,13 +1117,13 @@ Deliberately deferred, with the reason recorded:
 | every value | `Equals` `GetHashCode` `ToString` `GetType`, and `CompareTo` on numbers, `char`, `bool` and `string` |
 | `Convert` | `ToInt32` `ToInt64` `ToInt16` `ToByte` `ToUInt32` (from a number, `bool`, `char`, `string`; `ToInt32`/`ToInt64` also `(string, fromBase)`) `ToDouble` `ToSingle` `ToBoolean` `ToChar` `ToString` (any value; an integer with `toBase`) |
 | `Enum` (static, generic) | `GetValues<T>` `GetNames<T>` `GetName` `IsDefined` `Parse<T>` (and `ignoreCase`) `TryParse` (and `ignoreCase`): a number is taken as it is, names may be listed with commas and are or-ed |
-| `Environment` | `NewLine` `Exit` `GetCommandLineArgs` `GetEnvironmentVariable` `SetEnvironmentVariable` `TickCount` `TickCount64` `ProcessorCount` `CurrentDirectory` `UserName` |
+| `Environment` | `NewLine` `Exit` `GetCommandLineArgs` `GetEnvironmentVariable` `SetEnvironmentVariable` `TickCount` `TickCount64` `ProcessorCount` `CurrentDirectory` `UserName` `StackTrace` |
 | `TimeSpan` | constructors `(ticks)`, `(h, m, s)`, `(d, h, m, s)`, `(d, h, m, s, ms)`; `From{Days,Hours,Minutes,Seconds,Milliseconds}` (`double`, and .NET 9's whole-number overloads) `FromTicks`; `Ticks` `Days` `Hours` `Minutes` `Seconds` `Milliseconds` `Total{Days,Hours,Minutes,Seconds,Milliseconds}`; `Add` `Subtract` `Negate` `Duration` `Multiply` `Divide` `CompareTo` `Compare` `Equals`, `+ - * /` and comparisons; `Zero` `MaxValue` `MinValue` `TicksPer*`; prints `[-][d.]hh:mm:ss[.fffffff]` |
 | `DateTime` | constructors `(ticks)`, `(y, M, d)`, `(y, M, d, h, m, s)` (and a `DateTimeKind`), `(y, M, d, h, m, s, ms)`; `Now` `UtcNow` `Today` `MinValue` `MaxValue` `UnixEpoch` `IsLeapYear` `DaysInMonth`; `Year` `Month` `Day` `Hour` `Minute` `Second` `Millisecond` `DayOfWeek` `DayOfYear` `Date` `TimeOfDay` `Ticks` `Kind`; `Add{Ticks,Milliseconds,Seconds,Minutes,Hours,Days,Months,Years}` `Add` `Subtract` `CompareTo` `Compare` `Equals`, `+ -` and comparisons; `ToString` (en-US's `G`, a standard letter `d D t T g G f F s o u M Y`, or custom `y M d h H m s f F t K` with quotes and `\`) `ToShortDateString` `ToLongDateString` `ToShortTimeString` `ToLongTimeString` |
 
 Deliberately absent: `Convert`'s `decimal`, `object` and `IFormatProvider` overloads,
 `ToBase64String` and kin; `Enum.GetValues(Type)` and the other `Type`-taking forms,
-`Enum.Format`, `GetUnderlyingType`; `Environment.StackTrace`, `MachineName`,
+`Enum.Format`, `GetUnderlyingType`; `Environment.MachineName`,
 `OSVersion`; `DateTime.Parse`/`ParseExact`, time zones and `ToLocalTime`/
 `ToUniversalTime`, `DateTimeOffset`, `DateOnly`/`TimeOnly`, `TimeSpan.Parse` and
 its format strings; `StringBuilder.Capacity`/`EnsureCapacity`/`CopyTo`; `Random`'s
@@ -1146,7 +1193,7 @@ absent: `Process`, `Trace`, listeners, `Debugger`, `StackTrace`.
 | `Path` | `Combine` `Join` `GetFileName` `GetExtension` `GetFileNameWithoutExtension` `GetDirectoryName` `ChangeExtension` `HasExtension` `IsPathRooted` `GetFullPath` `GetTempPath`, `DirectorySeparatorChar` `AltDirectorySeparatorChar` `PathSeparator` |
 | `StreamReader` | constructor `(path)`; `ReadLine` `ReadToEnd` `Read` `Peek` `EndOfStream` `Close` `Dispose` |
 | `StreamWriter` | constructors `(path)`, `(path, append)`; `Write` `WriteLine` (a value, or nothing) `Flush` `Close` `Dispose` |
-| exceptions | `IOException` `FileNotFoundException` `DirectoryNotFoundException` `EndOfStreamException`, and `System.UnauthorizedAccessException` |
+| exceptions | `IOException` `FileNotFoundException` (`FileName`) `DirectoryNotFoundException` `EndOfStreamException` `PathTooLongException`, and `System.UnauthorizedAccessException` |
 
 Text is UTF-8 without a byte order mark (one is skipped when read), lines are
 written with `"\n"` and read up to `"\n"`, `"\r\n"` or `"\r"`. A missing path

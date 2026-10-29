@@ -439,6 +439,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Polite.Demo.IGreeter.Greet(String who)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -459,6 +462,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Polite.Greet(String who)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -639,6 +645,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Ticker.Next()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -763,6 +772,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Make()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -781,7 +793,10 @@ nkStmtList
         nkIdent 'c'
         nkIdent 'ICounter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Show(ICounter c)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -790,7 +805,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1245,6 +1263,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Polite.Demo.IGreeter.Greet(String who)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1270,6 +1291,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Polite.Greet(String who)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1561,6 +1585,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Ticker.Next()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1710,6 +1737,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Make()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1731,7 +1761,10 @@ nkStmtList
         nkIdent 'c'
         nkIdent 'ICounter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Show(ICounter c)"
     nkEmpty
     nkStmtList
       nkCall
@@ -1746,7 +1779,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

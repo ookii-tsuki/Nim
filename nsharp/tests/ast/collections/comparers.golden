@@ -191,6 +191,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.ByLength.Compare(String a, String b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -341,6 +344,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Mod10.Equals(Int32 a, Int32 b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -361,6 +367,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Mod10.GetHashCode(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -478,7 +487,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Version..ctor(Int32 major, Int32 minor)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -503,6 +515,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -523,6 +538,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Version.CompareTo(Version other)"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -539,6 +557,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Version.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -641,7 +662,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Squares..ctor(Int32 n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -660,6 +684,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -674,7 +701,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Squares'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Squares.get_Count()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -693,7 +723,10 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Squares.get_Item(Int32 i)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -712,6 +745,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Squares.GetEnumerator()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -726,6 +762,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Squares.Demo.IEnumerable.GetEnumerator()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -811,6 +850,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.SumAll(IReadOnlyList`1 xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -819,7 +861,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1010,6 +1055,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.ByLength.Compare(String a, String b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1232,6 +1280,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Mod10.Equals(Int32 a, Int32 b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1263,6 +1314,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Mod10.GetHashCode(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1414,7 +1468,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Version..ctor(Int32 major, Int32 minor)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1449,6 +1506,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1477,6 +1537,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Version.CompareTo(Version other)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1525,6 +1588,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Version.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1692,7 +1758,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Squares..ctor(Int32 n)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1716,6 +1785,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1737,7 +1809,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Squares'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Squares.get_Count()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1760,7 +1835,10 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Squares.get_Item(Int32 i)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1784,6 +1862,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Squares.GetEnumerator()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1828,6 +1909,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Squares.Demo.IEnumerable.GetEnumerator()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1931,6 +2015,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.SumAll(IReadOnlyList`1 xs)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1973,7 +2060,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -2209,7 +2299,10 @@ nkStmtList
               nkIdent 'b'
               nkIdent 'int32'
               nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__0(Int32 a, Int32 b)"
           nkEmpty
           nkStmtList
             nkInfix
@@ -2288,7 +2381,10 @@ nkStmtList
                   nkIdent 'b'
                   nkIdent 'int32'
                   nkEmpty
-              nkEmpty
+              nkPragma
+                nkExprColonExpr
+                  nkIdent 'nsFrame'
+                  nkStrLit "Demo.Program.<Main>b__1(Int32 a, Int32 b)"
               nkEmpty
               nkStmtList
                 nkCall

@@ -1,0 +1,73 @@
+// StackTrace, ToString() and Environment.StackTrace name each frame as .NET does
+// (`Demo.Program.Run(Int32 n)`, `get_X()`, `..ctor()`, `op_Addition`, a generic
+// method's `[T]`), from the throw up to the method that catches it; `throw;` keeps
+// the trace and goes on with it, `throw e;` starts it again. The file paths differ
+// from machine to machine, so each line is printed without its ` in <path>`.
+using System;
+using System.Collections.Generic;
+namespace Demo {
+  class Vec {
+    public int X;
+    public static Vec operator +(Vec a, Vec b) { throw new InvalidOperationException("add"); }
+    public int this[int i] { get { throw new IndexOutOfRangeException(); } }
+  }
+  class Box<T> {
+    public T Value;
+    public void Fail(int a, string b) { throw new Exception("box"); }
+  }
+  class Program {
+    int X { get { throw new Exception("get"); } }
+    Program() { }
+    Program(int n) { throw new Exception("ctor"); }
+    static void Over(int a) { throw new Exception("o1"); }
+    static void Over(double a, List<int> b) { throw new Exception("o2"); }
+    static T Gen<T>(T x) { throw new Exception("gen"); }
+    static void A() {
+      throw new InvalidOperationException("a");
+    }
+    static void Rethrow() {
+      try { A(); }
+      catch (Exception) { throw; }
+    }
+    static void ThrowAgain() {
+      try { A(); }
+      catch (Exception e) { throw e; }
+    }
+    static void Wrap() {
+      try { A(); }
+      catch (Exception e) { throw new Exception("wrapped", e); }
+    }
+    static string Lines(string text) {
+      var result = "";
+      foreach (var line in text.Split('\n')) {
+        int at = line.IndexOf(" in ");
+        int colon = line.LastIndexOf(":line ");
+        result += (at >= 0 ? line.Substring(0, at) + (colon >= 0 ? line.Substring(colon) : "") : line) + "\n";
+      }
+      return result;
+    }
+    static void Main() {
+      try { new Box<int>().Fail(1, "x"); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { var p = new Program(); var x = p.X; } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { new Program(1); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { Over(1); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { Over(1.0, null); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { Gen("s"); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { var v = new Vec() + new Vec(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { var i = new Vec()[0]; } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      Console.WriteLine("-- rethrow");
+      try { Rethrow(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      Console.WriteLine("-- throw e");
+      try { ThrowAgain(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      Console.WriteLine("-- wrapped");
+      try { Wrap(); } catch (Exception e) { Console.Write(Lines(e.ToString())); }
+      Console.WriteLine("-- filter");
+      try { A(); } catch (Exception e) when (e.Message == "a") { Console.Write(Lines(e.StackTrace)); }
+      Console.WriteLine("-- never thrown");
+      var fresh = new Exception("never");
+      Console.WriteLine((fresh.StackTrace == null) + " " + fresh.ToString());
+      Console.WriteLine("-- environment");
+      Console.Write(Lines(Environment.StackTrace));
+    }
+  }
+}

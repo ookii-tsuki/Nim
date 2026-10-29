@@ -115,7 +115,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Resource'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Resource.nsFinalize()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -231,7 +234,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -373,7 +379,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Resource'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Resource.nsFinalize()"
     nkEmpty
     nkStmtList
       nkCall
@@ -523,7 +532,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

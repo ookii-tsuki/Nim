@@ -395,7 +395,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Plain'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Plain.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -576,7 +579,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Custom'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Custom.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -593,6 +599,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Custom.Greet()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -773,7 +782,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Loud'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Loud.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -790,6 +802,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Loud.Suffix()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -905,7 +920,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1408,7 +1426,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Plain'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Plain.get_Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1731,7 +1752,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Custom'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Custom.get_Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1750,6 +1774,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Custom.Greet()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2077,7 +2104,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Loud'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Loud.get_Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2096,6 +2126,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Loud.Suffix()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2234,7 +2267,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

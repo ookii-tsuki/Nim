@@ -19,8 +19,8 @@
 #               IsPathRooted Join PathSeparator
 #   StreamReader  Close Dispose EndOfStream Peek Read ReadLine ReadToEnd
 #   StreamWriter  Close Dispose Flush Write WriteLine
-#   IOException, FileNotFoundException, DirectoryNotFoundException,
-#   EndOfStreamException
+#   IOException, FileNotFoundException (FileName), DirectoryNotFoundException,
+#   EndOfStreamException, PathTooLongException
 #
 # Deliberately absent: `FileStream` and the byte-level `Stream` family, `FileInfo`,
 # encodings other than UTF-8, attributes and times, and `FileSystemWatcher`.
@@ -32,7 +32,7 @@ import ../System
 from ../../nsharp/pragmas import nsHidden
 import Collections/Generic
 from ../../nsharp/intrinsics import NsArray, nsArrayOf, items, len, ToString, nsTypeName,
-  Type, nsTypeNamed
+  Type, nsTypeNamed, nsState, nsStateOrNil
 
 {.push discardable.}
 
@@ -41,6 +41,7 @@ type
   FileNotFoundException* = object of IOException
   DirectoryNotFoundException* = object of IOException
   EndOfStreamException* = object of IOException
+  PathTooLongException* = object of IOException
 
   File* = object
     ## `System.IO.File`: its members are static.
@@ -75,6 +76,36 @@ proc nsTypeOf*(t: typedesc[DirectoryInfo]): Type {.nsHidden.} = nsTypeNamed("Sys
 proc Message*(e: ref FileNotFoundException): string = e.msg
   ## .NET's `FileNotFoundException` overrides `Message` (to name the file when made
   ## without a message); the text is the field here too.
+
+proc nsNewException*(t: typedesc[FileNotFoundException]; a, b: string): ref FileNotFoundException {.nsHidden.} =
+  ## `new FileNotFoundException(message, fileName)`.
+  result = nsNewException(FileNotFoundException, a)
+  result.nsState.fileName = b
+
+proc FileName*[T: ref FileNotFoundException](e: T): string =
+  ## The file it could not find, or null.
+  let st = nsStateOrNil(e)
+  if st != nil: st.fileName else: ""
+
+nsMoreMessages = proc (e: ref Exception): string {.nimcall.} =
+  ## The messages this namespace's parameterless constructors make.
+  if e of FileNotFoundException: "Unable to find the specified file."
+  elif e of DirectoryNotFoundException: "Attempted to access a path that is not on the disk."
+  elif e of EndOfStreamException: "Attempted to read past the end of the stream."
+  elif e of PathTooLongException:
+    "The specified file name or path is too long, or a component of the specified " &
+    "path is too long."
+  elif e of IOException: "I/O error occurred."
+  else: ""
+
+nsMoreHResults = proc (e: ref Exception): int32 {.nimcall.} =
+  ## The HRESULTs of this namespace's exceptions, for `Exception.HResult`.
+  if e of FileNotFoundException: -2147024894'i32
+  elif e of DirectoryNotFoundException: -2147024893'i32
+  elif e of EndOfStreamException: -2147024858'i32
+  elif e of PathTooLongException: -2147024690'i32
+  elif e of IOException: -2146232800'i32
+  else: 0'i32
 
 # --- System.IO.Path -------------------------------------------------------------
 
@@ -148,7 +179,7 @@ proc nsMissing(path: string) {.noinline, noreturn.} =
   if dirExists(full):
     raise nsNewException(UnauthorizedAccessException, "Access to the path '" & full & "' is denied.")
   if dirExists(parentDir(full)):
-    raise nsNewException(FileNotFoundException, "Could not find file '" & full & "'.")
+    raise nsNewException(FileNotFoundException, "Could not find file '" & full & "'.", full)
   raise nsNewException(DirectoryNotFoundException, "Could not find a part of the path '" & full & "'.")
 
 proc nsWriteFail(path: string) {.noinline, noreturn.} =

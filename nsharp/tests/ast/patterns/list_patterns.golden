@@ -108,6 +108,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Describe(Int32[] xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -116,7 +119,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -259,6 +265,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Describe(Int32[] xs)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -548,7 +557,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkCall
@@ -1267,7 +1279,10 @@ nkStmtList
                               nkIdent 'v'
                               nkIdent 'int32'
                               nkEmpty
-                          nkEmpty
+                          nkPragma
+                            nkExprColonExpr
+                              nkIdent 'nsFrame'
+                              nkStrLit "Demo.Program.<Main>b__0(Int32 v)"
                           nkEmpty
                           nkStmtList
                             nkInfix

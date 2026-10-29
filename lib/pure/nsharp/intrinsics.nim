@@ -8,7 +8,8 @@
 # which is why a bool reads `true` here and `True` in C#.
 
 import format
-from pragmas import nsHidden
+from pragmas import nsHidden, nsFrame
+export nsFrame
 export format
 import std/strutils
 import std/hashes
@@ -133,14 +134,153 @@ var nsExceptionName*: proc (e: ref Exception): string {.nimcall.} = nil
   ## `nsExceptionTypeName`). An exception type takes no method: the defects .NET's
   ## exceptions alias are declared in Nim's `system`, whose types cannot.
 
+type
+  NsExceptionState* = ref object of RootObj
+    ## What a .NET exception holds beyond Nim's: `Source`, `HelpLink`, `HResult`,
+    ## `Data`, an argument exception's parameter and value, a disposed object's
+    ## name, and an `AggregateException`'s inner exceptions. Made the first time
+    ## one is set, and kept in `system`'s `Exception.nsExtra`, which N# programs
+    ## have.
+    source*, helpLink*: string
+    hasSource*, hasHelpLink*, hasHResult*: bool
+    hresult*: int32
+    data*: RootRef            ## `System.Collections.IDictionary`, made when first read
+    paramName*: string
+    actualValue*: RootRef
+    objectName*: string
+    fileName*: string             ## a `FileNotFoundException`'s
+    inners*: seq[ref Exception]   ## an `AggregateException`'s, its first the inner one
+    rawMessage*: string           ## an `AggregateException`'s message before theirs
+
+proc nsState*(e: ref Exception): NsExceptionState {.nsHidden.} =
+  ## The exception's own state, made the first time it is asked for.
+  when compiles(e.nsExtra):
+    if e.nsExtra.isNil: e.nsExtra = NsExceptionState()
+    NsExceptionState(e.nsExtra)
+  else:
+    {.error: "N#'s exceptions keep their state in `Exception.nsExtra`, which " &
+             "`system` declares for N# programs (`-d:nsharp`)".}
+
+proc nsStateOrNil*(e: ref Exception): NsExceptionState {.nsHidden.} =
+  ## The state, or nil when nothing was ever set: reading needs none made.
+  when compiles(e.nsExtra): NsExceptionState(e.nsExtra) else: nil
+
+proc nsProgramName*(): string {.nsHidden.} =
+  ## The program's own assembly name, `Source` of what it throws.
+  let a = nsProgramAssembly()
+  a[0 ..< a.find(',')]
+
+from system/stacktraces import reraisedFromBegin, reraisedFromEnd
+
+proc nsMergeRethrown(trace: var seq[StackTraceEntry]) =
+  ## `throw;` raises the exception again, and Nim then appends the stack the
+  ## rethrow happened on between two markers. .NET's trace continues from the
+  ## rethrowing method outward instead: those outer frames go in front (the trace is
+  ## outermost first), and the rethrowing method, which both parts hold, once.
+  while true:
+    var first = -1
+    for i, t in trace:
+      if t.line == reraisedFromBegin:
+        first = i
+        break
+    if first < 0: return
+    var last = first + 1
+    while last < trace.len and trace[last].line != reraisedFromEnd: inc last
+    var merged = trace[first + 1 ..< min(last, trace.len)]
+    if merged.len > 0: merged.setLen(merged.len - 1)
+    merged.add trace[0 ..< first]
+    if last + 1 < trace.len: merged.add trace[last + 1 .. ^1]
+    trace = merged
+
+proc nsCutTrace(e: ref Exception) =
+  ## A `catch` sees the frames from the throw up to the method catching it, as
+  ## .NET's `StackTrace` does, not the whole stack the throw happened on.
+  when compileOption("stacktrace"):
+    if e.trace.len == 0: return
+    nsMergeRethrown(e.trace)
+    var f = getFrame()
+    while f != nil and ($f.filename).endsWith(".nim"): f = f.prev
+    if f == nil: return
+    var depth = 0
+    var g = f
+    while g != nil:
+      inc depth
+      g = g.prev
+    ## The catching method is the trace's entry at its own depth.
+    if depth >= 1 and depth <= e.trace.len and e.trace[depth - 1].procname == f.procname:
+      e.trace = e.trace[depth - 1 .. ^1]
+
+proc nsThrown*(e: ref Exception): ref Exception {.nsHidden.} =
+  ## `throw e;` of an exception thrown before: .NET starts its trace again where it
+  ## is thrown now, where Nim would keep the old one.
+  if e != nil: e.trace.setLen 0
+  e
+
+proc nsFrames(e: ref Exception): seq[StackTraceEntry] =
+  ## The program's own frames, innermost first, when the build keeps stack
+  ## traces: not the library's (a `.nim` file) or a module's initialisation.
+  result = @[]
+  when declared(getStackTraceEntries):
+    var entries = e.getStackTraceEntries()
+    nsMergeRethrown(entries)
+    for i in countdown(entries.high, 0):
+      let t = entries[i]
+      let file = $t.filename
+      if file.endsWith(".nim") or file.endsWith("/" & $t.procname & ".ns"): continue
+      result.add t
+
+proc nsFrameText(frames: seq[StackTraceEntry]): string =
+  ## `   at Demo.Program.Main() in Program.ns:line 6`, a line per frame.
+  result = ""
+  for t in frames:
+    if result.len > 0: result.add "\n"
+    result.add "   at " & $t.procname & " in " & $t.filename
+    if t.line > 0: result.add ":line " & $t.line
+
+proc nsCurrentStackTrace*(): string {.nsHidden.} =
+  ## `Environment.StackTrace`: the calls the program is in now, innermost first,
+  ## after .NET's own frame for reading it.
+  result = "   at System.Environment.get_StackTrace()"
+  when declared(getStackTraceEntries):
+    var frames: seq[StackTraceEntry] = @[]
+    let entries = getStackTraceEntries()
+    for i in countdown(entries.high, 0):
+      let t = entries[i]
+      let file = $t.filename
+      if file.endsWith(".nim") or file.endsWith("/" & $t.procname & ".ns"): continue
+      frames.add t
+    let text = nsFrameText(frames)
+    if text.len > 0: result.add "\n" & text
+
+proc nsThrownByLibrary*(e: ref Exception): bool {.nsHidden.} =
+  ## Whether the library raised it: its innermost frame is the library's.
+  when declared(getStackTraceEntries):
+    let entries = e.getStackTraceEntries()
+    entries.len > 0 and ($entries[^1].filename).endsWith(".nim")
+  else: false
+
+proc nsStackTrace*(e: ref Exception): string {.nsHidden.} =
+  ## `Exception.StackTrace`: `   at Demo.Program.Main() in Program.ns:line 6`, a
+  ## line per frame, innermost first; null ("") when it was never thrown, or the
+  ## build keeps no stack traces.
+  nsFrameText(nsFrames(e))
+
 proc nsExceptionText(e: ref Exception): string =
-  ## `Exception.ToString()`: the type and message, then each inner exception's, as
-  ## .NET writes it (without the stack traces N# does not keep).
+  ## `Exception.ToString()` as .NET writes it: the type and message, the inner
+  ## exception's text, then the stack trace; an `AggregateException` adds its other
+  ## inner exceptions, numbered.
   result = (if nsExceptionName != nil: nsExceptionName(e) else: "System.Exception")
   if e.msg.len > 0: result.add ": " & e.msg
   if e.parent != nil:
     result.add "\n ---> " & nsExceptionText(e.parent) &
                "\n   --- End of inner exception stack trace ---"
+  let trace = nsStackTrace(e)
+  if trace.len > 0: result.add "\n" & trace
+  let st = nsStateOrNil(e)
+  if st != nil:
+    for i, x in st.inners:
+      if x == e.parent: continue
+      result.add "\n ---> (Inner Exception #" & $i & ") " & nsExceptionText(x) & "<---\n"
 
 method ToString*(x: RootRef): string {.base, discardable.} =
   ## `object.ToString()`: an exception's type and message, else the dynamic type's
@@ -818,11 +958,10 @@ proc nsTypeOf*(t: typedesc[string]): Type {.nsHidden.} = nsTypeNamed("System.Str
 proc nsTypeOf*(t: typedesc[RootRef]): Type {.nsHidden.} = nsTypeNamed("System.Object")
 
 
-proc nsAdoptException*(e: ref Exception) {.nsHidden.} =
-  ## An exception as the program first sees it, in a `catch`: a defect Nim's
-  ## runtime raised (a check N# leaves to Nim, such as a string's index) is named as
-  ## Nim names its type, where N#'s own throws are named as .NET does (`nsStamped`),
-  ## and takes .NET's name and message here, once.
+proc nsAdoptExceptionName*(e: ref Exception) {.nsHidden.} =
+  ## A defect Nim's runtime raised (a check N# leaves to Nim, such as a string's
+  ## index) is named as Nim names its type, where N#'s own throws are named as .NET
+  ## does (`nsStamped`): it takes .NET's name and message here, once.
   if e == nil or e.name.isNil: return
   if e of IndexDefect:
     if e.name == cstring"IndexDefect":
@@ -836,6 +975,12 @@ proc nsAdoptException*(e: ref Exception) {.nsHidden.} =
     if e.name == cstring"NilAccessDefect":
       e.msg = "Object reference not set to an instance of an object."
       e.name = "System.NullReferenceException"
+
+proc nsAdoptException*(e: ref Exception) {.nsHidden.} =
+  ## An exception as the program first sees it, in a `catch`: named and worded as
+  ## .NET's, and its stack trace ending at the catching method.
+  nsCutTrace(e)
+  nsAdoptExceptionName(e)
 
 proc GetType*(x: RootRef): Type {.discardable.} =
   ## `x.GetType()` on a class value: its dynamic type.

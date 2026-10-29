@@ -1,0 +1,28 @@
+using System
+using System.Collections.Generic
+member AggregateException.Handle = System | void
+member AggregateException.Message = System | string
+member AggregateException.Message = System | string
+member AggregateException.Message = System | string
+member AggregateException.Message = System | string
+member AggregateException.ToString = System | string
+member Console.Write = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Exception.Message = System | string
+member Exception.Message = System | string
+member Exception.Message = System | string
+member Exception.Message = System | string
+member Exception.Message = System | string
+member ReadOnlyCollection.Count = System.Collections.ObjectModel | int
+member ReadOnlyCollection.Count = System.Collections.ObjectModel | int
+member ReadOnlyCollection.Count = System.Collections.ObjectModel | int
+member ReadOnlyCollection.Count = System.Collections.ObjectModel | int
+member Type.Name = System.Reflection | string

@@ -160,7 +160,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec..ctor(Double x, Double y)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -185,6 +188,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -203,7 +209,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Addition(Vec a, Vec b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -222,7 +231,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Subtraction(Vec a, Vec b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -237,7 +249,10 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_UnaryNegation(Vec a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -256,7 +271,10 @@ nkStmtList
         nkIdent 'k'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Multiply(Vec a, Double k)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -275,7 +293,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Equality(Vec a, Vec b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -294,7 +315,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Inequality(Vec a, Vec b)"
     nkEmpty
     nkEmpty
   nkConverterDef
@@ -309,7 +333,10 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Implicit(Vec v)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -324,7 +351,10 @@ nkStmtList
         nkIdent 'd'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Explicit(Double d)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -344,7 +374,10 @@ nkStmtList
         nkIdent 'k'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.Scale(Double k)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -361,6 +394,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -381,6 +417,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.Equals(Object o)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -397,6 +436,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.GetHashCode()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -472,7 +514,10 @@ nkStmtList
         nkIdent 'c'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.op_Increment(Counter c)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -488,7 +533,10 @@ nkStmtList
         nkVarTy
           nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -507,7 +555,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.op_LessThan(Counter a, Counter b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -526,7 +577,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.op_GreaterThan(Counter a, Counter b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -656,7 +710,10 @@ nkStmtList
         nkIdent 'c'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.get_Item(Int32 r, Int32 c)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -683,7 +740,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.set_Item(Int32 r, Int32 c, Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -702,7 +762,10 @@ nkStmtList
         nkIdent 'key'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.get_Item(String key)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -725,7 +788,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.set_Item(String key, Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -841,7 +907,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -983,7 +1052,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec..ctor(Double x, Double y)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1018,6 +1090,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1041,7 +1116,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Addition(Vec a, Vec b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1079,7 +1157,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Subtraction(Vec a, Vec b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1113,7 +1194,10 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_UnaryNegation(Vec a)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1145,7 +1229,10 @@ nkStmtList
         nkIdent 'k'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Multiply(Vec a, Double k)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1179,7 +1266,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Equality(Vec a, Vec b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1217,7 +1307,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Inequality(Vec a, Vec b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1239,7 +1332,10 @@ nkStmtList
         nkIdent 'v'
         nkIdent 'Vec'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Implicit(Vec v)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1273,7 +1369,10 @@ nkStmtList
         nkIdent 'd'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.op_Explicit(Double d)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1298,7 +1397,10 @@ nkStmtList
         nkIdent 'k'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.Scale(Double k)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1335,6 +1437,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1379,6 +1484,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.Equals(Object o)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1397,6 +1505,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vec.GetHashCode()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1494,7 +1605,10 @@ nkStmtList
         nkIdent 'c'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.op_Increment(Counter c)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1535,7 +1649,10 @@ nkStmtList
         nkVarTy
           nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1559,7 +1676,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.op_LessThan(Counter a, Counter b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1591,7 +1711,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.op_GreaterThan(Counter a, Counter b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1769,7 +1892,10 @@ nkStmtList
         nkIdent 'c'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.get_Item(Int32 r, Int32 c)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1808,7 +1934,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.set_Item(Int32 r, Int32 c, Int32 value)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1840,7 +1969,10 @@ nkStmtList
         nkIdent 'key'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.get_Item(String key)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1882,7 +2014,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.set_Item(String key, Int32 value)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2043,7 +2178,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

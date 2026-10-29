@@ -129,6 +129,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Shape.Area()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -146,6 +149,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Shape.Kind()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -256,7 +262,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Sq..ctor(Double s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -275,6 +284,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -337,6 +349,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Sq.Area()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -370,6 +385,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Sq.Kind()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -378,7 +396,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -516,6 +537,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Shape.Area()"
     nkEmpty
     nkStmtList
       nkRaiseStmt
@@ -538,6 +562,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Shape.Kind()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -680,7 +707,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Sq..ctor(Double s)"
     nkEmpty
     nkStmtList
       nkCall
@@ -707,6 +737,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -730,6 +763,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Sq.Area()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -755,6 +791,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Sq.Kind()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -841,7 +880,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkBlockStmt

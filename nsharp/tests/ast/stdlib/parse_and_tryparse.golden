@@ -104,6 +104,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Parse(String s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -122,7 +125,10 @@ nkStmtList
         nkIdent 's'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.TryInt(String s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -141,7 +147,10 @@ nkStmtList
         nkIdent 's'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.TryDouble(String s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -150,7 +159,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -291,6 +303,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Parse(String s)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -314,7 +329,10 @@ nkStmtList
         nkIdent 's'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.TryInt(String s)"
     nkEmpty
     nkStmtList
       nkTryStmt
@@ -416,7 +434,10 @@ nkStmtList
         nkIdent 's'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.TryDouble(String s)"
     nkEmpty
     nkStmtList
       nkTryStmt
@@ -470,7 +491,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

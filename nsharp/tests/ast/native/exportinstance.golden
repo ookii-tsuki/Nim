@@ -98,7 +98,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Hooks.Poke()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -233,7 +236,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Hooks.Poke()"
     nkEmpty
     nkStmtList
   nkProcDef

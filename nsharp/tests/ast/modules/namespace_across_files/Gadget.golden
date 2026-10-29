@@ -98,6 +98,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Company.Products.Gadget.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -234,6 +237,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Company.Products.Gadget.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt

@@ -554,6 +554,9 @@ type
     else:
       trace*: seq[StackTraceEntry]
     up: ref Exception # used for stacking exceptions. Not exported!
+    when defined(nsharp):
+      nsExtra*: RootRef ## N#'s `Source`, `HelpLink`, `Data` and the like, made
+                        ## when first set (see `lib/pure/ns/System.nim`).
 
   Defect* = object of Exception ## \
     ## Abstract base class for all exceptions that Nim's runtime raises

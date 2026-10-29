@@ -302,6 +302,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Animal.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -752,6 +755,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.CatShop.Make()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -943,7 +949,10 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Animal'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vet.Take(Animal a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1049,7 +1058,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Cat'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Cat.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1058,7 +1070,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1195,6 +1210,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Animal.get_Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1343,7 +1361,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Cat'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Cat.get_Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1841,6 +1862,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.CatShop.Make()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2166,7 +2190,10 @@ nkStmtList
         nkIdent 'a'
         nkIdent 'Animal'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Vet.Take(Animal a)"
     nkEmpty
     nkStmtList
       nkCall
@@ -2313,7 +2340,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -2384,7 +2414,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkIdent 'Cat'
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__0()"
             nkEmpty
             nkStmtList
               nkCall
@@ -2425,7 +2458,10 @@ nkStmtList
                 nkIdent 'a'
                 nkIdent 'Animal'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__1(Animal a)"
             nkEmpty
             nkStmtList
               nkCall
@@ -2468,7 +2504,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkIdent 'Cat'
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__2()"
             nkEmpty
             nkStmtList
               nkCall
@@ -2509,7 +2548,10 @@ nkStmtList
                 nkIdent 'a'
                 nkIdent 'Animal'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__3(Animal a)"
             nkEmpty
             nkStmtList
               nkCall

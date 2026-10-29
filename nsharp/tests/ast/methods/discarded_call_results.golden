@@ -577,7 +577,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'R'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "R.get_A()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -596,7 +599,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "R.set_A(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -617,7 +623,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "R..ctor(Int32 A)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -636,6 +645,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -655,7 +667,10 @@ nkStmtList
         nkVarTy
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "R.Deconstruct(Int32& A)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -719,6 +734,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "A.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -735,6 +753,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "A.F()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -850,7 +871,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1602,7 +1626,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'R'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "R.get_A()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -1623,7 +1650,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "R.set_A(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -1648,7 +1678,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "R..ctor(Int32 A)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1672,6 +1705,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1698,7 +1734,10 @@ nkStmtList
         nkVarTy
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "R.Deconstruct(Int32& A)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1774,6 +1813,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "A.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1792,6 +1834,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "A.F()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1930,7 +1975,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

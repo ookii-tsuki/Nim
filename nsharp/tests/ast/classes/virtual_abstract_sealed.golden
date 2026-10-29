@@ -203,7 +203,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Animal..ctor(String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -222,6 +225,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -239,6 +245,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Animal.Sound()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -256,6 +265,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Animal.Describe()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -272,6 +284,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Animal.get_Legs()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -288,6 +303,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Animal.Kind()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -356,7 +374,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Dog..ctor(String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -375,6 +396,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -488,7 +512,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Puppy..ctor(String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -507,6 +534,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -523,6 +553,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Dog.Sound()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -539,6 +572,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Puppy.Kind()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -570,6 +606,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Dog.Describe()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -603,6 +642,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Dog.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -623,7 +665,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Bird..ctor(String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -642,6 +687,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -704,6 +752,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Bird.Sound()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -735,7 +786,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Bird'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Bird.get_Legs()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -843,6 +897,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Point.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1059,6 +1116,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Puppy.Sound()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1067,7 +1127,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1215,7 +1278,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Animal..ctor(String name)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1239,6 +1305,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1263,6 +1332,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Animal.Sound()"
     nkEmpty
     nkStmtList
       nkRaiseStmt
@@ -1285,6 +1357,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Animal.Describe()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1314,6 +1389,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Animal.get_Legs()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1332,6 +1410,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Animal.Kind()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1412,7 +1493,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Dog..ctor(String name)"
     nkEmpty
     nkStmtList
       nkCall
@@ -1435,6 +1519,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1458,6 +1545,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Dog.Sound()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1476,6 +1566,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Dog.Describe()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1503,6 +1596,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Dog.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1591,7 +1687,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Puppy..ctor(String name)"
     nkEmpty
     nkStmtList
       nkCall
@@ -1614,6 +1713,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1637,6 +1739,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Puppy.Sound()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1655,6 +1760,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Puppy.Kind()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1757,7 +1865,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Bird..ctor(String name)"
     nkEmpty
     nkStmtList
       nkCall
@@ -1780,6 +1891,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1803,6 +1917,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Bird.Sound()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1819,7 +1936,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Bird'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Bird.get_Legs()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2045,6 +2165,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Point.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2332,7 +2455,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Zoo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

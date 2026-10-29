@@ -51,6 +51,10 @@ proc nimToCs*(t: PNode; names: seq[string]; args: seq[NsNode];
     for i in 1 ..< t.len: result.add nimToCs(t[i], names, args, info)
   of nkVarTy:
     result = (if t.len > 0: nimToCs(t[0], names, args, info) else: nil)
+  of nkRefTy:
+    ## `ref Exception`: how the library holds a C# exception, which C# names
+    ## without the `ref`.
+    result = (if t.len > 0: nimToCs(t[0], names, args, info) else: nil)
   else: result = nil
 
 proc libSig(surface: NsBclSurface; name: string; args: seq[NsNode];
@@ -571,17 +575,23 @@ proc libGenericResult*(surface: NsBclSurface; recv: NsNode; name: string;
   ## parameters bound by the receiver's type arguments, and by the arguments when
   ## they are given (`xs.Select(x => "n" + x)` is an `IEnumerable<string>`); nil
   ## when any stays open.
-  if recv == nil or recv.rtype == nil or recv.rtype.kind notin {nsnTypeName, nsnArrayType}:
-    return nil
-  let rt = recv.rtype
+  if recv == nil: return nil
+  ## A receiver typed by name alone (a literal, a library call's result): its name.
+  let rt = (if recv.rtype != nil: recv.rtype
+            elif recv.typeName.len > 0 and not recv.typeName.endsWith("[]"):
+              nsnTypeName(recv.typeName, recv.info)
+            elif recv.typeKind == tkString: nsnTypeName("string", recv.info)
+            else: nil)
+  if rt == nil or rt.kind notin {nsnTypeName, nsnArrayType}: return nil
   let nimName = (if rt.kind == nsnArrayType: surface.nimSpellingOf("[]")
                  else: surface.nimSpellingOf(rt.name))
   if nimName.len == 0: return nil
   for key in surface.withBases(nimName):
     for m in surface.members.getOrDefault(key):
       if m.name != name or m.paramTypes.len != nargs + 1 or m.retType == nil: continue
-      ## A generic type (`IEnumerable[T]`), or one of the parameters (`Max(): T`).
-      if m.retType.kind != nkBracketExpr and
+      ## A generic type (`IEnumerable[T]`), one of the parameters (`Max(): T`), or
+      ## a reference to one of the library's types (`Flatten(): ref AggregateException`).
+      if m.retType.kind notin {nkBracketExpr, nkRefTy} and
          not (m.retType.kind == nkIdent and m.genParams.find(m.retType.ident.s) >= 0):
         continue
       var nb = newSeq[NsNode](m.genParams.len)

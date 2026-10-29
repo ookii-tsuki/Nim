@@ -121,7 +121,10 @@ nkStmtList
         nkVarTy
           nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Pt.Bump()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -248,7 +251,10 @@ nkStmtList
         nkIdent 'p'
         nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Mod(Pt p)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -269,7 +275,10 @@ nkStmtList
           nkIdent 'NsArray'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Rebind(Int32[] a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -289,7 +298,10 @@ nkStmtList
         nkVarTy
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Twice(Int32& x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -310,6 +322,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Loop(Int32 n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -330,6 +345,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.ByRef(Int32 n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -356,6 +374,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Count(Int32 from, Int32 to)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -376,6 +397,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Captured(Int32 n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -398,7 +422,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Swap(Int32 a, Int32 b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -427,6 +454,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Pick[T](T a, T b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -447,6 +477,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Shout(String s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -465,7 +498,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program..ctor(Int32 start)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -482,6 +518,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -490,7 +529,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -591,7 +633,10 @@ nkStmtList
         nkVarTy
           nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Pt.Bump()"
     nkEmpty
     nkStmtList
       nkCommand
@@ -748,7 +793,10 @@ nkStmtList
         nkIdent 'p'
         nkIdent 'Pt'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Mod(Pt p)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -791,7 +839,10 @@ nkStmtList
           nkIdent 'NsArray'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Rebind(Int32[] a)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -839,7 +890,10 @@ nkStmtList
         nkVarTy
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Twice(Int32& x)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -866,6 +920,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Loop(Int32 n)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -913,6 +970,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.ByRef(Int32 n)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -950,6 +1010,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Count(Int32 from, Int32 to)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -991,6 +1054,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Captured(Int32 n)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1010,7 +1076,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkIdent 'int32'
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Program.<Captured>b__0()"
             nkEmpty
             nkStmtList
               nkInfix
@@ -1043,7 +1112,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Swap(Int32 a, Int32 b)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1113,6 +1185,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Pick[T](T a, T b)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1143,6 +1218,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Shout(String s)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1174,7 +1252,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program..ctor(Int32 start)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1207,6 +1288,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1222,7 +1306,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1350,7 +1437,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Program.<Main>b__0(Int32 x)"
             nkEmpty
             nkStmtList
               nkVarSection

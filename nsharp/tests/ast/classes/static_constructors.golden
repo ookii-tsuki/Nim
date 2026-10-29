@@ -220,6 +220,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Lazy.Log(String s, Int32 v)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -354,7 +357,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'ByMethod'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "ByMethod.Hello()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -499,7 +505,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'ByNew'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "ByNew..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -512,6 +521,9 @@ nkStmtList
       nkIdent 'ByNew'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -528,7 +540,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'ByNew'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "ByNew.get_Count()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -549,7 +564,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "ByNew.set_Count(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -649,7 +667,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -826,6 +847,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Lazy.Log(String s, Int32 v)"
     nkEmpty
     nkStmtList
       nkCall
@@ -1045,7 +1069,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'ByMethod'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "ByMethod.Hello()"
     nkEmpty
     nkStmtList
       nkCall
@@ -1239,7 +1266,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'ByNew'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "ByNew..ctor()"
     nkEmpty
     nkStmtList
       nkCall
@@ -1257,6 +1287,9 @@ nkStmtList
       nkIdent 'ByNew'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1279,7 +1312,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'ByNew'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "ByNew.get_Count()"
     nkEmpty
     nkCall
       nkIdent 'nsStaticRef_nsByNew_CountBacking'
@@ -1301,7 +1337,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "ByNew.set_Count(Int32 value)"
     nkEmpty
     nkAsgn
       nkCall
@@ -1439,7 +1478,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

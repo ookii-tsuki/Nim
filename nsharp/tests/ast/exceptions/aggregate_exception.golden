@@ -1,0 +1,556 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkFromStmt
+    nkStrLit "System/Collections/ObjectModel"
+    nkIdent 'Count'
+    nkAccQuoted
+      nkIdent '[]'
+    nkIdent 'items'
+  nkFromStmt
+    nkStrLit "System/Reflection"
+    nkIdent 'Name'
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkImportStmt
+    nkStrLit "System/Collections/Generic"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Program"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'agg'
+          nkEmpty
+          nkCall
+            nkIdent 'nsNewException'
+            nkIdent 'AggregateException'
+            nkCall
+              nkIdent 'nsNewException'
+              nkIdent 'Exception'
+              nkStrLit "a"
+            nkCall
+              nkIdent 'nsNewException'
+              nkIdent 'AggregateException'
+              nkCall
+                nkIdent 'nsNewException'
+                nkIdent 'Exception'
+                nkStrLit "b"
+              nkCall
+                nkIdent 'nsNewException'
+                nkIdent 'Exception'
+                nkStrLit "c"
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkIdent 'agg'
+          nkIdent 'Message'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkDotExpr
+                  nkDotExpr
+                    nkIdent 'agg'
+                    nkIdent 'InnerExceptions'
+                  nkIdent 'Count'
+                nkStrLit " "
+              nkDotExpr
+                nkDotExpr
+                  nkIdent 'agg'
+                  nkIdent 'InnerException'
+                nkIdent 'Message'
+            nkStrLit " "
+          nkDotExpr
+            nkDotExpr
+              nkCall
+                nkDotExpr
+                  nkIdent 'agg'
+                  nkIdent 'Flatten'
+              nkIdent 'InnerExceptions'
+            nkIdent 'Count'
+      nkForStmt
+        nkIdent 'e'
+        nkDotExpr
+          nkCall
+            nkDotExpr
+              nkIdent 'agg'
+              nkIdent 'Flatten'
+          nkIdent 'InnerExceptions'
+        nkStmtList
+          nkCall
+            nkIdent 'Write'
+            nkInfix
+              nkIdent '+'
+              nkDotExpr
+                nkIdent 'e'
+                nkIdent 'Message'
+              nkStrLit " "
+      nkCall
+        nkIdent 'WriteLine'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkCall
+            nkIdent 'nsNewException'
+            nkIdent 'AggregateException'
+            nkStrLit "custom"
+            nkCall
+              nkIdent 'nsNewException'
+              nkIdent 'Exception'
+              nkStrLit "x"
+          nkIdent 'Message'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'one'
+          nkEmpty
+          nkCall
+            nkIdent 'nsNewException'
+            nkIdent 'AggregateException'
+            nkBlockExpr
+              nkEmpty
+              nkStmtList
+                nkVarSection
+                  nkIdentDefs
+                    nkIdent 'nsInit1'
+                    nkEmpty
+                    nkCall
+                      nkBracketExpr
+                        nkIdent 'newList'
+                        nkRefTy
+                          nkIdent 'Exception'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'nsInit1'
+                    nkIdent 'Add'
+                  nkCall
+                    nkIdent 'nsNewException'
+                    nkIdent 'Exception'
+                    nkStrLit "l"
+                nkIdent 'nsInit1'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkDotExpr
+              nkIdent 'one'
+              nkIdent 'Message'
+            nkStrLit " | "
+          nkDotExpr
+            nkCall
+              nkDotExpr
+                nkIdent 'one'
+                nkIdent 'GetBaseException'
+            nkIdent 'Message'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsNewException'
+                nkIdent 'AggregateException'
+              nkIdent 'Message'
+            nkStrLit " "
+          nkDotExpr
+            nkDotExpr
+              nkCall
+                nkIdent 'nsNewException'
+                nkIdent 'AggregateException'
+              nkIdent 'InnerExceptions'
+            nkIdent 'Count'
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkStrLit "["
+            nkCall
+              nkDotExpr
+                nkIdent 'agg'
+                nkIdent 'ToString'
+          nkStrLit "]"
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkDotExpr
+              nkCall
+                nkDotExpr
+                  nkIdent 'agg'
+                  nkIdent 'Flatten'
+              nkIdent 'Handle'
+            nkLambda
+              nkEmpty
+              nkEmpty
+              nkEmpty
+              nkFormalParams
+                nkIdent 'bool'
+                nkIdentDefs
+                  nkIdent 'e'
+                  nkRefTy
+                    nkIdent 'Exception'
+                  nkEmpty
+              nkPragma
+                nkExprColonExpr
+                  nkIdent 'nsFrame'
+                  nkStrLit "Demo.Program.<Main>b__0(Exception e)"
+              nkEmpty
+              nkStmtList
+                nkInfix
+                  nkIdent '!='
+                  nkDotExpr
+                    nkIdent 'e'
+                    nkIdent 'Message'
+                  nkStrLit "b"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'AggregateException'
+            nkIdent 'left'
+          nkStmtList
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'left'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkDotExpr
+                        nkIdent 'left'
+                        nkIdent 'InnerExceptions'
+                      nkIdent 'Count'
+                    nkStrLit " "
+                  nkDotExpr
+                    nkDotExpr
+                      nkIdent 'left'
+                      nkIdent 'InnerException'
+                    nkIdent 'Message'
+      nkTryStmt
+        nkStmtList
+          nkRaiseStmt
+            nkCall
+              nkIdent 'nsThrown'
+              nkIdent 'agg'
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'Exception'
+            nkIdent 'e'
+          nkStmtList
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'e'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkCall
+                        nkDotExpr
+                          nkIdent 'e'
+                          nkIdent 'GetType'
+                      nkIdent 'Name'
+                    nkStrLit " "
+                  nkInfix
+                    nkIdent 'of'
+                    nkIdent 'e'
+                    nkIdent 'AggregateException'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

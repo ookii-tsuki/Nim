@@ -340,6 +340,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.F(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -360,6 +363,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.F(Int64 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -380,6 +386,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.F(Double x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -400,6 +409,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.F(Object x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -420,6 +432,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.G(Int64 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -440,6 +455,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.G(Double x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -460,6 +478,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.H(Animal a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -480,6 +501,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.H(Dog d)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -500,6 +524,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.K(Object o)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -520,6 +547,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.K(String s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -545,6 +575,9 @@ nkStmtList
           nkIntLit 0
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.P(Int32[] a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -565,6 +598,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.P(Int32 a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -589,6 +625,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Q(Int32 a, Int32 b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -609,6 +648,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Q(Int32 a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -633,6 +675,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.R[T](T x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -653,6 +698,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.R(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -673,6 +721,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.U(UInt32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -693,6 +744,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.U(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -713,6 +767,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Ch(Char c)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -733,6 +790,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Ch(Int32 i)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -753,6 +813,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.By(Byte b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -773,6 +836,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.By(Int16 s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -795,6 +861,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Nu(Nullable`1 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -815,6 +884,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Nu(Object x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -835,6 +907,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.S(String s)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -855,6 +930,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.S(Object o)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -863,7 +941,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1267,6 +1348,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.F(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1289,6 +1373,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.F(Int64 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1311,6 +1398,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.F(Double x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1333,6 +1423,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.F(Object x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1355,6 +1448,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.G(Int64 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1377,6 +1473,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.G(Double x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1399,6 +1498,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.H(Animal a)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1421,6 +1523,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.H(Dog d)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1443,6 +1548,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.K(Object o)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1465,6 +1573,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.K(String s)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1492,6 +1603,9 @@ nkStmtList
           nkIntLit 0
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.P(Int32[] a)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1514,6 +1628,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.P(Int32 a)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1540,6 +1657,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Q(Int32 a, Int32 b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1562,6 +1682,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Q(Int32 a)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1588,6 +1711,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.R[T](T x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1610,6 +1736,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.R(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1632,6 +1761,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.U(UInt32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1654,6 +1786,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.U(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1676,6 +1811,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Ch(Char c)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1698,6 +1836,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Ch(Int32 i)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1720,6 +1861,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.By(Byte b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1742,6 +1886,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.By(Int16 s)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1766,6 +1913,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Nu(Nullable`1 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1788,6 +1938,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Nu(Object x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1810,6 +1963,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.S(String s)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1832,6 +1988,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.S(Object o)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1842,7 +2001,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

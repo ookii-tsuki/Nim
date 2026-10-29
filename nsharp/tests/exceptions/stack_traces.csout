@@ -1,0 +1,39 @@
+   at Demo.Box`1.Fail(Int32 a, String b):line 16
+   at Demo.Program.Main():line 50
+   at Demo.Program.get_X():line 19
+   at Demo.Program.Main():line 51
+   at Demo.Program..ctor(Int32 n):line 21
+   at Demo.Program.Main():line 52
+   at Demo.Program.Over(Int32 a):line 22
+   at Demo.Program.Main():line 53
+   at Demo.Program.Over(Double a, List`1 b):line 23
+   at Demo.Program.Main():line 54
+   at Demo.Program.Gen[T](T x):line 24
+   at Demo.Program.Main():line 55
+   at Demo.Vec.op_Addition(Vec a, Vec b):line 11
+   at Demo.Program.Main():line 56
+   at Demo.Vec.get_Item(Int32 i):line 12
+   at Demo.Program.Main():line 57
+-- rethrow
+   at Demo.Program.A():line 26
+   at Demo.Program.Rethrow():line 29
+   at Demo.Program.Main():line 59
+-- throw e
+   at Demo.Program.ThrowAgain():line 34
+   at Demo.Program.Main():line 61
+-- wrapped
+System.Exception: wrapped
+ ---> System.InvalidOperationException: a
+   at Demo.Program.A():line 26
+   at Demo.Program.Wrap():line 37
+   --- End of inner exception stack trace ---
+   at Demo.Program.Wrap():line 38
+   at Demo.Program.Main():line 63
+-- filter
+   at Demo.Program.A():line 26
+   at Demo.Program.Main():line 65
+-- never thrown
+True System.Exception: never
+-- environment
+   at System.Environment.get_StackTrace()
+   at Demo.Program.Main():line 70

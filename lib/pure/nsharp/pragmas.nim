@@ -17,6 +17,17 @@ template nsInterface*() {.pragma.}
   ## and N# checks the members exist (Nim's generics call them by name). One with
   ## them is a value, as a user's interface lowers.
 
+template nsFrame*(name: string) {.pragma.}
+  ## `{.nsFrame: "Demo.Program.Main()".}` names the proc's stack frame as .NET's
+  ## stack traces name the C# member it lowers; the code generator writes it in
+  ## place of the proc's own name. Lowering puts it on each member.
+
+template nsCallerArgument*(argument: string) {.pragma.}
+  ## `paramName {.nsCallerArgument: "argument".}: string = ""` is C#'s
+  ## `[CallerArgumentExpression("argument")]`: a call that leaves the parameter out
+  ## passes the text the named argument was written with (`ThrowIfNull(s)` gives
+  ## `"s"`), which the frontend fills in.
+
 template nsHidden*() {.pragma.}
   ## `{.nsHidden.}` marks a helper the library exports for the code N# generates
   ## (`nsBox`, `newList`, `items`) but that is not a C# member: the frontend leaves

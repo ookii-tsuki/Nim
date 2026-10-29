@@ -104,7 +104,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "App.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -233,7 +236,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "App.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

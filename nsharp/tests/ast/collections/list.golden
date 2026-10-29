@@ -106,6 +106,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.IsEven(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -126,6 +129,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.IsBig(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -150,6 +156,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Descending(Int32 a, Int32 b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -170,6 +179,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Tag(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -188,7 +200,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Print(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -197,7 +212,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -338,6 +356,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.IsEven(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -366,6 +387,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.IsBig(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -395,6 +419,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Descending(Int32 a, Int32 b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -420,6 +447,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Tag(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -443,7 +473,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Print(Int32 x)"
     nkEmpty
     nkStmtList
       nkCall
@@ -458,7 +491,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -497,7 +533,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__0(Int32 x)"
             nkEmpty
             nkStmtList
               nkInfix

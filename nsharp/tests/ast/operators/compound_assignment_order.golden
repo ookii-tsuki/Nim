@@ -244,7 +244,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Counter.get_P()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -263,7 +266,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Counter.set_P(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -282,7 +288,10 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Counter.get_Item(Int32 i)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -305,7 +314,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Counter.set_Item(Int32 i, Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -537,6 +549,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Bump()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -553,6 +568,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Set0()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -573,6 +591,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Obj(Counter c)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -589,6 +610,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Ix()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -597,7 +621,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -762,7 +789,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Counter.get_P()"
     nkEmpty
     nkStmtList
       nkCommand
@@ -790,7 +820,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Counter.set_P(Int32 value)"
     nkEmpty
     nkStmtList
       nkCommand
@@ -819,7 +852,10 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Counter.get_Item(Int32 i)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -848,7 +884,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Counter.set_Item(Int32 i, Int32 value)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1143,6 +1182,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Bump()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1166,6 +1208,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Set0()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1195,6 +1240,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Obj(Counter c)"
     nkEmpty
     nkStmtList
       nkCommand
@@ -1218,6 +1266,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Ix()"
     nkEmpty
     nkStmtList
       nkCommand
@@ -1233,7 +1284,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkAsgn

@@ -245,6 +245,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Animal.get_N()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -444,7 +447,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Dog'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Dog.get_N()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -619,7 +625,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -756,6 +765,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Animal.get_N()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -904,7 +916,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Dog'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Dog.get_N()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1349,7 +1364,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

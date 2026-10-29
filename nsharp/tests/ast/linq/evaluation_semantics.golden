@@ -170,7 +170,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person..ctor(String n, Int32 a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -195,6 +198,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -276,7 +282,10 @@ nkStmtList
         nkIdent 'f'
         nkIdent 'Action0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.T(Action f)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -297,6 +306,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Tick(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -305,7 +317,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -468,7 +483,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person..ctor(String n, Int32 a)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -503,6 +521,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -605,7 +626,10 @@ nkStmtList
         nkIdent 'f'
         nkIdent 'Action0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.T(Action f)"
     nkEmpty
     nkStmtList
       nkTryStmt
@@ -658,6 +682,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Tick(Int32 x)"
     nkEmpty
     nkStmtList
       nkCommand
@@ -673,7 +700,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkCall
@@ -685,7 +715,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__0()"
           nkEmpty
           nkStmtList
             nkCall
@@ -725,7 +758,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__1()"
           nkEmpty
           nkStmtList
             nkCall
@@ -804,7 +840,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__4()"
           nkEmpty
           nkStmtList
             nkCall
@@ -834,7 +873,10 @@ nkStmtList
                               nkIdent 'x'
                               nkIdent 'int32'
                               nkEmpty
-                          nkEmpty
+                          nkPragma
+                            nkExprColonExpr
+                              nkIdent 'nsFrame'
+                              nkStrLit "Demo.Program.<Main>b__2(Int32 x)"
                           nkEmpty
                           nkStmtList
                             nkCall
@@ -855,7 +897,10 @@ nkStmtList
                             nkIdent 'q'
                             nkIdent 'int32'
                             nkEmpty
-                        nkEmpty
+                        nkPragma
+                          nkExprColonExpr
+                            nkIdent 'nsFrame'
+                            nkStrLit "Demo.Program.<Main>b__3(Int32 p, Int32 q)"
                         nkEmpty
                         nkStmtList
                           nkInfix
@@ -909,7 +954,10 @@ nkStmtList
                           nkIdent 'x'
                           nkIdent 'int32'
                           nkEmpty
-                      nkEmpty
+                      nkPragma
+                        nkExprColonExpr
+                          nkIdent 'nsFrame'
+                          nkStrLit "Demo.Program.<Main>b__5(Int32 x)"
                       nkEmpty
                       nkStmtList
                         nkCommand
@@ -928,7 +976,10 @@ nkStmtList
                       nkIdent 'x'
                       nkIdent 'int32'
                       nkEmpty
-                  nkEmpty
+                  nkPragma
+                    nkExprColonExpr
+                      nkIdent 'nsFrame'
+                      nkStrLit "Demo.Program.<Main>b__6(Int32 x)"
                   nkEmpty
                   nkStmtList
                     nkCommand
@@ -1061,7 +1112,10 @@ nkStmtList
                           nkIdent 'p'
                           nkIdent 'Person'
                           nkEmpty
-                      nkEmpty
+                      nkPragma
+                        nkExprColonExpr
+                          nkIdent 'nsFrame'
+                          nkStrLit "Demo.Program.<Main>b__7(Person p)"
                       nkEmpty
                       nkStmtList
                         nkDotExpr
@@ -1080,7 +1134,10 @@ nkStmtList
                       nkIdent 'p'
                       nkIdent 'Person'
                       nkEmpty
-                  nkEmpty
+                  nkPragma
+                    nkExprColonExpr
+                      nkIdent 'nsFrame'
+                      nkStrLit "Demo.Program.<Main>b__8(Person p)"
                   nkEmpty
                   nkStmtList
                     nkDotExpr
@@ -1099,7 +1156,10 @@ nkStmtList
                   nkIdent 'p'
                   nkIdent 'Person'
                   nkEmpty
-              nkEmpty
+              nkPragma
+                nkExprColonExpr
+                  nkIdent 'nsFrame'
+                  nkStrLit "Demo.Program.<Main>b__9(Person p)"
               nkEmpty
               nkStmtList
                 nkDotExpr
@@ -1116,7 +1176,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__10()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1149,7 +1212,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__11()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1182,7 +1248,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__13()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1206,7 +1275,10 @@ nkStmtList
                         nkIdent 'p'
                         nkIdent 'Person'
                         nkEmpty
-                    nkEmpty
+                    nkPragma
+                      nkExprColonExpr
+                        nkIdent 'nsFrame'
+                        nkStrLit "Demo.Program.<Main>b__12(Person p)"
                     nkEmpty
                     nkStmtList
                       nkDotExpr
@@ -1224,7 +1296,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__15()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1248,7 +1323,10 @@ nkStmtList
                         nkIdent 'p'
                         nkIdent 'Person'
                         nkEmpty
-                    nkEmpty
+                    nkPragma
+                      nkExprColonExpr
+                        nkIdent 'nsFrame'
+                        nkStrLit "Demo.Program.<Main>b__14(Person p)"
                     nkEmpty
                     nkStmtList
                       nkDotExpr
@@ -1266,7 +1344,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__16()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1287,7 +1368,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__17()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1311,7 +1395,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__18()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1341,7 +1428,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__19()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1369,7 +1459,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__20()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1397,7 +1490,10 @@ nkStmtList
           nkEmpty
           nkFormalParams
             nkEmpty
-          nkEmpty
+          nkPragma
+            nkExprColonExpr
+              nkIdent 'nsFrame'
+              nkStrLit "Demo.Program.<Main>b__22()"
           nkEmpty
           nkStmtList
             nkCall
@@ -1416,7 +1512,10 @@ nkStmtList
                       nkIdent 'p'
                       nkIdent 'Person'
                       nkEmpty
-                  nkEmpty
+                  nkPragma
+                    nkExprColonExpr
+                      nkIdent 'nsFrame'
+                      nkStrLit "Demo.Program.<Main>b__21(Person p)"
                   nkEmpty
                   nkStmtList
                     nkDotExpr

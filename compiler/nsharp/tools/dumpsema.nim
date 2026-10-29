@@ -58,7 +58,7 @@ proc isValueKind(k: NsTypeKind): bool =
   k in {tkInt, tkFloat, tkBool, tkChar, tkString, tkSequence, tkClass,
         tkException}
 
-proc recvSpelling(n: NsNode): string =
+proc recvSpelling(surface: NsBclSurface; n: NsNode): string =
   ## How the receiver reads, in the shared vocabulary: the resolved type name when
   ## the frontend has one, otherwise the class of the resolved kind. "" means it
   ## could not be placed, and the access is not projected.
@@ -145,7 +145,7 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
     let rk = (if n.strVal == "usingStatic": tkUnknown
               elif n.body != nil: n.body.typeKind else: tkUnknown)
     if rk == tkType:
-      let recv = recvSpelling(n.body)
+      let recv = recvSpelling(surface, n.body)
       let kind = surface.kindOfName(recv)
       let m = surface.member(recv, kind, n.name)
       if m.name.len > 0 and recv.len > 0 and m.isStatic:
@@ -155,7 +155,7 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
                      tokenOf(surface.kindOfName(n.rtype.name))
                    else: retTokenFor(surface, m, kind))
         if isProjected(tok):
-          facts.add "member " & recv & "." & n.name & " = " &
+          facts.add "member " & surface.csTypeName(recv) & "." & n.name & " = " &
                     nsOf(m.path) & " | " & tok
     elif isValueKind(rk) and n.body != nil and
          scope.classes.hasKey(n.body.typeName) and
@@ -182,7 +182,7 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
                         nsOf(m.path) & " | " & tok
             break
     elif isValueKind(rk):
-      let recv = recvSpelling(n.body)
+      let recv = recvSpelling(surface, n.body)
       ## An instance member: a static overload of the name (`string.Equals(a, b)`)
       ## is not this one.
       var m = NsBclMember()
@@ -216,7 +216,7 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
                      tokenOf(surface.kindOfName(n.rtype.name))
                    else: retTokenFor(surface, m, rk))
         if isProjected(tok):
-          facts.add "member " & recv & "." & n.name & " = " &
+          facts.add "member " & surface.csTypeName(recv) & "." & n.name & " = " &
                     nsOf(m.path) & " | " & tok
   else: discard
   walk(n.typ, surface, scope, facts, usings)

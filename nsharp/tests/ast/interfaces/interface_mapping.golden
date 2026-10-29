@@ -397,6 +397,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Base.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -413,6 +416,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Base.Size()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -580,6 +586,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Mid.Size()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -656,6 +665,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.A.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -867,6 +879,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Mid.Name()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1084,6 +1099,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Other.Size()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1219,6 +1237,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.B.Name()"
     nkEmpty
     nkEmpty
   nkConverterDef
@@ -1281,6 +1302,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.A.Size()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1389,6 +1413,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Leaf.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1448,6 +1475,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.B.Size()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1714,6 +1744,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Gen`1.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1722,7 +1755,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -2167,6 +2203,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Gen`1.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2556,6 +2595,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Base.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2574,6 +2616,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Base.Size()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2802,6 +2847,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Mid.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2820,6 +2868,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Mid.Size()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3051,6 +3102,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Leaf.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3338,6 +3392,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Other.Size()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3623,6 +3680,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.A.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3641,6 +3701,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.A.Size()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3873,6 +3936,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.B.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3891,6 +3957,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.B.Size()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -4229,7 +4298,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

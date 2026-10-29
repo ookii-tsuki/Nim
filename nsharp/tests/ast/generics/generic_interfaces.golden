@@ -772,7 +772,10 @@ nkStmtList
         nkIdent 'item'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntRepo.Add(Int32 item)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -793,6 +796,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntRepo.Get(Int32 i)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -807,7 +813,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntRepo.get_Count()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -824,6 +833,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntRepo.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1066,7 +1078,10 @@ nkStmtList
         nkIdent 'item'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Repo`1.Add(T item)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1093,6 +1108,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Repo`1.Get(Int32 i)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1113,7 +1131,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Repo`1.get_Count()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1261,7 +1282,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Money..ctor(Int32 c)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1280,6 +1304,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1300,6 +1327,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Money.CompareTo(Money other)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1395,7 +1425,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Fill[T](IRepo`1 r, T a, T b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1404,7 +1437,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -2312,7 +2348,10 @@ nkStmtList
         nkIdent 'item'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Repo`1.Add(T item)"
     nkEmpty
     nkStmtList
       nkCall
@@ -2346,6 +2385,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Repo`1.Get(Int32 i)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2372,7 +2414,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Repo`1.get_Count()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2493,7 +2538,10 @@ nkStmtList
         nkIdent 'b'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Fill[T](IRepo`1 r, T a, T b)"
     nkEmpty
     nkStmtList
       nkCall
@@ -3090,7 +3138,10 @@ nkStmtList
         nkIdent 'item'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntRepo.Add(Int32 item)"
     nkEmpty
     nkStmtList
       nkCall
@@ -3118,6 +3169,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntRepo.Get(Int32 i)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3138,7 +3192,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntRepo.get_Count()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3161,6 +3218,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.IntRepo.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3306,7 +3366,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Money..ctor(Int32 c)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -3330,6 +3393,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -3357,6 +3423,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Money.CompareTo(Money other)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3433,7 +3502,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

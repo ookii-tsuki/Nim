@@ -226,6 +226,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Entry.Churn(Int32 rounds)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -243,6 +246,9 @@ nkStmtList
         nkIdent 'exportc'
         nkStrLit "nsChurn"
       nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -487,6 +493,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Entry.Churn(Int32 rounds)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -669,6 +678,9 @@ nkStmtList
         nkIdent 'exportc'
         nkStrLit "nsChurn"
       nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkTryStmt

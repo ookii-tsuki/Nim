@@ -361,7 +361,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Entry.MakeTemp()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -378,7 +381,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Entry.Start()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -392,6 +398,9 @@ nkStmtList
         nkIdent 'exportc'
         nkStrLit "nsStart"
       nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -963,7 +972,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Entry.MakeTemp()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1014,7 +1026,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Entry.Start()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1341,6 +1356,9 @@ nkStmtList
         nkIdent 'exportc'
         nkStrLit "nsStart"
       nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkTryStmt

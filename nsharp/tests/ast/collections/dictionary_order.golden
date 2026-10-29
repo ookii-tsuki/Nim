@@ -447,7 +447,10 @@ nkStmtList
           nkIdent 'K'
           nkIdent 'V'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Show[K,V](String label, Dictionary`2 d)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -456,7 +459,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -996,7 +1002,10 @@ nkStmtList
           nkIdent 'K'
           nkIdent 'V'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Show[K,V](String label, Dictionary`2 d)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1055,7 +1064,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

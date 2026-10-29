@@ -187,7 +187,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Put(T x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -210,6 +213,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Describe()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -357,6 +363,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo.Twice(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -441,7 +450,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -694,7 +706,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Put(T x)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -722,6 +737,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Describe()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -976,6 +994,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo.Twice(Int32 x)"
     nkEmpty
     nkStmtList
       nkCommand
@@ -1121,7 +1142,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

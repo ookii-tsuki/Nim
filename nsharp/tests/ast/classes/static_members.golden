@@ -279,7 +279,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.get_Total()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -300,7 +303,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.set_Total(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -315,7 +321,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.get_Ratio()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -334,7 +343,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.set_Ratio(Double value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -349,7 +361,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -362,6 +377,9 @@ nkStmtList
       nkIdent 'Counter'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -382,7 +400,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter..ctor(String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -401,6 +422,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -419,6 +443,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.Seed()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -435,6 +462,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.Describe()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -534,7 +564,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -759,7 +792,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.get_Total()"
     nkEmpty
     nkCall
       nkIdent 'nsStaticRef_nsCounter_TotalBacking'
@@ -781,7 +817,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.set_Total(Int32 value)"
     nkEmpty
     nkAsgn
       nkCall
@@ -799,7 +838,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.get_Ratio()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -820,7 +862,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.set_Ratio(Double value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -839,7 +884,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter..ctor()"
     nkEmpty
     nkStmtList
       nkCall
@@ -891,6 +939,9 @@ nkStmtList
       nkIdent 'Counter'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -917,7 +968,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter..ctor(String name)"
     nkEmpty
     nkStmtList
       nkCall
@@ -946,6 +1000,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -971,6 +1028,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.Seed()"
     nkEmpty
     nkStmtList
       nkCall
@@ -993,6 +1053,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.Describe()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1179,7 +1242,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkCall

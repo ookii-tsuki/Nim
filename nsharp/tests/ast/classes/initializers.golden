@@ -135,7 +135,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -154,7 +157,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.set_Name(String value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -169,7 +175,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -182,6 +191,9 @@ nkStmtList
       nkIdent 'Person'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -202,7 +214,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person..ctor(String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -221,6 +236,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -237,6 +255,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -449,6 +470,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Pair()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -479,6 +503,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.MinMax(Int32[] xs)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -487,7 +514,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -621,7 +651,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.get_Name()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -642,7 +675,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.set_Name(String value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -661,7 +697,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Person'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person..ctor()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -682,6 +721,9 @@ nkStmtList
       nkIdent 'Person'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -708,7 +750,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person..ctor(String name)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -740,6 +785,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -763,6 +811,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Person.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1039,6 +1090,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Pair()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1079,6 +1133,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.MinMax(Int32[] xs)"
     nkEmpty
     nkStmtList
       nkStmtList
@@ -1134,7 +1191,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

@@ -176,7 +176,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Point'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.get_X()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -191,7 +194,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Point'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.get_Y()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -208,7 +214,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.set_Y(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -225,6 +234,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.Sum()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -243,7 +255,10 @@ nkStmtList
         nkIdent 'dx'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.Move(Int32 dx)"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -260,6 +275,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -286,7 +304,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point..ctor(Int32 x, Int32 y)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -311,6 +332,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -373,7 +397,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Named'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Named.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -394,7 +421,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Named..ctor(String name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -413,6 +443,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -490,7 +523,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -503,6 +539,9 @@ nkStmtList
       nkIdent 'Counter'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -519,6 +558,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.Next()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -539,7 +581,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter..ctor(Int32 start)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -558,6 +603,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -652,7 +700,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Size'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Size.get_Area()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -680,7 +731,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Size..ctor(Int32 w, Int32 h)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -705,6 +759,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -831,7 +888,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.get_W()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -850,7 +910,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.set_W(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -865,7 +928,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.get_Twice()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -882,7 +948,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.set_Twice(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -903,7 +972,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box..ctor(Int32 W)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -922,6 +994,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -941,7 +1016,10 @@ nkStmtList
         nkVarTy
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.Deconstruct(Int32& W)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1012,7 +1090,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1146,7 +1227,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Point'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.get_X()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1165,7 +1249,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Point'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.get_Y()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -1184,7 +1271,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.set_Y(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -1205,6 +1295,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.Sum()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1232,7 +1325,10 @@ nkStmtList
         nkIdent 'dx'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.Move(Int32 dx)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1259,6 +1355,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point.ToString()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1303,7 +1402,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Point..ctor(Int32 x, Int32 y)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1343,6 +1445,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1430,7 +1535,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Named'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Named.get_Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1458,7 +1566,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Named..ctor(String name)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1489,6 +1600,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1600,7 +1714,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Counter'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter..ctor()"
     nkEmpty
     nkStmtList
       nkCall
@@ -1617,6 +1734,9 @@ nkStmtList
       nkIdent 'Counter'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1639,6 +1759,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter.Next()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1665,7 +1788,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Counter..ctor(Int32 start)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1697,6 +1823,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1829,7 +1958,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Size'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Size.get_Area()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1866,7 +1998,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Size..ctor(Int32 w, Int32 h)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1901,6 +2036,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2156,7 +2294,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.get_W()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -2177,7 +2318,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.set_W(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -2196,7 +2340,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.get_Twice()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -2215,7 +2362,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.set_Twice(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -2240,7 +2390,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box..ctor(Int32 W)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2272,6 +2425,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2298,7 +2454,10 @@ nkStmtList
         nkVarTy
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box.Deconstruct(Int32& W)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2388,7 +2547,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

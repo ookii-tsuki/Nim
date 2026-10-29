@@ -129,7 +129,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "MyEx..ctor(String m, Int32 c)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -155,6 +158,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -233,7 +239,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.get_Err()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -253,7 +262,10 @@ nkStmtList
         nkRefTy
           nkIdent 'Exception'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.set_Err(Exception value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -383,6 +395,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Wrap(Exception inner)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -391,7 +406,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -484,13 +502,16 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "MyEx..ctor(String m, Int32 c)"
     nkEmpty
     nkStmtList
-      nkAsgn
-        nkDotExpr
-          nkIdent 'self'
-          nkIdent 'msg'
+      nkCall
+        nkIdent 'nsInitException'
+        nkIdent 'self'
+        nkIdent 'Exception'
         nkIdent 'm'
       nkAsgn
         nkDotExpr
@@ -520,6 +541,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -646,7 +670,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Box'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.get_Err()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -668,7 +695,10 @@ nkStmtList
         nkRefTy
           nkIdent 'Exception'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Box.set_Err(Exception value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -823,6 +853,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Wrap(Exception inner)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -833,7 +866,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1079,12 +1115,14 @@ nkStmtList
         nkStmtList
           nkRaiseStmt
             nkCall
-              nkIdent 'Wrap'
-              nkIdent 'Program'
+              nkIdent 'nsThrown'
               nkCall
-                nkIdent 'newMyEx'
-                nkStrLit "wrapped"
-                nkIntLit 9
+                nkIdent 'Wrap'
+                nkIdent 'Program'
+                nkCall
+                  nkIdent 'newMyEx'
+                  nkStrLit "wrapped"
+                  nkIntLit 9
         nkExceptBranch
           nkInfix
             nkIdent 'as'
@@ -1117,7 +1155,9 @@ nkStmtList
       nkTryStmt
         nkStmtList
           nkRaiseStmt
-            nkIdent 'saved'
+            nkCall
+              nkIdent 'nsThrown'
+              nkIdent 'saved'
         nkExceptBranch
           nkInfix
             nkIdent 'as'

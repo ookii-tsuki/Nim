@@ -110,7 +110,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -239,7 +242,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -260,7 +266,10 @@ nkStmtList
                 nkIdent 'b'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__0(Int32 a, Int32 b)"
             nkEmpty
             nkStmtList
               nkReturnStmt
@@ -291,7 +300,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__1(Int32 x)"
             nkEmpty
             nkStmtList
               nkReturnStmt
@@ -314,7 +326,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__2()"
             nkEmpty
             nkStmtList
               nkCall
@@ -342,7 +357,10 @@ nkStmtList
                 nkIdent 'nsUnused1'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__3(Int32 nsUnused0, Int32 nsUnused1)"
             nkEmpty
             nkStmtList
               nkReturnStmt
@@ -370,7 +388,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkIdent 'int32'
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__4()"
             nkEmpty
             nkStmtList
               nkReturnStmt

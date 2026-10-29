@@ -137,7 +137,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.P..ctor(String n, Int32 a)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -162,6 +165,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -233,7 +239,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -394,7 +403,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.P..ctor(String n, Int32 a)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -429,6 +441,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -521,7 +536,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -598,7 +616,10 @@ nkStmtList
                         nkIdent 'x'
                         nkIdent 'float64'
                         nkEmpty
-                    nkEmpty
+                    nkPragma
+                      nkExprColonExpr
+                        nkIdent 'nsFrame'
+                        nkStrLit "Demo.Program.<Main>b__0(Double x)"
                     nkEmpty
                     nkStmtList
                       nkIdent 'x'
@@ -620,7 +641,10 @@ nkStmtList
                     nkIdent 'x'
                     nkIdent 'float64'
                     nkEmpty
-                nkEmpty
+                nkPragma
+                  nkExprColonExpr
+                    nkIdent 'nsFrame'
+                    nkStrLit "Demo.Program.<Main>b__1(Double x)"
                 nkEmpty
                 nkStmtList
                   nkIdent 'x'
@@ -733,7 +757,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__2(Int32 x)"
             nkEmpty
             nkStmtList
               nkIdent 'x'
@@ -779,7 +806,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Demo.Program.<Main>b__3(Int32 x)"
             nkEmpty
             nkStmtList
               nkCall
@@ -840,7 +870,10 @@ nkStmtList
                         nkIdent 'p'
                         nkIdent 'P'
                         nkEmpty
-                    nkEmpty
+                    nkPragma
+                      nkExprColonExpr
+                        nkIdent 'nsFrame'
+                        nkStrLit "Demo.Program.<Main>b__4(P p)"
                     nkEmpty
                     nkStmtList
                       nkDotExpr
@@ -867,7 +900,10 @@ nkStmtList
                       nkIdent 'p'
                       nkIdent 'P'
                       nkEmpty
-                  nkEmpty
+                  nkPragma
+                    nkExprColonExpr
+                      nkIdent 'nsFrame'
+                      nkStrLit "Demo.Program.<Main>b__5(P p)"
                   nkEmpty
                   nkStmtList
                     nkDotExpr

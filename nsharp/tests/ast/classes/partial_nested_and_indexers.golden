@@ -299,7 +299,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Account'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Account.get_Balance()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -316,7 +319,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Account.set_Balance(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -335,7 +341,10 @@ nkStmtList
         nkIdent 'n'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Account.Deposit(Int32 n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -354,7 +363,10 @@ nkStmtList
         nkIdent 'n'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Account.Withdraw(Int32 n)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -371,6 +383,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Account.Summary()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -496,7 +511,10 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.get_Item(Int32 i)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -519,7 +537,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.set_Item(Int32 i, Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -643,6 +664,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Outer.Next()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -665,6 +689,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Outer.Describe(Int32 size)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1225,6 +1252,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Tick()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1249,6 +1279,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Pair(Int32 a, Int32 b)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1257,7 +1290,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1417,7 +1453,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Account'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Account.get_Balance()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -1436,7 +1475,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Account.set_Balance(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -1459,7 +1501,10 @@ nkStmtList
         nkIdent 'n'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Account.Deposit(Int32 n)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1493,7 +1538,10 @@ nkStmtList
         nkIdent 'n'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Account.Withdraw(Int32 n)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1525,6 +1573,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Account.Summary()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1713,7 +1764,10 @@ nkStmtList
         nkIdent 'i'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.get_Item(Int32 i)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1742,7 +1796,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid.set_Item(Int32 i, Int32 value)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1902,6 +1959,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Outer.Next()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1930,6 +1990,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Outer.Describe(Int32 size)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2726,6 +2789,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Tick()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2764,6 +2830,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Pair(Int32 a, Int32 b)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2780,7 +2849,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

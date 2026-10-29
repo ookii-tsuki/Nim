@@ -234,6 +234,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Add(T x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -254,7 +257,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.get_Count()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -278,6 +284,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Pick()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -301,6 +310,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -323,6 +335,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Describe()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -751,6 +766,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Wrapper`1.Pick()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -773,6 +791,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Wrapper`1.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -893,7 +914,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Show[T](Repo`1 r)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -902,7 +926,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1227,6 +1254,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Add(T x)"
     nkEmpty
     nkStmtList
       nkCall
@@ -1254,7 +1284,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.get_Count()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1284,6 +1317,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Pick()"
     nkEmpty
     nkStmtList
       nkRaiseStmt
@@ -1312,6 +1348,9 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkIdent 'base'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1336,6 +1375,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.Describe()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1537,6 +1579,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Wrapper`1.Pick()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1572,6 +1617,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Wrapper`1.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1675,7 +1723,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Show[T](Repo`1 r)"
     nkEmpty
     nkStmtList
       nkCall
@@ -2276,7 +2327,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo.Add(Int32 x)"
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2305,6 +2359,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo.Pick()"
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2333,6 +2390,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo.Name()"
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2416,6 +2476,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "StrRepo.Pick()"
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2499,6 +2562,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "TopRepo.Pick()"
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2527,6 +2593,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "TopRepo.Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -2607,7 +2676,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo.Add(Int32 x)"
     nkEmpty
     nkStmtList
       nkCommand
@@ -2637,6 +2709,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo.Pick()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2659,6 +2734,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2803,6 +2881,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "TopRepo.Pick()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2830,6 +2911,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "TopRepo.Name()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2974,6 +3058,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "StrRepo.Pick()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -3111,7 +3198,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

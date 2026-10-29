@@ -102,6 +102,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Company.Products.Store.Items()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -240,6 +243,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Company.Products.Store.Items()"
     nkEmpty
     nkStmtList
       nkVarSection

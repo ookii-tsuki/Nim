@@ -230,7 +230,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -542,7 +545,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkCall
@@ -928,7 +934,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Program.<Main>b__0(Int32 x)"
             nkEmpty
             nkStmtList
               nkInfix
@@ -974,7 +983,10 @@ nkStmtList
                     nkIdent 'x'
                     nkIdent 'int32'
                     nkEmpty
-                nkEmpty
+                nkPragma
+                  nkExprColonExpr
+                    nkIdent 'nsFrame'
+                    nkStrLit "Program.<Main>b__1(Int32 x)"
                 nkEmpty
                 nkStmtList
                   nkIdent 'x'
@@ -1111,7 +1123,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Program.<Main>b__2(Int32 x)"
             nkEmpty
             nkStmtList
               nkCall

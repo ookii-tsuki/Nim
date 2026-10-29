@@ -48,6 +48,10 @@ type
       ## namespace is already imported is not named twice.
     cache: IdentCache
     thisName: string        ## "self" in instance members, "" in static ones
+    frameScope: string
+      ## `Demo.Program.<Main>` while a member is lowered: its lambdas and local
+      ## functions name their stack frames after it, as .NET's do.
+    frameCount: ref int     ## numbers those lambdas and local functions
     entryPoint: PNode       ## the emitted `Main` proc, if there was one
     staticInits: seq[PNode]
       ## One `nsStaticInit<C>` proc per class with static initialisers or a static
@@ -610,6 +614,168 @@ proc prependAll(into: PNode; pre: seq[PNode]): PNode =
     for x in into: result.add x
   else: result.add into
 
+# --- stack frames ---------------------------------------------------------------
+#
+# Each member's procs carry `{.nsFrame: "Demo.Program.Run(Int32 n)".}`, so a stack
+# trace names the C# member as .NET's does (see `nsharp/pragmas`). A proc with no
+# C# counterpart (an allocator, a wrapper) records no frame at all.
+
+proc clrTypeName(t: NsNode): string =
+  ## A type as .NET's stack traces write it: `Int32`, `String`, ``List`1``,
+  ## `Int32[]`, ``Nullable`1``.
+  if t == nil: return "Object"
+  case t.kind
+  of nsnArrayType:
+    result = clrTypeName(t.typ) & "[" & repeat(',', max(int(t.intVal), 1) - 1) & "]"
+  of nsnNullableType:
+    let inner = clrTypeName(t.typ)
+    result = (if inner in ["String", "Object"]: inner else: "Nullable`1")
+  of nsnTupleType: result = "ValueTuple`" & $t.sons.len
+  of nsnTypeName:
+    var name = t.name
+    let dot = name.rfind('.')
+    if dot >= 0: name = name[dot + 1 .. ^1]
+    result =
+      case name
+      of "int": "Int32"
+      of "uint": "UInt32"
+      of "long": "Int64"
+      of "ulong": "UInt64"
+      of "short": "Int16"
+      of "ushort": "UInt16"
+      of "byte": "Byte"
+      of "sbyte": "SByte"
+      of "float": "Single"
+      of "double": "Double"
+      of "decimal": "Decimal"
+      of "bool": "Boolean"
+      of "char": "Char"
+      of "string": "String"
+      of "object", "dynamic": "Object"
+      of "nint": "IntPtr"
+      of "nuint": "UIntPtr"
+      else: name
+    if t.sons.len > 0: result.add "`" & $t.sons.len
+  else: result = "Object"
+
+proc clrParams(params: seq[NsNode]): string =
+  ## `Int32 a, String& b`: a `ref`, `out` or `in` parameter's type is a reference.
+  result = ""
+  for i, p in params:
+    if i > 0: result.add ", "
+    result.add clrTypeName(p.typ)
+    if p.paramMod in ["ref", "out", "in"]: result.add '&'
+    result.add ' ' & p.name
+
+proc frameOwner(l: Lowerer; cls: NsNode): string =
+  ## `Demo.Outer+Box`1`: the type a member's frame names.
+  result = (if cls.outer.len > 0: cls.outer & "+" & cls.name else: cls.name)
+  if cls.typeParams.len > 0: result.add "`" & $cls.typeParams.len
+  if l.curNamespace.len > 0: result = l.curNamespace & "." & result
+
+proc addPragma(pd, e: PNode) =
+  if pd[4].kind == nkEmpty: pd[4] = newNodeI(nkPragma, pd.info)
+  pd[4].add e
+
+proc framed(l: Lowerer; pd: PNode; name: string) =
+  pd.addPragma newTree(nkExprColonExpr, pd.info, l.id("nsFrame", pd.info),
+                       newStrNode(nkStrLit, name))
+
+proc unframed(l: Lowerer; pd: PNode) =
+  pd.addPragma newTree(nkExprColonExpr, pd.info, l.id("stackTrace", pd.info),
+                       l.id("off", pd.info))
+
+proc nestedFrame(l: Lowerer; kind, name: string; params: seq[NsNode]): string =
+  ## A lambda's or local function's frame inside the member being lowered:
+  ## `Demo.Program.<Main>b__0()`, `Demo.Program.<Main>g__Local|1(Int32 n)`. .NET
+  ## numbers them by its own ordinals; these count in source order.
+  if l.frameScope.len == 0 or l.frameCount == nil: return ""
+  result = l.frameScope & kind & name & (if kind == "g__": "|" else: "") &
+           $l.frameCount[] & "(" & clrParams(params) & ")"
+  inc l.frameCount[]
+
+proc procNameOf(pd: PNode): string =
+  var n = pd[0]
+  if n.kind == nkPostfix: n = n[1]
+  if n.kind == nkAccQuoted:
+    result = ""
+    for x in n: result.add x.ident.s
+  elif n.kind == nkIdent: result = n.ident.s
+  else: result = ""
+
+proc nameFrames(l: Lowerer; cls, m: NsNode; procs: openArray[PNode]) =
+  ## The frames of the procs one member lowered to: the member's own, named as
+  ## .NET names it (`get_X`, `..ctor`, `op_Addition`, `get_Item`), and none for
+  ## the procs that only call it.
+  let owner = l.frameOwner(cls)
+  var first = true
+  for pd in procs:
+    if pd == nil or pd.kind notin {nkProcDef, nkMethodDef, nkFuncDef, nkConverterDef} or
+       pd.len < 7 or pd[6].kind == nkEmpty:
+      continue
+    let pn = procNameOf(pd)
+    var frame = ""
+    case m.kind
+    of nsnMethodDecl:
+      if first:
+        var name = m.name
+        if m.explicitIface.len > 0:
+          name = (if l.curNamespace.len > 0 and '.' notin m.explicitIface:
+                    l.curNamespace & "." else: "") & m.explicitIface & "." & name
+        if m.typeParams.len > 0:
+          name.add '['
+          for i, t in m.typeParams:
+            if i > 0: name.add ','
+            name.add t.name
+          name.add ']'
+        frame = owner & "." & name & "(" & clrParams(m.params) & ")"
+    of nsnPropertyDecl:
+      frame = owner & "." & (if pn.endsWith("="): "set_" & m.name & "(" & clrTypeName(m.typ) & " value)"
+                             else: "get_" & m.name & "()")
+    of nsnIndexerDecl:
+      let ps = clrParams(m.params)
+      frame = owner & "." & (if pn.endsWith("="):
+                               "set_Item(" & ps & (if ps.len > 0: ", " else: "") &
+                               clrTypeName(m.typ) & " value)"
+                             else: "get_Item(" & ps & ")")
+    of nsnOperatorDecl:
+      if first:
+        let unary = m.params.len == 1
+        let op =
+          case m.name
+          of "+": (if unary: "op_UnaryPlus" else: "op_Addition")
+          of "-": (if unary: "op_UnaryNegation" else: "op_Subtraction")
+          of "*": "op_Multiply"
+          of "/": "op_Division"
+          of "%": "op_Modulus"
+          of "==": "op_Equality"
+          of "!=": "op_Inequality"
+          of "<": "op_LessThan"
+          of ">": "op_GreaterThan"
+          of "<=": "op_LessThanOrEqual"
+          of ">=": "op_GreaterThanOrEqual"
+          of "!": "op_LogicalNot"
+          of "~": "op_OnesComplement"
+          of "++": "op_Increment"
+          of "--": "op_Decrement"
+          of "&": "op_BitwiseAnd"
+          of "|": "op_BitwiseOr"
+          of "^": "op_ExclusiveOr"
+          of "<<": "op_LeftShift"
+          of ">>": "op_RightShift"
+          of ">>>": "op_UnsignedRightShift"
+          of "true": "op_True"
+          of "false": "op_False"
+          of "implicit": "op_Implicit"
+          of "explicit": "op_Explicit"
+          else: "op_" & m.name
+        frame = owner & "." & op & "(" & clrParams(m.params) & ")"
+    of nsnCtorDecl:
+      if pn.startsWith("init"): frame = owner & "..ctor(" & clrParams(m.params) & ")"
+    else: discard
+    first = false
+    if frame.len > 0: l.framed(pd, frame) else: l.unframed(pd)
+
 proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
   ## A lambda as a Nim closure. `sema.nim` wrote the types of the delegate it
   ## converts to; one it could not place keeps `auto`, which Nim infers when the
@@ -643,6 +809,8 @@ proc lambdaToNim(l: Lowerer; n: NsNode): PNode =
     body.sons = @[st]
   result[6] = if body != nil: prependAll(l.stmtSeq(body), l.shadowParams(n.params, body, n.info))
               else: emptyList(n.info)
+  let frame = l.nestedFrame("b__", "", n.params)
+  if frame.len > 0: l.framed(result, frame)
   if n.captures.len > 0:
     ## It captures loop-body cells: made by a factory taking them, so it keeps
     ## this iteration's (see `markLoopCells`).
@@ -1990,6 +2158,14 @@ proc throwToNim(l: Lowerer; n: NsNode): PNode =
     for a in n.body.sons: ne.add l.expr(a)
     if l.imports != nil: l.imports.note(namespaceModulePath("System"), "nsNewException")
     e = ne
+  elif n.body != nil and n.body.kind != nsnNew:
+    ## `throw e;` of an exception thrown before starts its stack trace again.
+    e = newTree(nkCall, n.info, l.id("nsThrown", n.info), e)
+  elif n.body == nil:
+    ## `throw;` raises the caught exception itself, which makes Nim record the
+    ## rethrow's own frames as well (a bare `raise` would not), so its stack trace
+    ## goes on to the next catch, as .NET's does.
+    e = newTree(nkCall, n.info, l.id("getCurrentException", n.info))
   result = newTree(nkRaiseStmt, n.info, e)
 
 # --- patterns -----------------------------------------------------------------
@@ -3387,6 +3563,8 @@ proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   for t in n.typeParams: inner.procTypeParams.add t.name
   result = inner.mkProc(l.id(n.name, n.info), fp, inner.memberBody(n.typ, n.body, n.params),
                         n.info, withPragmas = true)
+  let frame = l.nestedFrame("g__", n.name, n.params)
+  if frame.len > 0: l.framed(result, frame)
 
 proc enumeratorLoop(l: Lowerer; n: NsNode): PNode =
   ## `foreach` over a class with a `GetEnumerator` method, as C# defines it:
@@ -3996,11 +4174,14 @@ proc lowerInit(l: Lowerer; cls, m: NsNode; isException: bool;
                         not l.scope.classes.hasKey(baseName) and
                         l.surface.isExceptionType(baseName)
   if externalExcBase:
-    if m.initArgs.len > 0:
-      ibody.add newTree(nkAsgn, m.info,
-                        newTree(nkDotExpr, m.info, l.id("self", m.info),
-                                l.id("msg", m.info)),
-                        l.expr(m.initArgs[0]))
+    ## The library's constructor gives the arguments to `self`: the message, an
+    ## inner exception, a parameter's name.
+    let icall = newTree(nkCall, m.info, l.id("nsInitException", m.info), l.id("self", m.info))
+    let q = l.qualifiedName(baseName, m.info)
+    icall.add (if q != nil: q else: l.id(nimTypeName(baseName), m.info))
+    for a in m.initArgs: icall.add l.expr(a)
+    if l.imports != nil: l.imports.note(namespaceModulePath("System"), "nsInitException")
+    ibody.add icall
   elif initName.len > 0:
     let icall = newNodeI(nkCall, m.info)
     icall.add l.id(initName, m.info)
@@ -6033,6 +6214,10 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   var hasCtor = false
   for m in n.sons:
     var inner = l
+    inner.frameScope = l.frameOwner(n) & ".<" & m.name & ">"
+    inner.frameCount = new int
+    let firstProc = into.len
+    defer: l.nameFrames(n, m, into[firstProc .. ^1])
     case m.kind
     of nsnMethodDecl:
       inner.thisName = if m.attrs.isStatic: "" else: "self"

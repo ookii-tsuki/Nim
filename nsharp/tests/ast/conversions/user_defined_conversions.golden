@@ -130,7 +130,10 @@ nkStmtList
         nkIdent 'k'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "V2.op_Implicit(Int32 k)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -253,7 +256,10 @@ nkStmtList
         nkIdent 'd'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Meters.op_Implicit(Double d)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -382,6 +388,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Take(V2 v)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -398,6 +407,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Back()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -406,7 +418,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -550,7 +565,10 @@ nkStmtList
         nkIdent 'k'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "V2.op_Implicit(Int32 k)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -713,7 +731,10 @@ nkStmtList
         nkIdent 'd'
         nkIdent 'float64'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Meters.op_Implicit(Double d)"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -873,6 +894,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Take(V2 v)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -891,6 +915,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Back()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -903,7 +930,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

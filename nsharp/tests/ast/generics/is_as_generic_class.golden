@@ -401,7 +401,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1..ctor(T v)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -426,6 +429,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -448,6 +454,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1.Get()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -605,7 +614,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag`1.Add(T x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -626,7 +638,10 @@ nkStmtList
           nkIdent 'Bag'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag`1.get_Count()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -651,6 +666,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag`1.GetEnumerator()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -671,6 +689,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag`1.Demo.IEnumerable.GetEnumerator()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -831,7 +852,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Plain'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Plain.get_Count()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -850,6 +874,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Plain.GetEnumerator()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -864,6 +891,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Plain.Demo.IEnumerable.GetEnumerator()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -979,7 +1009,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1519,7 +1552,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1..ctor(T v)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1549,6 +1585,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1578,6 +1617,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Box`1.Get()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1776,7 +1818,10 @@ nkStmtList
         nkIdent 'x'
         nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag`1.Add(T x)"
     nkEmpty
     nkStmtList
       nkCall
@@ -1804,7 +1849,10 @@ nkStmtList
           nkIdent 'Bag'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag`1.get_Count()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -1835,6 +1883,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag`1.GetEnumerator()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1869,6 +1920,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Bag`1.Demo.IEnumerable.GetEnumerator()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2276,7 +2330,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Plain'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Plain.get_Count()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2297,6 +2354,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Plain.GetEnumerator()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2319,6 +2379,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Plain.Demo.IEnumerable.GetEnumerator()"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -2440,7 +2503,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection

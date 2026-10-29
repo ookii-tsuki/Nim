@@ -145,7 +145,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -300,7 +303,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon0.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -319,7 +325,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon0.set_Name(String value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -334,7 +343,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon0.get_Age()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -353,7 +365,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon0.set_Age(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -380,7 +395,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon0..ctor(String Name, Int32 Age)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -405,6 +423,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -515,7 +536,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon1'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon1.get_x()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -534,7 +558,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon1.set_x(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -549,7 +576,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon1'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon1.get_Name()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -568,7 +598,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon1.set_Name(String value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -595,7 +628,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon1..ctor(Int32 x, String Name)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -620,6 +656,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -730,7 +769,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon2'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon2.get_A()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -749,7 +791,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon2.set_A(Int32 value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -770,7 +815,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon2..ctor(Int32 A)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -789,6 +837,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -873,7 +924,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -1300,7 +1354,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon0.get_Name()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -1321,7 +1378,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon0.set_Name(String value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -1340,7 +1400,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon0'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon0.get_Age()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -1361,7 +1424,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon0.set_Age(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -1392,7 +1458,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon0..ctor(String Name, Int32 Age)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1427,6 +1496,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1665,7 +1737,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon1'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon1.get_x()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -1686,7 +1761,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon1.set_x(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -1705,7 +1783,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon1'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon1.get_Name()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -1726,7 +1807,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon1.set_Name(String value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -1757,7 +1841,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'string'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon1..ctor(Int32 x, String Name)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1792,6 +1879,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1999,7 +2089,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'nsAnon2'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon2.get_A()"
     nkEmpty
     nkDotExpr
       nkIdent 'self'
@@ -2020,7 +2113,10 @@ nkStmtList
         nkIdent 'value'
         nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon2.set_A(Int32 value)"
     nkEmpty
     nkAsgn
       nkDotExpr
@@ -2045,7 +2141,10 @@ nkStmtList
           nkIdent 'sink'
           nkIdent 'int32'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "nsAnon2..ctor(Int32 A)"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2069,6 +2168,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

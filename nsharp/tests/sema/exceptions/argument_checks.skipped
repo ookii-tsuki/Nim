@@ -1,0 +1,2 @@
+ArgumentException.GetType = result:other
+ArgumentOutOfRangeException.ActualValue = result:other

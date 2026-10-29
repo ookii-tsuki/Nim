@@ -104,6 +104,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Twice(Int32 x)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -112,7 +115,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -253,6 +259,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Twice(Int32 x)"
     nkEmpty
     nkStmtList
       nkReturnStmt
@@ -266,7 +275,10 @@ nkStmtList
     nkEmpty
     nkFormalParams
       nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.Main()"
     nkEmpty
     nkStmtList
       nkVarSection
@@ -279,7 +291,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Program.<Main>b__0()"
             nkEmpty
             nkStmtList
               nkCall
@@ -295,7 +310,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Program.<Main>b__1()"
             nkEmpty
             nkStmtList
               nkCall
@@ -379,7 +397,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Program.<Main>b__2(Int32 x)"
             nkEmpty
             nkStmtList
               nkInfix
@@ -403,7 +424,10 @@ nkStmtList
                 nkIdent 'x'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Program.<Main>b__3(Int32 x)"
             nkEmpty
             nkStmtList
               nkReturnStmt
@@ -433,7 +457,10 @@ nkStmtList
                 nkIdent 'y'
                 nkIdent 'int32'
                 nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Program.<Main>b__4(Int32 x, Int32 y)"
             nkEmpty
             nkStmtList
               nkInfix
@@ -477,7 +504,10 @@ nkStmtList
             nkEmpty
             nkFormalParams
               nkEmpty
-            nkEmpty
+            nkPragma
+              nkExprColonExpr
+                nkIdent 'nsFrame'
+                nkStrLit "Program.<Main>b__5()"
             nkEmpty
             nkStmtList
               nkCommand
