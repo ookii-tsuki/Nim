@@ -126,7 +126,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'untyped'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'A'
@@ -391,8 +391,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Alpha.A.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -485,7 +485,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'A'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'A'
@@ -574,8 +574,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Alpha.Holder`1.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1137,8 +1137,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Alpha.A.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1270,7 +1270,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'A'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'A'
@@ -1384,8 +1384,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Alpha.Holder`1.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

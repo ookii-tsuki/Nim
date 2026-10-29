@@ -191,6 +191,7 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkIdent 'discardable'
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
@@ -256,6 +257,7 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkIdent 'discardable'
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
@@ -340,8 +342,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Polite.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -494,7 +496,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Polite'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Polite'
@@ -571,8 +573,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Ticker.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -698,7 +700,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Ticker'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Ticker'
@@ -776,8 +778,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Program.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -825,7 +827,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'IGreeter'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -844,7 +846,7 @@ nkStmtList
     nkFormalParams
       nkEmpty
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -880,7 +882,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Program'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -942,6 +944,7 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkIdent 'discardable'
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
@@ -1033,6 +1036,7 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkIdent 'discardable'
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
@@ -1145,8 +1149,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Polite.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1404,7 +1408,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Polite'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Polite'
@@ -1499,8 +1503,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Ticker.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1728,7 +1732,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Ticker'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Ticker'
@@ -1814,8 +1818,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Program.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1873,7 +1877,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'IGreeter'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -1895,7 +1899,7 @@ nkStmtList
     nkFormalParams
       nkEmpty
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -2021,7 +2025,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Program'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'

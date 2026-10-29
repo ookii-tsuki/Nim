@@ -1,56 +1,62 @@
    at Demo.Box`1.Fail(Int32 a, String b):line 23
-   at Demo.Program.Main():line 61
-   at Demo.Program.get_X():line 26
-   at Demo.Program.Main():line 62
-   at Demo.Program..ctor(Int32 n):line 28
-   at Demo.Program.Main():line 63
-   at Demo.Program.Over(Int32 a):line 29
    at Demo.Program.Main():line 64
-   at Demo.Program.Over(Double a, List`1 b):line 30
+   at Demo.Program.get_X():line 26
    at Demo.Program.Main():line 65
-   at Demo.Program.Gen[T](T x):line 31
+   at Demo.Program..ctor(Int32 n):line 28
    at Demo.Program.Main():line 66
-   at Demo.Vec.op_Addition(Vec a, Vec b):line 11
+   at Demo.Program.Over(Int32 a):line 29
    at Demo.Program.Main():line 67
-   at Demo.Vec.get_Item(Int32 i):line 12
+   at Demo.Program.Over(Double a, List`1 b):line 30
    at Demo.Program.Main():line 68
+   at Demo.Program.Gen[T](T x):line 31
+   at Demo.Program.Main():line 69
+   at Demo.Vec.op_Addition(Vec a, Vec b):line 11
+   at Demo.Program.Main():line 70
+   at Demo.Vec.get_Item(Int32 i):line 12
+   at Demo.Program.Main():line 71
 -- virtual, interface, implicit constructor, nested, event
    at Demo.Base.V():line 14
    at Demo.Der.V():line 15
-   at Demo.Program.Main():line 70
+   at Demo.Program.Main():line 73
    at Demo.Impl.Bar():line 17
-   at Demo.Program.Main():line 71
+   at Demo.Program.Main():line 74
    at Demo.Program.Fail():line 32
    at Demo.Init..ctor():line 18
-   at Demo.Program.Main():line 72
+   at Demo.Program.Main():line 75
    at Demo.Outer.Inner.Fail():line 19
-   at Demo.Program.Main():line 73
-   at Demo.Evt.add_E(Action value):line 20
-   at Demo.Program.Main():line 74
--- a filter that does not match
-   at Demo.Program.A():line 37
-   at Demo.Program.Filtered():line 34
    at Demo.Program.Main():line 76
+   at Demo.Evt.add_E(Action value):line 20
+   at Demo.Program.Main():line 77
+-- a filter reading the trace
+   at Demo.Program.A():line 40
+   at Demo.Program.FilterReads():line 34
+-- nullable parameters
+   at Demo.Program.Nullables(Nullable`1 d, Nullable`1 t, Exception x):line 35
+   at Demo.Program.Main():line 81
+-- a filter that does not match
+   at Demo.Program.A():line 40
+   at Demo.Program.Filtered():line 37
+   at Demo.Program.Main():line 83
 -- rethrow
-   at Demo.Program.A():line 37
-   at Demo.Program.Rethrow():line 40
-   at Demo.Program.Main():line 78
+   at Demo.Program.A():line 40
+   at Demo.Program.Rethrow():line 43
+   at Demo.Program.Main():line 85
 -- throw e
-   at Demo.Program.ThrowAgain():line 45
-   at Demo.Program.Main():line 80
+   at Demo.Program.ThrowAgain():line 48
+   at Demo.Program.Main():line 87
 -- wrapped
 System.Exception: wrapped
  ---> System.InvalidOperationException: a
-   at Demo.Program.A():line 37
-   at Demo.Program.Wrap():line 48
+   at Demo.Program.A():line 40
+   at Demo.Program.Wrap():line 51
    --- End of inner exception stack trace ---
-   at Demo.Program.Wrap():line 49
-   at Demo.Program.Main():line 82
+   at Demo.Program.Wrap():line 52
+   at Demo.Program.Main():line 89
 -- filter
-   at Demo.Program.A():line 37
-   at Demo.Program.Main():line 84
+   at Demo.Program.A():line 40
+   at Demo.Program.Main():line 91
 -- never thrown
 true System.Exception: never
 -- environment
    at System.Environment.get_StackTrace()
-   at Demo.Program.Main():line 89
+   at Demo.Program.Main():line 96

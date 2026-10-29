@@ -79,8 +79,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Node.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -149,7 +149,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Node'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Node'
@@ -226,8 +226,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Program.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -289,7 +289,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Program'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -383,8 +383,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Node.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -465,7 +465,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Node'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Node'
@@ -553,8 +553,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Program.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -940,7 +940,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Program'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'

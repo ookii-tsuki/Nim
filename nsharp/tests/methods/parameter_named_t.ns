@@ -1,0 +1,15 @@
+// A static method's parameter may be named `t` (or anything else) without
+// clashing with how N# passes the class to it.
+using System;
+namespace Demo {
+  class Calc {
+    public static int Twice(int t) => t * 2;
+    public static string Join<T>(T t, T u) => t + "," + u;
+  }
+  class Program {
+    static double Half(double t) { return t / 2; }
+    static void Main() {
+      Console.WriteLine(Calc.Twice(3) + " " + Calc.Join("a", "b") + " " + Half(5));
+    }
+  }
+}

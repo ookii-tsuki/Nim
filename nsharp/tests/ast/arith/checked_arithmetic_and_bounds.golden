@@ -61,8 +61,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Program.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -110,7 +110,7 @@ nkStmtList
     nkFormalParams
       nkEmpty
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -150,7 +150,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Program'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -230,8 +230,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Program.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -289,7 +289,7 @@ nkStmtList
     nkFormalParams
       nkEmpty
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -1405,8 +1405,15 @@ nkStmtList
                 nkEmpty
                 nkCall
                   nkIdent 'getCurrentException'
+            nkLetSection
+              nkIdentDefs
+                nkIdent 'nsTrace20'
+                nkEmpty
+                nkDotExpr
+                  nkIdent 'nsExc18'
+                  nkIdent 'trace'
             nkCall
-              nkIdent 'nsAdoptExceptionName'
+              nkIdent 'nsAdoptException'
               nkIdent 'nsExc18'
             nkVarSection
               nkIdentDefs
@@ -1456,9 +1463,6 @@ nkStmtList
                   nkIdent 'nsPick19'
                   nkIntLit 1
                 nkStmtList
-                  nkCall
-                    nkIdent 'nsCutTrace'
-                    nkIdent 'nsExc18'
                   nkLetSection
                     nkIdentDefs
                       nkIdent 'e'
@@ -1478,8 +1482,14 @@ nkStmtList
                           nkIdent 'e'
                           nkIdent 'Message'
               nkElse
-                nkRaiseStmt
-                  nkEmpty
+                nkStmtList
+                  nkAsgn
+                    nkDotExpr
+                      nkIdent 'nsExc18'
+                      nkIdent 'trace'
+                    nkIdent 'nsTrace20'
+                  nkRaiseStmt
+                    nkEmpty
       nkTryStmt
         nkStmtList
           nkTryStmt
@@ -1524,7 +1534,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Program'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'

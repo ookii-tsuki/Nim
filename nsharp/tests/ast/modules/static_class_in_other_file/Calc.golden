@@ -54,8 +54,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Math.Calc.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -105,7 +105,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Calc'
@@ -134,7 +134,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Calc'
@@ -163,7 +163,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Calc'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Calc'
@@ -243,8 +243,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Math.Calc.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -304,7 +304,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Calc'
@@ -338,7 +338,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Calc'
@@ -372,7 +372,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Calc'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Calc'

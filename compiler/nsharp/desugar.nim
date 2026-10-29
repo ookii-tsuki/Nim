@@ -637,8 +637,13 @@ proc clrTypeName(l: Lowerer; t: NsNode): string =
                     "SByte", "Single", "Double", "Decimal", "Boolean", "Char", "IntPtr",
                     "UIntPtr"]
     let own = (if t.typ != nil and t.typ.kind == nsnTypeName: canonicalTypeName(t.typ.name) else: "")
+    let lib = (if own.len > 0: l.surface.nimSpellingOf(own) else: "")
     let ownValue = own.len > 0 and (l.scope.enums.contains(own) or
-                   l.scope.classes.hasKey(own) and l.scope.classes[own].classKind == ckStruct)
+                   l.scope.classes.hasKey(own) and l.scope.classes[own].classKind == ckStruct or
+                   not l.scope.classes.hasKey(own) and lib.len > 0 and
+                   l.surface.types.hasKey(lib) and l.surface.types[lib].isValue and
+                   not l.surface.isExceptionType(lib)) or
+                   t.typ != nil and t.typ.kind == nsnTupleType
     result = (if inner in values or ownValue: "Nullable`1" else: inner)
   of nsnTupleType: result = "ValueTuple`" & $t.sons.len
   of nsnTypeName:
@@ -2769,9 +2774,13 @@ proc filteredTryToNim(l: Lowerer; n: NsNode): PNode =
   for r in l.cacheResets(info): body.add r
   body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(exc, info),
     empty(info), newTree(nkCall, info, l.id("getCurrentException", info))))
-  ## Named before a filter can read it (see `tryToNim`); its trace is cut only by
-  ## the clause that takes it, so one re-raised past every filter keeps it whole.
-  body.add newTree(nkCall, info, l.id("nsAdoptExceptionName", info), l.id(exc, info))
+  ## Named and its trace cut before a filter can read it (see `tryToNim`); the
+  ## whole trace is kept, and put back when no clause takes the exception, so one
+  ## re-raised past every filter keeps its outer frames.
+  let saved = l.fresh("nsTrace")
+  body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id(saved, info),
+    empty(info), newTree(nkDotExpr, info, l.id(exc, info), l.id("trace", info))))
+  body.add newTree(nkCall, info, l.id("nsAdoptException", info), l.id(exc, info))
   body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id(pick, info),
     empty(info), newIntNode(nkIntLit, 0)))
   var k = 0
@@ -2797,12 +2806,14 @@ proc filteredTryToNim(l: Lowerer; n: NsNode): PNode =
     body.add newTree(nkIfStmt, c.info, newTree(nkElifBranch, c.info, test,
       newTree(nkBlockStmt, c.info, empty(c.info), then)))
     let run = newNodeI(nkStmtList, c.info)
-    run.add newTree(nkCall, c.info, l.id("nsCutTrace", c.info), l.id(exc, c.info))
     run.add l.catchVar(c, l.id(exc, c.info))
     run.add l.stmtSeq(c.body)
     dispatch.add newTree(nkElifBranch, c.info, newTree(nkInfix, c.info, l.id("==", c.info),
       l.id(pick, c.info), newIntNode(nkIntLit, k)), run)
-  dispatch.add newTree(nkElse, info, newTree(nkRaiseStmt, info, empty(info)))
+  dispatch.add newTree(nkElse, info, newTree(nkStmtList, info,
+    newTree(nkAsgn, info, newTree(nkDotExpr, info, l.id(exc, info), l.id("trace", info)),
+            l.id(saved, info)),
+    newTree(nkRaiseStmt, info, empty(info))))
   body.add dispatch
   br.add body
   result.add br
@@ -3917,9 +3928,10 @@ proc staticStorageName(cls, member: string): string =
   "ns" & cls & "_" & member
 
 proc typedescDefs(l: Lowerer; cls: string; info: TLineInfo): PNode =
-  ## `t: typedesc[C]`, the receiver of a static member, so `C.x` is Nim's dot-call.
+  ## `nsT: typedesc[C]`, the receiver of a static member, so `C.x` is Nim's dot-call;
+  ## named so no parameter of the method's own (`t`) is taken.
   result = newNodeI(nkIdentDefs, info)
-  result.add l.id("t", info)
+  result.add l.id("nsT", info)
   result.add newTree(nkBracketExpr, info, l.id("typedesc", info), l.clsType(cls, info))
   result.add empty(info)
 
@@ -4429,6 +4441,8 @@ proc lowerInterface(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     ## A dispatcher is one indirect call: inlined, an interface call costs no more;
     ## the implementation it reaches records the frame, as in .NET.
     disp[4] = newTree(nkPragma, info, l.id("inline", info))
+    ## C# lets a call statement drop a method's result.
+    if fp[0].kind != nkEmpty: disp[4].add l.id("discardable", info)
     l.unframed(disp)
     into.add disp
   # default implementations (C# 8): `nsDefault_I_M(self: I, params)`, whose `this`
@@ -6191,9 +6205,12 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
          pd[4].sons.anyIt(it.kind == nkExprColonExpr and it[0].kind == nkIdent and
                           it[0].ident.s in ["nsFrame", "stackTrace"]):
         continue
+      let own = n.name & (if n.typeParams.len > 0: "`" & $n.typeParams.len else: "")
       case procNameOf(pd)
-      of "ToString": l.framed(pd, owner & ".ToString()")
-      of "Equals": l.framed(pd, owner & ".Equals(" & n.name & " other)")
+      of "ToString":
+        ## A record's own; a plain class's field print is N#'s, which .NET has not.
+        if n.attrs.isRecord: l.framed(pd, owner & ".ToString()") else: l.unframed(pd)
+      of "Equals": l.framed(pd, owner & ".Equals(" & own & " other)")
       of "hash": l.framed(pd, owner & ".GetHashCode()")
       else: l.unframed(pd)
   else:

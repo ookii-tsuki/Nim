@@ -1,0 +1,20 @@
+// A call statement may drop the result of a method reached through an interface,
+// as of any other method.
+using System;
+namespace Demo {
+  interface IShape { double Area(); string Name { get; } }
+  class Square : IShape {
+    public int Calls;
+    public double Area() { Calls++; return 4; }
+    public string Name => "square";
+  }
+  class Program {
+    static void Main() {
+      var sq = new Square();
+      IShape s = sq;
+      s.Area();
+      s.Area();
+      Console.WriteLine(sq.Calls + " " + s.Area() + " " + s.Name);
+    }
+  }
+}

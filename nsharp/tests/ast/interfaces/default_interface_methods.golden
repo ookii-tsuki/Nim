@@ -149,6 +149,7 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkIdent 'discardable'
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
@@ -168,6 +169,7 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkIdent 'discardable'
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
@@ -187,6 +189,7 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkIdent 'discardable'
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
@@ -309,8 +312,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Plain.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -437,7 +440,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Plain'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Plain'
@@ -514,8 +517,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Custom.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -661,7 +664,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Custom'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Custom'
@@ -738,8 +741,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Loud.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -885,7 +888,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Loud'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Loud'
@@ -962,8 +965,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Program.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1025,7 +1028,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Program'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -1083,6 +1086,7 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkIdent 'discardable'
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
@@ -1114,6 +1118,7 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkIdent 'discardable'
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
@@ -1145,6 +1150,7 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkIdent 'discardable'
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
@@ -1310,8 +1316,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Plain.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1576,7 +1582,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Plain'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Plain'
@@ -1664,8 +1670,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Custom.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1956,7 +1962,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Custom'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Custom'
@@ -2044,8 +2050,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Loud.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2331,7 +2337,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Loud'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Loud'
@@ -2419,8 +2425,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Program.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2537,7 +2543,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Program'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'

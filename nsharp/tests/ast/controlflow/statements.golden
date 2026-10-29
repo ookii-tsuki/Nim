@@ -52,7 +52,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'untyped'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -106,8 +106,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Resource.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -262,8 +262,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Program.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -311,7 +311,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -346,7 +346,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -369,7 +369,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -394,7 +394,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Program'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -483,8 +483,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Resource.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -686,8 +686,8 @@ nkStmtList
     nkPragma
       nkIdent 'discardable'
       nkExprColonExpr
-        nkIdent 'nsFrame'
-        nkStrLit "Demo.Program.ToString()"
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -745,7 +745,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'int32'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -911,8 +911,15 @@ nkStmtList
                 nkEmpty
                 nkCall
                   nkIdent 'getCurrentException'
+            nkLetSection
+              nkIdentDefs
+                nkIdent 'nsTrace3'
+                nkEmpty
+                nkDotExpr
+                  nkIdent 'nsExc1'
+                  nkIdent 'trace'
             nkCall
-              nkIdent 'nsAdoptExceptionName'
+              nkIdent 'nsAdoptException'
               nkIdent 'nsExc1'
             nkVarSection
               nkIdentDefs
@@ -996,9 +1003,6 @@ nkStmtList
                   nkIdent 'nsPick2'
                   nkIntLit 1
                 nkStmtList
-                  nkCall
-                    nkIdent 'nsCutTrace'
-                    nkIdent 'nsExc1'
                   nkLetSection
                     nkIdentDefs
                       nkIdent 'ex'
@@ -1018,9 +1022,6 @@ nkStmtList
                   nkIdent 'nsPick2'
                   nkIntLit 2
                 nkStmtList
-                  nkCall
-                    nkIdent 'nsCutTrace'
-                    nkIdent 'nsExc1'
                   nkLetSection
                     nkIdentDefs
                       nkIdent 'ex'
@@ -1040,8 +1041,14 @@ nkStmtList
                           nkIdent 'ex'
                           nkIdent 'Message'
               nkElse
-                nkRaiseStmt
-                  nkEmpty
+                nkStmtList
+                  nkAsgn
+                    nkDotExpr
+                      nkIdent 'nsExc1'
+                      nkIdent 'trace'
+                    nkIdent 'nsTrace3'
+                  nkRaiseStmt
+                    nkEmpty
       nkTryStmt
         nkStmtList
           nkCall
@@ -1121,7 +1128,7 @@ nkStmtList
                   nkIdent 'off'
               nkLetSection
                 nkIdentDefs
-                  nkIdent 'nsChecked3'
+                  nkIdent 'nsChecked4'
                   nkEmpty
                   nkInfix
                     nkIdent '+'
@@ -1129,7 +1136,7 @@ nkStmtList
                     nkIntLit 1
               nkPragma
                 nkIdent 'pop'
-              nkIdent 'nsChecked3'
+              nkIdent 'nsChecked4'
       nkCall
         nkIdent 'WriteLine'
         nkIdent 'wrapped'
@@ -1152,7 +1159,7 @@ nkStmtList
                       nkIdent 'on'
                   nkLetSection
                     nkIdentDefs
-                      nkIdent 'nsChecked4'
+                      nkIdent 'nsChecked5'
                       nkEmpty
                       nkCall
                         nkIdent 'nsCkAdd'
@@ -1160,7 +1167,7 @@ nkStmtList
                         nkIntLit 1
                   nkPragma
                     nkIdent 'pop'
-                  nkIdent 'nsChecked4'
+                  nkIdent 'nsChecked5'
           nkCall
             nkIdent 'WriteLine'
             nkIdent 'boom'
@@ -1189,14 +1196,14 @@ nkStmtList
         nkStmtList
           nkLetSection
             nkIdentDefs
-              nkIdent 'nsUsing5'
+              nkIdent 'nsUsing6'
               nkEmpty
               nkIdent 'shared'
           nkDefer
             nkStmtList
               nkCall
                 nkIdent 'nsDispose'
-                nkIdent 'nsUsing5'
+                nkIdent 'nsUsing6'
           nkStmtList
             nkCall
               nkDotExpr
@@ -1262,16 +1269,23 @@ nkStmtList
               nkStmtList
                 nkLetSection
                   nkIdentDefs
-                    nkIdent 'nsExc7'
+                    nkIdent 'nsExc8'
                     nkEmpty
                     nkCall
                       nkIdent 'getCurrentException'
+                nkLetSection
+                  nkIdentDefs
+                    nkIdent 'nsTrace10'
+                    nkEmpty
+                    nkDotExpr
+                      nkIdent 'nsExc8'
+                      nkIdent 'trace'
                 nkCall
-                  nkIdent 'nsAdoptExceptionName'
-                  nkIdent 'nsExc7'
+                  nkIdent 'nsAdoptException'
+                  nkIdent 'nsExc8'
                 nkVarSection
                   nkIdentDefs
-                    nkIdent 'nsPick8'
+                    nkIdent 'nsPick9'
                     nkEmpty
                     nkIntLit 0
                 nkIfStmt
@@ -1280,11 +1294,11 @@ nkStmtList
                       nkIdent 'and'
                       nkInfix
                         nkIdent '=='
-                        nkIdent 'nsPick8'
+                        nkIdent 'nsPick9'
                         nkIntLit 0
                       nkInfix
                         nkIdent 'of'
-                        nkIdent 'nsExc7'
+                        nkIdent 'nsExc8'
                         nkIdent 'ArgumentException'
                     nkBlockStmt
                       nkEmpty
@@ -1297,7 +1311,7 @@ nkStmtList
                               nkPar
                                 nkRefTy
                                   nkIdent 'ArgumentException'
-                              nkIdent 'nsExc7'
+                              nkIdent 'nsExc8'
                         nkIfStmt
                           nkElifBranch
                             nkInfix
@@ -1307,18 +1321,15 @@ nkStmtList
                                 nkIdent 'Message'
                               nkStrLit "other"
                             nkAsgn
-                              nkIdent 'nsPick8'
+                              nkIdent 'nsPick9'
                               nkIntLit 1
                 nkIfStmt
                   nkElifBranch
                     nkInfix
                       nkIdent '=='
-                      nkIdent 'nsPick8'
+                      nkIdent 'nsPick9'
                       nkIntLit 1
                     nkStmtList
-                      nkCall
-                        nkIdent 'nsCutTrace'
-                        nkIdent 'nsExc7'
                       nkLetSection
                         nkIdentDefs
                           nkIdent 'ex'
@@ -1327,14 +1338,20 @@ nkStmtList
                             nkPar
                               nkRefTy
                                 nkIdent 'ArgumentException'
-                            nkIdent 'nsExc7'
+                            nkIdent 'nsExc8'
                       nkStmtList
                         nkCall
                           nkIdent 'WriteLine'
                           nkStrLit "wrong"
                   nkElse
-                    nkRaiseStmt
-                      nkEmpty
+                    nkStmtList
+                      nkAsgn
+                        nkDotExpr
+                          nkIdent 'nsExc8'
+                          nkIdent 'trace'
+                        nkIdent 'nsTrace10'
+                      nkRaiseStmt
+                        nkEmpty
             nkFinally
               nkStmtList
                 nkCall
@@ -1347,16 +1364,23 @@ nkStmtList
           nkStmtList
             nkLetSection
               nkIdentDefs
-                nkIdent 'nsExc9'
+                nkIdent 'nsExc11'
                 nkEmpty
                 nkCall
                   nkIdent 'getCurrentException'
+            nkLetSection
+              nkIdentDefs
+                nkIdent 'nsTrace13'
+                nkEmpty
+                nkDotExpr
+                  nkIdent 'nsExc11'
+                  nkIdent 'trace'
             nkCall
-              nkIdent 'nsAdoptExceptionName'
-              nkIdent 'nsExc9'
+              nkIdent 'nsAdoptException'
+              nkIdent 'nsExc11'
             nkVarSection
               nkIdentDefs
-                nkIdent 'nsPick10'
+                nkIdent 'nsPick12'
                 nkEmpty
                 nkIntLit 0
             nkIfStmt
@@ -1365,11 +1389,11 @@ nkStmtList
                   nkIdent 'and'
                   nkInfix
                     nkIdent '=='
-                    nkIdent 'nsPick10'
+                    nkIdent 'nsPick12'
                     nkIntLit 0
                   nkInfix
                     nkIdent 'of'
-                    nkIdent 'nsExc9'
+                    nkIdent 'nsExc11'
                     nkIdent 'Exception'
                 nkBlockStmt
                   nkEmpty
@@ -1382,7 +1406,7 @@ nkStmtList
                           nkPar
                             nkRefTy
                               nkIdent 'Exception'
-                          nkIdent 'nsExc9'
+                          nkIdent 'nsExc11'
                     nkIfStmt
                       nkElifBranch
                         nkInfix
@@ -1394,18 +1418,15 @@ nkStmtList
                             nkIdent 'Length'
                           nkIntLit 3
                         nkAsgn
-                          nkIdent 'nsPick10'
+                          nkIdent 'nsPick12'
                           nkIntLit 1
             nkIfStmt
               nkElifBranch
                 nkInfix
                   nkIdent '=='
-                  nkIdent 'nsPick10'
+                  nkIdent 'nsPick12'
                   nkIntLit 1
                 nkStmtList
-                  nkCall
-                    nkIdent 'nsCutTrace'
-                    nkIdent 'nsExc9'
                   nkLetSection
                     nkIdentDefs
                       nkIdent 'ex'
@@ -1414,7 +1435,7 @@ nkStmtList
                         nkPar
                           nkRefTy
                             nkIdent 'Exception'
-                        nkIdent 'nsExc9'
+                        nkIdent 'nsExc11'
                   nkStmtList
                     nkCall
                       nkIdent 'WriteLine'
@@ -1425,8 +1446,14 @@ nkStmtList
                           nkIdent 'ex'
                           nkIdent 'Message'
               nkElse
-                nkRaiseStmt
-                  nkEmpty
+                nkStmtList
+                  nkAsgn
+                    nkDotExpr
+                      nkIdent 'nsExc11'
+                      nkIdent 'trace'
+                    nkIdent 'nsTrace13'
+                  nkRaiseStmt
+                    nkEmpty
       nkVarSection
         nkIdentDefs
           nkIdent 'missing'
@@ -1489,7 +1516,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -1525,7 +1552,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'string'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'
@@ -1574,7 +1601,7 @@ nkStmtList
     nkFormalParams
       nkIdent 'Program'
       nkIdentDefs
-        nkIdent 't'
+        nkIdent 'nsT'
         nkBracketExpr
           nkIdent 'typedesc'
           nkIdent 'Program'

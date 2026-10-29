@@ -24,6 +24,7 @@ type
     isInterface*: bool    ## declared `{.nsInterface.}`: a C# interface
     genParams*: seq[string] ## its generic parameters
     sig*: PNode           ## a delegate (proc type): its formal parameters
+    isValue*: bool        ## a value type: an `object` (not a `ref`), a `distinct` or an enum
     fields*: seq[string]  ## an object type's fields, which C# reads as properties
     hiddenFields*: seq[string] ## those marked `{.nsHidden.}`, which it does not
     union*: seq[PNode]    ## a type class `A[T] | B[T]`: its alternatives
@@ -472,6 +473,7 @@ proc loadTypes(s: var NsBclSurface; n: PNode; module = "") =
     if body != nil and body.kind == nkProcTy and body.len > 0:
       t.sig = body[0]
     if body != nil:
+      t.isValue = body.kind in {nkObjectTy, nkDistinctTy, nkEnumTy}
       case body.kind
       of nkObjectTy, nkRefTy, nkPtrTy:
         t.base = headSpelling(body)

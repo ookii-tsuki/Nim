@@ -30,6 +30,9 @@ namespace Demo {
     static void Over(double a, List<int> b) { throw new Exception("o2"); }
     static T Gen<T>(T x) { throw new Exception("gen"); }
     public static int Fail() { throw new Exception("init"); }
+    static bool Log(Exception e) { Console.Write(Lines(e.StackTrace)); return true; }
+    static void FilterReads() { try { A(); } catch (Exception e) when (Log(e)) { } }
+    static void Nullables(DateTime? d, (int, int)? t, Exception? x) { throw new Exception("n"); }
     static void Filtered() {
       try { A(); } catch (Exception e) when (e.Message == "no") { }
     }
@@ -72,6 +75,10 @@ namespace Demo {
       try { new Init(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
       try { new Outer.Inner().Fail(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
       try { new Evt().E += () => { }; } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      Console.WriteLine("-- a filter reading the trace");
+      FilterReads();
+      Console.WriteLine("-- nullable parameters");
+      try { Nullables(DateTime.Now, (1, 2), null); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
       Console.WriteLine("-- a filter that does not match");
       try { Filtered(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
       Console.WriteLine("-- rethrow");
