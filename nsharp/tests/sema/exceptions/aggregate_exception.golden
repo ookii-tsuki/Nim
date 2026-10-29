@@ -1,6 +1,10 @@
 using System
 using System.Collections.Generic
 member AggregateException.Handle = System | void
+member AggregateException.Handle = System | void
+member AggregateException.Message = System | string
+member AggregateException.Message = System | string
+member AggregateException.Message = System | string
 member AggregateException.Message = System | string
 member AggregateException.Message = System | string
 member AggregateException.Message = System | string
@@ -16,6 +20,10 @@ member Console.WriteLine = System | void
 member Console.WriteLine = System | void
 member Console.WriteLine = System | void
 member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Exception.Message = System | string
 member Exception.Message = System | string
 member Exception.Message = System | string
 member Exception.Message = System | string

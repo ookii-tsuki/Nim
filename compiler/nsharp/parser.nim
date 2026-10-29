@@ -465,6 +465,46 @@ proc offsetOf(p: NsParser; t: NsToken): int =
   if t.line < 1 or t.line > p.lineStarts.len: return p.src.len
   min(p.lineStarts[t.line - 1] + t.col - 1, p.src.len)
 
+proc argumentText(p: NsParser; a: int; last: NsToken; b: int): string =
+  ## An argument's text as C#'s `[CallerArgumentExpression]` gives it: from its
+  ## first token to the end of its last, without the comments and space after it,
+  ## and without parentheses around the whole of it.
+  var e = p.offsetOf(last)
+  if last.kind in {nsStrLit, nsCharLit}:
+    ## Past the literal's closing quote: its text may hold `//` or `,`.
+    let q = (if last.kind == nsCharLit: '\'' else: '"')
+    while e < b and p.src[e] != q: inc e
+    if e < b: inc e
+    var verbatim = e >= 2 and p.src[e - 2] == '@'
+    while e < b:
+      if p.src[e] == '\\' and not verbatim: e += 2
+      elif p.src[e] == q:
+        if verbatim and e + 1 < b and p.src[e + 1] == q: e += 2
+        else:
+          inc e
+          break
+      else: inc e
+  ## The rest up to the next token is the last token itself, then space and
+  ## comments.
+  var cut = b
+  for i in e ..< b - 1:
+    if p.src[i] == '/' and p.src[i + 1] in {'/', '*'}:
+      cut = i
+      break
+  result = p.src[a ..< min(max(cut, a), p.src.len)].strip(leading = false)
+  while result.len >= 2 and result[0] == '(' and result[^1] == ')':
+    var depth = 0
+    var whole = true
+    for i, c in result:
+      if c == '(': inc depth
+      elif c == ')':
+        dec depth
+        if depth == 0 and i < result.high:
+          whole = false
+          break
+    if not whole: break
+    result = result[1 .. ^2].strip()
+
 proc parseArgument(p: var NsParser): NsNode =
   ## A call argument may be a lambda even inside a switch arm's guard. Its text as
   ## written is kept, for a parameter that receives it (`[CallerArgumentExpression]`).
@@ -473,10 +513,9 @@ proc parseArgument(p: var NsParser): NsNode =
   let first = p.peek
   result = p.parseArgumentInner()
   p.inGuard = saved
-  if result != nil and p.src.len > 0:
-    let a = p.offsetOf(first)
-    let b = p.offsetOf(p.peek)
-    if a < b: result.srcText = p.src[a ..< b].strip(leading = false)
+  if result != nil and p.src.len > 0 and result.kind != nsnNamedArg and p.pos > 0:
+    ## `name: e` keeps the text on `e`, which the inner call recorded.
+    result.srcText = p.argumentText(p.offsetOf(first), p.toks[p.pos - 1], p.offsetOf(p.peek))
 
 proc parseArgumentInner(p: var NsParser): NsNode =
   ## One call argument: `e`, `name: e`, `ref x`, `out x`, `out int x`, `out var x`,
@@ -2607,6 +2646,7 @@ proc synthesizeEntryPoint(module: NsNode) =
   let info = stmts[0].info
   let main = nsn(nsnMethodDecl, info)
   main.name = "Main"
+  main.strVal = "topLevel"   ## its frame is `Program.<Main>$`, as C# names it
   main.typ = nsn(nsnVoidType, info)
   main.attrs.isStatic = true
   let args = nsn(nsnParam, info)

@@ -33,7 +33,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Calc'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -50,6 +53,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Math.Calc.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -66,7 +72,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Calc'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -81,7 +90,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Calc'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -156,7 +168,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Calc'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -171,7 +186,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Calc'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Math.Calc..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -184,6 +202,9 @@ nkStmtList
       nkIdent 'Calc'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -198,7 +219,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Calc'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -218,6 +242,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Math.Calc.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -240,7 +267,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Calc'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -258,7 +288,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Calc'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Math.Calc"
@@ -344,7 +377,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Calc'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -361,7 +397,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Calc'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Math.Calc..ctor()"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -374,6 +413,9 @@ nkStmtList
       nkIdent 'Calc'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

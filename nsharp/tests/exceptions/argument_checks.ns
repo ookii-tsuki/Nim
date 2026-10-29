@@ -35,6 +35,18 @@ namespace Demo {
       catch (ArgumentOutOfRangeException e) { Console.WriteLine("[" + e.Message + "]"); }
       try { ArgumentOutOfRangeException.ThrowIfNotEqual(n, 7); }
       catch (ArgumentOutOfRangeException e) { Console.WriteLine("[" + e.Message + "]"); }
+      try { ArgumentException.ThrowIfNullOrEmpty(argument: ""); }
+      catch (ArgumentException e) { Console.WriteLine(e.ParamName); }
+      try { ArgumentOutOfRangeException.ThrowIfGreaterThan(other: 1, value: n + 9); }
+      catch (ArgumentOutOfRangeException e) { Console.WriteLine(e.ParamName); }
+      try { ArgumentOutOfRangeException.ThrowIfNegative(n /* comment */); }
+      catch (ArgumentOutOfRangeException e) { Console.WriteLine(e.ParamName); }
+      try { ArgumentOutOfRangeException.ThrowIfNegative((n)); }
+      catch (ArgumentOutOfRangeException e) { Console.WriteLine(e.ParamName); }
+      try { ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(2.5, 3.0); }
+      catch (ArgumentOutOfRangeException e) { Console.WriteLine("[" + e.Message + "]"); }
+      try { ObjectDisposedException.ThrowIf(true, "text"); }
+      catch (ObjectDisposedException e) { Console.WriteLine(e.ObjectName); }
       try { ObjectDisposedException.ThrowIf(true, o); }
       catch (ObjectDisposedException e) { Console.WriteLine("[" + e.Message + "] " + e.ObjectName); }
       ObjectDisposedException.ThrowIf(false, o);

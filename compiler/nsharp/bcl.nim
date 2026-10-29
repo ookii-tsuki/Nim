@@ -47,6 +47,7 @@ type
                           ## (`Sum<T>(Func<T, N>)` is `int Sum(Func<T, int>)`, ...)
     viaUnion*: bool       ## filed under this receiver as a member of a type class it
                           ## is one of: a C# extension method, seen with its `using`
+    paramNames*: seq[string]   ## every parameter's name, the receiver's first
     callerArgs*: seq[tuple[param, source: int]]
       ## `paramName {.nsCallerArgument: "argument".}`: the parameter (counted from
       ## the receiver) that a call leaving it out passes the named argument's text
@@ -612,7 +613,7 @@ proc loadMembers(s: var NsBclSurface; n: PNode; module: string; hidden: bool) =
                            isVirtual: n.kind == nkMethodDef,
                            genParams: gps, paramTypes: ptypes,
                            qualifier: nsStaticOf(n), hidden: hidden,
-                           callerArgs: callerArgs,
+                           callerArgs: callerArgs, paramNames: pnames,
                            retType: (if fp[0].kind == nkEmpty: nil else: fp[0]))
   let qualifier = nsStaticOf(n)
   if qualifier.len > 0 and not hidden and (typ: qualifier, member: name, module: module) notin s.staticDecls:

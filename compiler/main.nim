@@ -151,9 +151,6 @@ proc commandCompileToC(graph: ModuleGraph) =
   let conf = graph.config
   extccomp.initVars(conf)
   when defined(nsharp):
-    if conf.isNsharpProject:
-      ## The library's own N#-only state (`system`'s `Exception.nsExtra`).
-      defineSymbol(conf.symbols, "nsharp")
     if conf.isNsharpProject and conf.symbolFiles == disabledSf:
       ## N#: a C# virtual call is one indirect call through the type's vtable, as
       ## in .NET, rather than a chain of type tests.
@@ -264,6 +261,11 @@ proc mainCommand*(graph: ModuleGraph) =
 
   conf.lastCmdTime = epochTime()
   conf.searchPaths.add(conf.libpath)
+  when defined(nsharp):
+    if conf.isNsharpProject:
+      ## The library's own N#-only state (`system`'s `Exception.nsExtra`), for
+      ## every command (`c`, `cpp`, `check`, `js`).
+      defineSymbol(conf.symbols, "nsharp")
 
   proc customizeForBackend(backend: TBackend) =
     ## Sets backend specific options but don't compile to backend yet in

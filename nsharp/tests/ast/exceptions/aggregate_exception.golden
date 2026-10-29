@@ -46,7 +46,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -63,6 +66,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -79,7 +85,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -94,7 +103,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -123,7 +135,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -138,7 +153,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -151,6 +169,9 @@ nkStmtList
       nkIdent 'Program'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -165,7 +186,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -185,6 +209,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -207,7 +234,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -225,7 +255,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Program"
@@ -463,6 +496,109 @@ nkStmtList
                       nkIdent 'left'
                       nkIdent 'InnerException'
                     nkIdent 'Message'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'nested'
+          nkEmpty
+          nkCall
+            nkIdent 'nsNewException'
+            nkIdent 'AggregateException'
+            nkCall
+              nkIdent 'nsNewException'
+              nkIdent 'AggregateException'
+              nkCall
+                nkIdent 'nsNewException'
+                nkIdent 'Exception'
+                nkStrLit "A"
+              nkCall
+                nkIdent 'nsNewException'
+                nkIdent 'Exception'
+                nkStrLit "B"
+            nkCall
+              nkIdent 'nsNewException'
+              nkIdent 'Exception'
+              nkStrLit "C"
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkCall
+            nkDotExpr
+              nkIdent 'nested'
+              nkIdent 'Flatten'
+          nkIdent 'Message'
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkDotExpr
+              nkIdent 'nested'
+              nkIdent 'Handle'
+            nkLambda
+              nkEmpty
+              nkEmpty
+              nkEmpty
+              nkFormalParams
+                nkIdent 'bool'
+                nkIdentDefs
+                  nkIdent 'e'
+                  nkRefTy
+                    nkIdent 'Exception'
+                  nkEmpty
+              nkPragma
+                nkExprColonExpr
+                  nkIdent 'nsFrame'
+                  nkStrLit "Demo.Program.<Main>b__1(Exception e)"
+              nkEmpty
+              nkStmtList
+                nkInfix
+                  nkIdent '=='
+                  nkDotExpr
+                    nkIdent 'e'
+                    nkIdent 'Message'
+                  nkStrLit "C"
+        nkExceptBranch
+          nkInfix
+            nkIdent 'as'
+            nkIdent 'AggregateException'
+            nkIdent 'left'
+          nkStmtList
+            nkCall
+              nkIdent 'nsAdoptException'
+              nkIdent 'left'
+            nkStmtList
+              nkCall
+                nkIdent 'WriteLine'
+                nkDotExpr
+                  nkIdent 'left'
+                  nkIdent 'Message'
+      nkCall
+        nkIdent 'WriteLine'
+        nkDotExpr
+          nkCall
+            nkIdent 'nsNewException'
+            nkIdent 'AggregateException'
+            nkStrLit "m"
+            nkBlockExpr
+              nkEmpty
+              nkStmtList
+                nkVarSection
+                  nkIdentDefs
+                    nkIdent 'nsInit2'
+                    nkEmpty
+                    nkCall
+                      nkBracketExpr
+                        nkIdent 'newList'
+                        nkRefTy
+                          nkIdent 'Exception'
+                nkCall
+                  nkDotExpr
+                    nkIdent 'nsInit2'
+                    nkIdent 'Add'
+                  nkCall
+                    nkIdent 'nsNewException'
+                    nkIdent 'Exception'
+                    nkStrLit "q"
+                nkIdent 'nsInit2'
+          nkIdent 'Message'
       nkTryStmt
         nkStmtList
           nkRaiseStmt
@@ -510,7 +646,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -527,7 +666,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program..ctor()"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -540,6 +682,9 @@ nkStmtList
       nkIdent 'Program'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

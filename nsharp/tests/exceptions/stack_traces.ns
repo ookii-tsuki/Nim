@@ -11,6 +11,13 @@ namespace Demo {
     public static Vec operator +(Vec a, Vec b) { throw new InvalidOperationException("add"); }
     public int this[int i] { get { throw new IndexOutOfRangeException(); } }
   }
+  class Base { public virtual void V() { throw new Exception("v"); } }
+  class Der : Base { public override void V() { base.V(); } }
+  interface IFoo { void Bar(); }
+  class Impl : IFoo { public void Bar() { throw new Exception("bar"); } }
+  class Init { int x = Program.Fail(); }
+  class Outer { public class Inner { public void Fail() { throw new Exception("inner"); } } }
+  class Evt { public event Action E { add { throw new Exception("add"); } remove { } } }
   class Box<T> {
     public T Value;
     public void Fail(int a, string b) { throw new Exception("box"); }
@@ -22,6 +29,10 @@ namespace Demo {
     static void Over(int a) { throw new Exception("o1"); }
     static void Over(double a, List<int> b) { throw new Exception("o2"); }
     static T Gen<T>(T x) { throw new Exception("gen"); }
+    public static int Fail() { throw new Exception("init"); }
+    static void Filtered() {
+      try { A(); } catch (Exception e) when (e.Message == "no") { }
+    }
     static void A() {
       throw new InvalidOperationException("a");
     }
@@ -55,6 +66,14 @@ namespace Demo {
       try { Gen("s"); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
       try { var v = new Vec() + new Vec(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
       try { var i = new Vec()[0]; } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      Console.WriteLine("-- virtual, interface, implicit constructor, nested, event");
+      try { Base b = new Der(); b.V(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { IFoo f = new Impl(); f.Bar(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { new Init(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { new Outer.Inner().Fail(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      try { new Evt().E += () => { }; } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
+      Console.WriteLine("-- a filter that does not match");
+      try { Filtered(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
       Console.WriteLine("-- rethrow");
       try { Rethrow(); } catch (Exception e) { Console.Write(Lines(e.StackTrace)); }
       Console.WriteLine("-- throw e");

@@ -258,13 +258,24 @@ proc nsInitException*[T: Exception](e: ref Exception; t: typedesc[T]; a, b: stri
   nsInitException(e, T, a, b)
   e.parent = inner
 
+proc nsArgumentText*[V](value: V): string {.nsHidden.} =
+  ## A value in an argument exception's message, as .NET writes it (`3`, not
+  ## Nim's `3.0`).
+  when V is SomeFloat: nsFormatValue(nsBox(value), "G")
+  elif V is RootRef: (if value.isNil: "" else: value.ToString())
+  else: $value
+
 proc nsInitException*[T: Exception; V](e: ref Exception; t: typedesc[T]; a: string;
                                        value: V; b: string) {.nsHidden.} =
-  ## `ArgumentOutOfRangeException(paramName, actualValue, message)`.
-  let shown = (when V is RootRef: (if value.isNil: "" else: value.ToString()) else: $value)
-  e.msg = nsParam(b, a) & "\nActual value was " & shown & "."
+  ## `ArgumentOutOfRangeException(paramName, actualValue, message)`; a null value
+  ## adds no "Actual value" line.
+  e.msg = nsParam(b, a)
   e.nsState.paramName = a
-  e.nsState.actualValue = nsBox(value)
+  when V isnot typeof(nil):
+    let boxed = nsBox(value)
+    if not boxed.isNil:
+      e.msg.add "\nActual value was " & nsArgumentText(value) & "."
+      e.nsState.actualValue = boxed
 
 proc nsNewException*[T: Exception](t: typedesc[T]): ref T {.nsHidden.} =
   ## `new E()`.
@@ -322,6 +333,14 @@ proc nsNewException*[T: AggregateException; C: not (string or ref Exception)](
   var xs: seq[ref Exception] = @[]
   for x in inners: xs.add x
   nsAggregate(nsDefaultMessage(nsMade(AggregateException)), xs)
+
+proc nsNewException*[T: AggregateException; C: not (string or ref Exception)](
+    t: typedesc[T]; a: string; inners: C): ref T {.nsHidden.} =
+  ## `new AggregateException(message, listOfExceptions)`.
+  mixin items
+  var xs: seq[ref Exception] = @[]
+  for x in inners: xs.add x
+  nsAggregate(a, xs)
 
 # An exception nothing catches ends the program as .NET's runtime ends it: its type,
 # message and inner exceptions on stderr, and an abort (exit status 134).
@@ -472,13 +491,16 @@ proc InnerExceptions*(e: ref AggregateException): ReadOnlyCollection[ref Excepti
 
 proc Flatten*(e: ref AggregateException): ref AggregateException =
   ## One `AggregateException` holding the inner exceptions of every nested one, in
-  ## place of them.
+  ## place of them, in .NET's order: each level's own exceptions, then those of the
+  ## aggregates it held, breadth first.
   var flat: seq[ref Exception] = @[]
-  proc add(x: ref Exception) =
-    if x of AggregateException:
-      for y in x.nsState.inners: add(y)
-    else: flat.add x
-  for x in e.nsState.inners: add(x)
+  var queue = @[e]
+  var i = 0
+  while i < queue.len:
+    for x in queue[i].nsState.inners:
+      if x of AggregateException: queue.add (ref AggregateException)(x)
+      else: flat.add x
+    inc i
   nsAggregate(e.nsState.rawMessage, flat)
 
 proc Handle*(e: ref AggregateException; predicate: Func2[ref Exception, bool]) =
@@ -487,7 +509,7 @@ proc Handle*(e: ref AggregateException; predicate: Func2[ref Exception, bool]) =
   var left: seq[ref Exception] = @[]
   for x in e.nsState.inners:
     if not predicate(x): left.add x
-  if left.len > 0: raise nsAggregate(e.nsState.rawMessage, left)
+  if left.len > 0: raise nsAggregate(e.msg, left)
 
 
 # --- System.Int32, Double, Char, String -------------------------------------
@@ -1103,7 +1125,7 @@ proc nsActualValue*(param, value, rule: string): ref ArgumentOutOfRangeException
 # `ThrowIfNullOrEmpty` says it is empty.
 
 proc nsOutOfRange[V](value: V; paramName, rule: string): ref ArgumentOutOfRangeException =
-  result = nsActualValue(paramName, $value, rule)
+  result = nsActualValue(paramName, nsArgumentText(value), rule)
   result.nsState.actualValue = nsBox(value)
 
 proc ThrowIfNull*[T](t: typedesc[ArgumentNullException]; argument: T;
@@ -1143,32 +1165,34 @@ proc ThrowIfNegativeOrZero*[V: SomeNumber](t: typedesc[ArgumentOutOfRangeExcepti
 
 proc ThrowIfGreaterThan*[V](t: typedesc[ArgumentOutOfRangeException]; value, other: V;
     paramName {.nsCallerArgument: "value".}: string = "") =
-  if value > other: raise nsOutOfRange(value, paramName, "must be less than or equal to '" & $other & "'.")
+  if value > other: raise nsOutOfRange(value, paramName, "must be less than or equal to '" & nsArgumentText(other) & "'.")
 
 proc ThrowIfGreaterThanOrEqual*[V](t: typedesc[ArgumentOutOfRangeException]; value, other: V;
     paramName {.nsCallerArgument: "value".}: string = "") =
-  if value >= other: raise nsOutOfRange(value, paramName, "must be less than '" & $other & "'.")
+  if value >= other: raise nsOutOfRange(value, paramName, "must be less than '" & nsArgumentText(other) & "'.")
 
 proc ThrowIfLessThan*[V](t: typedesc[ArgumentOutOfRangeException]; value, other: V;
     paramName {.nsCallerArgument: "value".}: string = "") =
-  if value < other: raise nsOutOfRange(value, paramName, "must be greater than or equal to '" & $other & "'.")
+  if value < other: raise nsOutOfRange(value, paramName, "must be greater than or equal to '" & nsArgumentText(other) & "'.")
 
 proc ThrowIfLessThanOrEqual*[V](t: typedesc[ArgumentOutOfRangeException]; value, other: V;
     paramName {.nsCallerArgument: "value".}: string = "") =
-  if value <= other: raise nsOutOfRange(value, paramName, "must be greater than '" & $other & "'.")
+  if value <= other: raise nsOutOfRange(value, paramName, "must be greater than '" & nsArgumentText(other) & "'.")
 
 proc ThrowIfEqual*[V](t: typedesc[ArgumentOutOfRangeException]; value, other: V;
     paramName {.nsCallerArgument: "value".}: string = "") =
-  if value == other: raise nsOutOfRange(value, paramName, "must not be equal to '" & $other & "'.")
+  if value == other: raise nsOutOfRange(value, paramName, "must not be equal to '" & nsArgumentText(other) & "'.")
 
 proc ThrowIfNotEqual*[V](t: typedesc[ArgumentOutOfRangeException]; value, other: V;
     paramName {.nsCallerArgument: "value".}: string = "") =
-  if value != other: raise nsOutOfRange(value, paramName, "must be equal to '" & $other & "'.")
+  if value != other: raise nsOutOfRange(value, paramName, "must be equal to '" & nsArgumentText(other) & "'.")
 
-proc ThrowIf*(t: typedesc[ObjectDisposedException]; condition: bool; instance: RootRef) =
-  ## Throws `ObjectDisposedException` naming `instance`'s type when `condition` holds.
+proc ThrowIf*[V](t: typedesc[ObjectDisposedException]; condition: bool; instance: V) =
+  ## Throws `ObjectDisposedException` naming `instance`'s type when `condition` holds;
+  ## the instance is any object.
   if condition:
-    let name = (if instance.isNil: "" else: instance.nsDynType.nsDisplay)
+    let boxed = nsBox(instance)
+    let name = (if boxed.isNil: "" else: boxed.nsDynType.nsDisplay)
     raise nsNewException(ObjectDisposedException, name)
 
 proc ThrowIf*(t: typedesc[ObjectDisposedException]; condition: bool; typ: Type) =

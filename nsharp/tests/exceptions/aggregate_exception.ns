@@ -22,6 +22,11 @@ namespace Demo {
       } catch (AggregateException left) {
         Console.WriteLine(left.InnerExceptions.Count + " " + left.InnerException.Message);
       }
+      var nested = new AggregateException(new AggregateException(new Exception("A"), new Exception("B")), new Exception("C"));
+      Console.WriteLine(nested.Flatten().Message);
+      try { nested.Handle(e => e.Message == "C"); }
+      catch (AggregateException left) { Console.WriteLine(left.Message); }
+      Console.WriteLine(new AggregateException("m", new List<Exception> { new Exception("q") }).Message);
       try { throw agg; }
       catch (Exception e) { Console.WriteLine(e.GetType().Name + " " + (e is AggregateException)); }
     }

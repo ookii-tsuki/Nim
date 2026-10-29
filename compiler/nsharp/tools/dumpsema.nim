@@ -181,13 +181,25 @@ proc walk(n: NsNode; surface: NsBclSurface; scope: NsModuleScope;
               facts.add "member " & n.body.typeName & "." & n.name & " = " &
                         nsOf(m.path) & " | " & tok
             break
+    elif isValueKind(rk) and n.body != nil and n.body.kind == nsnThis and
+         n.body.strVal == "implicit":
+      ## A bare name inside a class (`ParamName` in a class deriving from
+      ## `ArgumentException`): Roslyn's side projects no implicit `this`.
+      discard
     elif isValueKind(rk):
       let recv = recvSpelling(surface, n.body)
       ## An instance member: a static overload of the name (`string.Equals(a, b)`)
       ## is not this one.
       var m = NsBclMember()
-      ## An array is filed under the library's array type, by its C# name (`int[]`).
-      let lookup = (if recv == "array": n.body.typeName else: recv)
+      ## An array is filed under the library's array type, by its C# name (`int[]`);
+      ## a class of the program's own derived from a library type (`class E :
+      ## FileNotFoundException`), under the nearest library type it derives from.
+      var lookup = (if recv == "array": n.body.typeName else: recv)
+      if scope.classes.hasKey(lookup):
+        for b in scope.baseChain(lookup):
+          if not scope.classes.hasKey(b):
+            lookup = b
+            break
       ## The first instance overload taking the call's arguments, when it is a call,
       ## and not one over another element type (`Min` of an `int` sequence for a
       ## `string[]`).

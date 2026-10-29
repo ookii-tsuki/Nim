@@ -19,6 +19,13 @@ Actual value was -3.]
 Actual value was -3.]
 [n ('-3') must be equal to '7'. (Parameter 'n')
 Actual value was -3.]
+""
+n + 9
+n
+n
+[2.5 ('2.5') must be greater than '3'. (Parameter '2.5')
+Actual value was 2.5.]
+System.String
 [Cannot access a disposed object.
 Object name: 'System.Object'.] System.Object
 done

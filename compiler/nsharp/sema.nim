@@ -1998,14 +1998,35 @@ proc fillCallerArgs(ctx: NsCheckContext; n: NsNode; recv, name: string) =
       ## A member over a receiver (a `typedesc` or a value) counts it as the first
       ## parameter; one filed by `{.nsStatic.}` has none.
       let offset = (if m.qualifier.len > 0: 0 else: 1)
+      var positional = 0
+      for a in n.sons:
+        if a.kind != nsnNamedArg: inc positional
       for c in m.callerArgs:
         let at = c.param - offset
         let src = c.source - offset
-        if at == n.sons.len and src >= 0 and src < n.sons.len and
-           n.sons[src].srcText.len > 0:
-          n.sons.add nsnStrLit(n.sons[src].srcText, n.info)
-          n.sons[^1].setType(tkString, "string")
-          return
+        if at < 0 or src < 0 or c.param >= m.paramNames.len or
+           c.source >= m.paramNames.len:
+          continue
+        ## Passed already, by position or by name: nothing to fill.
+        var given = positional > at
+        var text = ""
+        for i, a in n.sons:
+          if a.kind == nsnNamedArg:
+            if a.name == m.paramNames[c.param]: given = true
+            elif a.name == m.paramNames[c.source] and a.body != nil: text = a.body.srcText
+          elif i == src: text = a.srcText
+        if given or text.len == 0: continue
+        let lit = nsnStrLit(text, n.info)
+        lit.setType(tkString, "string")
+        if positional == n.sons.len and at == n.sons.len:
+          n.sons.add lit
+        else:
+          ## After named arguments, by name too.
+          let named = nsn(nsnNamedArg, n.info)
+          named.name = m.paramNames[c.param]
+          named.body = lit
+          n.sons.add named
+        return
 
 proc libraryBaseHas(ctx: NsCheckContext; name: string): bool =
   ## Whether the enclosing class inherits a visible member `name` from a library

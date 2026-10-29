@@ -37,7 +37,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -54,6 +57,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -70,7 +76,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -85,7 +94,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -114,7 +126,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -129,7 +144,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -142,6 +160,9 @@ nkStmtList
       nkIdent 'Program'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -156,7 +177,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -176,6 +200,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -198,7 +225,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -216,7 +246,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Program"
@@ -303,7 +336,7 @@ nkStmtList
                   nkIdent 'discardable'
                   nkExprColonExpr
                     nkIdent 'nsFrame'
-                    nkStrLit "Program.<Main>g__Get|1()"
+                    nkStrLit "Program.<Main>g__Get|0()"
                 nkEmpty
                 nkStmtList
                   nkReturnStmt
@@ -419,7 +452,7 @@ nkStmtList
             nkPragma
               nkExprColonExpr
                 nkIdent 'nsFrame'
-                nkStrLit "Program.<Main>g__Show|2()"
+                nkStrLit "Program.<Main>g__Show|1()"
             nkEmpty
             nkEmpty
           nkProcDef
@@ -443,7 +476,7 @@ nkStmtList
             nkPragma
               nkExprColonExpr
                 nkIdent 'nsFrame'
-                nkStrLit "Program.<Main>g__Twice|3()"
+                nkStrLit "Program.<Main>g__Twice|2()"
             nkEmpty
             nkEmpty
           nkProcDef
@@ -467,7 +500,7 @@ nkStmtList
             nkPragma
               nkExprColonExpr
                 nkIdent 'nsFrame'
-                nkStrLit "Program.<Main>g__Show|4()"
+                nkStrLit "Program.<Main>g__Show|1()"
             nkEmpty
             nkStmtList
               nkCall
@@ -499,7 +532,7 @@ nkStmtList
             nkPragma
               nkExprColonExpr
                 nkIdent 'nsFrame'
-                nkStrLit "Program.<Main>g__Twice|5()"
+                nkStrLit "Program.<Main>g__Twice|2()"
             nkEmpty
             nkStmtList
               nkCall
@@ -598,7 +631,7 @@ nkStmtList
                       nkPragma
                         nkExprColonExpr
                           nkIdent 'nsFrame'
-                          nkStrLit "Program.<Main>b__6()"
+                          nkStrLit "Program.<Main>b__3()"
                       nkEmpty
                       nkStmtList
                         nkCall
@@ -672,7 +705,7 @@ nkStmtList
                   nkIdent 'discardable'
                   nkExprColonExpr
                     nkIdent 'nsFrame'
-                    nkStrLit "Program.<Main>g__Fact|7(Int32 m)"
+                    nkStrLit "Program.<Main>g__Fact|4(Int32 m)"
                 nkEmpty
                 nkEmpty
               nkProcDef
@@ -695,7 +728,7 @@ nkStmtList
                 nkPragma
                   nkExprColonExpr
                     nkIdent 'nsFrame'
-                    nkStrLit "Program.<Main>g__Add|8(Int32& t)"
+                    nkStrLit "Program.<Main>g__Add|5(Int32& t)"
                 nkEmpty
                 nkEmpty
               nkProcDef
@@ -718,7 +751,7 @@ nkStmtList
                   nkIdent 'discardable'
                   nkExprColonExpr
                     nkIdent 'nsFrame'
-                    nkStrLit "Program.<Main>g__Fact|9(Int32 m)"
+                    nkStrLit "Program.<Main>g__Fact|4(Int32 m)"
                 nkEmpty
                 nkStmtList
                   nkReturnStmt
@@ -763,7 +796,7 @@ nkStmtList
                 nkPragma
                   nkExprColonExpr
                     nkIdent 'nsFrame'
-                    nkStrLit "Program.<Main>g__Add|10(Int32& t)"
+                    nkStrLit "Program.<Main>g__Add|5(Int32& t)"
                 nkEmpty
                 nkStmtList
                   nkAsgn
@@ -842,7 +875,7 @@ nkStmtList
               nkIdent 'discardable'
               nkExprColonExpr
                 nkIdent 'nsFrame'
-                nkStrLit "Program.<Main>g__Scale|11(Int32 q)"
+                nkStrLit "Program.<Main>g__Scale|6(Int32 q)"
             nkEmpty
             nkEmpty
           nkProcDef
@@ -865,7 +898,7 @@ nkStmtList
               nkIdent 'discardable'
               nkExprColonExpr
                 nkIdent 'nsFrame'
-                nkStrLit "Program.<Main>g__Scale|12(Int32 q)"
+                nkStrLit "Program.<Main>g__Scale|6(Int32 q)"
             nkEmpty
             nkStmtList
               nkCommand
@@ -996,7 +1029,7 @@ nkStmtList
                 nkPragma
                   nkExprColonExpr
                     nkIdent 'nsFrame'
-                    nkStrLit "Program.<Main>g__Early|13()"
+                    nkStrLit "Program.<Main>g__Early|7()"
                 nkEmpty
                 nkEmpty
               nkCall
@@ -1053,7 +1086,7 @@ nkStmtList
                 nkPragma
                   nkExprColonExpr
                     nkIdent 'nsFrame'
-                    nkStrLit "Program.<Main>g__Early|14()"
+                    nkStrLit "Program.<Main>g__Early|7()"
                 nkEmpty
                 nkStmtList
                   nkCall
@@ -1085,7 +1118,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1102,7 +1138,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program..ctor()"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -1115,6 +1154,9 @@ nkStmtList
       nkIdent 'Program'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

@@ -120,7 +120,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -143,6 +146,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -165,7 +171,10 @@ nkStmtList
             nkIdent 'Repo'
             nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -186,7 +195,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -207,7 +219,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -358,7 +373,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -377,6 +395,9 @@ nkStmtList
         nkIdent 'T'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -391,7 +412,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -408,6 +432,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -424,7 +451,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -439,7 +469,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -456,7 +489,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -471,7 +507,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -484,6 +523,9 @@ nkStmtList
       nkIdent 'IntRepo'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -498,7 +540,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'TopRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -515,7 +560,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'TopRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -532,7 +580,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'TopRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -547,7 +598,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'TopRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "TopRepo..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -560,6 +614,9 @@ nkStmtList
       nkIdent 'TopRepo'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -574,7 +631,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'StrRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -591,7 +651,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'StrRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -614,6 +677,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Wrapper`1.ToString()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -634,7 +700,10 @@ nkStmtList
           nkIdent 'Wrapper'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -651,7 +720,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'StrRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -666,7 +738,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'StrRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "StrRepo..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -679,6 +754,9 @@ nkStmtList
       nkIdent 'StrRepo'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -699,7 +777,10 @@ nkStmtList
           nkIdent 'Wrapper'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -720,7 +801,10 @@ nkStmtList
           nkIdent 'Wrapper'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -743,7 +827,10 @@ nkStmtList
             nkIdent 'Wrapper'
             nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -818,7 +905,10 @@ nkStmtList
             nkIdent 'Wrapper'
             nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -839,7 +929,10 @@ nkStmtList
           nkIdent 'Wrapper'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Wrapper`1..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -858,6 +951,9 @@ nkStmtList
         nkIdent 'T'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -872,7 +968,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -889,7 +988,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -946,7 +1048,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -961,7 +1066,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -974,6 +1082,9 @@ nkStmtList
       nkIdent 'Program'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -996,7 +1107,10 @@ nkStmtList
             nkIdent 'Repo'
             nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1020,7 +1134,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1040,7 +1157,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'TopRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1060,7 +1180,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'StrRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1086,7 +1209,10 @@ nkStmtList
             nkIdent 'Wrapper'
             nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1110,7 +1236,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1134,7 +1263,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1167,6 +1299,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -1193,7 +1328,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1219,7 +1357,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1411,7 +1552,10 @@ nkStmtList
           nkIdent 'Repo'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Repo`1..ctor()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1438,6 +1582,9 @@ nkStmtList
         nkIdent 'T'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1466,6 +1613,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Wrapper`1.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -1492,7 +1642,10 @@ nkStmtList
           nkIdent 'Wrapper'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1518,7 +1671,10 @@ nkStmtList
           nkIdent 'Wrapper'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1548,7 +1704,10 @@ nkStmtList
           nkIdent 'Wrapper'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1646,7 +1805,10 @@ nkStmtList
             nkIdent 'Wrapper'
             nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1671,7 +1833,10 @@ nkStmtList
           nkIdent 'Wrapper'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Wrapper`1..ctor()"
     nkEmpty
     nkStmtList
       nkCall
@@ -1693,6 +1858,9 @@ nkStmtList
         nkIdent 'T'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2267,6 +2435,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo.ToString()"
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2293,7 +2464,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2421,6 +2595,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "StrRepo.ToString()"
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2447,7 +2624,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'StrRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2507,6 +2687,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "TopRepo.ToString()"
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2533,7 +2716,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'TopRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkStaticStmt
@@ -2610,7 +2796,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2636,6 +2825,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -2656,7 +2848,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "IntRepo"
@@ -2766,7 +2961,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2783,7 +2981,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'IntRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "IntRepo..ctor()"
     nkEmpty
     nkStmtList
       nkCall
@@ -2799,6 +3000,9 @@ nkStmtList
       nkIdent 'IntRepo'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2819,7 +3023,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'TopRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2843,6 +3050,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "TopRepo.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -2863,7 +3073,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'TopRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "TopRepo"
@@ -2941,7 +3154,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'TopRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2958,7 +3174,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'TopRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "TopRepo..ctor()"
     nkEmpty
     nkStmtList
       nkCall
@@ -2974,6 +3193,9 @@ nkStmtList
       nkIdent 'TopRepo'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2994,7 +3216,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'StrRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -3020,6 +3245,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "StrRepo.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -3040,7 +3268,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'StrRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "StrRepo"
@@ -3095,7 +3326,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'StrRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -3112,7 +3346,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'StrRepo'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "StrRepo..ctor()"
     nkEmpty
     nkStmtList
       nkCall
@@ -3128,6 +3365,9 @@ nkStmtList
       nkIdent 'StrRepo'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -3148,7 +3388,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -3168,6 +3411,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -3188,7 +3434,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Program"
@@ -3344,7 +3593,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -3361,7 +3613,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Program..ctor()"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -3374,6 +3629,9 @@ nkStmtList
       nkIdent 'Program'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

@@ -192,10 +192,11 @@ proc nsMergeRethrown(trace: var seq[StackTraceEntry]) =
     if last + 1 < trace.len: merged.add trace[last + 1 .. ^1]
     trace = merged
 
-proc nsCutTrace(e: ref Exception) =
+proc nsCutTrace*(e: ref Exception) {.nsHidden.} =
   ## A `catch` sees the frames from the throw up to the method catching it, as
-  ## .NET's `StackTrace` does, not the whole stack the throw happened on.
-  when compileOption("stacktrace"):
+  ## .NET's `StackTrace` does, not the whole stack the throw happened on. (The JS
+  ## backend keeps a trace as text.)
+  when compileOption("stacktrace") and not defined(js):
     if e.trace.len == 0: return
     nsMergeRethrown(e.trace)
     var f = getFrame()
@@ -216,18 +217,23 @@ proc nsThrown*(e: ref Exception): ref Exception {.nsHidden.} =
   if e != nil: e.trace.setLen 0
   e
 
-proc nsFrames(e: ref Exception): seq[StackTraceEntry] =
-  ## The program's own frames, innermost first, when the build keeps stack
-  ## traces: not the library's (a `.nim` file) or a module's initialisation.
+proc nsOwnFrames(entries: seq[StackTraceEntry]): seq[StackTraceEntry] =
+  ## The program's own frames of a trace, innermost first: not the library's (a
+  ## `.nim` file) or a module's initialisation.
   result = @[]
-  when declared(getStackTraceEntries):
+  for i in countdown(entries.high, 0):
+    let t = entries[i]
+    let file = $t.filename
+    if file.endsWith(".nim") or file.endsWith("/" & $t.procname & ".ns"): continue
+    result.add t
+
+proc nsFrames(e: ref Exception): seq[StackTraceEntry] =
+  ## An exception's own frames, innermost first, when the build keeps stack traces.
+  result = @[]
+  when declared(getStackTraceEntries) and not defined(js):
     var entries = e.getStackTraceEntries()
     nsMergeRethrown(entries)
-    for i in countdown(entries.high, 0):
-      let t = entries[i]
-      let file = $t.filename
-      if file.endsWith(".nim") or file.endsWith("/" & $t.procname & ".ns"): continue
-      result.add t
+    result = nsOwnFrames(entries)
 
 proc nsFrameText(frames: seq[StackTraceEntry]): string =
   ## `   at Demo.Program.Main() in Program.ns:line 6`, a line per frame.
@@ -242,14 +248,7 @@ proc nsCurrentStackTrace*(): string {.nsHidden.} =
   ## after .NET's own frame for reading it.
   result = "   at System.Environment.get_StackTrace()"
   when declared(getStackTraceEntries):
-    var frames: seq[StackTraceEntry] = @[]
-    let entries = getStackTraceEntries()
-    for i in countdown(entries.high, 0):
-      let t = entries[i]
-      let file = $t.filename
-      if file.endsWith(".nim") or file.endsWith("/" & $t.procname & ".ns"): continue
-      frames.add t
-    let text = nsFrameText(frames)
+    let text = nsFrameText(nsOwnFrames(getStackTraceEntries()))
     if text.len > 0: result.add "\n" & text
 
 proc nsThrownByLibrary*(e: ref Exception): bool {.nsHidden.} =

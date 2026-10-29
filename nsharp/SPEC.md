@@ -843,15 +843,25 @@ unhandled-exception report write a frame as .NET does:
 `   at Demo.Program.Run(Int32 n) in /path/Program.ns:line 12`, innermost first. Each
 member's procs carry `{.nsFrame: "..."}` (see `nsharp/pragmas`), which the code
 generator records as the frame's name in place of the Nim proc's: a method with
-its CLR parameter types and a generic method's `[T]`, `get_X`/`set_X`, `..ctor`,
-`op_Addition`, `get_Item`; a proc with no C# counterpart (an allocator) records no
-frame. A `catch` cuts the trace at the method catching it (`nsAdoptException`), as
-.NET's covers only the frames from the throw to the catch; `throw;` keeps it and
-goes on with it to the next catch, `throw e;` starts it again. Divergences: a
-lambda is `<Main>b__0`, a local function `<Main>g__Local|1`, numbered in source
-order where .NET uses its own ordinals (`<>c.<Main>b__8_0`); the path is the
-`.ns` file's; a build without stack traces (`-d:release`, `-d:danger`) has an empty
-`StackTrace`, and then a thrown exception's `Source` is null too.
+its CLR parameter types and a generic method's `[T]`, `get_X`/`set_X`,
+`add_E`/`remove_E`, `..ctor` (an implicit constructor's too), `..cctor`,
+`op_Addition`, `get_Item`, `Finalize`, a default interface method as the
+interface's, a nested type's `Outer.Inner`, top-level statements'
+`Program.<Main>$`. A proc that only forwards a call (an allocator, an interface's
+dispatcher and table thunks, a virtual method's dispatcher) records no frame. A
+`catch` cuts the trace at the method catching it (`nsAdoptException`; a filtered
+`catch` once a clause takes it, so an exception no filter takes keeps its whole
+trace), as .NET's covers only the frames from the throw to the catch; `throw;`
+keeps it and goes on with it to the next catch, `throw e;` starts it again.
+Divergences: a lambda is `<Main>b__0`, a local function `<Main>g__Local|1`,
+numbered by N# (local functions first, as they are hoisted) where .NET uses its
+own ordinals (`<>c.<Main>b__8_0`); the library's own frames are left out, where
+.NET shows its BCL's (`List`1.get_Item`); an iterator's `MoveNext` and a record's
+`PrintMembers` have no frame of their own; the path is the `.ns` file's; a build
+without stack traces (`-d:release`, `-d:danger`) has an empty `StackTrace`, and
+then a thrown exception's `Source` is null too. The field N# adds to `Exception`
+changes its layout, so Nim code compiled apart from an N# program (a library built
+without the `nsharp` symbol) does not share exceptions with it.
 
 **Argument checks.** `ArgumentNullException.ThrowIfNull`,
 `ArgumentException.ThrowIfNullOrEmpty`/`ThrowIfNullOrWhiteSpace`,
@@ -860,7 +870,9 @@ order where .NET uses its own ordinals (`<>c.<Main>b__8_0`); the path is the
 and `ObjectDisposedException.ThrowIf` name the parameter after the argument's
 text, as C#'s `[CallerArgumentExpression]` does: the parser keeps each call
 argument's source text, and a library parameter marked
-`{.nsCallerArgument: "argument".}` that a call leaves out receives it. A user's own
+`{.nsCallerArgument: "argument".}` that a call leaves out receives it (the argument
+as written, named or not, without trailing comments or enclosing parentheses, as
+Roslyn gives it). A user's own
 `[CallerArgumentExpression]` parameter is not filled yet. A null string is the
 empty one in N#, so `ThrowIfNull` throws for `""` and `ThrowIfNullOrEmpty` says it
 is empty.

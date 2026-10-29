@@ -253,6 +253,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -577,7 +580,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -592,7 +598,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -645,7 +654,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -660,7 +672,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Entry..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -673,6 +688,9 @@ nkStmtList
       nkIdent 'Entry'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkCall
@@ -693,6 +711,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -919,6 +940,11 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkStrLit "Crate"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'stackTrace'
+      nkIdent 'off'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -982,6 +1008,8 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkPragma
+    nkIdent 'pop'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1173,6 +1201,11 @@ nkStmtList
     nkEmpty
     nkStmtList
       nkStrLit "Swatch"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'stackTrace'
+      nkIdent 'off'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1236,6 +1269,8 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkPragma
+    nkIdent 'pop'
   nkConverterDef
     nkPostfix
       nkIdent '*'
@@ -1575,7 +1610,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1593,7 +1631,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Entry"
@@ -1667,7 +1708,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1684,7 +1728,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Entry'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Entry..ctor()"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -1697,6 +1744,9 @@ nkStmtList
       nkIdent 'Entry'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

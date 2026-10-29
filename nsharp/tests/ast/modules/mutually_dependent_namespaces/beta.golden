@@ -60,7 +60,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'B'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -77,6 +80,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.B.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -93,7 +99,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'B'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -108,7 +117,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'B'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -163,7 +175,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'B'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -178,7 +193,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'B'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.B..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -191,6 +209,9 @@ nkStmtList
       nkIdent 'B'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -205,7 +226,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Special'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -222,6 +246,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.Special.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -238,7 +265,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Special'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -253,7 +283,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Special'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -310,7 +343,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Special'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -325,7 +361,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Special'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.Special..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -338,6 +377,9 @@ nkStmtList
       nkIdent 'Special'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -352,7 +394,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'B'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -386,6 +431,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.B.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -408,7 +456,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'B'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -426,7 +477,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'B'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Beta.B"
@@ -490,7 +544,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'B'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -507,7 +564,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'B'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.B..ctor()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -527,6 +587,9 @@ nkStmtList
       nkIdent 'B'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -547,7 +610,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Special'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -571,6 +637,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.Special.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -593,7 +662,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Special'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -611,7 +683,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Special'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Beta.Special"
@@ -677,7 +752,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Special'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -694,7 +772,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Special'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Beta.Special..ctor()"
     nkEmpty
     nkStmtList
       nkCall
@@ -710,6 +791,9 @@ nkStmtList
       nkIdent 'Special'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

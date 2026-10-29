@@ -291,6 +291,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -353,6 +356,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -373,6 +379,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -389,6 +398,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -470,6 +482,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -530,7 +545,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -547,6 +565,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Shape.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -563,7 +584,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -578,7 +602,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -773,7 +800,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Shape..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -786,6 +816,9 @@ nkStmtList
       nkIdent 'Shape'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -800,7 +833,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -817,6 +853,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Label.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -833,7 +872,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -848,7 +890,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -936,6 +981,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Program.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -962,7 +1010,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1024,6 +1075,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Circle.ToString()"
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1038,7 +1092,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1075,7 +1132,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1109,7 +1169,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1259,7 +1322,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1294,7 +1360,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1311,6 +1380,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Square.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1337,7 +1409,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkConverterDef
@@ -1425,7 +1500,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1440,7 +1518,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Label..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1453,6 +1534,9 @@ nkStmtList
       nkIdent 'Label'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1467,7 +1551,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1500,7 +1587,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -1595,7 +1685,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1610,7 +1703,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Program..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1623,6 +1719,9 @@ nkStmtList
       nkIdent 'Program'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1639,6 +1738,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1726,6 +1828,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1758,6 +1863,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1787,6 +1895,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1916,6 +2027,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'inline'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2002,7 +2116,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2022,6 +2139,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Shape.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -2044,7 +2164,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2062,10 +2185,18 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Shapes.Shape"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'stackTrace'
+      nkIdent 'off'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -2182,6 +2313,8 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkPragma
+    nkIdent 'pop'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -2253,6 +2386,11 @@ nkStmtList
       nkCall
         nkIdent 'nsTo_IShape'
         nkIdent 'x'
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'stackTrace'
+      nkIdent 'off'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -2314,6 +2452,8 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkPragma
+    nkIdent 'pop'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -2496,7 +2636,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Shape'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Shape..ctor()"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -2509,6 +2652,9 @@ nkStmtList
       nkIdent 'Shape'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2529,7 +2675,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -2560,6 +2709,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Circle.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -2582,7 +2734,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -2600,10 +2755,18 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Circle'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Shapes.Circle"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'stackTrace'
+      nkIdent 'off'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -2670,6 +2833,8 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkPragma
+    nkIdent 'pop'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -2741,6 +2906,11 @@ nkStmtList
       nkCall
         nkIdent 'nsTo_IScalable'
         nkIdent 'x'
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'stackTrace'
+      nkIdent 'off'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -2857,6 +3027,8 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkPragma
+    nkIdent 'pop'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -2875,6 +3047,11 @@ nkStmtList
     nkStmtList
       nkCall
         nkIdent 'nsVtGet_Circle_IShape'
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'stackTrace'
+      nkIdent 'off'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -2936,6 +3113,8 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkPragma
+    nkIdent 'pop'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -3109,7 +3288,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -3140,6 +3322,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Square.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -3162,7 +3347,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -3180,10 +3368,18 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Square'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Shapes.Square"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'stackTrace'
+      nkIdent 'off'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -3300,6 +3496,8 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkPragma
+    nkIdent 'pop'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -3318,6 +3516,11 @@ nkStmtList
     nkStmtList
       nkCall
         nkIdent 'nsVtGet_Square_IShape'
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'stackTrace'
+      nkIdent 'off'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -3379,6 +3582,8 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkPragma
+    nkIdent 'pop'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -3497,7 +3702,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -3524,6 +3732,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Label.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -3546,7 +3757,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -3564,10 +3778,18 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Shapes.Label"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'stackTrace'
+      nkIdent 'off'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -3629,6 +3851,8 @@ nkStmtList
       nkCall
         nkIdent 'addr'
         nkIdent 'nsStore'
+  nkPragma
+    nkIdent 'pop'
   nkMethodDef
     nkPostfix
       nkIdent '*'
@@ -3760,7 +3984,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -3777,7 +4004,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Label'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Label..ctor()"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -3790,6 +4020,9 @@ nkStmtList
       nkIdent 'Label'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -3810,7 +4043,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -3830,6 +4066,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Program.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -3852,7 +4091,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -3870,7 +4112,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Shapes.Program"
@@ -4235,7 +4480,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -4252,7 +4500,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Program'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Shapes.Program..ctor()"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -4265,6 +4516,9 @@ nkStmtList
       nkIdent 'Program'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

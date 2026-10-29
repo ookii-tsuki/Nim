@@ -35,7 +35,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Tool'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -52,6 +55,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Company.Products.Tool.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -68,7 +74,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Tool'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -83,7 +92,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Tool'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -127,7 +139,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Tool'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -142,7 +157,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Tool'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Company.Products.Tool..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -155,6 +173,9 @@ nkStmtList
       nkIdent 'Tool'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -169,7 +190,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Tool'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -189,6 +213,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Company.Products.Tool.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -211,7 +238,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Tool'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -229,7 +259,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Tool'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Company.Products.Tool"
@@ -282,7 +315,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Tool'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -299,7 +335,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Tool'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Company.Products.Tool..ctor()"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -312,6 +351,9 @@ nkStmtList
       nkIdent 'Tool'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

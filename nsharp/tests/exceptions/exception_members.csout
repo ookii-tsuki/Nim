@@ -48,6 +48,8 @@ Actual value was 5.]
 p True [Specified argument was out of the range of valid values. (Parameter 'p')]
 True [m]
 m (Parameter 'arg') / arg / -2147024809
+[msg (Parameter 'p')] True
+m f.txt -2147024894
 deep solo
 obj [gone
 Object name: 'obj'.]

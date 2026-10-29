@@ -1942,6 +1942,9 @@ proc genProcLvl3*(m: BModule, prc: PSym) =
       ## A frame starts at line 0, so a body written on the declaration's own line
       ## (C#'s `void Run() { a(); }`) records its line as well.
       p.lastLineInfo = unknownLineInfo
+      ## A method's dispatcher has no C# counterpart: the call it dispatches records
+      ## the frame.
+      if sfDispatcher in prc.flags: p.options.excl {optStackTrace, optLineTrace}
   genProcBody(p, procBody)
   if resultCleanup != nil:
     let body = move(p.s(cpsStmts).buf)
@@ -1977,7 +1980,7 @@ proc genProcLvl3*(m: BModule, prc: PSym) =
           m.s[cfsProcHeaders].finishProcHeaderAsProto()
       generatedProc.add(extract(header))
       generatedProc.finishProcHeaderWithBody():
-        if optStackTrace in prc.options:
+        if optStackTrace in p.options:
           generatedProc.add(extract(p.s(cpsLocals)))
           var procname = makeCString(prc.name.s)
           when defined(nsharp):
@@ -1999,7 +2002,7 @@ proc genProcLvl3*(m: BModule, prc: PSym) =
         else:
           generatedProc.add(extract(p.s(cpsInit)))
           generatedProc.add(extract(p.s(cpsStmts)))
-        if optStackTrace in prc.options: generatedProc.add(deinitFrame(p))
+        if optStackTrace in p.options: generatedProc.add(deinitFrame(p))
         generatedProc.add(returnStmt)
   if m.config.cmd == cmdNifC:
     # definition directive for the cnif artifact: groups the proc's text

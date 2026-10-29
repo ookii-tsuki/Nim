@@ -35,7 +35,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -52,6 +55,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Hooks.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -68,7 +74,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -83,7 +92,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -118,7 +130,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -133,7 +148,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Hooks..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -146,6 +164,9 @@ nkStmtList
       nkIdent 'Hooks'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -160,7 +181,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -180,6 +204,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Hooks.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -202,7 +229,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -220,7 +250,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Demo.Hooks"
@@ -256,7 +289,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -273,7 +309,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'Hooks'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Hooks..ctor()"
     nkEmpty
     nkStmtList
   nkProcDef
@@ -286,6 +325,9 @@ nkStmtList
       nkIdent 'Hooks'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall

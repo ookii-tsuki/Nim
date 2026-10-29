@@ -77,10 +77,14 @@ proc Message*(e: ref FileNotFoundException): string = e.msg
   ## .NET's `FileNotFoundException` overrides `Message` (to name the file when made
   ## without a message); the text is the field here too.
 
+proc nsInitException*(e: ref Exception; t: typedesc[FileNotFoundException]; a, b: string) {.nsHidden.} =
+  ## `FileNotFoundException(message, fileName)`, a derived class's `: base(...)` too.
+  e.msg = a
+  e.nsState.fileName = b
+
 proc nsNewException*(t: typedesc[FileNotFoundException]; a, b: string): ref FileNotFoundException {.nsHidden.} =
-  ## `new FileNotFoundException(message, fileName)`.
   result = nsNewException(FileNotFoundException, a)
-  result.nsState.fileName = b
+  nsInitException(result, FileNotFoundException, a, b)
 
 proc FileName*[T: ref FileNotFoundException](e: T): string =
   ## The file it could not find, or null.

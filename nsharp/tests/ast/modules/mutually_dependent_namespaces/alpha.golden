@@ -370,7 +370,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'A'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -387,6 +390,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.A.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -403,7 +409,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'A'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -418,7 +427,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'A'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -478,7 +490,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'A'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -493,7 +508,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'A'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.A..ctor()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -506,6 +524,9 @@ nkStmtList
       nkIdent 'A'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -526,7 +547,10 @@ nkStmtList
           nkIdent 'Holder'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -549,6 +573,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.Holder`1.ToString()"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -571,7 +598,10 @@ nkStmtList
             nkIdent 'Holder'
             nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -592,7 +622,10 @@ nkStmtList
           nkIdent 'Holder'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkMethodDef
@@ -613,7 +646,10 @@ nkStmtList
           nkIdent 'Holder'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -1063,7 +1099,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'A'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1097,6 +1136,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.A.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -1119,7 +1161,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'A'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1137,7 +1182,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'A'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkStrLit "Alpha.A"
@@ -1227,7 +1275,10 @@ nkStmtList
           nkIdent 'typedesc'
           nkIdent 'A'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1244,7 +1295,10 @@ nkStmtList
         nkIdent 'self'
         nkIdent 'A'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.A..ctor()"
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1264,6 +1318,9 @@ nkStmtList
       nkIdent 'A'
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1290,7 +1347,10 @@ nkStmtList
           nkIdent 'Holder'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkAsgn
@@ -1323,6 +1383,9 @@ nkStmtList
         nkEmpty
     nkPragma
       nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Alpha.Holder`1.ToString()"
     nkEmpty
     nkStmtList
       nkCall
@@ -1351,7 +1414,10 @@ nkStmtList
             nkIdent 'Holder'
             nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1379,7 +1445,10 @@ nkStmtList
           nkIdent 'Holder'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
@@ -1405,7 +1474,10 @@ nkStmtList
           nkIdent 'Holder'
           nkIdent 'T'
         nkEmpty
-    nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
     nkEmpty
     nkStmtList
       nkCall
