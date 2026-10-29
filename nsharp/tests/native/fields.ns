@@ -1,0 +1,49 @@
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // A binding exposes the fields it wants of a C++ type, in its own order; the
+    // C++ type keeps its layout. It is declared after the class using it, which C#
+    // allows, and its one helper from nsobj.hpp is the borrowed result.
+    static class Entry
+    {
+        [Export("nsStart")]
+        public static void Start()
+        {
+            Gauge g = Gauge.Instance();
+            Console.Print($"N#: level {g.level}, tally {g.tally}, max {Gauge.Max}");
+            Dial d = g.Dial;
+            Console.Print($"pointers: count {g.Counter}, dial ({d.x}, {d.y}), set {g.HasCounter}");
+            g.level -= 30;
+            g.tally = 9;
+            g.Counter += 1;
+            d.x = 8;
+            Gauge.Report();
+        }
+    }
+
+    [Native("Toybox::Gauge", Header = "toybox.hpp", Stable = true)]
+    public class Gauge
+    {
+        // A value field, and a reference one, which reads and writes what it refers to.
+        public int level;
+        public int tally;
+        // `static constexpr`: a static property naming it.
+        public static extern int Max { get; }
+        // Pointer fields: properties over C++ patterns, a lent object or a value
+        // (one named like its type, as C# allows).
+        [Native(Get = "#->dial")] public extern Dial Dial { [return: Borrowed] get; }
+        [Native(Get = "*#->counter", Set = "*#->counter = #")] public extern int Counter { get; set; }
+        [Native(Get = "#->counter != nullptr")] public extern bool HasCounter { get; }
+        [return: Borrowed] public static extern Gauge Instance();
+        public static extern void Report();
+    }
+
+    [Native("Toybox::Dial", Header = "toybox.hpp", Stable = true)]
+    public class Dial
+    {
+        public float x;
+        public float y;
+    }
+}

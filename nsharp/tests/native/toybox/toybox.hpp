@@ -411,4 +411,34 @@ struct Painter {
     static T* Build(A&&... a) { return new T(std::forward<A>(a)...); }
 };
 
+// Fields of every kind, for bindings that expose some of them: a value, a
+// pointer to one, a reference, a pointer to an object, a constant, one the binding
+// leaves out and a private one.
+struct Dial { float x = 3, y = 4; };
+struct Gauge {
+    int level = 100;
+    int* counter = nullptr;
+    int& tally;
+    Dial* dial = nullptr;
+    static constexpr int Max = 250;
+    int unbound = 42;
+    explicit Gauge(int& t) : tally(t) {}
+    int Hidden() const { return hidden; }
+    static Gauge* Instance() {
+        static int count = 5;
+        static Dial d;
+        static Gauge g(count);
+        g.counter = &count;
+        g.dial = &d;
+        return &g;
+    }
+    static void Report() {
+        Gauge* g = Instance();
+        Console::Print("C++: level %d, unbound %d, count %d, tally %d, dial.x %g, hidden %d",
+                       g->level, g->unbound, *g->counter, g->tally, g->dial->x, g->Hidden());
+    }
+private:
+    int hidden = 7;
+};
+
 } // namespace Toybox

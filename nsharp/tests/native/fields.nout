@@ -1,0 +1,3 @@
+N#: level 100, tally 5, max 250
+pointers: count 5, dial (3.0, 4.0), set true
+C++: level 70, unbound 42, count 10, tally 10, dial.x 8, hidden 7

@@ -56,6 +56,14 @@ type
       ## each local function's number, so its forward declaration and its
       ## definition record the same frame
     entryPoint: PNode       ## the emitted `Main` proc, if there was one
+    familyProcs: seq[PNode]
+      ## The helpers of each native family (`nsObjProcs`, `nsHandleProcs`), which
+      ## every routine converting to or from its handles calls: emitted right
+      ## after the declarations, so a member may name a native class declared
+      ## after it.
+    nativeProcs: seq[PNode]
+      ## Each native type's members, emitted after every family's helpers, so any
+      ## routine may name a native type, or call its members, declared after it.
     staticInits: seq[PNode]
       ## One `nsStaticInit<C>` proc per class with static initialisers or a static
       ## constructor. They are emitted after every declaration and called before
@@ -164,6 +172,13 @@ proc memberIdent(l: Lowerer; name: string; recv: NsNode; info: TLineInfo): PNode
     ## The library declares it under the same spelling, for the same reason.
     l.id("nsM_" & name, info)
   else: l.id(name, info)
+
+proc nativeMemberId(l: Lowerer; name: string; info: TLineInfo): PNode =
+  ## A `[Native]` member's exported Nim name, renamed as `memberIdent` reaches it;
+  ## its C++ name comes from its pattern, so the rename does not reach C++.
+  if l.imports != nil and name.strip(leading = false, chars = {'='}) in l.imports.memberRenames:
+    l.exportId("nsM_" & name, info)
+  else: l.exportId(name, info)
 
 proc noteMemberImport(l: Lowerer; n: NsNode) =
   ## Records the prelude declaration a member access resolved to, so the module can
@@ -5468,7 +5483,7 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
         "#." & (if targs.len > 0: "template " else: "") & m.name & targ & "(@)"
       else: "#->" & (if targs.len > 0: "template " else: "") & m.name & targ & "(@)"
   result = newNodeI(nkProcDef, info, 7)
-  result[0] = l.exportId(m.name, info)
+  result[0] = l.nativeMemberId(m.name, info)
   result[1] = empty(info)
   result[2] = l.genericParams(tps, info)
   result[3] = fp
@@ -5648,12 +5663,12 @@ proc nativeProperty(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
   if getter != nil:
     let pattern = expand(pn.get, false)
     if pattern.len > 0:
-      emit(l.exportId(m.name, info),
+      emit(l.nativeMemberId(m.name, info),
            newTree(nkFormalParams, info, l.typeToNim(m.typ, info), recvDefs(false)), pattern)
   if setter != nil:
     let pattern = expand(pn.set, true)
     if pattern.len > 0:
-      emit(l.exportId(m.name & "=", info),
+      emit(l.nativeMemberId(m.name & "=", info),
            newTree(nkFormalParams, info, empty(info), recvDefs(true),
                    l.identDefs("value", l.nativeParamType(m.typ, info), info)), pattern)
 
@@ -5714,6 +5729,10 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let info = n.info
   let nat = l.scope.classes[n.name].native
   let header = l.nativeHeader(n.name)
+  ## The helpers' header (`nsAddr`, boxes, `NsField`), which a member's pattern may
+  ## use while its `header:` names the binding's (`#pragma once` keeps one copy).
+  into.add newTree(nkPragma, info, newTree(nkExprColonExpr, info, l.id("emit", info),
+    strLit("/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n", info)))
   var ol = l
   ol.objTypes = true
   # the type: the C++ type, with the fields the binding names
@@ -5761,7 +5780,7 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   # an `importcpp` proc has no body to follow, leave them alone
   let procs = newNodeI(nkStmtList, info)
   if ownedRoot:
-    procs.add newTree(nkCall, info, l.id("nsObjProcs", info), l.id("NsH_" & n.name, info),
+    l.familyProcs.add newTree(nkCall, info, l.id("nsObjProcs", info), l.id("NsH_" & n.name, info),
                       l.id(n.name, info))
   if nat.handle.len > 0:
     ## Validity is the handle's `explicit operator bool` unless `Valid` says how to
@@ -5771,7 +5790,7 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     let null = (if nat.null.len > 0: nat.null.replace("{0}", "'1")
                 else: nat.handle.replace("{0}", "'1") & "()")
     let deref = (if nat.deref.len > 0: nat.deref else: "#.operator->()")
-    procs.add newTree(nkCall, info, l.id("nsHandleProcs", info), l.id("NsH_" & n.name, info),
+    l.familyProcs.add newTree(nkCall, info, l.id("nsHandleProcs", info), l.id("NsH_" & n.name, info),
                       l.id(n.name, info), strLit(header, info), strLit(valid, info),
                       strLit(null, info), strLit(deref, info))
   if nat.handle.len > 0 and nat.selfHandle.len > 0:
@@ -5854,7 +5873,7 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     pd[3] = fp
     pd[4] = l.cppPragma(nat.cpp & "()", header, info, ["constructor"])
     procs.add pd
-  into.add procs
+  l.nativeProcs.add procs
 
 proc cppParamSig(np: PNode): string =
   ## A member function's C++ parameter list for `{.member.}`/`{.virtual.}`:
@@ -7108,7 +7127,6 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   for e in l.scope.enums: l.imports.userTypes.incl e
   for d in l.scope.delegates.keys: l.imports.userTypes.incl d
   for cn, cls in l.scope.classes:
-    if l.scope.isNative(cn): continue
     for m in cls.members:
       if (m.isMethod or m.isProperty or m.isEvent) and m.name in l.imports.userTypes:
         l.imports.memberRenames.incl m.name
@@ -7164,6 +7182,8 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   for s in stmts:
     if s.kind in declKinds and s.kind != nkTypeSection and not isImportStmt(s):
       result.add s
+  for f in l.familyProcs: result.add f
+  for p in l.nativeProcs: result.add p
   for p in l.staticInits: routines.add p
   for s in stmts:
     if s.kind in {nkProcDef, nkMethodDef, nkConverterDef}: routines.add s
