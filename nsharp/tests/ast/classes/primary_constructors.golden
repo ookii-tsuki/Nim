@@ -210,7 +210,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'Y='
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Y='
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1001,7 +1003,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'Twice='
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Twice='
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1354,7 +1358,9 @@ nkStmtList
       nkIdent 'self'
       nkIdent 'YBacking'
   nkProcDef
-    nkIdent 'Y='
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Y='
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -2502,7 +2508,9 @@ nkStmtList
       nkIdent 'self'
       nkIdent 'TwiceBacking'
   nkProcDef
-    nkIdent 'Twice='
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Twice='
     nkEmpty
     nkEmpty
     nkFormalParams

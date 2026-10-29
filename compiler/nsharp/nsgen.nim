@@ -37,6 +37,21 @@ var namespaceModules: Table[string, seq[NsNode]]
   ## Parsed modules of each generated namespace, keyed by the namespace name, so a
   ## module that imports one can classify its types.
 
+var qualifiedRefs: Table[string, HashSet[string]]
+  ## For each file, the dotted names it writes (`Tools.Widget.Make`): one whose
+  ## longest prefix naming a namespace is not the file's own reaches that
+  ## namespace qualified, with no `using`, which C# allows (`reachedNamespace`).
+
+proc reachedNamespace(chain: string; isNamespace: proc (s: string): bool): string =
+  ## The namespace a dotted name is qualified with: its longest proper prefix that
+  ## names one (`Demo.App` in `Demo.App.Thing`, not `Demo`), or "".
+  result = ""
+  var prefix = ""
+  let parts = chain.split('.')
+  for part in parts[0 .. ^2]:
+    prefix = (if prefix.len == 0: part else: prefix & "." & part)
+    if isNamespace(prefix): result = prefix
+
 proc declaringNamespaces(ns: NsNode; name: string; names: var seq[string]) =
   ## Appends `name` if the namespace declares anything itself, then recurses into
   ## nested blocks. `namespace A { namespace B { } }` declares into `A.B`.
@@ -120,6 +135,14 @@ proc scanFile(source: string; path: string; fileIdx: FileIndex;
       if open.len > 0 and open[^1].depth == depth: open.setLen(open.len - 1)
       dec depth
     of nsIdent:
+      if i + 1 < toks.len and toks[i + 1].kind == nsDot and
+         (i == 0 or (toks[i - 1].kind != nsDot and not (toks[i - 1].kind == nsIdent and
+          toks[i - 1].text in ["using", "namespace", "static"]) and
+          not (i >= 2 and toks[i - 1].kind == nsAssign and toks[i - 2].kind == nsIdent and
+               i >= 3 and toks[i - 3].kind == nsIdent and toks[i - 3].text == "using"))):
+        ## A dotted name outside a directive (`using A.B;`, `namespace A.B`, `using
+        ## P = A.B;`), which names the namespace in its own way.
+        qualifiedRefs.mgetOrPut(path, initHashSet[string]()).incl dottedName(toks, i)
       if t.text == "namespace":
         var name = dottedName(toks, i + 1)
         if name.len > 0:
@@ -254,6 +277,53 @@ proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
       for e in s.libValueIfaces: result.libValueIfaces.incl e
       for q in s.namespaces: result.namespaces.incl q
       for u in s.usings: pending.add u
+  ## Namespaces reached only qualified: their types join the scope, so they are
+  ## classified, unless one is named like a type already in scope or the
+  ## library's, which then stays qualified.
+  var own = initHashSet[string]()
+  proc noteOwn(n: NsNode) =
+    if n.kind == nsnNamespace:
+      own.incl n.name
+      if n.body != nil:
+        for d in n.body.sons: noteOwn(d)
+  for d in module.sons: noteOwn(d)
+  var files = initHashSet[string]()
+  for d in module.sons: files.incl toFullPath(config, d.info)
+  var reached: seq[string] = @[]
+  proc isNamespace(s: string): bool = isDeclaredNamespace(s)
+  for f in files:
+    for chain in qualifiedRefs.getOrDefault(f):
+      let q = reachedNamespace(chain, isNamespace)
+      if q.len > 0 and namespaceModules.hasKey(q) and q notin seen and q notin own and
+         q notin reached:
+        reached.add q
+  reached.sort()
+  let surface = bclSurface(config)
+  for ns in reached:
+    result.qualifiedNs.add ns
+    var clashing: seq[string] = @[]
+    for m in namespaceModules[ns]:
+      let s = collectSymbols(m, config)
+      var names: seq[string] = @[]
+      for k in s.classes.keys: names.add k
+      for k in s.delegates.keys: names.add k
+      for e in s.enums: names.add e
+      for k in names:
+        if result.classes.hasKey(k) or result.delegates.hasKey(k) or
+           k in result.enums or surface.isKnownTypeName(k) or
+           surface.members.hasKey(k) or surface.types.hasKey(surface.nimSpellingOf(k)):
+          if k notin clashing: clashing.add k
+          result.qualifiedOnly.incl ns & "." & k
+      for k, v in s.classes:
+        if k notin clashing and not result.classes.hasKey(k): result.classes[k] = v
+      for k, v in s.delegates:
+        if k notin clashing and not result.delegates.hasKey(k): result.delegates[k] = v
+      for e in s.enums:
+        if e notin clashing: result.enums.incl e
+      for k, v in s.enumMembers:
+        if k notin clashing and not result.enumMembers.hasKey(k): result.enumMembers[k] = v
+    clashing.sort()
+    result.qualifiedExcept[ns] = clashing
   result.resolveBases()
 
 proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: string;
@@ -353,6 +423,13 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
   var pending: seq[string] = @[]
   for s in sites:
     if s.path == mainPath.string and s.ns in declared: pending.add s.ns
+  proc isDeclared(s: string): bool = s in declared
+  proc reachedFrom(path: string): seq[string] =
+    ## What a file reaches qualified: not a namespace it declares itself.
+    for chain in qualifiedRefs.getOrDefault(path):
+      let q = reachedNamespace(chain, isDeclared)
+      if q.len > 0 and path notin declared[q] and q notin result: result.add q
+  for q in reachedFrom(mainPath.string): pending.add q
   while pending.len > 0:
     let ns = pending.pop()
     if namespaceModules.hasKey(ns): continue
@@ -374,6 +451,9 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
     for u in uses:
       if u.ns in declared and not namespaceModules.hasKey(u.ns):
         pending.add u.ns
+    for path in declared[ns]:
+      for q in reachedFrom(path):
+        if not namespaceModules.hasKey(q): pending.add q
 
   ## A `using` this compilation owns must name a namespace declared in the tree or
   ## a module, which is what C# reports as CS0246.

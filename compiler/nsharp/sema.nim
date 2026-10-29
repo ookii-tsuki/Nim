@@ -2449,7 +2449,8 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       return tkUnknown
     if n.body != nil:
       let recv = n.body.typeName
-      ctx.checkStaticMember(recv, n.name, n.info)
+      if dottedName(n.body) notin ctx.scope.qualifiedOnly:
+        ctx.checkStaticMember(recv, n.name, n.info)
       if ctx.scope.classes.hasKey(recv) and
          ctx.scope.findMemberInfo(recv, n.name).name.len > 0:
         ## A static member of a class this compilation declares.
@@ -2592,7 +2593,10 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       ## qualifier, and the result type is the method's if the class is known.
       owner = unqualified(callee.body.name)
       ## `System.Console` beside a binding's own `Console`: the library's.
-      let foreign = ctx.scope.foreignQualified(dottedName(callee.body))
+      ## ... or a type of a namespace reached qualified, named like the library's
+      ## (`Tools.Console`), which the scope leaves out.
+      let written = dottedName(callee.body)
+      let foreign = ctx.scope.foreignQualified(written) or written in ctx.scope.qualifiedOnly
       if not foreign:
         ctx.checkStaticMember(owner, callee.name, callee.info)
         kind = ctx.memberKind(owner, callee.name)

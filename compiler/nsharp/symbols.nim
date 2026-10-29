@@ -98,6 +98,16 @@ type
     namespaces*: HashSet[string]
       ## Every name that stands for a namespace in scope: `using A.B.C;` makes `A`,
       ## `A.B` and `A.B.C` all name it, and `using P = A.B.C;` adds `P`.
+    qualifiedNs*: seq[string]
+      ## The namespaces of the tree the module reaches only qualified
+      ## (`Tools.Widget`), with no `using`: imported without their types that would
+      ## clash with others in scope (`qualifiedExcept`).
+    qualifiedExcept*: Table[string, seq[string]]
+      ## For each of them, its types named like a library type or one already in
+      ## scope (`Tools.Console` beside `System.Console`), which stay out of
+      ## `classes` and are only ever named qualified...
+    qualifiedOnly*: HashSet[string]
+      ## ... written as they are (`Tools.Console`).
 
 const NsIndexerName* = "this[]"
   ## The member name an indexer is recorded under; no C# identifier can collide.

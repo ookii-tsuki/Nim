@@ -1210,6 +1210,13 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
       for a in l.argsToNim(n): result.add a
       return
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
+     callee.body.typeKind == tkType and writtenName(callee.body) in l.scope.qualifiedOnly:
+    ## `Tools.Console.Print(s)`: a type of a namespace reached qualified, named like
+    ## another in scope, stays qualified: `Print(Tools.Console, s)`.
+    result = newTree(nkCall, n.info, l.id(callee.name, n.info), l.typeRef(callee.body))
+    for a in l.argsToNim(n): result.add a
+    return
+  if callee != nil and callee.kind == nsnMember and callee.body != nil and
      callee.body.typeKind == tkType:
     ## A static member: the qualifier is dropped, so the declaration it names has to
     ## be imported by name.
@@ -1786,6 +1793,11 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       ## `obj.M` as a method group: C# binds the receiver when the delegate is made,
       ## so it is read once into the closure's environment.
       result = l.instanceMethodGroup(n)
+    elif n.body != nil and n.body.typeKind == tkType and
+         writtenName(n.body) in l.scope.qualifiedOnly:
+      ## `Tools.Console.Calls`: a static of a type of a namespace reached qualified,
+      ## named like another in scope, read through the qualified type.
+      result = newTree(nkCall, n.info, l.id(n.name, n.info), l.typeRef(n.body))
     else:
       l.noteMemberImport(n)
       if l.imports != nil and n.name in l.imports.userTypes and n.body != nil and
@@ -4141,9 +4153,14 @@ proc lowerProperty(l: Lowerer; cls: NsNode; m: NsNode; isException: bool): seq[P
     sp.add (if isStatic: copyTree(recvDefs)
             else: l.selfDefs(cls.name, isException, m.info, mutable = true))
     sp.add l.paramDef(nsnParam("value", m.typ, m.info))
-    ## `private set;` keeps the setter in its module, as it does a private member.
-    let sattrs = (if setter.strVal == "access": setter.attrs else: m.attrs)
-    result.add l.mkProc(propName(l, m, "=", sattrs), sp, sbody, m.info)
+    ## Exported whatever its access (`private set;`), which `sema.nim` checks
+    ## (CS0272): Nim looks `P=` up where a generic routine assigning `P` is
+    ## instantiated, and a static member is generic (its `typedesc`), so one in
+    ## another module assigning a private setter would not find it.
+    let sattrs = m.attrs
+    var exported = sattrs
+    exported.access = aPublic
+    result.add l.mkProc(propName(l, m, "=", exported), sp, sbody, m.info)
 
 # --- operators and indexers ---------------------------------------------------
 
@@ -7132,6 +7149,17 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
         l.imports.memberRenames.incl m.name
   for d in module.sons:
     l.lowerDecl(d, stmts)
+  ## A namespace of the tree reached only qualified (`Tools.Widget.Make()`): its
+  ## members are in scope, its types that would clash are not, and are named
+  ## qualified (`Tools.Console`).
+  for ns in l.scope.qualifiedNs:
+    let path = namespaceModulePath(ns)
+    if ns in l.ownNamespaces or l.usingPaths.contains(path): continue
+    let clashing = l.scope.qualifiedExcept.getOrDefault(ns)
+    let imp = newNodeI((if clashing.len > 0: nkImportExceptStmt else: nkImportStmt), module.info)
+    imp.add newAtom(nkStrLit, path, module.info)
+    for c in clashing: imp.add l.id(c, module.info)
+    stmts.add imp
   result = newNodeI(nkStmtList, module.info)
   ## Every module sees the N# intrinsics, so `"a" + b` concatenates and any type
   ## can be printed without a `using`.

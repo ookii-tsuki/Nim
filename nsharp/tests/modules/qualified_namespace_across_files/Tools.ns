@@ -1,0 +1,20 @@
+namespace Tools
+{
+    // Named like System.Console: reached only as Tools.Console.
+    public static class Console
+    {
+        public static int Calls { get; private set; }
+        public static void Print(string s) { Calls++; System.Console.WriteLine("Tools: " + s); }
+    }
+
+    public enum Shade { Light, Dark }
+
+    public class Widget
+    {
+        public int Size;
+        public Widget(int size) { Size = size; }
+        public int Twice() => Size * 2;
+        public static Widget Make() => new Widget(4);
+        public static string Version => "1.2";
+    }
+}

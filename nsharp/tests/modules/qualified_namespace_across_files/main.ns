@@ -1,0 +1,23 @@
+// Types of another file's namespace, written with their namespace and no
+// `using`: one named like a library type stays apart from it.
+using System;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("System");
+            Tools.Console.Print("qualified");
+            Tools.Console.Print("again");
+            Console.WriteLine(Tools.Console.Calls);
+            Tools.Widget w = new Tools.Widget(3);
+            Console.WriteLine(w.Twice());
+            Console.WriteLine(Tools.Widget.Make().Size + " " + Tools.Widget.Version);
+            Tools.Shade s = Tools.Shade.Dark;
+            Console.WriteLine(s);
+            Console.WriteLine(Tools.Deep.Probe.Depth());
+        }
+    }
+}

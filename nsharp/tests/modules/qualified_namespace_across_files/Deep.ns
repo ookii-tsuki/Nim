@@ -1,0 +1,7 @@
+namespace Tools.Deep
+{
+    public static class Probe
+    {
+        public static int Depth() => 2;
+    }
+}

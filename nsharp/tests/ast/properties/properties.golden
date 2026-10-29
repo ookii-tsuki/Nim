@@ -238,7 +238,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'Id='
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Id='
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -276,7 +278,9 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
-    nkIdent 'Tag='
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Tag='
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -735,7 +739,9 @@ nkStmtList
       nkIdent 'self'
       nkIdent 'IdBacking'
   nkProcDef
-    nkIdent 'Id='
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Id='
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -779,7 +785,9 @@ nkStmtList
       nkIdent 'self'
       nkIdent 'TagBacking'
   nkProcDef
-    nkIdent 'Tag='
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Tag='
     nkEmpty
     nkEmpty
     nkFormalParams

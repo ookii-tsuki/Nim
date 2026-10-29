@@ -302,10 +302,15 @@ must compile with no `using` at all, and a qualifier that starts at a namespace 
 declares the name -- the qualifier C# drops has to be replaced by an import of that
 module (`from "System" import WriteLine`), since Nim resolves a proc where it is
 *used*. Namespaces are recorded compilation-wide for exactly this reason, and the
-same lookup is what makes `(Demo.Gadget)g` parse as a cast. A namespace the
-*compilation* declares is not replaced this way: `P.Gadget` and `Demo.Gadget.Make()`
-resolve in the file that declares or imports them, which is where a `using` or a
-`namespace` block put them.
+same lookup is what makes `(Demo.Gadget)g` parse as a cast. A namespace another
+file of the compilation declares is reached the same way, with no `using`:
+`Tools.Widget.Make()` generates and imports the `Tools` module, whose types join the
+scope -- except one named like a library type or one already in scope
+(`Tools.Console` beside `System.Console`), which the import leaves out
+(`import "Tools" except Console`) and which is only ever named qualified. A dotted
+name reaches the namespace that is its longest prefix naming one, so
+`Demo.App.Thing` in `namespace Demo.App` names the file's own namespace, not
+`Demo`.
 
 **The frontend keeps no namespace to module table.** The N# standard library is the
 root of the same tree, at `lib/pure/ns/`, which the frontend puts on the module
