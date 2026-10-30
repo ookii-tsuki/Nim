@@ -133,6 +133,13 @@ proc unmanagedEntryName(cls, m: string): string =
   ## `nsUC_<C>_<M>`: the C entry of an `[UnmanagedCallersOnly]` method.
   "nsUC_" & cls & "_" & m
 
+proc ptrMirrorName(l: Lowerer; name: string): string =
+  ## What `S*` points at: `S`'s unmanaged layout. That is its C mirror, `nsC_<S>`,
+  ## unless a `bool` or enum field marshals differently from how it is stored: then
+  ## `nsU_<S>`, of the fields as N# stores them.
+  let c = canonicalTypeName(name)
+  if l.scope.isRawStruct(c): "nsC_" & c else: "nsU_" & c
+
 proc cMirrorName(name: string): string =
   ## The C struct a struct crosses to C as.
   "nsC_" & canonicalTypeName(name)
@@ -382,7 +389,7 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
     if t.typ == nil or t.typ.kind == nsnVoidType: return l.id("pointer", info)
     let pointee =
       if t.typ.kind == nsnTypeName and l.scope.isMarshalableStruct(canonicalTypeName(t.typ.name)):
-        l.id(cMirrorName(t.typ.name), info)
+        l.id(l.ptrMirrorName(t.typ.name), info)
       else: l.typeToNim(t.typ, info)
     result = newTree(nkPtrTy, info, pointee)
   of nsnFnPtrType:
@@ -1761,10 +1768,14 @@ proc nullCoalesceToNim(l: Lowerer; n: NsNode): PNode =
     defs.add newNodeI(nkEmpty, n.info)
     defs.add l.expr(lhs)
     inner.add newTree(nkLetSection, n.info, defs)
-    let cond = newNodeI(nkInfix, n.info)
-    cond.add l.id("==", n.info)
-    cond.add l.id(NsCond, n.info)
-    cond.add newNodeI(nkNilLit, n.info)
+    let cond =
+      if l.isHandleValue(lhs):
+        ## A native object's reference (or handle): null is its invalid value.
+        newTree(nkPrefix, n.info, l.id("not", n.info),
+                newTree(nkCall, n.info, l.id("nsValid", n.info), l.id(NsCond, n.info)))
+      else:
+        newTree(nkInfix, n.info, l.id("==", n.info), l.id(NsCond, n.info),
+                newNodeI(nkNilLit, n.info))
     inner.add newTree(nkIfExpr, n.info,
                       newTree(nkElifExpr, n.info, cond, fallback),
                       newTree(nkElseExpr, n.info, l.id(NsCond, n.info)))
@@ -2130,10 +2141,10 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnTypeOf:
     result = newTree(nkCall, n.info, l.id("nsTypeOf", n.info), l.typeToNim(n.typ, n.info))
   of nsnSizeOf:
-    ## A struct's size is its C layout's, as C# gives a sequential struct's.
+    ## A struct's size is its unmanaged layout's, as C# gives a sequential struct's.
     let t = (if n.typ != nil and n.typ.kind == nsnTypeName and
                 l.scope.isMarshalableStruct(canonicalTypeName(n.typ.name)):
-               l.id(cMirrorName(n.typ.name), n.info)
+               l.id(l.ptrMirrorName(n.typ.name), n.info)
              else: l.typeToNim(n.typ, n.info))
     result = newTree(nkCall, n.info, l.id("nsSizeOf", n.info), t)
   of nsnWith:
@@ -3310,7 +3321,8 @@ proc assignCore(l: Lowerer; n: NsNode): PNode =
   if n.name.len == 0 and l.isCView(t0):
     ## `*p = v`: the struct stored as its C mirror.
     return newTree(nkAsgn, n.info, l.cView(t0),
-                   newTree(nkCall, n.info, l.id("nsToC", n.info), l.expr(n.sons[1])))
+                   newTree(nkCall, n.info, l.id("nsToMirror", n.info), l.expr(n.sons[1]),
+                           l.id(l.ptrMirrorName(t0.rtype.name), n.info)))
   if t0.kind == nsnMember and t0.body != nil and l.isCView(t0.body) and
      not l.isCViewField(t0):
     ## `p->P = v`: a property's setter on a copy, stored back.
@@ -5373,7 +5385,11 @@ proc cTypeOf(l: Lowerer; t: NsNode; byteBool: bool; info: TLineInfo): PNode =
   of mkString: l.id("cstring", info)
   of mkStruct: l.id(cMirrorName(t.name), info)
   of mkArray: newTree(nkPtrTy, info, l.typeToNim(t.typ, info))
-  of mkEnum: newTree(nkCall, info, l.id("nsEnumBase", info), l.typeToNim(t, info))
+  of mkEnum:
+    ## Its underlying integer, spelled out: `distinctBase` of an enum declared later
+    ## in the same type section does not resolve there.
+    let base = l.scope.enumBases.getOrDefault(canonicalTypeName(t.name))
+    (if base != nil: l.typeToNim(base, info) else: l.id("int32", info))
   of mkBlittable, mkUnsupported: l.typeToNim(t, info)
 
 proc toC(l: Lowerer; t: NsNode; v: PNode; byteBool: bool; info: TLineInfo): PNode =
@@ -5410,15 +5426,17 @@ proc cStructMirror(l: Lowerer; n: NsNode; into: var seq[PNode]) =
            x.body.kind == nsnIntLit and x.body.intVal == 1: p = true
     p
   let rec = newNodeI(nkRecList, info)
-  let toBody = newNodeI(nkObjConstr, info)
-  toBody.add l.id(cMirrorName(n.name), info)
+  ## Field by field into the zeroed `result`, so its padding is zero, as .NET's
+  ## copy into C memory leaves it.
+  let toBody = newNodeI(nkStmtList, info)
   let fromBody = newNodeI(nkStmtList, info)
   for f in l.scope.structFields(n.name):
     let field = (if f.kind == nsnPropertyDecl: f.name & "Backing" else: f.name)
     let byteBool = marshalAsByte(f.attributes, false)
     rec.add l.identDefs(field, l.cTypeOf(f.typ, byteBool, f.info), f.info)
     rec[^1][0] = l.exportId(field, f.info)
-    toBody.add newTree(nkExprColonExpr, info, l.id(field, info),
+    toBody.add newTree(nkAsgn, info,
+      newTree(nkDotExpr, info, l.id("result", info), l.id(field, info)),
       l.toC(f.typ, newTree(nkDotExpr, info, l.id("s", info), l.id(field, info)), byteBool, info))
     fromBody.add newTree(nkAsgn, info,
       newTree(nkDotExpr, info, l.id("result", info), l.id(field, info)),
@@ -5430,8 +5448,7 @@ proc cStructMirror(l: Lowerer; n: NsNode; into: var seq[PNode]) =
     empty(info), newTree(nkObjectTy, info, empty(info), empty(info), rec)))
   let toFp = newTree(nkFormalParams, info, l.id(cMirrorName(n.name), info),
                      l.identDefs("s", l.id(n.name, info), info))
-  let toProc = l.mkProc(l.exportId("nsToC", info), toFp,
-                        newTree(nkStmtList, info, toBody), info)
+  let toProc = l.mkProc(l.exportId("nsToC", info), toFp, toBody, info)
   toProc[4] = newTree(nkPragma, info, l.id("inline", info))
   into.add toProc
   let fromFp = newTree(nkFormalParams, info, l.id(n.name, info),
@@ -5439,6 +5456,52 @@ proc cStructMirror(l: Lowerer; n: NsNode; into: var seq[PNode]) =
   let fromProc = l.mkProc(l.exportId("nsFromC", info), fromFp, fromBody, info)
   fromProc[4] = newTree(nkPragma, info, l.id("inline", info))
   into.add fromProc
+  ## The unmanaged layout `S*` points at (`ptrMirrorName`): the C mirror itself, or
+  ## `nsU_<S>`, the fields as N# stores them (a nested struct as its own); and
+  ## `nsToMirror` into it.
+  let raw = l.scope.isRawStruct(canonicalTypeName(n.name))
+  let mirror = l.ptrMirrorName(n.name)
+  let toBodyU = newNodeI(nkStmtList, info)
+  if not raw:
+    let recU = newNodeI(nkRecList, info)
+    let fromU = newNodeI(nkStmtList, info)
+    for f in l.scope.structFields(n.name):
+      let field = (if f.kind == nsnPropertyDecl: f.name & "Backing" else: f.name)
+      let nested = l.scope.marshalOf(f.typ) == mkStruct
+      let ft = (if nested: l.id(l.ptrMirrorName(f.typ.name), f.info)
+                else: l.typeToNim(f.typ, f.info))
+      recU.add l.identDefs(field, ft, f.info)
+      recU[^1][0] = l.exportId(field, f.info)
+      let sv = newTree(nkDotExpr, info, l.id("s", info), l.id(field, info))
+      let cv = newTree(nkDotExpr, info, l.id("c", info), l.id(field, info))
+      toBodyU.add newTree(nkAsgn, info,
+        newTree(nkDotExpr, info, l.id("result", info), l.id(field, info)),
+        (if nested: newTree(nkCall, info, l.id("nsToMirror", info), sv,
+                            l.id(l.ptrMirrorName(f.typ.name), info))
+         else: sv))
+      fromU.add newTree(nkAsgn, info,
+        newTree(nkDotExpr, info, l.id("result", info), l.id(field, info)),
+        (if nested: newTree(nkCall, info, l.id("nsFromC", info), cv) else: cv))
+    let pragU = newTree(nkPragma, info, l.id("bycopy", info))
+    if packed: pragU.add l.id("packed", info)
+    into.add newTree(nkTypeSection, info, newTree(nkTypeDef, info,
+      newTree(nkPragmaExpr, info, l.exportId(mirror, info), pragU),
+      empty(info), newTree(nkObjectTy, info, empty(info), empty(info), recU)))
+    let fromUFp = newTree(nkFormalParams, info, l.id(n.name, info),
+                          l.identDefs("c", l.id(mirror, info), info))
+    let fromUProc = l.mkProc(l.exportId("nsFromC", info), fromUFp, fromU, info)
+    fromUProc[4] = newTree(nkPragma, info, l.id("inline", info))
+    into.add fromUProc
+  let mFp = newTree(nkFormalParams, info, l.id(mirror, info),
+                    l.identDefs("s", l.id(n.name, info), info),
+                    l.identDefs("t", newTree(nkBracketExpr, info, l.id("typedesc", info),
+                                             l.id(mirror, info)), info))
+  let mBody = (if raw: newTree(nkStmtList, info,
+                         newTree(nkCall, info, l.id("nsToC", info), l.id("s", info)))
+               else: toBodyU)
+  let mProc = l.mkProc(l.exportId("nsToMirror", info), mFp, mBody, info)
+  mProc[4] = newTree(nkPragma, info, l.id("inline", info))
+  into.add mProc
 
 proc marshalAsByte(attrs: seq[NsNode]; onReturn: bool): bool =
   ## `[MarshalAs(UnmanagedType.U1)]` (or `I1`): a `bool` as one byte, not a BOOL;
@@ -6197,7 +6260,7 @@ proc cppScalar(t: string): string =
   of "float": "float"
   of "double": "double"
   of "bool": "bool"
-  of "char": "char16_t"
+  of "char": "char"
   else: ""
 
 proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
@@ -7647,6 +7710,63 @@ proc renameMemberDecls(l: Lowerer; module: PNode) =
       for i in 0 ..< n.safeLen: l.walk(n[i])
   l.walk(module)
 
+proc declNameOf(n: PNode): string =
+  ## The identifier a const, var or template declaration names.
+  var x = n
+  while x.kind in {nkPostfix, nkPragmaExpr, nkAccQuoted}:
+    x = (if x.kind == nkPostfix: x[1] else: x[0])
+  if x.kind == nkIdent: x.ident.s else: ""
+
+proc orderDecls(decls: seq[PNode]): seq[PNode] =
+  ## The module's consts, vars and templates, each after the ones it names: a C#
+  ## constant may use one of a class declared later (`const int A = B.K + 1;`),
+  ## which Nim resolves only against what precedes it. Otherwise source order. A
+  ## member's accessor template is found by its type too (`B.K` is `K(typedesc[B])`),
+  ## as classes often share member names.
+  var definers = initTable[string, seq[int]]()
+  for i, d in decls:
+    case d.kind
+    of nkConstSection, nkVarSection:
+      for def in d:
+        if def.kind in {nkConstDef, nkIdentDefs}:
+          for k in 0 ..< max(def.len - 2, 1):
+            definers.mgetOrPut(declNameOf(def[k]), @[]).add i
+    of nkTemplateDef:
+      let name = declNameOf(d[namePos])
+      definers.mgetOrPut(name, @[]).add i
+      let fp = d[paramsPos]
+      if fp.len > 1 and fp[1].kind == nkIdentDefs and fp[1].len >= 2 and
+         fp[1][^2].kind == nkBracketExpr and fp[1][^2].len == 2 and
+         fp[1][^2][0].kind == nkIdent and fp[1][^2][0].ident.s == "typedesc" and
+         fp[1][^2][1].kind == nkIdent:
+        definers.mgetOrPut(fp[1][^2][1].ident.s & "." & name, @[]).add i
+    else: discard
+  var state = newSeq[int](decls.len)   ## 0 new, 1 in progress, 2 placed
+  proc visit(i: int; into: var seq[PNode]) =
+    if state[i] != 0: return
+    state[i] = 1
+    proc need(key: string; into: var seq[PNode]) =
+      for j in definers.getOrDefault(key):
+        if j != i: visit(j, into)
+    proc uses(n: PNode; into: var seq[PNode]) =
+      case n.kind
+      of nkIdent: need(n.ident.s, into)
+      of nkDotExpr:
+        ## `T.M`: the accessor of `T`'s `M` when there is one.
+        if n.len == 2 and n[0].kind == nkIdent and n[1].kind == nkIdent and
+           definers.hasKey(n[0].ident.s & "." & n[1].ident.s):
+          need(n[0].ident.s & "." & n[1].ident.s, into)
+        else:
+          for c in n: uses(c, into)
+      else:
+        for c in n: uses(c, into)
+    let d = decls[i]
+    ## A template's own name and signature name nothing it needs.
+    uses((if d.kind == nkTemplateDef: d[bodyPos] else: d), into)
+    state[i] = 2
+    into.add d
+  for i in 0 ..< decls.len: visit(i, result)
+
 proc lowerModule*(module: NsNode; scope: NsModuleScope;
                   cache: IdentCache; config: ConfigRef): PNode =
   ## Lowers a whole `.ns` module to the Nim statements the rest of the compiler
@@ -7750,9 +7870,11 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
     if s.kind == nkTypeSection:
       for t in s: types.add t
   if types.len > 0: result.add types
+  var decls: seq[PNode] = @[]
   for s in stmts:
     if s.kind in declKinds and s.kind != nkTypeSection and not isImportStmt(s):
-      result.add s
+      decls.add s
+  for d in orderDecls(decls): result.add d
   for f in l.familyProcs: result.add f
   for p in l.nativeProcs: result.add p
   for p in l.staticInits: routines.add p

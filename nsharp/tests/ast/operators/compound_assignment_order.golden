@@ -519,6 +519,28 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsToMirror'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Cell'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Cell'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'nsC_Cell'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'nsCreate'
     nkEmpty
     nkEmpty
@@ -1213,13 +1235,13 @@ nkStmtList
       nkIdent 'inline'
     nkEmpty
     nkStmtList
-      nkObjConstr
-        nkIdent 'nsC_Cell'
-        nkExprColonExpr
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
           nkIdent 'X'
-          nkDotExpr
-            nkIdent 's'
-            nkIdent 'X'
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'X'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1243,6 +1265,31 @@ nkStmtList
         nkDotExpr
           nkIdent 'c'
           nkIdent 'X'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToMirror'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Cell'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Cell'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'nsC_Cell'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsToC'
+        nkIdent 's'
   nkProcDef
     nkPostfix
       nkIdent '*'

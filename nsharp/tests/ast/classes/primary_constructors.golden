@@ -795,6 +795,28 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsToMirror'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Size'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Size'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'nsC_Size'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'Area'
     nkEmpty
     nkEmpty
@@ -2159,18 +2181,20 @@ nkStmtList
       nkIdent 'inline'
     nkEmpty
     nkStmtList
-      nkObjConstr
-        nkIdent 'nsC_Size'
-        nkExprColonExpr
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
           nkIdent 'w'
-          nkDotExpr
-            nkIdent 's'
-            nkIdent 'w'
-        nkExprColonExpr
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'w'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
           nkIdent 'h'
-          nkDotExpr
-            nkIdent 's'
-            nkIdent 'h'
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'h'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -2201,6 +2225,31 @@ nkStmtList
         nkDotExpr
           nkIdent 'c'
           nkIdent 'h'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToMirror'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Size'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Size'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'nsC_Size'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsToC'
+        nkIdent 's'
   nkProcDef
     nkPostfix
       nkIdent '*'

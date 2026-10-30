@@ -67,7 +67,7 @@ static class Mutate
 
         CSharpCompilation Compile(SyntaxTree main) =>
             CSharpCompilation.Create("mut" + counter++, new[] { main }.Concat(siblings), refs,
-                new CSharpCompilationOptions(OutputKind.ConsoleApplication));
+                new CSharpCompilationOptions(OutputKind.ConsoleApplication, allowUnsafe: true));
 
         var original = Compile(mainTree);
         var bad = original.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToList();

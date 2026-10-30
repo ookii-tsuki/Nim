@@ -998,8 +998,9 @@ proc GetType*[T: not RootRef](x: T): Type {.discardable.} = nsTypeOf(T)
 
 # `sizeof(T)` for the built-in value types, as C# defines them (a `char` is two
 # bytes there, whatever N#'s is).
-proc nsSizeOf*(t: typedesc[int8 | uint8 | bool]): int32 {.nsHidden.} = 1
-proc nsSizeOf*(t: typedesc[int16 | uint16 | char]): int32 {.nsHidden.} = 2
+proc nsSizeOf*(t: typedesc[int8 | uint8 | bool | char]): int32 {.nsHidden.} = 1
+  ## `char` is N#'s one byte (C#'s is two), which pointer arithmetic steps by.
+proc nsSizeOf*(t: typedesc[int16 | uint16]): int32 {.nsHidden.} = 2
 proc nsSizeOf*(t: typedesc[int32 | uint32 | float32]): int32 {.nsHidden.} = 4
 proc nsSizeOf*(t: typedesc[int64 | uint64 | float]): int32 {.nsHidden.} = 8
 proc nsSizeOf*[T](t: typedesc[T]): int32 {.nsHidden.} = int32(sizeof(T))
@@ -1290,13 +1291,13 @@ template nsEnumBase*(T: typedesc): typedesc {.nsHidden.} =
   typetraits.distinctBase(T)
 
 template nsThroughC*(p: typed; body: untyped): untyped =
-  ## A method or property on a struct `p` holds as its C mirror: `body` runs on a
+  ## A method or property on a struct `p` holds as its unmanaged layout: `body` runs on a
   ## copy, `nsSelf`, which is stored back after, also when it throws.
   block:
     let q = p
     var nsSelf {.inject.} = nsFromC(q[])
     try: body
-    finally: q[] = nsToC(nsSelf)
+    finally: q[] = nsToMirror(nsSelf, typeof(q[]))
 proc nsArrayAddr*[T](a: NsArray[T]): ptr T {.inline, nsHidden.} =
   ## A `T[]` passed to C (P/Invoke): its first element, which C reads and writes in
   ## place as .NET pins it; null for a null or empty array.

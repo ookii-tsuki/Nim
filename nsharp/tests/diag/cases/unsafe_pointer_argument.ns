@@ -1,0 +1,6 @@
+using System;
+unsafe class U { public static void Take(int* p) { } }
+class Program
+{
+    static void Main() { U.Take(null); Console.WriteLine(1); }
+}

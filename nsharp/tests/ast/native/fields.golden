@@ -1359,6 +1359,100 @@ nkStmtList
                   nkIdent 'spare'
               nkIdent 'y'
             nkStrLit ""
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'pick'
+          nkBracketExpr
+            nkIdent 'NsH_Dial'
+            nkIdent 'Dial'
+          nkBlockExpr
+            nkEmpty
+            nkStmtList
+              nkLetSection
+                nkIdentDefs
+                  nkIdent 'nsCond'
+                  nkEmpty
+                  nkDotExpr
+                    nkCall
+                      nkIdent 'nsDeref'
+                      nkIdent 'g'
+                    nkIdent 'spare'
+              nkIfExpr
+                nkElifExpr
+                  nkPrefix
+                    nkIdent 'not'
+                    nkCall
+                      nkIdent 'nsValid'
+                      nkIdent 'nsCond'
+                  nkDotExpr
+                    nkCall
+                      nkIdent 'nsDeref'
+                      nkIdent 'g'
+                    nkIdent 'home'
+                nkElseExpr
+                  nkIdent 'nsCond'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'none'
+          nkBracketExpr
+            nkIdent 'NsH_Dial'
+            nkIdent 'Dial'
+          nkCall
+            nkIdent 'nsNull'
+            nkBracketExpr
+              nkIdent 'NsH_Dial'
+              nkIdent 'Dial'
+      nkAsgn
+        nkIdent 'none'
+        nkBlockExpr
+          nkEmpty
+          nkStmtList
+            nkLetSection
+              nkIdentDefs
+                nkIdent 'nsCond'
+                nkEmpty
+                nkIdent 'none'
+            nkIfExpr
+              nkElifExpr
+                nkPrefix
+                  nkIdent 'not'
+                  nkCall
+                    nkIdent 'nsValid'
+                    nkIdent 'nsCond'
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'g'
+                  nkIdent 'home'
+              nkElseExpr
+                nkIdent 'nsCond'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "coalesce: "
+              nkCall
+                nkIdent 'nsFmt'
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'pick'
+                  nkIdent 'y'
+                nkStrLit ""
+            nkStrLit " "
+          nkCall
+            nkIdent 'nsFmt'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsDeref'
+                nkIdent 'none'
+              nkIdent 'x'
+            nkStrLit ""
       nkAsgn
         nkDotExpr
           nkCall

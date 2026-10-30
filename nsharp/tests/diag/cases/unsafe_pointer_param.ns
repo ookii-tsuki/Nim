@@ -1,0 +1,6 @@
+using System;
+class Program
+{
+    static int Read(int* p) => 0;
+    static void Main() { Console.WriteLine(1); }
+}

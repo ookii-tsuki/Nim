@@ -1,0 +1,35 @@
+// A constant may use constants of classes declared after it, in any order, as a
+// constant expression wherever C# takes one.
+using System;
+
+namespace Demo
+{
+    static class Program
+    {
+        const int Outer = Limits.Max + Limits.Step;
+        const string Label = Names.Prefix + "-" + nameof(Outer);
+        public const int Base = 1;
+
+        static void Main()
+        {
+            Console.WriteLine(Outer + " " + Label + " " + Limits.Half + " " + Grid.Max);
+            switch (12)
+            {
+                case Outer: Console.WriteLine("outer"); break;
+                default: Console.WriteLine("other"); break;
+            }
+        }
+    }
+
+    class Limits
+    {
+        public const int Max = 10;
+        public const int Half = Max / Step + Program.Base;
+        public const int Step = 2;
+    }
+
+    static class Names { public const string Prefix = "lim"; }
+
+    // A constant named like another class's, which it uses.
+    static class Grid { public const int Max = Limits.Max * 2; }
+}

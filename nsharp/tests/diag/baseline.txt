@@ -195,6 +195,14 @@ undeclared_type CS0246 match
 undeclared_var CS0103 match
 unknown_attribute CS0246 match
 unreachable_named_arg CS1739 match
+unsafe_address_of_local CS0214 match
+unsafe_block_ends CS0214 match
+unsafe_delegate_declaration CS0214 match
+unsafe_field_used_safely CS0214 match
+unsafe_pointer_argument CS0214 match
+unsafe_pointer_local CS0214 match
+unsafe_pointer_param CS0214 match
+unsafe_sizeof_struct CS0233 match
 use_before_decl CS0841 match
 using_non_disposable CS1674 match
 var_no_init CS0818 match

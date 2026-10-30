@@ -48,6 +48,8 @@ type
     isStaticCtx: bool                          ## inside a static member: no `this`
     typeParams: seq[string]                    ## the generic parameters in scope
     usingNamespaces: HashSet[string]           ## the namespaces the file imports or is in
+    inUnsafe: bool                             ## in an unsafe context (pointers allowed)
+    unsafeReported: ref HashSet[string]        ## CS0214 sites, reported once each
     curMember: NsNode                          ## the member whose body is walked
     tmpCounter: int                            ## numbers the temporaries sema introduces
     inCtor: bool                               ## inside a constructor of `clsName`
@@ -187,12 +189,6 @@ proc classifyType(ctx: NsCheckContext; t: NsNode): NsTypeKind =
     ## stays unknown, so lowering takes Nim's own operations on it.
     if t.kind == nsnPointerType and t.typ != nil:
       discard ctx.classifyType(t.typ)
-      let pn = (if t.typ.kind == nsnTypeName: canonicalTypeName(t.typ.name) else: "")
-      if t.intVal == 0 and ctx.scope.isMarshalableStruct(pn) and not ctx.scope.isRawStruct(pn):
-        ## `intVal` marks it reported, as a type is classified more than once.
-        t.intVal = 1
-        nsError(ctx.config, t.info, ndUnsupported,
-                "a pointer to struct '" & pn & "', which has a bool or enum field")
     for x in t.sons: discard ctx.classifyType(x)
     t.setType(tkUnknown, declTypeName(t))
     result = tkUnknown
@@ -2655,6 +2651,29 @@ proc chooseLibraryOverload(ctx: NsCheckContext; n: NsNode; kind: var NsTypeKind;
   n.rtype = rt
   if not isParam: callee.rtype = rt
 
+proc hasPointerType(t: NsNode): bool =
+  ## Whether a written type is or contains a pointer (`int*[]`, `List<int*>`).
+  if t == nil: return false
+  if t.kind in {nsnPointerType, nsnFnPtrType}: return true
+  if t.typ != nil and t.typ != t and hasPointerType(t.typ): return true
+  for x in t.sons:
+    if hasPointerType(x): return true
+  if t.kind == nsnParam: return hasPointerType(t.typ)
+  false
+
+proc requireUnsafe(ctx: NsCheckContext; info: TLineInfo) =
+  ## Pointers outside an unsafe context (an `unsafe` type, member or block): CS0214,
+  ## once per site, as a declaration and its uses may be walked more than once.
+  if ctx.inUnsafe: return
+  let key = $info.fileIndex.int32 & ":" & $info.line & ":" & $info.col
+  if ctx.unsafeReported != nil:
+    if key in ctx.unsafeReported[]: return
+    ctx.unsafeReported[].incl key
+  nsError(ctx.config, info, ndUnsafeNeeded)
+
+proc requireUnsafe(ctx: NsCheckContext; t: NsNode; info: TLineInfo) =
+  if hasPointerType(t): ctx.requireUnsafe(info)
+
 proc isPointerType(t: NsNode): bool =
   t != nil and t.kind in {nsnPointerType, nsnFnPtrType}
 
@@ -2696,6 +2715,7 @@ proc isPointerValue(ctx: NsCheckContext; n: NsNode): bool =
 
 proc walkPointerOp(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## `*p`, `&x`, `&M` and `fixed (T* p = e)`'s initialiser (unsafe code).
+  ctx.requireUnsafe(n.info)
   result = tkUnknown
   n.setType(tkUnknown)
   case n.name
@@ -3148,6 +3168,14 @@ proc subjectOf(kind: NsTypeKind; name: string; rtype: NsNode; info: TLineInfo): 
   result.setType(kind, name)
   result.rtype = rtype
 
+proc nestedTypeHides(ctx: NsCheckContext; name: string): bool =
+  ## A type nested in the class or one of its bases (hoisted out, its `outer`
+  ## names them), which C#'s lookup finds before an inherited member.
+  if not ctx.scope.classes.hasKey(name): return false
+  let d = ctx.scope.classes[name].decl
+  if d == nil or d.outer.len == 0: return false
+  d.outer.split('+')[^1] in ctx.scope.lookupChain(ctx.clsName)
+
 proc walkPattern(ctx: var NsCheckContext; pat, subject: NsNode) =
   ## A pattern against a subject of known (or unknown) type. A designation declares
   ## a local of the pattern's type; a `var` one takes the subject's. The subject's
@@ -3159,6 +3187,17 @@ proc walkPattern(ctx: var NsCheckContext; pat, subject: NsNode) =
                else: nil)
   case pat.kind
   of nsnPatType:
+    if pat.name.len == 0 and pat.typ != nil and pat.typ.kind == nsnTypeName and
+       pat.typ.sons.len == 0 and '.' notin pat.typ.name and ctx.clsName.len > 0 and
+       ctx.scope.findMemberInfo(ctx.clsName, pat.typ.name).isConst and
+       not ctx.nestedTypeHides(pat.typ.name):
+      ## `case Max:` naming a constant of the class, which C#'s lookup finds before
+      ## a type of that name elsewhere (the parser only knows a type exists).
+      pat.kind = nsnPatConst
+      pat.body = nsnIdent(pat.typ.name, pat.typ.info)
+      pat.typ = nil
+      ctx.walkPattern(pat, subject)
+      return
     ctx.checkTypeTest(pat)
     let k = ctx.classifyType(pat.typ)
     if pat.name.len > 0:
@@ -3276,7 +3315,23 @@ proc checkCtorAccess(ctx: NsCheckContext; cn: string; n: NsNode) =
   if first != nil:
     nsError(ctx.config, n.info, ndNotAccessible, signature(cn & "." & cn, first.params))
 
+proc walkExprIn(ctx: var NsCheckContext; n: NsNode): NsTypeKind
+
 proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
+  ## Any value of a pointer type needs an unsafe context (CS0214).
+  result = ctx.walkExprIn(n)
+  if n == nil or ctx.inUnsafe: return
+  if n.kind in {nsnIdent, nsnMember, nsnIndex, nsnCall} and hasPointerType(n.rtype):
+    ctx.requireUnsafe(n.info)
+  elif n.kind == nsnDefault and hasPointerType(n.typ):
+    ctx.requireUnsafe(n.info)
+  if n.kind in {nsnCall, nsnNew}:
+    ## An argument converted to a pointer parameter (`Take(null)`).
+    for a in n.sons:
+      if a != nil and a.argParam != nil and hasPointerType(a.argParam.typ):
+        ctx.requireUnsafe(a.info)
+
+proc walkExprIn(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if n == nil: return tkUnknown
   case n.kind
   of nsnIntLit:
@@ -3751,6 +3806,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   of nsnCast:
     if n.typ != nil and n.typ.kind in {nsnPointerType, nsnFnPtrType}:
       ## `(int*)p`, `(void*)x`: a reinterpretation, not a conversion.
+      ctx.requireUnsafe(n.info)
       discard ctx.walkExpr(n.body)
       result = ctx.classifyType(n.typ)
       n.setType(result, declTypeName(n.typ))
@@ -4113,6 +4169,12 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       n.intVal = size
       n.setType(tkInt, "")
       return tkInt
+    if hasPointerType(n.typ):
+      ctx.requireUnsafe(n.info)
+    elif tn notin ["char", "decimal"] and not ctx.scope.enums.contains(tn) and
+         not ctx.inUnsafe:
+      ## Only a built-in type has a predefined size (CS0233).
+      nsError(ctx.config, n.info, ndSizeofUnsafe, declTypeName(n.typ))
     if k notin {tkInt, tkFloat, tkBool, tkChar} and
        not (n.typ != nil and n.typ.kind in {nsnPointerType, nsnFnPtrType}) and
        not ctx.scope.isMarshalableStruct(tn):
@@ -4423,6 +4485,7 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   if n.paramMod == "ref" and n.kind == nsnLocalDecl:
     ctx.walkRefDecl(n)
     return
+  ctx.requireUnsafe(n.typ, n.info)
   ctx.checkLibraryInterfaceValue(n.typ)
   if n.kind == nsnLocalDecl:
     ctx.checkLocalDecl(n)
@@ -4736,6 +4799,12 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
   if n == nil: return
   case n.kind
   of nsnBlock: walkBody(ctx, n)
+  of nsnBlockStmt:
+    ## `unsafe { }` makes its text an unsafe context.
+    let saved = ctx.inUnsafe
+    if n.strVal == "unsafe": ctx.inUnsafe = true
+    ctx.walkInScope(n.sons)
+    ctx.inUnsafe = saved
   of nsnLocalDecl: ctx.walkDecl(n)
   of nsnMultiDecl:
     for d in n.sons: ctx.walkDecl(d)
@@ -4768,6 +4837,10 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
         ctx.checkAssignable(t)
   of nsnLocalFunc:
     ## A local function's body, like a method's, sees the enclosing locals.
+    let savedUnsafe = ctx.inUnsafe
+    if n.attrs.isUnsafe: ctx.inUnsafe = true
+    ctx.requireUnsafe(n.typ, n.info)
+    defer: ctx.inUnsafe = savedUnsafe
     let savedRet = ctx.retType
     let savedTps = ctx.typeParams
     for t in n.typeParams: ctx.typeParams.add t.name
@@ -5010,7 +5083,22 @@ proc checkCheckedOperator(ctx: NsCheckContext; m: NsNode) =
                  else: "operator " & m.name)
     nsError(ctx.config, m.info, ndCheckedNeedsUnchecked, shown)
 
+proc walkMemberDeclIn(ctx: var NsCheckContext; m: NsNode)
+
 proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
+  ## An `unsafe` member is an unsafe context; a pointer in a signature needs one.
+  let saved = ctx.inUnsafe
+  if m.attrs.isUnsafe: ctx.inUnsafe = true
+  if m.kind in {nsnFieldDecl, nsnPropertyDecl, nsnMethodDecl, nsnIndexerDecl,
+                nsnOperatorDecl, nsnCtorDecl}:
+    ctx.requireUnsafe(m.typ, m.info)
+    if m.kind != nsnPropertyDecl:
+      for p in m.params:
+        if p != nil and p.kind == nsnParam: ctx.requireUnsafe(p.typ, p.info)
+  ctx.walkMemberDeclIn(m)
+  ctx.inUnsafe = saved
+
+proc walkMemberDeclIn(ctx: var NsCheckContext; m: NsNode) =
   ctx.curMember = m
   if m.kind == nsnMethodDecl and m.strVal == "finalizer":
     ## C# runs a finalizer when the collector reclaims the object -- for a short
@@ -5608,7 +5696,10 @@ proc walkClass(ctx: var NsCheckContext; cls: NsNode) =
   for t in cls.typeParams: ctx.typeParams.add t.name
   ctx.clsName = cls.name
   ctx.members = ctx.scope.memberNames(cls.name)
+  let savedUnsafe = ctx.inUnsafe
+  if cls.attrs.isUnsafe: ctx.inUnsafe = true
   for m in cls.sons: ctx.walkMemberDecl(m)
+  ctx.inUnsafe = savedUnsafe
   ctx.clsName = savedCls
   ctx.members = savedMembers
   ctx.typeParams = savedTps
@@ -5698,7 +5789,12 @@ proc walkTop(ctx: var NsCheckContext; d: NsNode) =
     for f in d.sons:
       if f.name in seen: nsError(ctx.config, f.info, ndDuplicateMember, d.name, f.name)
       seen.add f.name
-  of nsnDelegateDecl, nsnUsing: discard
+  of nsnDelegateDecl:
+    ## `delegate void D(int* p);` needs an unsafe context of its own.
+    if not d.attrs.isUnsafe:
+      ctx.requireUnsafe(d.typ, d.info)
+      for p in d.params: ctx.requireUnsafe(p.typ, p.info)
+  of nsnUsing: discard
   else: ctx.walkStmt(d)
 
 proc checkDuplicateTypes(list: seq[NsNode]; config: ConfigRef; ns: string) =
@@ -5779,7 +5875,8 @@ proc checkModule*(module: NsNode; scope: NsModuleScope; config: ConfigRef) =
   ## base-constructor rule. Diagnostics go through `config`.
   var ctx = NsCheckContext(scope: scope, config: config,
                            surface: bclSurface(config),
-                           types: newTable[string, NsTypeInfo]())
+                           types: newTable[string, NsTypeInfo](),
+                           unsafeReported: new(HashSet[string]))
   var fileTypes = initTable[string, FileIndex]()
   collectFileTypes(module.sons, config, fileTypes)
   if fileTypes.len > 0:

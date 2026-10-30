@@ -204,6 +204,28 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsToMirror'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Vec'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Vec'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'nsC_Vec'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initVec'
     nkEmpty
     nkEmpty
@@ -1194,18 +1216,20 @@ nkStmtList
       nkIdent 'inline'
     nkEmpty
     nkStmtList
-      nkObjConstr
-        nkIdent 'nsC_Vec'
-        nkExprColonExpr
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
           nkIdent 'X'
-          nkDotExpr
-            nkIdent 's'
-            nkIdent 'X'
-        nkExprColonExpr
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'X'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
           nkIdent 'Y'
-          nkDotExpr
-            nkIdent 's'
-            nkIdent 'Y'
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'Y'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1236,6 +1260,31 @@ nkStmtList
         nkDotExpr
           nkIdent 'c'
           nkIdent 'Y'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToMirror'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Vec'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Vec'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'nsC_Vec'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsToC'
+        nkIdent 's'
   nkProcDef
     nkPostfix
       nkIdent '*'

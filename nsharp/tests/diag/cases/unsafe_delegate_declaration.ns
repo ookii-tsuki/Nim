@@ -1,0 +1,6 @@
+using System;
+delegate void D(int* p);
+class Program
+{
+    static void Main() { Console.WriteLine(1); }
+}

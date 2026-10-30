@@ -577,7 +577,7 @@ any operand type, as C#'s `(string, object)` overloads do, so `"n=" + 3` and
 | `default(T)` | default value | ✅ v1 | desugar (→ Nim `default`) |
 | `default` literal, `int[] a = { 1, 2 }`, `new[] { 1, 2 }` | target-typed / inferred | ✅ v1 | sem (from the target; an implicitly typed array from its elements' best common type, ECMA-334 12.6.3.15: `{ long.MaxValue, 1 }` is a `long[]`, `{ "a", null }` a `string[]`) |
 | `T.MaxValue` etc. | `static` field | ✅ v1 | lib (`lib/pure/ns/System.nim`) |
-| `sizeof(T)` | byte size | ✅ v1 for the built-in value types (C#'s sizes: `char` is 2) | lib (`nsSizeOf`); any other type needs an unsafe context and is NS9999 |
+| `sizeof(T)` | byte size | ✅ v1 for the built-in value types (C#'s sizes, but `char` is N#'s 1 byte, §4.4) | lib (`nsSizeOf`); any other type needs an unsafe context and is NS9999 |
 | String interpolation `$"{x}"` | format | ✅ v1 | desugar |
 | `with` expression (records) | copy-update | ✅ v1 | sem + desugar (a copy -- `nsClone` for a class record, the value for a struct -- with the initialiser applied as to a temporary; on a non-record class NS8858) |
 | Target-typed `new()` (C# 9) | infer type | ✅ v1 | sem (typed by the declaration, assignment, field, `return` or parameter it converts to) |
@@ -1016,8 +1016,10 @@ marshalling N# would otherwise get wrong rather than do: `CharSet.Unicode`/`Auto
 reads as `""`, and a returned `char*` is copied but not freed. Deliberately absent:
 `Marshal`'s heap helpers, `SafeHandle`, `GCHandle`, COM.
 
-**Pointers** (unsafe code, which N# allows anywhere; `unsafe` is accepted and means
-nothing more): `T*` is Nim's `ptr T` and `void*` its `pointer`; `*p`, `&x`, `p->f`,
+**Pointers** (unsafe code: only in an unsafe context -- an `unsafe` type, member,
+local function or block -- as in C#; a pointer type or operation elsewhere is CS0214,
+`sizeof` of a type with no predefined size CS0233; no project switch is needed, so
+C#'s CS0227 has no counterpart): `T*` is Nim's `ptr T` and `void*` its `pointer`; `*p`, `&x`, `p->f`,
 `p[i]` (unchecked), `p + n`/`p - n`/`p - q` and `++` in elements, comparisons, and
 casts between pointers and `IntPtr`/`nint`/`long` (the same bits). `fixed (T* p = arr)`
 is the address of an array's first element (Nim's memory manager does not move
@@ -1026,14 +1028,15 @@ its C layout (`nsC_<S>`), as C memory holds it, so `p->X` reads and writes what 
 sees; `*p`, `p[i]` or `p->Inner` as a whole value is copied out of it (`nsFromC`) and
 into it on assignment (`nsToC`), and a method or property called through the pointer,
 or a `ref` to it, runs on a copy that is stored back after (also when it throws), so
-another pointer to the same struct sees the old value until then. A pointer to a struct with a `bool` or enum
-field is NS9999 (their C layout differs from the one marshalling gives them). The
+another pointer to the same struct sees the old value until then. A struct whose
+`bool` or enum fields marshal differently from how they are stored is pointed at as
+`nsU_<S>`, its fields as N# stores them (a 1-byte `bool`, the enum's integer), which
+is also what `sizeof` measures. The
 address of an N# struct, laid out with Nim's type header, is NS9999 (pass it `ref`
 or `out`), and so is `fixed` over a string (C#'s `char*` is UTF-16, N#'s strings
 UTF-8) or over an array of structs. `sizeof` of a built-in type is a constant; of a
-pointer, or of a struct of C-laid fields, its size. N# is looser than C# here: it
-does not require an `unsafe` context (CS0214), nor report `&` of a variable that
-needs `fixed` (CS0212).
+pointer, or of a struct of C-laid fields, its size. N# is looser than C# in one
+place: it does not report `&` of a variable that needs `fixed` (CS0212).
 
 **Function pointers**: `delegate* unmanaged<A, B, R>` (`[Cdecl]` or `[Stdcall]`) is a C
 function pointer, `proc (A, B): R {.cdecl.}`, which a P/Invoke passes and a call

@@ -272,7 +272,9 @@ proc mergeNamespace(into, s: NsModuleScope; skip: HashSet[string] = initHashSet[
   for k, v in s.delegates:
     if k notin skip and not into.delegates.hasKey(k): into.delegates[k] = v
   for e in s.enums:
-    if e notin skip: into.enums.incl e
+    if e notin skip:
+      into.enums.incl e
+      if s.enumBases.hasKey(e): into.enumBases[e] = s.enumBases[e]
   for k, v in s.enumMembers:
     if k notin skip and not into.enumMembers.hasKey(k): into.enumMembers[k] = v
   for e in s.libIfaces: into.libIfaces.incl e

@@ -42,6 +42,7 @@ type
     isEnumerable*: bool     ## a class naming `IEnumerable<T>`: it converts to one
     isEnumerator*: bool     ## a class naming `IEnumerator<T>`: it converts to one
     isExtern*: bool         ## `extern`: implemented natively (a `[Native]` type's member)
+    isUnsafe*: bool         ## `unsafe`: its text is an unsafe context (pointers allowed)
 
   NsDeclKind* = enum
     ## Storage class of a local declaration.

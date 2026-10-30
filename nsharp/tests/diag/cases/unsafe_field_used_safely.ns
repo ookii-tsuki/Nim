@@ -1,0 +1,6 @@
+using System;
+unsafe class Holder { public static int* Slot; }
+class Program
+{
+    static void Main() { Console.WriteLine(Holder.Slot == null); }
+}

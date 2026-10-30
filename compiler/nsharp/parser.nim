@@ -1727,9 +1727,10 @@ proc parseStatement(p: var NsParser): NsNode =
     result.sons = p.parseBlock().sons
     return
   if t.kind == nsIdent and t.text == "unsafe" and p.peekAhead(1).kind == nsLBrace:
-    ## `unsafe { ... }`: a block; N# does not require it around pointers.
+    ## `unsafe { ... }`: a block whose text is an unsafe context.
     discard p.advance
     result = nsn(nsnBlockStmt, p.infoOf(t))
+    result.strVal = "unsafe"
     result.sons = p.parseBlock().sons
     return
   if t.kind == nsIdent and t.text == "fixed" and p.peekAhead(1).kind == nsLParen:
@@ -2249,7 +2250,8 @@ proc parseClassMemberInner(p: var NsParser; clsName: string;
                       isOverride: "override" in mods, isAbstract: "abstract" in mods,
                       isSealed: "sealed" in mods, isNew: "new" in mods,
                       isEvent: "event" in mods, isRequired: "required" in mods,
-                      isPartial: "partial" in mods, isExtern: "extern" in mods)
+                      isPartial: "partial" in mods, isExtern: "extern" in mods,
+                      isUnsafe: "unsafe" in mods)
 
   # constructor: `ClassName(params)` (no return type, as in C#)
   if p.at(nsIdent) and p.peek.text == clsName and p.peekAhead(1).kind == nsLParen:
@@ -2476,7 +2478,8 @@ proc parseTypeDecl(p: var NsParser): NsNode =
     result.params = p.parseParams()
   result.attrs = NsAttrs(access: accessOfTopLevel(mods), isAbstract: "abstract" in mods,
                          isSealed: "sealed" in mods, isStatic: "static" in mods,
-                         isPartial: "partial" in mods, isFile: "file" in mods)
+                         isPartial: "partial" in mods, isFile: "file" in mods,
+                         isUnsafe: "unsafe" in mods)
   if p.at(nsColon):
     ## `: Base, I1, I2`. Which of them is a class is not the grammar's to say:
     ## `symbols.nim` decides, once every type is known.
@@ -2566,7 +2569,8 @@ proc parseDelegateDecl(p: var NsParser): NsNode =
   result = nsn(nsnDelegateDecl, p.infoOf(nameTok))
   result.name = nameTok.text
   result.typ = ret
-  result.attrs = NsAttrs(access: accessOfTopLevel(mods), isFile: "file" in mods)
+  result.attrs = NsAttrs(access: accessOfTopLevel(mods), isFile: "file" in mods,
+                         isUnsafe: "unsafe" in mods)
   result.typeParams = p.parseTypeParams()
   result.params = p.parseParams()
   result.constraints = p.parseWhereClauses()
@@ -2709,6 +2713,8 @@ proc hoistNestedTypes(list: var seq[NsNode]; config: ConfigRef) =
       for m in d.sons:
         if m.kind in {nsnClassDecl, nsnEnumDecl, nsnDelegateDecl}:
           m.outer = (if d.outer.len > 0: d.outer & "+" else: "") & d.name
+          ## Its text is inside the outer type's, so an unsafe context too.
+          m.attrs.isUnsafe = m.attrs.isUnsafe or d.attrs.isUnsafe
           if m.attrs.isFile: nsError(config, m.info, ndNestedFileType, m.name)
           nested.add m
         else: kept.add m

@@ -153,6 +153,8 @@ type
     ndExternOutsideNative
     ndDllImportNotStaticExtern
     ndDllImportGeneric
+    ndUnsafeNeeded
+    ndSizeofUnsafe
     ndNativeCtor
     ndExportMisplaced
     ndNativeBaseNotNative
@@ -392,6 +394,10 @@ const
                         " on a method marked 'static' and 'extern'"),
     ndDllImportGeneric: (code: "7042", msg: "The DllImport attribute cannot be applied to a" &
                         " method that is generic or contained in a generic method or type."),
+    ndUnsafeNeeded: (code: "0214", msg: "Pointers and fixed size buffers may only be used" &
+                        " in an unsafe context"),
+    ndSizeofUnsafe: (code: "0233", msg: "'$1' does not have a predefined size, therefore" &
+                        " sizeof can only be used in an unsafe context"),
     ndNativeCtor: (code: "9905", msg: "'$1': a [Native] class with a handle cannot" &
                         " declare a constructor; the engine constructs it"),
     ndExportMisplaced: (code: "9906", msg: "'$1': [Export] applies only to a non-generic" &

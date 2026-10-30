@@ -1,0 +1,54 @@
+// Pointers are allowed in an unsafe context only: an `unsafe` type, member, local
+// function or block, as in C#.
+using System;
+
+namespace Demo
+{
+    unsafe struct Cell
+    {
+        public int Value;
+        public int* Next;
+    }
+
+    unsafe class Outer
+    {
+        // A nested type is inside the unsafe type's text.
+        public static class Inner
+        {
+            public static int Read(int* p) => *p;
+        }
+    }
+
+    class Program
+    {
+        static unsafe int Sum(int* p, int n)
+        {
+            int s = 0;
+            for (int i = 0; i < n; i++) s += p[i];
+            return s;
+        }
+
+        static void Main()
+        {
+            int[] xs = { 1, 2, 3, 4 };
+            int total;
+            unsafe
+            {
+                fixed (int* p = xs) total = Sum(p, xs.Length);
+            }
+            Console.WriteLine(total);
+
+            int y = 5;
+            unsafe int Twice(int* q) => *q * 2;
+            unsafe { Console.WriteLine(Twice(&y) + Outer.Inner.Read(&y)); }
+
+            unsafe
+            {
+                Cell c = new Cell();
+                c.Value = 7;
+                c.Next = &y;
+                Console.WriteLine(c.Value + *c.Next + " " + (sizeof(Cell) >= 12));
+            }
+        }
+    }
+}

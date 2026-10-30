@@ -1,0 +1,10 @@
+using System;
+class Program
+{
+    static void Main()
+    {
+        int x = 3;
+        unsafe { int* p = &x; *p = 4; }
+        Console.WriteLine(sizeof(int*));
+    }
+}

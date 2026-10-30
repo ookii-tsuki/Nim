@@ -1,0 +1,6 @@
+using System;
+struct Pair { public int A; public int B; }
+class Program
+{
+    static void Main() { Console.WriteLine(sizeof(Pair)); }
+}

@@ -1,0 +1,55 @@
+// Pointers to a struct with bool, enum, char and nested struct fields: C# lays
+// them out as stored (a 1-byte bool, the enum's integer), not as marshalling does.
+using System;
+using System.Runtime.InteropServices;
+
+namespace Demo
+{
+    enum Mode : byte { Off, Slow, Fast }
+
+    struct Inner
+    {
+        public bool Ready;
+        public Mode Speed;
+    }
+
+    struct Flagged
+    {
+        public int Id;
+        public bool On;
+        public Mode Kind;
+        public char Tag;
+        public Inner Sub;
+        public void Toggle() { On = !On; Sub.Ready = On; }
+    }
+
+    unsafe class Program
+    {
+        [DllImport("libc.so.6", EntryPoint = "calloc")]
+        static extern void* Calloc(nuint n, nuint size);
+        [DllImport("libc.so.6", EntryPoint = "free")]
+        static extern void Free(void* p);
+
+        static void Main()
+        {
+            Flagged* p = (Flagged*)Calloc(2, (nuint)sizeof(Flagged));
+            Console.WriteLine(p->On + " " + p->Kind + " " + p->Sub.Speed);
+            p->Id = 7;
+            p->On = true;
+            p->Kind = Mode.Fast;
+            p->Tag = 'x';
+            p->Sub.Speed = Mode.Slow;
+            p->Toggle();
+            Flagged f = *p;
+            Console.WriteLine(f.Id + " " + f.On + " " + f.Kind + " " + f.Tag + " " + f.Sub.Ready + " " + f.Sub.Speed);
+            f.On = true;
+            p[1] = f;
+            p[1].Toggle();
+            Inner i = p[1].Sub;
+            Console.WriteLine(p[1].On + " " + i.Ready + " " + i.Speed);
+            byte* raw = (byte*)p;
+            Console.WriteLine(raw[4] + " " + raw[5]);
+            Free(p);
+        }
+    }
+}

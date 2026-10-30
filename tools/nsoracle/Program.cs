@@ -85,7 +85,9 @@ static class Program
 
         var compilation = CSharpCompilation.Create(
             "nsoracle", trees, refs,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            // Unsafe code is allowed, as N# allows it without a project switch (and
+            // as the C# cross-check builds with AllowUnsafeBlocks).
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
 
         var main = trees[0];
         if (diagMode)

@@ -1,0 +1,1210 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Program'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Limits'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Names'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Grid'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkConstSection
+    nkConstDef
+      nkIdent 'nsLimits_Max'
+      nkIdent 'int32'
+      nkIntLit 10
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Max'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Limits'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsLimits_Max'
+  nkConstSection
+    nkConstDef
+      nkIdent 'nsLimits_Step'
+      nkIdent 'int32'
+      nkIntLit 2
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Step'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Limits'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsLimits_Step'
+  nkConstSection
+    nkConstDef
+      nkIdent 'nsProgram_Outer'
+      nkIdent 'int32'
+      nkInfix
+        nkIdent '+'
+        nkDotExpr
+          nkIdent 'Limits'
+          nkIdent 'Max'
+        nkDotExpr
+          nkIdent 'Limits'
+          nkIdent 'Step'
+  nkTemplateDef
+    nkIdent 'Outer'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsProgram_Outer'
+  nkConstSection
+    nkConstDef
+      nkIdent 'nsNames_Prefix'
+      nkIdent 'string'
+      nkStrLit "lim"
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Prefix'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Names'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsNames_Prefix'
+  nkConstSection
+    nkConstDef
+      nkIdent 'nsProgram_Label'
+      nkIdent 'string'
+      nkInfix
+        nkIdent '+'
+        nkInfix
+          nkIdent '+'
+          nkDotExpr
+            nkIdent 'Names'
+            nkIdent 'Prefix'
+          nkStrLit "-"
+        nkStrLit "Outer"
+  nkTemplateDef
+    nkIdent 'Label'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsProgram_Label'
+  nkConstSection
+    nkConstDef
+      nkIdent 'nsProgram_Base'
+      nkIdent 'int32'
+      nkIntLit 1
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Base'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsProgram_Base'
+  nkConstSection
+    nkConstDef
+      nkIdent 'nsLimits_Half'
+      nkIdent 'int32'
+      nkInfix
+        nkIdent '+'
+        nkCall
+          nkIdent 'nsDiv'
+          nkDotExpr
+            nkIdent 'Limits'
+            nkIdent 'Max'
+          nkDotExpr
+            nkIdent 'Limits'
+            nkIdent 'Step'
+        nkDotExpr
+          nkIdent 'Program'
+          nkIdent 'Base'
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Half'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Limits'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsLimits_Half'
+  nkConstSection
+    nkConstDef
+      nkIdent 'nsGrid_Max'
+      nkIdent 'int32'
+      nkInfix
+        nkIdent '*'
+        nkDotExpr
+          nkIdent 'Limits'
+          nkIdent 'Max'
+        nkIntLit 2
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Max'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Grid'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsGrid_Max'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program..ctor()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Limits'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initLimits'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Limits..ctor()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newLimits'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Limits'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Names'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Names'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Names'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Names'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initNames'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Names'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Names..ctor()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newNames'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Names'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Grid'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Grid'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Grid'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Grid'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initGrid'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Grid'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid..ctor()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newGrid'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Grid'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Program"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Program"
+  nkProcDef
+    nkIdent 'Main'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Main()"
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkInfix
+              nkIdent '+'
+              nkInfix
+                nkIdent '+'
+                nkInfix
+                  nkIdent '+'
+                  nkInfix
+                    nkIdent '+'
+                    nkDotExpr
+                      nkIdent 'Program'
+                      nkIdent 'Outer'
+                    nkStrLit " "
+                  nkDotExpr
+                    nkIdent 'Program'
+                    nkIdent 'Label'
+                nkStrLit " "
+              nkDotExpr
+                nkIdent 'Limits'
+                nkIdent 'Half'
+            nkStrLit " "
+          nkDotExpr
+            nkIdent 'Grid'
+            nkIdent 'Max'
+      nkBlockStmt
+        nkIdent 'nsSwitch1'
+        nkStmtList
+          nkCaseStmt
+            nkIntLit 12
+            nkOfBranch
+              nkDotExpr
+                nkIdent 'Program'
+                nkIdent 'Outer'
+              nkStmtList
+                nkCall
+                  nkIdent 'WriteLine'
+                  nkStrLit "outer"
+                nkBreakStmt
+                  nkIdent 'nsSwitch1'
+            nkElse
+              nkStmtList
+                nkCall
+                  nkIdent 'WriteLine'
+                  nkStrLit "other"
+                nkBreakStmt
+                  nkIdent 'nsSwitch1'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newProgram'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Program'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program..ctor()"
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newProgram'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Program'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initProgram'
+        nkIdent 'result'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Limits"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Limits"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Limits'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newLimits'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initLimits'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Limits'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Limits..ctor()"
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newLimits'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Limits'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initLimits'
+        nkIdent 'result'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Names'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Names"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Names'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Names"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Names'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Names'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newNames'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initNames'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Names'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Names..ctor()"
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newNames'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Names'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initNames'
+        nkIdent 'result'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Grid'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Grid"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Grid'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Grid"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Grid'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Grid'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newGrid'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initGrid'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Grid'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Grid..ctor()"
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newGrid'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Grid'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initGrid'
+        nkIdent 'result'
+  nkWhenStmt
+    nkElifBranch
+      nkIdent 'isMainModule'
+      nkStmtList
+        nkCall
+          nkIdent 'Main'

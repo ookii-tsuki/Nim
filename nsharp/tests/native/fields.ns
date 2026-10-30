@@ -6,7 +6,7 @@ namespace Demo
     // A binding exposes the fields it wants of a C++ type, in its own order; the
     // C++ type keeps its layout. It is declared after the class using it, which C#
     // allows, and its one helper from nsobj.hpp is the borrowed result.
-    static class Entry
+    static unsafe class Entry
     {
         [Export("nsStart")]
         public static void Start()
@@ -38,13 +38,17 @@ namespace Demo
             g.spare.y = 11;
             g.dial = g.home;
             Console.Print($"after: dial.x {g.dial.x}, spare.y {g.spare.y}");
+            Dial pick = g.spare ?? g.home;
+            Dial none = null;
+            none ??= g.home;
+            Console.Print($"coalesce: {pick.y} {none.x}");
             g.home = g.spare;
             Gauge.Report();
         }
     }
 
     [Native("Toybox::Gauge", Header = "toybox.hpp", Stable = true)]
-    public class Gauge
+    public unsafe class Gauge
     {
         // A value field, and a reference one, which reads and writes what it refers to.
         public int level;

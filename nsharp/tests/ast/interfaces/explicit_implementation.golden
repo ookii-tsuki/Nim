@@ -728,6 +728,28 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsToMirror'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Ticker'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Ticker'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'nsC_Ticker'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'Next'
     nkEmpty
     nkEmpty
@@ -1769,13 +1791,13 @@ nkStmtList
       nkIdent 'inline'
     nkEmpty
     nkStmtList
-      nkObjConstr
-        nkIdent 'nsC_Ticker'
-        nkExprColonExpr
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
           nkIdent 'Count'
-          nkDotExpr
-            nkIdent 's'
-            nkIdent 'Count'
+        nkDotExpr
+          nkIdent 's'
+          nkIdent 'Count'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1799,6 +1821,31 @@ nkStmtList
         nkDotExpr
           nkIdent 'c'
           nkIdent 'Count'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToMirror'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Ticker'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Ticker'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'nsC_Ticker'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsToC'
+        nkIdent 's'
   nkProcDef
     nkPostfix
       nkIdent '*'

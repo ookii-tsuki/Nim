@@ -167,14 +167,10 @@ nkStmtList
     nkEmpty
     nkEmpty
     nkFormalParams
-      nkCall
-        nkIdent 'nsEnumBase'
-        nkIdent 'Unit'
+      nkIdent 'int32'
       nkIdentDefs
         nkIdent 'u'
-        nkCall
-          nkIdent 'nsEnumBase'
-          nkIdent 'Unit'
+        nkIdent 'int32'
         nkEmpty
     nkPragma
       nkExprColonExpr
@@ -465,9 +461,7 @@ nkStmtList
           nkCall
             nkIdent 'nsPI_Shapes_Next'
             nkCall
-              nkCall
-                nkIdent 'nsEnumBase'
-                nkIdent 'Unit'
+              nkIdent 'int32'
               nkIdent 'u'
       nkAsgn
         nkIdent 'result'

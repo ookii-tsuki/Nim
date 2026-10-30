@@ -76,6 +76,7 @@ type
     classes*: Table[string, NsClassSymbol]
     delegates*: Table[string, NsNode]
     enums*: HashSet[string]
+    enumBases*: Table[string, NsNode]   ## an enum's written underlying type, if any
       ## The enums in scope. `Color.Green` is a qualifier over one of these, and
       ## the qualifier is what tells it from a member access on a value.
     enumMembers*: Table[string, seq[string]]
@@ -244,6 +245,7 @@ proc collect*(decl: NsNode; scope: NsModuleScope; ns = "") =
     scope.delegates[decl.name] = decl
   of nsnEnumDecl:
     scope.enums.incl decl.name
+    if decl.typ != nil: scope.enumBases[decl.name] = decl.typ
     var names: seq[string] = @[]
     for f in decl.sons: names.add f.name
     scope.enumMembers[decl.name] = names
@@ -404,6 +406,11 @@ proc mergePartials(module: NsNode; config: ConfigRef) =
         visit(d.body.sons, d.name)
         kept.add d
       elif d.kind == nsnClassDecl and d.attrs.isPartial:
+        if d.attrs.isUnsafe:
+          ## `unsafe` on one part makes that part's text an unsafe context, not the
+          ## other parts': its members carry it once the parts are one class.
+          for m in d.sons: m.attrs.isUnsafe = true
+          d.attrs.isUnsafe = false
         let key = ns & "." & d.name
         if first.hasKey(key):
           let f = first[key]
