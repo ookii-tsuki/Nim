@@ -28,6 +28,9 @@ type
   StructLayoutAttribute* = ref object of Attribute
     ## `[StructLayout(LayoutKind.Sequential, Pack = 1)]` on a struct: its fields in
     ## declaration order, as C lays them out (packed with `Pack = 1`).
+  UnmanagedCallersOnlyAttribute* = ref object of Attribute
+    ## `[UnmanagedCallersOnly(EntryPoint = "name")]` on a static method: C may call
+    ## it, through `&M` (a `delegate* unmanaged<...>`), or by `name`.
   MarshalAsAttribute* = ref object of Attribute
     ## `[MarshalAs(UnmanagedType.U1)]` on a `bool` parameter or result: one byte
     ## rather than the 4-byte BOOL.

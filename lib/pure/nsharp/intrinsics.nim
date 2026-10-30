@@ -445,7 +445,10 @@ proc nsFieldValue*[T](x: T): string {.nsHidden.} =
     result = (if x.isSome: nsFieldValue(x.get) else: "null")
   elif T is RootRef:
     result = (if x.isNil: "null" else: nsValueText(x))
-  elif T is ref or T is ptr or T is pointer:
+  elif T is ptr or T is pointer:
+    ## A raw pointer prints its address.
+    result = "0x" & toHex(cast[uint](x))
+  elif T is ref:
     result = (if x.isNil: "null" else: $x)
   elif T is object and compiles(x.nsObj):
     ## An interface value: the object it holds, or null.
@@ -724,6 +727,7 @@ template nsStepped(v: typed; up: static bool): untyped =
                        else: (when up: succ(v.get) else: pred(v.get)))
      else: v)
   elif typeof(v) is SomeFloat: (when up: v + 1 else: v - 1)
+  elif typeof(v) is ptr: (when up: v + 1 else: v - 1)   ## a pointer: one element on
   else: (when up: succ(v) else: pred(v))
 template nsPostInc*(x: untyped): untyped {.nsHidden.} =
   (let nsOld = x; x = nsStepped(nsOld, true); nsOld)
@@ -998,6 +1002,8 @@ proc nsSizeOf*(t: typedesc[int8 | uint8 | bool]): int32 {.nsHidden.} = 1
 proc nsSizeOf*(t: typedesc[int16 | uint16 | char]): int32 {.nsHidden.} = 2
 proc nsSizeOf*(t: typedesc[int32 | uint32 | float32]): int32 {.nsHidden.} = 4
 proc nsSizeOf*(t: typedesc[int64 | uint64 | float]): int32 {.nsHidden.} = 8
+proc nsSizeOf*[T](t: typedesc[T]): int32 {.nsHidden.} = int32(sizeof(T))
+  ## Unsafe code: a pointer's or a C-laid struct's (`nsC_<S>`) size.
 
 # --- boxing -----------------------------------------------------------------
 #
@@ -1261,11 +1267,36 @@ type
   NsArray*[T] = ref object of NsArrayBase
     nsData* {.nsHidden.}: seq[T]
 
+template nsPtrAt*[T](p: ptr T; i: SomeInteger): var T {.nsHidden.} =
+  ## `p[i]` (unsafe code): the `i`th `T` from `p`, unchecked.
+  cast[ptr UncheckedArray[T]](p)[i]
+
+proc `+`*[T](p: ptr T; n: SomeInteger): ptr T {.inline, nsHidden.} =
+  ## `p + n`: `n` elements on.
+  cast[ptr T](cast[uint](p) + uint(n) * uint(sizeof(T)))
+proc `+`*[T](n: SomeInteger; p: ptr T): ptr T {.inline, nsHidden.} = p + n
+proc `-`*[T](p: ptr T; n: SomeInteger): ptr T {.inline, nsHidden.} =
+  cast[ptr T](cast[uint](p) - uint(n) * uint(sizeof(T)))
+proc `-`*[T](p, q: ptr T): int64 {.inline, nsHidden.} =
+  ## `p - q`: how many elements apart.
+  (cast[int](p) - cast[int](q)) div sizeof(T)
+proc `<=`*[T](p, q: ptr T): bool {.inline, nsHidden.} = cast[uint](p) <= cast[uint](q)
+proc inc*[T](p: var ptr T; n = 1) {.inline, nsHidden.} = p = p + n
+proc dec*[T](p: var ptr T; n = 1) {.inline, nsHidden.} = p = p - n
+
 template nsEnumBase*(T: typedesc): typedesc {.nsHidden.} =
   ## An enum's underlying integer type (an N# enum is `distinct` over it), as
   ## P/Invoke passes it to C.
   typetraits.distinctBase(T)
 
+template nsThroughC*(p: typed; body: untyped): untyped =
+  ## A method or property on a struct `p` holds as its C mirror: `body` runs on a
+  ## copy, `nsSelf`, which is stored back after, also when it throws.
+  block:
+    let q = p
+    var nsSelf {.inject.} = nsFromC(q[])
+    try: body
+    finally: q[] = nsToC(nsSelf)
 proc nsArrayAddr*[T](a: NsArray[T]): ptr T {.inline, nsHidden.} =
   ## A `T[]` passed to C (P/Invoke): its first element, which C reads and writes in
   ## place as .NET pins it; null for a null or empty array.

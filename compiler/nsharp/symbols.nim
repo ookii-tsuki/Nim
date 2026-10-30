@@ -315,6 +315,7 @@ proc isMarshalableStruct*(scope: NsModuleScope; name: string; depth = 0): bool =
 
 proc marshalOf*(scope: NsModuleScope; t: NsNode; depth = 0): NsMarshal =
   if t == nil or t.kind in {nsnEmpty, nsnVoidType}: return mkVoid
+  if t.kind in {nsnPointerType, nsnFnPtrType}: return mkBlittable
   if t.kind == nsnArrayType:
     if t.intVal <= 1 and t.typ != nil and t.typ.kind == nsnTypeName and
        canonicalTypeName(t.typ.name) in NsBlittableTypes:
@@ -328,6 +329,19 @@ proc marshalOf*(scope: NsModuleScope; t: NsNode; depth = 0): NsMarshal =
   elif n == "string": mkString
   elif scope.isMarshalableStruct(n, depth): mkStruct
   else: mkUnsupported
+
+proc isRawStruct*(scope: NsModuleScope; name: string; depth = 0): bool =
+  ## A marshalable struct whose C mirror (`nsC_<S>`) is also its unmanaged layout:
+  ## numbers, pointers and such structs only, so `S*` can point at the mirror.
+  ## A `bool` or enum field marshals to a different C type than it is stored as.
+  if not scope.isMarshalableStruct(name, depth): return false
+  for f in scope.structFields(name):
+    case scope.marshalOf(f.typ, depth + 1)
+    of mkBlittable: discard
+    of mkStruct:
+      if not scope.isRawStruct(canonicalTypeName(f.typ.name), depth + 1): return false
+    else: return false
+  true
 
 proc isInterface*(scope: NsModuleScope; name: string): bool =
   scope.classes.hasKey(name) and scope.classes[name].classKind == ckInterface

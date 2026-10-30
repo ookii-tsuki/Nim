@@ -45,14 +45,16 @@ const
     "virtual", "override", "abstract", "sealed", "readonly", "const", "unsafe",
     "extern", "new", "implicit", "explicit", "event", "required", "partial"]
   NsTypeModifiers = ["public", "private", "protected", "internal", "abstract",
-    "sealed", "static", "partial", "file"]
+    "sealed", "static", "partial", "file", "unsafe"]
   ## Modifiers N# actually implements. Anything else recognised but unimplemented
   ## is reported by `parseModifierList` instead of being silently dropped.
   NsMemberModifiers = ["public", "private", "protected", "internal", "static",
     "const", "readonly", "virtual", "override", "abstract", "sealed", "new",
-    "implicit", "explicit", "event", "required", "partial", "extern"]
+    "implicit", "explicit", "event", "required", "partial", "extern", "unsafe"]
   NsClassModifiers = ["public", "private", "protected", "internal", "abstract",
-    "sealed", "static", "partial", "file"]
+    "sealed", "static", "partial", "file", "unsafe"]
+    ## (`unsafe` only allows pointers in C#; N# allows them anywhere, so it means
+    ## nothing more.)
 
 # --- token helpers ----------------------------------------------------------
 
@@ -135,6 +137,14 @@ proc parseDottedName(p: var NsParser): string =
       result.add "."
       result.add p.advance.text
 
+proc pointerSuffix(p: NsParser): bool =
+  ## Whether the `*` after a type name is a pointer suffix (`int* p`, `(int*)x`,
+  ## `List<int*>`, `int*[]`) rather than a multiplication: what follows it is a
+  ## name being declared, or the end of the type.
+  var k = 0
+  while p.peekAhead(k).kind == nsStar: inc k
+  p.peekAhead(k).kind in {nsIdent, nsRParen, nsGt, nsComma, nsLBracket, nsShr, nsGe}
+
 proc parseType(p: var NsParser): NsNode =
   ## A type as written: `void` becomes an `nsnVoidType`, `T[]` an `nsnArrayType`,
   ## and a name an `nsnTypeName` carrying its generic arguments and qualifier.
@@ -162,9 +172,41 @@ proc parseType(p: var NsParser): NsNode =
     return
   if t.kind != nsIdent:
     return nsn(nsnEmpty, p.infoOf(t))
+  if t.text == "delegate" and p.peekAhead(1).kind == nsStar:
+    ## `delegate* unmanaged[Cdecl]<int, int, void>`: a function pointer, its
+    ## parameter types then its result type.
+    discard p.advance
+    discard p.advance
+    result = nsn(nsnFnPtrType, p.infoOf(t))
+    if p.at(nsIdent) and p.peek.text in ["unmanaged", "managed"]:
+      result.strVal = p.advance.text
+      if result.strVal == "managed": result.strVal = ""
+      if p.at(nsLBracket):
+        discard p.advance
+        while not p.at(nsRBracket) and not p.at(nsEof):
+          let conv = p.advance
+          if conv.kind == nsIdent and conv.text notin ["Cdecl", "Stdcall", "StdCall"]:
+            p.err(conv, ndUnsupported, "the '" & conv.text & "' calling convention")
+          elif conv.kind == nsIdent and conv.text != "Cdecl": result.name = "stdcall"
+          if p.at(nsComma): discard p.advance
+        discard p.expect(nsRBracket)
+    discard p.expect(nsLt)
+    while not atGtClose(p) and not p.at(nsEof):
+      result.add p.parseType()
+      if p.at(nsComma): discard p.advance else: break
+    p.expectGt()
+    while p.at(nsStar):
+      discard p.advance
+      result = nsnPointerType(result, p.infoOf(t))
+    return
   if t.text == "void":
     discard p.advance
-    return nsnVoidType(p.infoOf(t))
+    result = nsnVoidType(p.infoOf(t))
+    while p.at(nsStar):
+      ## `void*`: an untyped pointer.
+      discard p.advance
+      result = nsnPointerType(result, p.infoOf(t))
+    return
   result = nsnTypeName(p.parseDottedName(), p.infoOf(t))
   if p.typeAliases.hasKey(result.name) and not p.at(nsLt):
     ## A type alias stands for its target.
@@ -183,6 +225,10 @@ proc parseType(p: var NsParser): NsNode =
     ## read before `[]` because `int?[]` is an array of nullable ints in C#.
     discard p.advance
     result = nsnNullableType(result, p.infoOf(t))
+  while p.at(nsStar) and p.pointerSuffix():
+    ## `T*`, `T**`: a pointer (unsafe code).
+    discard p.advance
+    result = nsnPointerType(result, p.infoOf(t))
   while p.at(nsLBracket) and p.peekAhead(1).kind in {nsRBracket, nsComma}:
     ## `T[]`, or `T[,]` with one comma per extra dimension.
     discard p.advance
@@ -359,7 +405,9 @@ proc looksLikeCast(p: NsParser): bool =
   if p.peek.kind != nsLParen: return false
   var i = 1
   if p.peekAhead(i).kind != nsIdent: return false
-  if not p.isTypeName(p.peekAhead(i).text): return false
+  if not p.isTypeName(p.peekAhead(i).text) and
+     not (p.peekAhead(i).text == "void" and p.peekAhead(i + 1).kind == nsStar):
+    return false
   inc i
   while p.peekAhead(i).kind == nsDot and p.peekAhead(i + 1).kind == nsIdent:
     i += 2
@@ -367,6 +415,7 @@ proc looksLikeCast(p: NsParser): bool =
     i = skipBalancedGt(p, i)
     if i < 0: return false
   if p.peekAhead(i).kind == nsQuestion: inc i   ## `(int?)x`
+  while p.peekAhead(i).kind == nsStar: inc i      ## `(int*)p`, `(void*)x`
   while p.peekAhead(i).kind == nsLBracket and p.peekAhead(i + 1).kind == nsRBracket:
     i += 2
   if p.peekAhead(i).kind != nsRParen: return false
@@ -759,6 +808,14 @@ proc parsePostfixTail(p: var NsParser; start: NsNode): NsNode =
       result = nsnMember(result, nameTok.text, p.infoOf(nameTok))
       if p.looksLikeTypeArgs():
         result.typeArgs = p.parseTypeArgs()
+    elif p.at(nsMinusGt):
+      ## `p->f`: `(*p).f`.
+      let opTok = p.advance
+      let nameTok = p.peek
+      if nameTok.kind != nsIdent: break
+      discard p.advance
+      result = nsnMember(nsnUnary("deref", result, p.infoOf(opTok)), nameTok.text,
+                         p.infoOf(nameTok))
     elif p.at(nsQuestionDot):
       let opTok = p.advance
       let nameTok = p.peek
@@ -839,6 +896,14 @@ proc parseUnary(p: var NsParser): NsNode =
     discard p.advance
     result = nsn(nsnFromEnd, p.infoOf(t))
     result.body = p.parseUnary()
+  of nsStar:
+    ## `*p`: the pointee (unsafe code).
+    discard p.advance
+    result = nsnUnary("deref", p.parseUnary(), p.infoOf(t))
+  of nsAmp:
+    ## `&x`: its address; `&M` of a method, a function pointer to it.
+    discard p.advance
+    result = nsnUnary("addr", p.parseUnary(), p.infoOf(t))
   of nsMinus, nsPlus, nsBang, nsTilde:
     discard p.advance
     let operand = p.parseUnary()
@@ -1269,6 +1334,10 @@ proc parseNew(p: var NsParser, kw: NsToken): NsNode =
         typ.add p.parseType()
         if p.at(nsComma): discard p.advance else: break
       p.expectGt()
+    while p.at(nsStar):
+      ## `new int*[n]`.
+      discard p.advance
+      typ = nsnPointerType(typ, info)
     if p.at(nsLBracket):
       discard p.advance
       if p.at(nsComma) or p.at(nsRBracket):
@@ -1426,6 +1495,13 @@ proc looksLikeDecl(p: NsParser): bool =
   if p.peek.kind != nsIdent: return false
   if p.peek.text in ["var", "let", "const"]: return true
   var i = 1
+  if p.peek.text == "delegate" and p.peekAhead(1).kind == nsStar:
+    ## `delegate* unmanaged[Cdecl]<int, int> f = ...`
+    i = 2
+    while p.peekAhead(i).kind notin {nsLt, nsEof, nsSemi}: inc i
+    if p.peekAhead(i).kind != nsLt: return false
+    i = skipBalancedGt(p, i)
+    if i < 0: return false
   while p.peekAhead(i).kind == nsDot and p.peekAhead(i + 1).kind == nsIdent:
     i += 2
   if p.peekAhead(i).kind == nsLt:
@@ -1435,6 +1511,14 @@ proc looksLikeDecl(p: NsParser): bool =
     ## `int? x = ...`. A ternary in statement position still fails the declarator
     ## test below, so `x ? y : z;` stays an expression.
     inc i
+  var stars = 0
+  while p.peekAhead(i).kind == nsStar:
+    ## `int* p = ...`, `byte** q;`: a pointer (unsafe code), when the name before it
+    ## is a type; `a * b` is otherwise the multiplication it reads as.
+    inc i
+    inc stars
+  if stars > 0 and not (p.isTypeName(p.peek.text) or p.peek.text in ["void", "delegate"]):
+    return false
   while p.peekAhead(i).kind == nsLBracket and
         p.peekAhead(i + 1).kind in {nsRBracket, nsComma}:
     inc i
@@ -1442,6 +1526,7 @@ proc looksLikeDecl(p: NsParser): bool =
     if p.peekAhead(i).kind != nsRBracket: return false
     inc i
   if p.peekAhead(i).kind != nsIdent: return false
+  if stars > 0: return p.peekAhead(i + 1).kind in {nsAssign, nsSemi, nsComma}
   p.peekAhead(i + 1).kind in {nsAssign, nsSemi, nsComma, nsRParen, nsEof}
 
 proc parseInitializer(p: var NsParser; declared: NsNode): NsNode =
@@ -1640,6 +1725,32 @@ proc parseStatement(p: var NsParser): NsNode =
     let info = p.infoOf(t)
     result = nsn(nsnBlockStmt, info)
     result.sons = p.parseBlock().sons
+    return
+  if t.kind == nsIdent and t.text == "unsafe" and p.peekAhead(1).kind == nsLBrace:
+    ## `unsafe { ... }`: a block; N# does not require it around pointers.
+    discard p.advance
+    result = nsn(nsnBlockStmt, p.infoOf(t))
+    result.sons = p.parseBlock().sons
+    return
+  if t.kind == nsIdent and t.text == "fixed" and p.peekAhead(1).kind == nsLParen:
+    ## `fixed (int* p = arr, q = &s.x) body`: each pointer a local of a block that
+    ## then runs the body. Nim's memory manager does not move objects, so pinning
+    ## is only the address.
+    discard p.advance
+    discard p.advance
+    result = nsn(nsnBlockStmt, p.infoOf(t))
+    let typ = p.parseType()
+    while not p.at(nsEof):
+      let d = nsn(nsnLocalDecl, p.here())
+      d.typ = copyNsTree(typ)
+      if p.peek.kind == nsIdent: d.name = p.advance.text
+      else: p.err(p.peek, ndIdentifierExpected)
+      discard p.expect(nsAssign)
+      d.body = nsnUnary("fixed", p.parseExpr(), d.info)
+      result.add d
+      if p.at(nsComma): discard p.advance else: break
+    discard p.expect(nsRParen)
+    result.add p.parseStatement()
     return
   if t.kind == nsIdent:
     case t.text

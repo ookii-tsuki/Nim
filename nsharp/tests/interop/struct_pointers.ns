@@ -1,0 +1,82 @@
+// A struct in C memory reached through a pointer: fields in place, the whole value
+// copied in and out, and a method or property run on it through the pointer.
+using System;
+using System.Runtime.InteropServices;
+
+namespace Demo
+{
+    struct Vec
+    {
+        public int X;
+        public int Y;
+        public int Len2() => X * X + Y * Y;
+        public void Grow() { X++; Y++; }
+        public int Sum { get { return X + Y; } }
+        public void SetThenFail() { X = -1; throw new InvalidOperationException("no"); }
+    }
+
+    unsafe struct Seg
+    {
+        public Vec A;
+        public Vec B;
+        public int* Tag;
+    }
+
+    unsafe class Program
+    {
+        [DllImport("libc.so.6", EntryPoint = "calloc")]
+        static extern void* Calloc(nuint n, nuint size);
+        [DllImport("libc.so.6", EntryPoint = "free")]
+        static extern void Free(void* p);
+
+        static void Reset(ref Vec v) { v.X = 0; v.Y = 0; }
+
+        static void Main()
+        {
+            Vec* p = (Vec*)Calloc(3, (nuint)sizeof(Vec));
+            p->X = 3; p->Y = 4;
+            Console.WriteLine(p->Len2());
+            p->Grow();
+            Console.WriteLine(p->X + " " + p->Y + " " + p->Sum);
+            Vec v = *p;
+            v.X = 100;
+            Console.WriteLine(p->X + " " + v.X);
+            *p = v;
+            Console.WriteLine((*p).X);
+            p[1] = new Vec { X = 7, Y = 8 };
+            Console.WriteLine(p[1].Y + " " + (p + 1)->X + " " + (*(p + 1)).Len2());
+            p[1].X += 5;
+            p->Y++;
+            Console.WriteLine(p[1].X + " " + p->Y);
+            Vec* end = p + 2;
+            int n = 0;
+            for (Vec* q = p; q < end; q++) n += q->X;
+            Console.WriteLine(n);
+
+            Seg* s = (Seg*)Calloc(1, (nuint)sizeof(Seg));
+            s->A = *p;
+            s->B.X = 9;
+            int t = 42;
+            s->Tag = &t;
+            Vec a = s->A;
+            Console.WriteLine(a.X + " " + s->B.X + " " + *s->Tag + " " + s->A.Len2());
+            Console.WriteLine(sizeof(Vec) + " " + sizeof(Seg));
+            Reset(ref p[1]);
+            Console.WriteLine(p[1].X + p[1].Y);
+            try { (p + 2)->SetThenFail(); }
+            catch (InvalidOperationException) { Console.WriteLine("kept " + p[2].X); }
+            long at = (long)s->Tag;
+            Console.WriteLine(at == (long)&t);
+            Free(s);
+            Free(p);
+
+            int u = 1, w = 2;
+            int*[] slots = new int*[2];
+            slots[0] = &u; slots[1] = &w;
+            *slots[1] += 10;
+            Console.WriteLine(*slots[0] + *slots[1]);
+            long addr = (long)(slots[0] + 1) - (long)slots[0];
+            Console.WriteLine(addr);
+        }
+    }
+}

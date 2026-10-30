@@ -41,6 +41,7 @@ cat > "$1/check.csproj" <<'EOF'
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>nscross</AssemblyName>
     <RootNamespace>nscross</RootNamespace>

@@ -386,6 +386,11 @@ proc nsUnhandled(e: ref Exception) {.nimcall, gcsafe, raises: [], tags: [].} =
     discard nsSignal(nsSIGABRT, nil)
     nsAbort()
 
+proc nsCallbackEscape*(e: ref Exception) {.nsHidden.} =
+  ## An exception leaving a method C called (`[UnmanagedCallersOnly]`): it cannot
+  ## unwind through C's frames, so it ends the program, reported as .NET does.
+  nsUnhandled(e)
+
 proc InnerException*[T: ref Exception](e: T): ref Exception = e.parent
   ## The exception a constructor was handed as the cause, or null.
 

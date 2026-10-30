@@ -1,0 +1,44 @@
+// Function pointers to [UnmanagedCallersOnly] methods, held in locals and fields
+// and called directly.
+using System;
+using System.Runtime.InteropServices;
+
+namespace Demo.Inner
+{
+    static class Helpers
+    {
+        [UnmanagedCallersOnly]
+        public static int Twice(int x) => x * 2;
+    }
+}
+
+namespace Demo
+{
+    unsafe class Program
+    {
+        [UnmanagedCallersOnly]
+        static int Add(int a, int b) => a + b;
+
+        [UnmanagedCallersOnly]
+        static void Hello() { Console.WriteLine("hello"); }
+
+        static delegate* unmanaged<int, int, int> s_op;
+        delegate* unmanaged<int, int, int> op;
+
+        static int Apply(delegate* unmanaged<int, int, int> f, int x) => f(x, x);
+
+        static void Main()
+        {
+            delegate* unmanaged<void> h = &Hello;
+            h();
+            s_op = &Add;
+            Console.WriteLine(s_op(1, 2) + Program.s_op(3, 4));
+            var p = new Program();
+            p.op = &Add;
+            Console.WriteLine(p.op(5, 6) + " " + Apply(&Add, 4));
+            delegate* unmanaged<int, int> t = &Demo.Inner.Helpers.Twice;
+            Console.WriteLine(t(21));
+            Console.WriteLine((long)s_op != 0);
+        }
+    }
+}

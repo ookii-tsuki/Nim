@@ -128,6 +128,14 @@ proc nameNode(l: Lowerer; name: string; info: TLineInfo): PNode =
   if name.len > 0 and name[0] notin {'a'..'z', 'A'..'Z', '_'}:
     result = newTree(nkAccQuoted, info, result)
 
+proc unmanagedEntryName(cls, m: string): string =
+  ## `nsUC_<C>_<M>`: the C entry of an `[UnmanagedCallersOnly]` method.
+  "nsUC_" & cls & "_" & m
+
+proc cMirrorName(name: string): string =
+  ## The C struct a struct crosses to C as.
+  "nsC_" & canonicalTypeName(name)
+
 proc exportId(l: Lowerer; name: string; info: TLineInfo): PNode =
   newTree(nkPostfix, info, l.id("*", info), l.nameNode(name, info))
 
@@ -367,6 +375,23 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
   case t.kind
   of nsnEmpty, nsnVoidType:
     result = empty(info)
+  of nsnPointerType:
+    ## `T*` is `ptr T`, `void*` Nim's `pointer`; a struct's pointer reaches its C
+    ## layout (`nsC_<S>`), which is what C memory holds.
+    if t.typ == nil or t.typ.kind == nsnVoidType: return l.id("pointer", info)
+    let pointee =
+      if t.typ.kind == nsnTypeName and l.scope.isMarshalableStruct(canonicalTypeName(t.typ.name)):
+        l.id(cMirrorName(t.typ.name), info)
+      else: l.typeToNim(t.typ, info)
+    result = newTree(nkPtrTy, info, pointee)
+  of nsnFnPtrType:
+    ## `delegate* unmanaged<A, B, R>`: a C function, `proc (a0: A; a1: B): R {.cdecl.}`.
+    let fp = newNodeI(nkFormalParams, info)
+    fp.add (if t.sons.len > 0: l.typeToNim(t.sons[^1], info) else: empty(info))
+    for i in 0 ..< t.sons.len - 1:
+      fp.add l.identDefs("a" & $i, l.typeToNim(t.sons[i], info), info)
+    let conv = (if t.strVal.len == 0: "nimcall" elif t.name == "stdcall": "stdcall" else: "cdecl")
+    result = newTree(nkProcTy, info, fp, newTree(nkPragma, info, l.id(conv, info)))
   of nsnArrayType:
     ## `T[,]` is the library's `NsMdArray[T]`, a `T[]` its `NsArray[T]`: both
     ## references, as C# arrays are.
@@ -1167,6 +1192,12 @@ proc typedescQualifier(l: Lowerer; qual: NsNode; member: string): string =
 
 proc callToNim(l: Lowerer; n: NsNode): PNode =
   var callee = n.body
+  if n.strVal == "fnptr":
+    ## `f(a, b)` through a function pointer held in a local or a field; the
+    ## parentheses keep `C.f(a)` from reading as a call of `f` with `C`.
+    result = newTree(nkCall, n.info, newTree(nkPar, n.info, l.expr(callee)))
+    for a in n.sons: result.add l.expr(a)
+    return
   if callee != nil and callee.kind == nsnMember and callee.strVal == "event":
     ## Raising an event: each of its handlers is called.
     result = newTree(nkCall, n.info, l.id("Invoke", n.info),
@@ -1767,8 +1798,70 @@ proc switchExprToNim(l: Lowerer; n: NsNode): PNode
 proc isIfaceValue(l: Lowerer; e: NsNode): bool
 proc objOf(l: Lowerer; e: NsNode): PNode
 
+proc structPointee(l: Lowerer; t: NsNode): bool =
+  ## Whether `T*` points at a struct's C mirror (`nsC_<S>`) rather than at `T`.
+  t != nil and t.kind == nsnTypeName and l.scope.isMarshalableStruct(canonicalTypeName(t.name))
+
+proc isCViewField(l: Lowerer; n: NsNode): bool
+
+proc isCView(l: Lowerer; n: NsNode): bool =
+  ## `*p`, `p[i]` or `p->F` naming a whole struct held as its C mirror, which is
+  ## read with `nsFromC`, written with `nsToC`, and copied in and out around a
+  ## method or property. The shape is checked before the (costlier) struct.
+  if n == nil: return false
+  let shaped =
+    case n.kind
+    of nsnUnary: n.name == "deref"
+    of nsnIndex:
+      n.body != nil and n.body.rtype != nil and n.body.rtype.kind == nsnPointerType
+    of nsnMember: l.isCViewField(n)
+    else: false
+  shaped and l.structPointee(n.rtype)
+
+proc isCViewField(l: Lowerer; n: NsNode): bool =
+  ## `p->F`: a field of a struct held as its C mirror.
+  n.kind == nsnMember and n.body != nil and n.body.kind in {nsnUnary, nsnIndex, nsnMember} and
+    l.isCView(n.body) and
+    (let m = l.scope.findMemberInfo(canonicalTypeName(n.body.rtype.name), n.name);
+     m.name.len > 0 and not m.isMethod and not m.isProperty and not m.isStatic)
+
+proc cView(l: Lowerer; n: NsNode): PNode =
+  ## The C mirror lvalue `isCView`/`isCViewField` names.
+  case n.kind
+  of nsnUnary: newTree(nkBracketExpr, n.info, l.expr(n.body))
+  of nsnIndex:
+    newTree(nkCall, n.info, l.id("nsPtrAt", n.info), l.expr(n.body), l.expr(n.sons[0]))
+  else: newTree(nkDotExpr, n.info, l.cView(n.body), l.id(n.name, n.info))
+
+proc throughCView(l: Lowerer; holder, whole: NsNode): PNode =
+  ## A method or property on a struct held as its C mirror (`holder.body`): `whole`
+  ## runs on a copy, `nsSelf`, which is written back after (`nsThroughC`).
+  let recv = holder.body
+  holder.body = NsNode(kind: nsnIdent, info: recv.info, name: "nsSelf",
+                       typeKind: recv.typeKind, typeName: recv.typeName, rtype: recv.rtype)
+  let inner = (if whole.kind == nsnAssign: l.assignCore(whole) else: l.expr(whole))
+  holder.body = recv
+  newTree(nkCall, whole.info, l.id("nsThroughC", whole.info),
+          newTree(nkAddr, whole.info, l.cView(recv)), inner)
+
 proc expr(l: Lowerer; n: NsNode): PNode =
   if n == nil: return newNodeI(nkEmpty, unknownLineInfo)
+  if n.kind in {nsnUnary, nsnIndex, nsnMember, nsnCall}:
+    if l.isCViewField(n):
+      let f = l.cView(n)
+      return (if l.isCView(n): newTree(nkCall, n.info, l.id("nsFromC", n.info), f) else: f)
+    if l.isCView(n):
+      return newTree(nkCall, n.info, l.id("nsFromC", n.info), l.cView(n))
+    if n.kind == nsnMember and n.body != nil and l.isCView(n.body):
+      return l.throughCView(n, n)
+    if n.kind == nsnCall and n.body != nil and n.body.kind == nsnMember and
+       n.body.body != nil and l.isCView(n.body.body):
+      return l.throughCView(n.body, n)
+    if n.kind == nsnCall:
+      for a in n.sons:
+        if a.kind == nsnRefArg and l.isCView(a.body):
+          ## `M(ref *p)`: `M` updates a copy, stored back after.
+          return l.throughCView(a, n)
   case n.kind
   of nsnEmpty: result = empty(n.info)
   of nsnIdent:
@@ -1880,6 +1973,10 @@ proc expr(l: Lowerer; n: NsNode): PNode =
         result = newTree(nkCall, n.info, l.id("nsVal", n.info), result)
   of nsnCall: result = l.callToNim(n)
   of nsnIndex:
+    if n.body != nil and n.body.rtype != nil and n.body.rtype.kind == nsnPointerType:
+      ## `p[i]`: the `i`th element from `p`, unchecked as C# has it.
+      return newTree(nkCall, n.info, l.id("nsPtrAt", n.info), l.expr(n.body),
+                     l.expr(n.sons[0]))
     if n.strVal.startsWith("count:"):
       ## `x[^k]` on a collection: `x[x.Count - k]`, `x` read once.
       let info = n.info
@@ -1960,6 +2057,21 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       result = newTree(nkCall, n.info, l.id("nsMdOf", n.info), result,
                        newTree(nkPrefix, n.info, l.id("@", n.info), dims))
   of nsnUnary:
+    case n.name
+    of "deref":
+      ## `*p`: `p[]`.
+      return newTree(nkBracketExpr, n.info, l.expr(n.body))
+    of "addr":
+      if n.strVal == "method":
+        ## `&M` of an `[UnmanagedCallersOnly]` method: its C entry.
+        let parts = n.typeName.split('.')
+        return l.id(unmanagedEntryName(parts[0], parts[^1]), n.info)
+      return newTree(nkAddr, n.info, l.expr(n.body))
+    of "fixed":
+      ## `fixed (T* p = arr)`: the first element; or the address written.
+      if n.body.kind == nsnUnary and n.body.name == "addr": return l.expr(n.body)
+      return newTree(nkCall, n.info, l.id("nsArrayAddr", n.info), l.expr(n.body))
+    else: discard
     if isCheckedOp(n):
       result = newTree(nkCall, n.info, l.id(checkedOperatorName(n.argParam), n.info),
                        l.expr(n.body))
@@ -1988,6 +2100,13 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       sl.add result
       result = newTree(nkBlockExpr, n.info, empty(n.info), sl)
   of nsnCast, nsnIs, nsnAs:
+    if n.kind == nsnCast and (n.strVal == "reinterpret" or
+       (n.typ != nil and n.typ.kind in {nsnPointerType, nsnFnPtrType}) or
+       (n.typ != nil and n.typ.kind == nsnTypeName and n.body != nil and
+        n.body.rtype != nil and n.body.rtype.kind in {nsnPointerType, nsnFnPtrType} and
+        canonicalTypeName(n.typ.name) in ["nint", "nuint", "long", "ulong"])):
+      ## `(int*)p`, `(IntPtr)p`: the same bits as the other type.
+      return newTree(nkCast, n.info, l.typeToNim(n.typ, n.info), l.expr(n.body))
     result = l.ifaceTypeOp(n)
     if result != nil: discard
     elif n.kind == nsnIs and n.name == "nsIsType":
@@ -2010,7 +2129,12 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnTypeOf:
     result = newTree(nkCall, n.info, l.id("nsTypeOf", n.info), l.typeToNim(n.typ, n.info))
   of nsnSizeOf:
-    result = newTree(nkCall, n.info, l.id("nsSizeOf", n.info), l.typeToNim(n.typ, n.info))
+    ## A struct's size is its C layout's, as C# gives a sequential struct's.
+    let t = (if n.typ != nil and n.typ.kind == nsnTypeName and
+                l.scope.isMarshalableStruct(canonicalTypeName(n.typ.name)):
+               l.id(cMirrorName(n.typ.name), n.info)
+             else: l.typeToNim(n.typ, n.info))
+    result = newTree(nkCall, n.info, l.id("nsSizeOf", n.info), t)
   of nsnWith:
     ## `r with { A = 1 }`: a copy of `r` -- `nsClone` for a class record, which
     ## keeps the dynamic type -- with the initialiser applied to it.
@@ -3182,6 +3306,14 @@ proc assignCore(l: Lowerer; n: NsNode): PNode =
     return newTree(nkAsgn, n.info, l.id(n.sons[0].name, n.info),
                    newTree(nkCall, n.info, l.id("addr", n.info), bare.expr(n.sons[1].body)))
   let t0 = n.sons[0]
+  if n.name.len == 0 and l.isCView(t0):
+    ## `*p = v`: the struct stored as its C mirror.
+    return newTree(nkAsgn, n.info, l.cView(t0),
+                   newTree(nkCall, n.info, l.id("nsToC", n.info), l.expr(n.sons[1])))
+  if t0.kind == nsnMember and t0.body != nil and l.isCView(t0.body) and
+     not l.isCViewField(t0):
+    ## `p->P = v`: a property's setter on a copy, stored back.
+    return l.throughCView(t0, n)
   if n.name.len == 0 and t0.kind == nsnMember and t0.body != nil and
      l.scope.qualifiedOnly.hasKey(writtenName(t0.body)):
     for m in l.scope.qualifiedOnly[writtenName(t0.body)].members:
@@ -5230,10 +5362,6 @@ proc dllImportOf(m: NsNode): NsDllImport =
       elif x.name == "CallingConvention" and x.body.kind == nsnMember:
         result.stdcall = x.body.name in ["StdCall", "Winapi"]
 
-proc cMirrorName(name: string): string =
-  ## The C struct a struct crosses to C as.
-  "nsC_" & canonicalTypeName(name)
-
 proc marshalAsByte(attrs: seq[NsNode]; onReturn: bool): bool
 
 proc cTypeOf(l: Lowerer; t: NsNode; byteBool: bool; info: TLineInfo): PNode =
@@ -5320,6 +5448,32 @@ proc marshalAsByte(attrs: seq[NsNode]; onReturn: bool): bool =
       for x in a.sons:
         if x.kind == nsnMember and x.name in ["U1", "I1"]: return true
   false
+
+proc unmanagedEntry(l: Lowerer; cls, m: NsNode): PNode =
+  ## `[UnmanagedCallersOnly] static R M(args)`: `nsUC_<C>_<M>`, the C function `&M`
+  ## gives (exported under `EntryPoint` when one is named), which calls `M`. An
+  ## exception cannot unwind through C's frames, so one leaving `M` ends the program
+  ## as .NET's does.
+  let info = m.info
+  var entry = ""
+  for x in m.attributeNamed("UnmanagedCallersOnly").sons:
+    if x.kind == nsnNamedArg and x.name == "EntryPoint" and x.body != nil and
+       x.body.kind == nsnStrLit: entry = x.body.strVal
+  let params = l.formalParams(m.typ, m.params, info)
+  let call = newTree(nkCall, info, l.id(m.name, info), l.id(cls.name, info))
+  for p in m.params: call.add l.id(p.name, info)
+  let isVoid = m.typ == nil or m.typ.kind in {nsnVoidType, nsnEmpty}
+  let run = (if isVoid: call else: newTree(nkAsgn, info, l.id("result", info), call))
+  let body = newTree(nkStmtList, info, newTree(nkTryStmt, info,
+    newTree(nkStmtList, info, run),
+    newTree(nkExceptBranch, info,
+      newTree(nkInfix, info, l.id("as", info), l.id("Exception", info), l.id("nsE", info)),
+      newTree(nkStmtList, info, newTree(nkCall, info, l.id("nsCallbackEscape", info),
+                                        l.id("nsE", info))))))
+  result = l.mkProc(l.exportId(unmanagedEntryName(cls.name, m.name), info), params, body, info)
+  result[4] = newTree(nkPragma, info, l.id("cdecl", info))
+  if entry.len > 0:
+    result[4].add newTree(nkExprColonExpr, info, l.id("exportc", info), newStrNode(nkStrLit, entry))
 
 proc pinvokeMethod(l: var Lowerer; cls, m: NsNode; into: var seq[PNode]) =
   ## `[DllImport] static extern R M(args)`: `nsPI_<C>_<M>`, the C function, and
@@ -6658,6 +6812,8 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       if m.name == "Main" and l.entryPoint == nil: l.entryPoint = pd
       let ew = l.exportWrapper(n, m)
       if ew != nil: into.add ew
+      if m.attrs.isStatic and m.hasAttribute("UnmanagedCallersOnly"):
+        into.add l.unmanagedEntry(n, m)
     of nsnPropertyDecl:
       inner.thisName = (if m.attrs.isStatic: "" else: "self")
       for p in inner.lowerProperty(n, m, isException): into.add l.asMethod(n, m, p)

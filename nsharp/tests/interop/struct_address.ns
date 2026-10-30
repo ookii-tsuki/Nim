@@ -1,0 +1,18 @@
+// The address of an N# struct, which N# lays out with a type header C would not
+// expect; C takes it by `ref` or `out` instead.
+using System;
+
+namespace Demo
+{
+    struct Point { public int X; public int Y; }
+
+    unsafe class Program
+    {
+        static void Main()
+        {
+            Point p = new Point { X = 1, Y = 2 };
+            Point* q = &p;
+            Console.WriteLine(q->X);
+        }
+    }
+}

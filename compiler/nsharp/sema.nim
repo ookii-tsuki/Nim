@@ -106,6 +106,9 @@ proc declTypeName(t: NsNode): string =
   ## `T?` it is the inner name, which is what `x.Value` needs.
   if t == nil: ""
   elif t.kind == nsnNullableType: declTypeName(t.typ)
+  elif t.kind == nsnPointerType:
+    (if t.typ == nil or t.typ.kind == nsnVoidType: "void" else: declTypeName(t.typ)) & "*"
+  elif t.kind == nsnFnPtrType: "delegate*"
   elif t.kind == nsnArrayType:
     ## `int[]`: the element's name with the brackets, so indexing can recover it.
     (if t.typ != nil: declTypeName(t.typ) & "[]" else: "")
@@ -179,6 +182,20 @@ proc classifyType(ctx: NsCheckContext; t: NsNode): NsTypeKind =
   ## `desugar.nim` knows whether the type needs `Option`.
   if t == nil: return tkUnknown
   case t.kind
+  of nsnPointerType, nsnFnPtrType:
+    ## A pointer or function pointer: what it points at is classified, it itself
+    ## stays unknown, so lowering takes Nim's own operations on it.
+    if t.kind == nsnPointerType and t.typ != nil:
+      discard ctx.classifyType(t.typ)
+      let pn = (if t.typ.kind == nsnTypeName: canonicalTypeName(t.typ.name) else: "")
+      if t.intVal == 0 and ctx.scope.isMarshalableStruct(pn) and not ctx.scope.isRawStruct(pn):
+        ## `intVal` marks it reported, as a type is classified more than once.
+        t.intVal = 1
+        nsError(ctx.config, t.info, ndUnsupported,
+                "a pointer to struct '" & pn & "', which has a bool or enum field")
+    for x in t.sons: discard ctx.classifyType(x)
+    t.setType(tkUnknown, declTypeName(t))
+    result = tkUnknown
   of nsnArrayType:
     t.setType(tkSequence, declTypeName(t))
     result = tkSequence
@@ -2630,12 +2647,140 @@ proc chooseLibraryOverload(ctx: NsCheckContext; n: NsNode; kind: var NsTypeKind;
   n.rtype = rt
   if not isParam: callee.rtype = rt
 
+proc isPointerType(t: NsNode): bool =
+  t != nil and t.kind in {nsnPointerType, nsnFnPtrType}
+
+proc declaredTypeOf(ctx: NsCheckContext; n: NsNode; methods = true): NsNode =
+  ## The type a local, field or method (its result) named by `n` is declared
+  ## with, read before `n` is walked; nil when it is not such a name.
+  var m = NsMemberSymbol()
+  case n.kind
+  of nsnIdent:
+    if ctx.types.hasKey(n.name): return ctx.types[n.name].node
+    m = ctx.scope.findMemberInfo(ctx.clsName, n.name)
+  of nsnMember:
+    if n.body != nil and n.body.kind == nsnIdent and not ctx.types.hasKey(n.body.name) and
+       ctx.scope.classes.hasKey(canonicalTypeName(n.body.name)):
+      m = ctx.scope.findMemberInfo(canonicalTypeName(n.body.name), n.name)
+  else: discard
+  if m.name.len > 0 and not m.isProperty and (methods or not m.isMethod): m.typ else: nil
+
+proc isPointerValue(ctx: NsCheckContext; n: NsNode): bool =
+  ## Whether `n` is a pointer, judged before it is walked: what `(long)n` casts
+  ## must be known first, since a pointer's cast reinterprets it.
+  case n.kind
+  of nsnIdent, nsnMember: isPointerType(ctx.declaredTypeOf(n))
+  of nsnIndex:
+    ## `ps[i]` of an array or a pointer of pointers.
+    let t = (if n.body != nil: ctx.declaredTypeOf(n.body) else: nil)
+    t != nil and t.kind in {nsnArrayType, nsnPointerType} and isPointerType(t.typ)
+  of nsnCall:
+    ## `M(..)` of a method returning a pointer.
+    n.body != nil and n.body.kind in {nsnIdent, nsnMember} and
+      isPointerType(ctx.declaredTypeOf(n.body))
+  of nsnUnary: n.name in ["addr", "fixed"]
+  of nsnCast: n.typ != nil and isPointerType(n.typ)
+  of nsnBinary:
+    n.name in ["+", "-"] and n.sons.len == 2 and
+      (if n.name == "+": ctx.isPointerValue(n.sons[0]) xor ctx.isPointerValue(n.sons[1])
+       else: ctx.isPointerValue(n.sons[0]) and not ctx.isPointerValue(n.sons[1]))
+  else: false
+
+proc walkPointerOp(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
+  ## `*p`, `&x`, `&M` and `fixed (T* p = e)`'s initialiser (unsafe code).
+  result = tkUnknown
+  n.setType(tkUnknown)
+  case n.name
+  of "deref":
+    discard ctx.walkExpr(n.body)
+    let pt = n.body.rtype
+    if pt != nil and pt.kind == nsnPointerType and pt.typ != nil and pt.typ.kind != nsnVoidType:
+      result = ctx.classifyType(pt.typ)
+      n.setType(result, declTypeName(pt.typ))
+      n.rtype = pt.typ
+  of "addr":
+    let b = n.body
+    var owner = ""
+    var name = ""
+    if b.kind == nsnIdent and not ctx.types.hasKey(b.name) and b.name in ctx.members:
+      owner = ctx.clsName
+      name = b.name
+    elif b.kind == nsnMember and b.body != nil and b.body.kind == nsnIdent and
+         ctx.scope.classes.hasKey(canonicalTypeName(b.body.name)):
+      owner = canonicalTypeName(b.body.name)
+      name = b.name
+    elif b.kind == nsnMember and b.body != nil and b.body.kind == nsnMember:
+      ## `&Demo.Inner.Helpers.Twice`: the type named with its namespace.
+      let dn = dottedName(b.body)
+      let dot = dn.rfind('.')
+      if dot > 0 and not ctx.types.hasKey(dn.split('.')[0]) and
+         dn.split('.')[0] notin ctx.members and ctx.scope.classes.hasKey(dn[dot + 1 .. ^1]):
+        owner = dn[dot + 1 .. ^1]
+        name = b.name
+    let m = (if owner.len > 0: ctx.scope.findMemberInfo(owner, name) else: NsMemberSymbol())
+    if m.name.len > 0 and m.isMethod:
+      ## `&M`: a function pointer to a static method C may call, which C# marks
+      ## `[UnmanagedCallersOnly]`; lowering takes its C entry (`nsUC_<C>_<M>`).
+      n.strVal = "method"
+      n.typeName = m.owner & "." & m.name
+      var callable = false
+      if ctx.scope.classes.hasKey(m.owner) and ctx.scope.classes[m.owner].decl != nil:
+        for d in ctx.scope.classes[m.owner].decl.sons:
+          if d.kind == nsnMethodDecl and d.name == m.name and d.attrs.isStatic and
+             d.hasAttribute("UnmanagedCallersOnly"):
+            callable = true
+      if not callable:
+        nsError(ctx.config, n.info, ndUnsupported,
+                "'&" & m.owner & "." & m.name & "' of a method without [UnmanagedCallersOnly]")
+      return
+    discard ctx.walkExpr(b)
+    let pointee = (if b.rtype != nil: b.rtype else: nsnTypeName(b.typeName, b.info))
+    let pn = canonicalTypeName(pointee.name)
+    if pointee.kind == nsnTypeName and ctx.scope.classes.hasKey(pn) and
+       ctx.scope.classes[pn].classKind == ckStruct and ctx.scope.classes[pn].native.cpp.len == 0:
+      ## An N# struct is laid out with Nim's type header, which a C reader of the
+      ## pointer would not expect; P/Invoke takes it by `ref`/`out` instead.
+      nsError(ctx.config, n.info, ndUnsupported,
+              "the address of a struct (pass it 'ref' or 'out' to C)")
+    n.rtype = nsnPointerType(pointee, n.info)
+    n.typeName = declTypeName(n.rtype)
+  else:
+    ## `fixed (T* p = arr)`: the first element of an array, or an address taken.
+    discard ctx.walkExpr(n.body)
+    let b = n.body
+    if b.kind == nsnUnary and b.name == "addr":
+      n.rtype = b.rtype
+    elif b.rtype != nil and b.rtype.kind == nsnArrayType and b.rtype.typ != nil and
+         ctx.scope.marshalOf(b.rtype.typ) in {mkBlittable, mkEnum}:
+      n.rtype = nsnPointerType(b.rtype.typ, n.info)
+    else:
+      nsError(ctx.config, n.info, ndUnsupported,
+              "'fixed' over this (an array of numbers, or an address, is supported)")
+    if n.rtype != nil: n.typeName = declTypeName(n.rtype)
+
+proc fnPtrTypeOf(ctx: NsCheckContext; n: NsNode): NsNode =
+  ## The `delegate*` type of a local or field `n` names, before it is walked.
+  if n == nil or n.kind notin {nsnIdent, nsnMember}: return nil
+  let t = ctx.declaredTypeOf(n, methods = false)
+  if t != nil and t.kind == nsnFnPtrType: t else: nil
+
 proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   var kind = tkUnknown
   var cands: seq[seq[NsNode]] = @[]
   var owner = ""
   var tn = ""
   let callee = n.body
+  let ft = ctx.fnPtrTypeOf(callee)
+  if ft != nil:
+    ## `f(a, b)` through a function pointer: its last type argument is the result.
+    discard ctx.walkExpr(callee)
+    for a in n.sons: discard ctx.walkExpr(a)
+    n.strVal = "fnptr"
+    if ft.sons.len > 0 and ft.sons[^1].kind != nsnVoidType:
+      result = ctx.classifyType(ft.sons[^1])
+      n.setType(result, declTypeName(ft.sons[^1]))
+      n.rtype = ft.sons[^1]
+    return
   if callee != nil and callee.kind == nsnIdent and not ctx.types.hasKey(callee.name) and
      callee.name notin ctx.members and ctx.scope.staticUsings.len > 0 and
      ctx.scope.enclosingStatic(ctx.clsName, callee.name).name.len == 0:
@@ -3449,6 +3594,15 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     result = tkTuple
   of nsnIndex:
     discard ctx.walkExpr(n.body)
+    if n.body != nil and n.body.rtype != nil and n.body.rtype.kind == nsnPointerType and
+       n.body.rtype.typ != nil and n.body.rtype.typ.kind != nsnVoidType:
+      ## `p[i]`: the `i`th `T` from where `p` points.
+      for x in n.sons: discard ctx.walkExpr(x)
+      let t = n.body.rtype.typ
+      result = ctx.classifyType(t)
+      n.setType(result, declTypeName(t))
+      n.rtype = t
+      return
     if n.body != nil and n.body.typeKind in {tkInt, tkFloat, tkBool, tkChar}:
       ## Only arrays, strings and types with an indexer take `[]` (CS0021).
       nsError(ctx.config, n.info, ndNotIndexable, kindSpelling(n.body))
@@ -3548,6 +3702,7 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       let probe = nsnMember(n.body, "[]", n.info)
       ctx.checkLibraryCall(probe, n.sons)
   of nsnUnary:
+    if n.name in ["deref", "addr", "fixed"]: return ctx.walkPointerOp(n)
     result = ctx.walkExpr(n.body)
     if n.name == "-" and n.body != nil and n.body.kind == nsnIntLit and
        n.body.strVal.len == 0 and n.body.intVal == 2147483648'i64:
@@ -3586,6 +3741,23 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     n.setType(result, n.body.typeName)
     n.rtype = n.body.rtype
   of nsnCast:
+    if n.typ != nil and n.typ.kind in {nsnPointerType, nsnFnPtrType}:
+      ## `(int*)p`, `(void*)x`: a reinterpretation, not a conversion.
+      discard ctx.walkExpr(n.body)
+      result = ctx.classifyType(n.typ)
+      n.setType(result, declTypeName(n.typ))
+      n.rtype = n.typ
+      return
+    if n.typ != nil and n.typ.kind == nsnTypeName and n.body != nil and
+       canonicalTypeName(n.typ.name) in ["nint", "nuint", "long", "ulong"] and
+       ctx.isPointerValue(n.body):
+      ## `(IntPtr)p`: a pointer's address as a number.
+      discard ctx.walkExpr(n.body)
+      n.strVal = "reinterpret"
+      result = ctx.classifyType(n.typ)
+      n.setType(result, declTypeName(n.typ))
+      n.rtype = n.typ
+      return
     ctx.checkTypeTest(n)
     block userConversion:
       ## `(T)x` through a user-defined conversion, implicit or explicit: lowering
@@ -3668,6 +3840,14 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     var lk = ctx.walkExpr(n.sons[0])
     var rk = ctx.walkExpr(n.sons[1])
     let (lk0, rk0) = (lk, rk)
+    if n.name in ["+", "-"]:
+      ## `p + n`, `n + p`, `p - n`: the pointer, moved.
+      let lp = isPointerType(n.sons[0].rtype)
+      let rp = isPointerType(n.sons[1].rtype)
+      if lp != rp and (lp or n.name == "+"):
+        n.rtype = (if lp: n.sons[0].rtype else: n.sons[1].rtype)
+        n.setType(tkUnknown, declTypeName(n.rtype))
+        return tkUnknown
     if n.name in ["==", "!="]:
       ## `s == null` for a string compares with the empty string.
       if lk == tkString: ctx.markNull(n.sons[1], "string")
@@ -3908,10 +4088,28 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     n.rtype = nsnTypeName("Type", n.info)
     result = tkClass
   of nsnSizeOf:
-    ## Only the built-in value types have a size outside an unsafe context.
+    ## A built-in value type's size is a constant (C# 12.8.19), which converts as a
+    ## literal does (`nuint n = sizeof(int)`); a pointer's, or (unsafe code) a C-laid
+    ## struct's, is known when the program is built. `char` is left to lowering:
+    ## N#'s is one byte where C#'s is two.
     let k = ctx.classifyType(n.typ)
-    if k notin {tkInt, tkFloat, tkBool, tkChar}:
-      nsError(ctx.config, n.info, ndUnsupported, "'sizeof' of a type other than a built-in value type")
+    let tn = (if n.typ != nil and n.typ.kind == nsnTypeName: canonicalTypeName(n.typ.name) else: "")
+    let size = case tn
+               of "sbyte", "byte", "bool": 1
+               of "short", "ushort": 2
+               of "int", "uint", "float": 4
+               of "long", "ulong", "double": 8
+               else: 0
+    if size > 0:
+      n.kind = nsnIntLit
+      n.intVal = size
+      n.setType(tkInt, "")
+      return tkInt
+    if k notin {tkInt, tkFloat, tkBool, tkChar} and
+       not (n.typ != nil and n.typ.kind in {nsnPointerType, nsnFnPtrType}) and
+       not ctx.scope.isMarshalableStruct(tn):
+      nsError(ctx.config, n.info, ndUnsupported,
+              "'sizeof' of a type other than a built-in value type, a pointer or a struct of them")
     n.setType(tkInt, "int")
     result = tkInt
   of nsnCheckedExpr:

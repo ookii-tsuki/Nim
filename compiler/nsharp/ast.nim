@@ -82,6 +82,9 @@ type
     nsnTypeName        # name, sons = generic arguments (may be empty)
     nsnArrayType       # typ = element type, intVal = rank when 2 or more (`T[,]`)
     nsnNullableType    # typ = inner type                 (from `T?`)
+    nsnPointerType     # typ = pointee (void for `void*`) (from `T*`, unsafe code)
+    nsnFnPtrType       # sons = parameter types, then the result type; strVal =
+                       # "unmanaged" (C's convention) or ""  (`delegate* unmanaged<int, int>`)
     nsnVoidType
     # --- declarations ---
     nsnModule          # sons = top level declarations
@@ -301,6 +304,10 @@ proc nsnNullableType*(inner: NsNode; info: TLineInfo): NsNode =
   ## the reference, which C# reads as a nullability annotation.
   NsNode(kind: nsnNullableType, info: info, typ: inner)
 
+proc nsnPointerType*(pointee: NsNode; info: TLineInfo): NsNode =
+  ## `T*`: a pointer to a `T` (unsafe code), `void*` an untyped one.
+  NsNode(kind: nsnPointerType, info: info, typ: pointee)
+
 proc nsnVoidType*(info: TLineInfo): NsNode =
   NsNode(kind: nsnVoidType, info: info)
 
@@ -408,6 +415,7 @@ proc substitute*(t: NsNode; params: seq[string]; args: seq[NsNode]): NsNode =
     for a in t.sons: result.add substitute(a, params, args)
   of nsnArrayType: result = nsnArrayType(substitute(t.typ, params, args), t.info)
   of nsnNullableType: result = nsnNullableType(substitute(t.typ, params, args), t.info)
+  of nsnPointerType: result = nsnPointerType(substitute(t.typ, params, args), t.info)
   else: result = t
 
 proc attributeNamed*(n: NsNode; name: string): NsNode =

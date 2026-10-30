@@ -1,0 +1,7 @@
+using System
+using System.Runtime.InteropServices
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void

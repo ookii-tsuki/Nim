@@ -2575,21 +2575,13 @@ nkStmtList
               nkIdent '+'
               nkInfix
                 nkIdent '+'
-                nkCall
-                  nkIdent 'nsSizeOf'
-                  nkIdent 'int32'
-                nkCall
-                  nkIdent 'nsSizeOf'
-                  nkIdent 'int64'
+                nkIntLit 4
+                nkIntLit 8
               nkCall
                 nkIdent 'nsSizeOf'
                 nkIdent 'char'
-            nkCall
-              nkIdent 'nsSizeOf'
-              nkIdent 'uint8'
-          nkCall
-            nkIdent 'nsSizeOf'
-            nkIdent 'float64'
+            nkIntLit 1
+          nkIntLit 8
       nkVarSection
         nkIdentDefs
           nkIdent 't'

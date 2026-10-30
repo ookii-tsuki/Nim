@@ -976,7 +976,7 @@ binding (`Toybox.ns`) and C++-driven tests (`run_native.sh`).
 | `[Export("name")]` on a static method | ✅ v1 | desugar: an `exportc` wrapper C++ calls; the host calls `NimMain()` first (`--noMain`) |
 | `base.M()` on a native `virtual` | ✅ v1 | in an override, the C++ class's own function called without dispatch (`#->Ns::Base::M(@)`, a companion `nsBaseCall_C_M` of each native virtual), or an N# base's override |
 | The host's memory: `-d:nimAllocPagesViaHost` | ✅ v1 | Nim's allocator takes its memory from the program embedding it instead of from the OS, which defines `void* nimHostAllocPages(size_t size, size_t alignment)` (page-aligned, `NULL` when out of memory) and `void nimHostDeallocPages(void* p, size_t size)` with C linkage. Nim asks for regions of 16 KB and more, growing with its use, and gives each back whole with the size it got; objects of up to a page are cut from them by Nim's own size classes, so the host sees few, large requests and allocation keeps its speed (binary trees: the same as from the OS, where `-d:useMalloc`, every object from `malloc`, is 40% slower). They are called from every thread that allocates, and before `NimMain` returns, so the host's allocator is ready before it. A plain Nim option (`lib/system/osalloc.nim`), for ARC/ORC |
-| `extern "C"` functions, raw pointers, function pointers | 🔜 later | |
+| `extern "C"` functions, raw pointers, function pointers | ✅ v1 | §14.3: C functions through P/Invoke; unsafe pointers and `delegate* unmanaged` |
 | C bindings (`[Native]` over a C struct and its functions) | 🔜 later | a C struct is a Nim `importc` object (`{.inheritable, pure.}` to derive it as a plain struct: no `of`, no methods, so no native virtuals); functions are `importc` procs, and handles are whatever the C API uses (an id, a pointer). An N# type deriving a C struct would hold Nim-managed fields as in C++, but C has no destructor to run them, so the binding names the C call that frees one (`Free = "ns_free"`) |
 | `[StructLayout]` ABI match, `IntPtr` | ✅ v1 | §14.3: P/Invoke; `IntPtr`/`nint` is a pointer-sized integer, which a binding takes for an opaque C pointer |
 
@@ -1015,6 +1015,35 @@ marshalling N# would otherwise get wrong rather than do: `CharSet.Unicode`/`Auto
 `string` reaches C as `""` (an N# null string is the empty one), a `NULL` result
 reads as `""`, and a returned `char*` is copied but not freed. Deliberately absent:
 `Marshal`'s heap helpers, `SafeHandle`, `GCHandle`, COM.
+
+**Pointers** (unsafe code, which N# allows anywhere; `unsafe` is accepted and means
+nothing more): `T*` is Nim's `ptr T` and `void*` its `pointer`; `*p`, `&x`, `p->f`,
+`p[i]` (unchecked), `p + n`/`p - n`/`p - q` and `++` in elements, comparisons, and
+casts between pointers and `IntPtr`/`nint`/`long` (the same bits). `fixed (T* p = arr)`
+is the address of an array's first element (Nim's memory manager does not move
+objects, so nothing is pinned) or of what `&` names. A pointer to a struct reaches
+its C layout (`nsC_<S>`), as C memory holds it, so `p->X` reads and writes what C
+sees; `*p`, `p[i]` or `p->Inner` as a whole value is copied out of it (`nsFromC`) and
+into it on assignment (`nsToC`), and a method or property called through the pointer,
+or a `ref` to it, runs on a copy that is stored back after (also when it throws), so
+another pointer to the same struct sees the old value until then. A pointer to a struct with a `bool` or enum
+field is NS9999 (their C layout differs from the one marshalling gives them). The
+address of an N# struct, laid out with Nim's type header, is NS9999 (pass it `ref`
+or `out`), and so is `fixed` over a string (C#'s `char*` is UTF-16, N#'s strings
+UTF-8) or over an array of structs. `sizeof` of a built-in type is a constant; of a
+pointer, or of a struct of C-laid fields, its size. N# is looser than C# here: it
+does not require an `unsafe` context (CS0214), nor report `&` of a variable that
+needs `fixed` (CS0212).
+
+**Function pointers**: `delegate* unmanaged<A, B, R>` (`[Cdecl]` or `[Stdcall]`) is a C
+function pointer, `proc (A, B): R {.cdecl.}`, which a P/Invoke passes and a call
+`f(a, b)` calls. `&M` of a static method marked `[UnmanagedCallersOnly]` is the C
+function `nsUC_<C>_<M>` that calls it (exported under `EntryPoint = "name"` too, for C
+to call by name), and a function pointer in a local or a field is called as
+`f(a, b)`. An exception leaving such a method ends the program, as .NET's does when
+C called it, since it cannot unwind through C; unlike .NET, this holds when N# code
+calls it through the pointer too. `&M` of any other method is NS9999, so a managed
+`delegate*<...>` can be declared but N# has no value to give it.
 
 ### 14.4 Targets without an OS
 

@@ -1,0 +1,72 @@
+// Unsafe code for C: pointers into arrays and C memory, `->` on a C struct, and a
+// function pointer C calls back (libc's `qsort`).
+using System;
+using System.Runtime.InteropServices;
+
+namespace Demo
+{
+    struct Pair
+    {
+        public int Key;
+        public double Value;
+    }
+
+    static unsafe class LibC
+    {
+        [DllImport("libc.so.6", EntryPoint = "qsort")]
+        public static extern void QSort(void* items, nuint count, nuint size,
+                                        delegate* unmanaged<void*, void*, int> compare);
+        [DllImport("libc.so.6", EntryPoint = "malloc")]
+        public static extern void* Malloc(nuint size);
+        [DllImport("libc.so.6", EntryPoint = "free")]
+        public static extern void Free(void* p);
+    }
+
+    unsafe class Program
+    {
+        [UnmanagedCallersOnly]
+        static int Compare(void* a, void* b)
+        {
+            int x = *(int*)a;
+            int y = *(int*)b;
+            return x < y ? -1 : (x > y ? 1 : 0);
+        }
+
+        static int Sum(int* p, int n)
+        {
+            int s = 0;
+            for (int i = 0; i < n; i++) s += p[i];
+            return s;
+        }
+
+        static void Main()
+        {
+            int[] xs = { 5, 3, 9, 1, 7 };
+            fixed (int* p = xs)
+            {
+                LibC.QSort(p, (nuint)xs.Length, sizeof(int), &Compare);
+                Console.WriteLine(Sum(p, xs.Length) + " " + *(p + 1) + " " + p[4]);
+                int* q = p + 2;
+                q++;
+                Console.WriteLine(*q + " " + (q - p));
+            }
+            Console.WriteLine(string.Join(",", xs));
+
+            int local = 41;
+            int* lp = &local;
+            *lp += 1;
+            Console.WriteLine(local);
+
+            IntPtr raw = (IntPtr)lp;
+            Console.WriteLine(*(int*)raw);
+
+            Pair* pairs = (Pair*)LibC.Malloc((nuint)(2 * sizeof(Pair)));
+            pairs->Key = 1;
+            pairs->Value = 0.5;
+            pairs[1].Key = 2;
+            pairs[1].Value = 1.5;
+            Console.WriteLine(pairs[0].Key + pairs[1].Key + " " + (pairs->Value + pairs[1].Value));
+            LibC.Free(pairs);
+        }
+    }
+}
