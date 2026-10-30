@@ -1,0 +1,11 @@
+using System
+using System.Runtime.InteropServices
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member array.Length = System | int
+member string.Join = System | string

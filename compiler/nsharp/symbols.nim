@@ -271,6 +271,64 @@ proc foreignQualified*(scope: NsModuleScope; written: string): bool =
     scope.classes[last].namespace.len > 0 and scope.classes[last].namespace != prefix and
     isDeclaredNamespace(prefix)     ## an alias (`using P = ...`) names the same types
 
+type
+  NsMarshal* = enum
+    ## How a P/Invoke parameter or result crosses to C (.NET's default marshalling).
+    mkVoid          ## no result
+    mkBlittable     ## a number, `char` or `nint`: the same bits
+    mkBool          ## a 4-byte BOOL (a byte with `[MarshalAs(UnmanagedType.U1)]`)
+    mkString        ## a NUL-terminated copy of the characters
+    mkStruct        ## a struct of marshalable fields, as a C struct of them in order
+    mkArray         ## a `T[]` of blittable `T`: a pointer to its first element
+    mkEnum          ## an enum: its underlying integer
+    mkUnsupported
+
+const NsBlittableTypes* = ["int", "uint", "long", "ulong", "short", "ushort", "byte",
+                           "sbyte", "float", "double", "nint", "nuint", "char"]
+
+proc structFields*(scope: NsModuleScope; name: string): seq[NsNode] =
+  ## A struct's instance fields in declaration order, auto-properties' storage
+  ## included, as C# lays them out.
+  result = @[]
+  if not scope.classes.hasKey(name) or scope.classes[name].decl == nil: return
+  for m in scope.classes[name].decl.sons:
+    if (m.kind == nsnFieldDecl and not m.attrs.isStatic and not m.attrs.isConst) or
+       (m.kind == nsnPropertyDecl and not m.attrs.isStatic and
+        ((m.params.len > 0 and m.params[0] != nil and m.params[0].kind == nsnEmpty) or
+         (m.params.len > 1 and m.params[1] != nil and m.params[1].kind == nsnEmpty))):
+      result.add m
+
+proc marshalOf*(scope: NsModuleScope; t: NsNode; depth = 0): NsMarshal
+
+proc isMarshalableStruct*(scope: NsModuleScope; name: string; depth = 0): bool =
+  ## A struct this compilation declares whose fields all marshal, so it crosses to
+  ## C as a C struct of them (`nsC_<S>`).
+  if depth > 8 or not scope.classes.hasKey(name): return false
+  let c = scope.classes[name]
+  if c.classKind != ckStruct or c.typeParams.len > 0 or c.native.cpp.len > 0: return false
+  let fields = scope.structFields(name)
+  if fields.len == 0: return false
+  for f in fields:
+    if scope.marshalOf(f.typ, depth + 1) notin {mkBlittable, mkBool, mkStruct, mkEnum}:
+      return false
+  true
+
+proc marshalOf*(scope: NsModuleScope; t: NsNode; depth = 0): NsMarshal =
+  if t == nil or t.kind in {nsnEmpty, nsnVoidType}: return mkVoid
+  if t.kind == nsnArrayType:
+    if t.intVal <= 1 and t.typ != nil and t.typ.kind == nsnTypeName and
+       canonicalTypeName(t.typ.name) in NsBlittableTypes:
+      return mkArray
+    return mkUnsupported
+  if t.kind != nsnTypeName or t.sons.len > 0: return mkUnsupported
+  let n = canonicalTypeName(t.name)
+  if n in NsBlittableTypes: mkBlittable
+  elif scope.enums.contains(n): mkEnum
+  elif n == "bool": mkBool
+  elif n == "string": mkString
+  elif scope.isMarshalableStruct(n, depth): mkStruct
+  else: mkUnsupported
+
 proc isInterface*(scope: NsModuleScope; name: string): bool =
   scope.classes.hasKey(name) and scope.classes[name].classKind == ckInterface
 

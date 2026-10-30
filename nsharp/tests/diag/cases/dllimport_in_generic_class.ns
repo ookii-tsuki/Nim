@@ -1,0 +1,11 @@
+// [DllImport] in a generic class.
+using System.Runtime.InteropServices;
+namespace Demo
+{
+    class Native<T>
+    {
+        [DllImport("libc.so.6")]
+        public static extern int abs(int x);
+    }
+    class Program { static void Main() { } }
+}

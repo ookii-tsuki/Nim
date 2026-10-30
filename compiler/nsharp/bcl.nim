@@ -198,11 +198,19 @@ proc isLibraryNamespace*(s: NsBclSurface; name: string): bool =
   ## A namespace the prelude itself is written in.
   s.namespaces.contains(name)
 
-proc namespaceModulePath*(ns: string): string =
+var siblingNamespaces*: Table[string, string]
+  ## Namespaces a `<N>.ns` beside the main module is the module of: the file, by
+  ## its path without the extension, which every module imports so all reach one.
+
+proc namespaceFilePath*(ns: string): string =
   ## `A.B` as `A/B`; dots cannot be kept, `addFileExt` would read `.B` as a suffix.
   result = newStringOfCap(ns.len)
   for c in ns:
     result.add(if c == '.': '/' else: c)
+
+proc namespaceModulePath*(ns: string): string =
+  ## What `import` names for namespace `ns`: its sibling file, or its module.
+  siblingNamespaces.getOrDefault(ns, namespaceFilePath(ns))
 
 # --- the library's surface ---------------------------------------------------
 #

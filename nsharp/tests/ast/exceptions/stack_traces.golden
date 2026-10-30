@@ -271,7 +271,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '+'
+      nkAccQuoted
+        nkIdent '+'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -293,7 +294,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '[]'
+      nkAccQuoted
+        nkIdent '[]'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -680,7 +682,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -2846,7 +2849,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '+'
+      nkAccQuoted
+        nkIdent '+'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -2873,7 +2877,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '[]'
+      nkAccQuoted
+        nkIdent '[]'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -3299,7 +3304,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -4949,7 +4955,7 @@ nkStmtList
     nkStmtList
       nkVarSection
         nkIdentDefs
-          nkIdent 'result'
+          nkIdent 'nsResult'
           nkIdent 'string'
           nkStrLit ""
       nkForStmt
@@ -4979,12 +4985,12 @@ nkStmtList
                   nkIdent 'LastIndexOf'
                 nkStrLit ":line "
           nkAsgn
-            nkIdent 'result'
+            nkIdent 'nsResult'
             nkInfix
               nkIdent '+'
               nkCall
                 nkIdent 'nsVal'
-                nkIdent 'result'
+                nkIdent 'nsResult'
               nkInfix
                 nkIdent '+'
                 nkIfExpr
@@ -5018,7 +5024,7 @@ nkStmtList
                     nkIdent 'line'
                 nkStrLit "\n"
       nkReturnStmt
-        nkIdent 'result'
+        nkIdent 'nsResult'
   nkProcDef
     nkIdent 'Main'
     nkEmpty

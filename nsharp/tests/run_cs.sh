@@ -13,6 +13,8 @@
 #
 # A `.csout` beside a test records what C# produces when it legitimately differs
 # from the `.out`, for instance a bool reading `true` in N# and `True` in C#.
+# A `.nocs` says .NET cannot run the test here (its first line says why, such as
+# C functions linked into the N# build): C# only has to compile it.
 #
 # Usage:  ./nsharp/tests/run_cs.sh
 # Skips cleanly when `dotnet` is unavailable on PATH.
@@ -120,6 +122,13 @@ check_one() {
     return 0
   fi
 
+  nocs="${ns%.ns}.nocs"
+  if [ -f "$nocs" ]; then
+    ## Valid C# that .NET cannot run here (C functions linked into the N# build):
+    ## compiling it is the check.
+    echo "ok (C# compiles it; not run: $(head -1 "$nocs")): ${ns#$root/}"
+    return 0
+  fi
   exitmark="${ns%.ns}.exit"
   if [ -f "$exitmark" ]; then
     ## An exception nothing catches: .NET's exit status and report, its stack

@@ -34,6 +34,8 @@ ctor_arg_count CS7036 match
 ctor_arg_type CS1503 match
 delegate_mismatch CS0123 match
 dict_wrong_key CS1503 match
+dllimport_in_generic_class CS7042 match
+dllimport_not_static CS0601 match
 dup_local CS0128 match
 dup_member CS0102 match
 dup_method CS0111 match

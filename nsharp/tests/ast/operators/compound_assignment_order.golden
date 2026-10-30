@@ -64,6 +64,24 @@ nkStmtList
             nkIdent 'int32'
             nkEmpty
     nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'nsC_Cell'
+        nkPragma
+          nkIdent 'bycopy'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'X'
+            nkIdent 'int32'
+            nkEmpty
+    nkTypeDef
       nkPostfix
         nkIdent '*'
         nkIdent 'Program'
@@ -290,7 +308,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '[]'
+      nkAccQuoted
+        nkIdent '[]'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -312,7 +331,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '[]='
+      nkAccQuoted
+        nkIdent '[]='
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -448,7 +468,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -461,6 +482,38 @@ nkStmtList
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Cell'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Cell'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Cell'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Cell'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -917,7 +970,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '[]'
+      nkAccQuoted
+        nkIdent '[]'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -945,7 +999,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '[]='
+      nkAccQuoted
+        nkIdent '[]='
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1123,7 +1178,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1141,6 +1197,52 @@ nkStmtList
       nkCall
         nkIdent 'ToString'
         nkIdent 'self'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Cell'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Cell'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'nsC_Cell'
+        nkExprColonExpr
+          nkIdent 'X'
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'X'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Cell'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Cell'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
+          nkIdent 'X'
+        nkDotExpr
+          nkIdent 'c'
+          nkIdent 'X'
   nkProcDef
     nkPostfix
       nkIdent '*'

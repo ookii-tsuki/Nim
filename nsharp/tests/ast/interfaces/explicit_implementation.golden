@@ -163,6 +163,24 @@ nkStmtList
             nkIdent 'int32'
             nkEmpty
     nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'nsC_Ticker'
+        nkPragma
+          nkIdent 'bycopy'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'Count'
+            nkIdent 'int32'
+            nkEmpty
+    nkTypeDef
       nkPostfix
         nkIdent '*'
         nkIdent 'Program'
@@ -200,7 +218,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -266,7 +285,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -600,7 +620,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -670,6 +691,38 @@ nkStmtList
         nkIdent 'nsBox_Ticker'
         nkEmpty
     nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Ticker'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Ticker'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Ticker'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Ticker'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -966,7 +1019,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1057,7 +1111,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1539,7 +1594,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1697,6 +1753,52 @@ nkStmtList
           nkIdent 'nsVt'
           nkCall
             nkIdent 'nsVtGet_Ticker_ICounter'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Ticker'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Ticker'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'nsC_Ticker'
+        nkExprColonExpr
+          nkIdent 'Count'
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'Count'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Ticker'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Ticker'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
+          nkIdent 'Count'
+        nkDotExpr
+          nkIdent 'c'
+          nkIdent 'Count'
   nkProcDef
     nkPostfix
       nkIdent '*'

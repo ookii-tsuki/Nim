@@ -1,0 +1,1 @@
+.NET would look for "__Internal" in a library; the C functions are linked into the N# build

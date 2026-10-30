@@ -35,6 +35,30 @@ nkStmtList
             nkIdent 'int32'
             nkEmpty
     nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'nsC_Pt'
+        nkPragma
+          nkIdent 'bycopy'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'X'
+            nkIdent 'int32'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'Y'
+            nkIdent 'int32'
+            nkEmpty
+    nkTypeDef
       nkPostfix
         nkIdent '*'
         nkIdent 'Plain'
@@ -43,6 +67,24 @@ nkStmtList
         nkEmpty
         nkOfInherit
           nkIdent 'RootObj'
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'A'
+            nkIdent 'int32'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'nsC_Plain'
+        nkPragma
+          nkIdent 'bycopy'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
         nkRecList
           nkIdentDefs
             nkPostfix
@@ -121,7 +163,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -134,6 +177,38 @@ nkStmtList
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Pt'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Pt'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Pt'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Pt'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -300,7 +375,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -313,6 +389,38 @@ nkStmtList
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Plain'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Plain'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Plain'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Plain'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -595,7 +703,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -613,6 +722,64 @@ nkStmtList
       nkCall
         nkIdent 'ToString'
         nkIdent 'self'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Pt'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Pt'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'nsC_Pt'
+        nkExprColonExpr
+          nkIdent 'X'
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'X'
+        nkExprColonExpr
+          nkIdent 'Y'
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'Y'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Pt'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Pt'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
+          nkIdent 'X'
+        nkDotExpr
+          nkIdent 'c'
+          nkIdent 'X'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
+          nkIdent 'Y'
+        nkDotExpr
+          nkIdent 'c'
+          nkIdent 'Y'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -825,7 +992,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -843,6 +1011,52 @@ nkStmtList
       nkCall
         nkIdent 'ToString'
         nkIdent 'self'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Plain'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Plain'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'nsC_Plain'
+        nkExprColonExpr
+          nkIdent 'A'
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'A'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Plain'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Plain'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
+          nkIdent 'A'
+        nkDotExpr
+          nkIdent 'c'
+          nkIdent 'A'
   nkProcDef
     nkPostfix
       nkIdent '*'

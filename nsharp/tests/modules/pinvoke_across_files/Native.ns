@@ -1,0 +1,18 @@
+using System.Runtime.InteropServices;
+using Geo;
+
+namespace Interop
+{
+    public static class Shapes
+    {
+        [DllImport("__Internal", EntryPoint = "size_area")]
+        public static extern int Area(Size s);
+        [DllImport("__Internal", EntryPoint = "size_grow")]
+        public static extern void Grow(ref Size s, int by);
+        [DllImport("__Internal", EntryPoint = "unit_next")]
+        public static extern Unit Next(Unit u);
+        // A second binding of the same C function, as .NET allows.
+        [DllImport("__Internal", EntryPoint = "size_area")]
+        public static extern int AreaAgain(Size s);
+    }
+}

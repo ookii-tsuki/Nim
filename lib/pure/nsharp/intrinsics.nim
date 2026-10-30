@@ -13,6 +13,7 @@ export nsFrame
 export format
 import std/strutils
 import std/hashes
+import std/typetraits
 from std/cmdline import paramStr
 export hashes
 
@@ -1259,6 +1260,16 @@ type
     nsName: proc (): string {.nimcall.}  ## `System.Int32[]`, the type's name
   NsArray*[T] = ref object of NsArrayBase
     nsData* {.nsHidden.}: seq[T]
+
+template nsEnumBase*(T: typedesc): typedesc {.nsHidden.} =
+  ## An enum's underlying integer type (an N# enum is `distinct` over it), as
+  ## P/Invoke passes it to C.
+  typetraits.distinctBase(T)
+
+proc nsArrayAddr*[T](a: NsArray[T]): ptr T {.inline, nsHidden.} =
+  ## A `T[]` passed to C (P/Invoke): its first element, which C reads and writes in
+  ## place as .NET pins it; null for a null or empty array.
+  if a == nil or a.nsData.len == 0: nil else: addr a.nsData[0]
 
 proc nsArrayName[T](): string {.nimcall.} =
   mixin nsTypeOf

@@ -45,6 +45,11 @@ type
   TimeoutException* = object of SystemException
   OperationCanceledException* = object of SystemException
   PlatformNotSupportedException* = object of NotSupportedException
+  TypeLoadException* = object of SystemException
+  DllNotFoundException* = object of TypeLoadException
+    ## A P/Invoke's library that could not be loaded, thrown at its first call.
+  EntryPointNotFoundException* = object of TypeLoadException
+    ## ... or the library has no such function.
   AggregateException* = object of CatchableError
     ## .NET's derives from `Exception` itself; Nim's catchable root is the nearest.
   InvalidOperationException* = object of SystemException
@@ -145,7 +150,8 @@ proc nsNetName(nimName: string): string =
      "ArgumentNullException", "InvalidOperationException", "NotSupportedException",
      "NotImplementedException", "ObjectDisposedException", "UnauthorizedAccessException",
      "TimeoutException", "OperationCanceledException", "PlatformNotSupportedException",
-     "AggregateException":
+     "AggregateException", "TypeLoadException", "DllNotFoundException",
+     "EntryPointNotFoundException":
     "System." & nimName
   of "IOException", "FileNotFoundException", "DirectoryNotFoundException",
      "EndOfStreamException", "PathTooLongException":
@@ -178,6 +184,9 @@ proc nsDefaultMessage*[T: Exception](e: ref T): string {.nsHidden.} =
   elif T is InvalidOperationException:
     "Operation is not valid due to the current state of the object."
   elif T is PlatformNotSupportedException: "Operation is not supported on this platform."
+  elif T is DllNotFoundException: "Dll was not found."
+  elif T is EntryPointNotFoundException: "Entry point was not found."
+  elif T is TypeLoadException: "Failure has occurred while loading a type."
   elif T is NotSupportedException: "Specified method is not supported."
   elif T is TimeoutException: "The operation has timed out."
   elif T is OperationCanceledException: "The operation was canceled."
@@ -428,6 +437,9 @@ proc HResult*[T: ref Exception](e: T): int32 =
   elif e of ObjectDisposedException: -2146232798'i32
   elif e of InvalidOperationException: -2146233079'i32
   elif e of PlatformNotSupportedException: -2146233031'i32
+  elif e of DllNotFoundException: -2146233052'i32
+  elif e of EntryPointNotFoundException: -2146233053'i32
+  elif e of TypeLoadException: -2146233054'i32
   elif e of NotSupportedException: -2146233067'i32
   elif e of NotImplementedException: -2147467263'i32
   elif e of UnauthorizedAccessException: -2147024891'i32
@@ -523,6 +535,10 @@ template MinValue*[T: SomeInteger](t: typedesc[T]): T = low(T)
 template MaxValue*[T: SomeFloat](t: typedesc[T]): T = high(T)
 template MinValue*[T: SomeFloat](t: typedesc[T]): T = low(T)
 template MaxValue*(t: typedesc[char]): char = high(char)
+template Zero*(t: typedesc[int]): int = 0
+  ## `IntPtr.Zero` (`nint`): the null pointer, as a P/Invoke passes or returns it.
+template Size*(t: typedesc[int]): int32 = int32(sizeof(int))
+  ## `IntPtr.Size`: the size of a pointer.
 template MinValue*(t: typedesc[char]): char = low(char)
 template Empty*(t: typedesc[string]): string = ""
 # .NET defines `Epsilon` as the smallest positive subnormal, which Nim does not

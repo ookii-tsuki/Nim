@@ -151,6 +151,8 @@ type
     ndNativeThisNoHandle
     ndNativeNoSelfHandle
     ndExternOutsideNative
+    ndDllImportNotStaticExtern
+    ndDllImportGeneric
     ndNativeCtor
     ndExportMisplaced
     ndNativeBaseNotNative
@@ -386,6 +388,10 @@ const
                         " attribute"),
     ndExternOutsideNative: (code: "9904", msg: "'$1': an 'extern' member must belong to a" &
                         " type marked [Native]"),
+    ndDllImportNotStaticExtern: (code: "0601", msg: "The DllImport attribute must be specified" &
+                        " on a method marked 'static' and 'extern'"),
+    ndDllImportGeneric: (code: "7042", msg: "The DllImport attribute cannot be applied to a" &
+                        " method that is generic or contained in a generic method or type."),
     ndNativeCtor: (code: "9905", msg: "'$1': a [Native] class with a handle cannot" &
                         " declare a constructor; the engine constructs it"),
     ndExportMisplaced: (code: "9906", msg: "'$1': [Export] applies only to a non-generic" &

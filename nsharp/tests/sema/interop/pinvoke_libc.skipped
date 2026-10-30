@@ -1,0 +1,3 @@
+DllNotFoundException.GetType = result:other
+EntryPointNotFoundException.GetType = result:other
+LayoutKind.Sequential = result:other

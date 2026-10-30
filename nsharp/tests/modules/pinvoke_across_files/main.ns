@@ -1,0 +1,20 @@
+// P/Invoke declared in another namespace module, over a struct and an enum of a
+// third, linked into the program.
+using System;
+using Geo;
+using Interop;
+
+namespace Demo
+{
+    class Program
+    {
+        static void Main()
+        {
+            var s = new Size(3, 4);
+            Console.WriteLine(Shapes.Area(s) + " " + Shapes.AreaAgain(s));
+            Shapes.Grow(ref s, 2);
+            Console.WriteLine(s.Width + "x" + s.Height);
+            Console.WriteLine(Shapes.Next(Unit.Pixel));
+        }
+    }
+}

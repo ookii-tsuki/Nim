@@ -93,6 +93,24 @@ nkStmtList
             nkIdent 'int32'
             nkEmpty
     nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'nsC_Sum'
+        nkPragma
+          nkIdent 'bycopy'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'V'
+            nkIdent 'int32'
+            nkEmpty
+    nkTypeDef
       nkPostfix
         nkIdent '*'
         nkIdent 'Text'
@@ -190,6 +208,24 @@ nkStmtList
             nkIdent 'int32'
             nkEmpty
     nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'nsC_Money'
+        nkPragma
+          nkIdent 'bycopy'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'Cents'
+            nkIdent 'int32'
+            nkEmpty
+    nkTypeDef
       nkPostfix
         nkIdent '*'
         nkIdent 'Program'
@@ -203,7 +239,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkGenericParams
       nkIdentDefs
@@ -302,7 +339,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -361,6 +399,38 @@ nkStmtList
         nkIdent 'Sum'
         nkEmpty
     nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Sum'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Sum'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Sum'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Sum'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -741,7 +811,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkGenericParams
       nkIdentDefs
@@ -840,7 +911,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -904,6 +976,38 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Money'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Money'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Money'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Money'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initMoney'
     nkEmpty
     nkEmpty
@@ -950,7 +1054,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '+'
+      nkAccQuoted
+        nkIdent '+'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1191,7 +1296,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkGenericParams
       nkIdentDefs
@@ -1319,7 +1425,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -1440,6 +1547,52 @@ nkStmtList
           nkIdent 'nsVt'
           nkCall
             nkIdent 'nsVtGet_Sum_IMonoid_Sum'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Sum'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Sum'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'nsC_Sum'
+        nkExprColonExpr
+          nkIdent 'V'
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'V'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Sum'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Sum'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
+          nkIdent 'V'
+        nkDotExpr
+          nkIdent 'c'
+          nkIdent 'V'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -1985,7 +2138,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkGenericParams
       nkIdentDefs
@@ -2113,7 +2267,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -2237,6 +2392,52 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Money'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Money'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'nsC_Money'
+        nkExprColonExpr
+          nkIdent 'Cents'
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'Cents'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Money'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Money'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
+          nkIdent 'Cents'
+        nkDotExpr
+          nkIdent 'c'
+          nkIdent 'Cents'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
       nkIdent 'initMoney'
     nkEmpty
     nkEmpty
@@ -2292,7 +2493,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '+'
+      nkAccQuoted
+        nkIdent '+'
     nkEmpty
     nkEmpty
     nkFormalParams

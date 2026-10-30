@@ -5002,12 +5002,56 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
     nsError(ctx.config, m.info, ndUnsupported, what)
   proc named(m: NsNode): string =
     (if m.kind == nsnCtorDecl: cls.name & "." & cls.name else: cls.name & "." & m.name)
+  let layout = cls.attributeNamed("StructLayout")
+  if layout != nil:
+    ## A layout N# does not give the struct's C mirror is NS9999, not ignored.
+    for x in layout.sons:
+      if x.kind == nsnMember and x.name in ["Explicit", "Auto"]:
+        unsupported(cls, "'LayoutKind." & x.name & "'")
+      elif x.kind == nsnNamedArg and x.name == "Pack" and x.body != nil and
+           not (x.body.kind == nsnIntLit and x.body.intVal in [0, 1, 8]):
+        unsupported(cls, "'Pack' other than 1 or 8")
+      elif x.kind == nsnNamedArg and x.name in ["Size", "CharSet"]:
+        unsupported(cls, "'" & x.name & "' on a StructLayout")
   for m in cls.sons:
     let a = m.attributeNamed("Export")
     if a != nil and (m.kind != nsnMethodDecl or not m.attrs.isStatic or
                      m.typeParams.len > 0):
       nsError(ctx.config, m.info, ndExportMisplaced, named(m))
-    if m.attrs.isExtern and not native:
+    if m.hasAttribute("DllImport"):
+      ## P/Invoke: a C function, whatever class declares it.
+      if m.kind != nsnMethodDecl or not m.attrs.isStatic or not m.attrs.isExtern:
+        nsError(ctx.config, m.info, ndDllImportNotStaticExtern)
+      elif m.typeParams.len > 0 or cls.typeParams.len > 0:
+        nsError(ctx.config, m.info, ndDllImportGeneric)
+      else:
+        ## What N# would otherwise ignore, getting the bytes wrong.
+        for x in m.attributeNamed("DllImport").sons:
+          if x.kind == nsnNamedArg and x.body != nil and x.body.kind == nsnMember and
+             ((x.name == "CharSet" and x.body.name in ["Unicode", "Auto"]) or
+              (x.name == "CallingConvention" and x.body.name in ["ThisCall", "FastCall"])):
+            unsupported(m, "'" & x.name & " = " & x.body.name & "' on a P/Invoke")
+          elif x.kind == nsnNamedArg and x.name in ["SetLastError", "PreserveSig",
+                                                    "BestFitMapping", "ThrowOnUnmappableChar"]:
+            unsupported(m, "'" & x.name & "' on a P/Invoke")
+        var attrs = m.attributes
+        for p in m.params: attrs.add p.attributes
+        for a in attrs:
+          if a.name.split('.')[^1] in ["MarshalAs", "MarshalAsAttribute"]:
+            for x in a.sons:
+              if x.kind == nsnMember and x.name notin ["U1", "I1", "Bool", "LPStr", "LPUTF8Str"]:
+                unsupported(m, "'MarshalAs(UnmanagedType." & x.name & ")'")
+        if ctx.scope.marshalOf(m.typ) == mkUnsupported or
+           ctx.scope.marshalOf(m.typ) == mkArray:
+          unsupported(m, "a P/Invoke result of type '" & declTypeName(m.typ) & "'")
+        for p in m.params:
+          let mk = ctx.scope.marshalOf(p.typ)
+          if mk == mkUnsupported or (mk in {mkString, mkArray} and p.paramMod != "") or
+             p.paramMod in ["params", "in", "this"]:
+            unsupported(p, "a P/Invoke parameter '" & p.name & "' of type '" &
+                           declTypeName(p.typ) & "'" &
+                           (if p.paramMod.len > 0: " passed '" & p.paramMod & "'" else: ""))
+    elif m.attrs.isExtern and not native:
       nsError(ctx.config, m.info, ndExternOutsideNative, named(m))
     var borrowed, owned = false
     for a in m.attributes:

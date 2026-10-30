@@ -2,7 +2,7 @@ nkStmtList
   nkImportStmt
     nkStrLit "nsharp/intrinsics"
   nkFromStmt
-    nkStrLit "Tools"
+    nkStrLit "/home/user/Nim/nsharp/tests/modules/qualified_namespace_across_files/Tools"
     nkNilLit
   nkFromStmt
     nkStrLit "Tools/Deep"
@@ -18,7 +18,7 @@ nkStmtList
   nkImportStmt
     nkStrLit "System"
   nkImportExceptStmt
-    nkStrLit "Tools"
+    nkStrLit "/home/user/Nim/nsharp/tests/modules/qualified_namespace_across_files/Tools"
     nkIdent 'Console'
   nkImportStmt
     nkStrLit "Tools/Deep"

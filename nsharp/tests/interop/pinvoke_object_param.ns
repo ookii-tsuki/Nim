@@ -1,0 +1,17 @@
+// A P/Invoke parameter of a type .NET would marshal as a COM VARIANT.
+using System;
+using System.Runtime.InteropServices;
+
+namespace Demo
+{
+    static class Native
+    {
+        [DllImport("libc.so.6", EntryPoint = "puts")]
+        public static extern int Put(object s);
+    }
+
+    class Program
+    {
+        static void Main() { Console.WriteLine("unreached"); }
+    }
+}

@@ -363,7 +363,9 @@ resolved relative to the enclosing namespace, so `using Company.Shared;` inside
 `namespace Company` works and `using Shared;` does not. A namespace alias is an
 import of its target, so it also puts the target's names in unqualified scope,
 which C# does not: after `using P = Company.Products;`, `Gadget` resolves as well
-as `P.Gadget`. A sibling `<N>.ns` file takes precedence over the generated module.
+as `P.Gadget`. A sibling `<N>.ns` file is the module of namespace `N`: none is
+generated for it, so every module importing `N`, generated or not, reaches that
+one file.
 A namespace reached qualified (`Beta.B`, no `using Beta;`, below) joins a cycle as a
 `using` does. In a cycle, a namespace that calls another's static method may not
 yet see it (Nim's `{.cyclic.}` imports do not declare procs ahead), whichever way
@@ -917,8 +919,8 @@ deliberate scope cut.
 | Custom attribute classes | metadata | ✅ v1 | a class deriving from `System.Attribute`; `[A]` resolves `AAttribute` then `A` (else NS0246) and must name an attribute class (NS0616). Without reflection an attribute has no effect, so its arguments are not evaluated, and `AttributeUsage` is not enforced. `[assembly: X]` is dropped |
 | `[Obsolete("msg")]` | deprecation | ✅ v1 | sem: a call of an obsolete member or `new` of an obsolete class warns NS0618 (NS0612 without a message), and is the error NS0619 with `true` |
 | Generic attributes (C# 11) | `[Tag<int>("x")]` on `class TagAttribute<T> : Attribute` | ✅ v1 | sem: the type arguments must match the class's parameters (NS0305; on a non-generic attribute NS0308); like any attribute, no runtime effect |
-| `[DllImport("lib")]` | P/Invoke | 🔜 later (NS0246: the library declares no such attribute) | desugar (→ `{.importc,dynlib.}`) |
-| `[StructLayout(LayoutKind.Sequential)]` | ABI layout | 🔜 later | desugar (→ `{.packed.}`) |
+| `[DllImport("lib")]` | P/Invoke | ✅ v1 (§14.3) | desugar (→ `{.importc, cdecl, dynlib.}`, or linked in for `"__Internal"`) |
+| `[StructLayout(LayoutKind.Sequential)]` | ABI layout | ✅ v1 (§14.3): every C# struct is sequential; `Pack = 1` packs | desugar (→ the struct's C mirror, `{.bycopy, packed.}`) |
 | `[Conditional("X")]` | call-site strip | 🔜 later | desugar |
 | `[Serializable]`, `[STAThread]` | framework | ✅ v1 (accepted, no effect) | lib |
 | Attribute *reflection* at runtime | `GetCustomAttributes` | 🚫 out | - |
@@ -976,9 +978,45 @@ binding (`Toybox.ns`) and C++-driven tests (`run_native.sh`).
 | The host's memory: `-d:nimAllocPagesViaHost` | ✅ v1 | Nim's allocator takes its memory from the program embedding it instead of from the OS, which defines `void* nimHostAllocPages(size_t size, size_t alignment)` (page-aligned, `NULL` when out of memory) and `void nimHostDeallocPages(void* p, size_t size)` with C linkage. Nim asks for regions of 16 KB and more, growing with its use, and gives each back whole with the size it got; objects of up to a page are cut from them by Nim's own size classes, so the host sees few, large requests and allocation keeps its speed (binary trees: the same as from the OS, where `-d:useMalloc`, every object from `malloc`, is 40% slower). They are called from every thread that allocates, and before `NimMain` returns, so the host's allocator is ready before it. A plain Nim option (`lib/system/osalloc.nim`), for ARC/ORC |
 | `extern "C"` functions, raw pointers, function pointers | 🔜 later | |
 | C bindings (`[Native]` over a C struct and its functions) | 🔜 later | a C struct is a Nim `importc` object (`{.inheritable, pure.}` to derive it as a plain struct: no `of`, no methods, so no native virtuals); functions are `importc` procs, and handles are whatever the C API uses (an id, a pointer). An N# type deriving a C struct would hold Nim-managed fields as in C++, but C has no destructor to run them, so the binding names the C call that frees one (`Free = "ns_free"`) |
-| `[StructLayout]` ABI match, `IntPtr` | 🔜 later | |
+| `[StructLayout]` ABI match, `IntPtr` | ✅ v1 | §14.3: P/Invoke; `IntPtr`/`nint` is a pointer-sized integer, which a binding takes for an opaque C pointer |
 
-### 14.3 Targets without an OS
+### 14.3 C: P/Invoke
+
+C is called as .NET calls it: a `static extern` method with `[DllImport]` (from
+`System.Runtime.InteropServices`) is the C function. One of a library
+(`[DllImport("libm.so.6")]`, `EntryPoint = "cos"`) is looked up when it is first
+called, the library probed as .NET does (`m` finds `libm.so`), and a missing one
+throws `DllNotFoundException` or `EntryPointNotFoundException` there, so a binding for
+another platform costs nothing until called. One linked into the program
+(`"__Internal"`, Unity's spelling: a C file compiled with `--compile:x.c`, or a
+library on the link line) is declared under a name of its own that an assembler
+label binds to the C symbol, so neither a header's declaration nor a second binding
+of the same function (other parameter types, as .NET allows) conflicts with it. The
+calling convention is C's (`CallingConvention.StdCall` for Win32's). Arguments are
+marshalled as .NET does by default:
+
+| C# | C |
+|---|---|
+| `int`, `long`, `double`, `byte`, ..., `char` (one byte, `CharSet.Ansi`), `nint`/`IntPtr` | the same bits |
+| `ref`/`out T` | `T*` |
+| `bool` | a 4-byte `BOOL`; one byte with `[MarshalAs(UnmanagedType.U1)]` (on a parameter, or `[return: ...]`) |
+| `string` | a NUL-terminated copy of its UTF-8 (`const char*`); a returned one is copied and not freed |
+| a struct of such fields (nested structs too) | a C struct of its fields in declaration order, auto-properties included (`Pack = 1` packs it); `ref`/`out` through a copy |
+| `T[]` of a blittable `T` | a pointer to its first element, which C reads and writes in place (null for null or empty) |
+| an enum | its underlying integer |
+
+A struct crosses as `nsC_<S>`, a C struct of its fields, copied to and from it: an
+N# struct is a Nim object with a type header, which C does not expect. Anything
+else (a class, `object`, a delegate, `params`, a `ref string`) is NS9999, as is a
+marshalling N# would otherwise get wrong rather than do: `CharSet.Unicode`/`Auto`,
+`MarshalAs` other than `U1`, `I1`, `Bool`, `LPStr` or `LPUTF8Str`, `ThisCall`/`FastCall`,
+`LayoutKind.Explicit`/`Auto`, `Pack` other than 1 or 8, `SetLastError`. A
+`[DllImport]` method that is not `static extern` is CS0601. Unlike .NET, a null
+`string` reaches C as `""` (an N# null string is the empty one), a `NULL` result
+reads as `""`, and a returned `char*` is copied but not freed. Deliberately absent:
+`Marshal`'s heap helpers, `SafeHandle`, `GCHandle`, COM.
+
+### 14.4 Targets without an OS
 
 `--os:any` (with `--threads:off -d:useMalloc`) builds a program that needs only a C
 library, such as newlib or picolibc on a microcontroller: `malloc`, `memcpy`,

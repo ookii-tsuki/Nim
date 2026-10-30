@@ -1,0 +1,65 @@
+// P/Invoke of C functions linked into the program (`"__Internal"`, Unity's
+// spelling): structs by value, by `ref` and nested, both ways a `bool` crosses, an
+// array C fills, a string, an `out` number.
+using System;
+using System.Runtime.InteropServices;
+
+namespace Demo
+{
+    struct Vec2
+    {
+        public float X;
+        public float Y;
+        public Vec2(float x, float y) { X = x; Y = y; }
+        public override string ToString() => $"({X}, {Y})";
+    }
+
+    struct Box
+    {
+        public Vec2 Min;
+        public Vec2 Max;
+        public int Tag { get; set; }
+    }
+
+    static class Native
+    {
+        [DllImport("__Internal", EntryPoint = "vec2_dot")]
+        public static extern float Dot(Vec2 a, Vec2 b);
+        [DllImport("__Internal", EntryPoint = "vec2_scale")]
+        public static extern void Scale(ref Vec2 v, float s);
+        [DllImport("__Internal", EntryPoint = "box_grow")]
+        public static extern Box Grow(Box b, float by);
+        [DllImport("__Internal", EntryPoint = "is_odd")]
+        public static extern bool IsOdd(int x);
+        [DllImport("__Internal", EntryPoint = "is_even")]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool IsEven(int x);
+        [DllImport("__Internal", EntryPoint = "any_set")]
+        public static extern int AnySet(bool flag);
+        [DllImport("__Internal", EntryPoint = "fill")]
+        public static extern void Fill(int[] xs, int n, int v);
+        [DllImport("__Internal", EntryPoint = "name_len")]
+        public static extern nuint NameLength(string s);
+        [DllImport("__Internal", EntryPoint = "sum_and_count")]
+        public static extern int SumAndCount(int[] xs, int n, out int count);
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            var a = new Vec2(1, 2);
+            Console.WriteLine(Native.Dot(a, new Vec2(3, 4)));
+            Native.Scale(ref a, 2);
+            Console.WriteLine(a);
+            var b = Native.Grow(new Box { Min = new Vec2(0, 0), Max = new Vec2(1, 1), Tag = 4 }, 0.5f);
+            Console.WriteLine($"{b.Min} {b.Max} {b.Tag}");
+            Console.WriteLine($"{Native.IsOdd(3)} {Native.IsOdd(4)} {Native.IsEven(4)} {Native.AnySet(true)}");
+            var xs = new int[4];
+            Native.Fill(xs, xs.Length, 10);
+            Console.WriteLine(string.Join(",", xs));
+            Console.WriteLine(Native.NameLength("N# on C"));
+            Console.WriteLine($"{Native.SumAndCount(xs, 3, out int n)} of {n}");
+        }
+    }
+}

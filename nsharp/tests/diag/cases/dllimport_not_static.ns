@@ -1,0 +1,11 @@
+// [DllImport] on an instance method.
+using System.Runtime.InteropServices;
+namespace Demo
+{
+    class Program
+    {
+        [DllImport("libc.so.6")]
+        public extern int abs(int x);
+        static void Main() { }
+    }
+}

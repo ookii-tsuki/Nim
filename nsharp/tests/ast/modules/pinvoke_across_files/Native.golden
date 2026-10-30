@@ -1,0 +1,578 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "System/Runtime/InteropServices"
+  nkImportStmt
+    nkStrLit "/home/user/Nim/nsharp/tests/modules/pinvoke_across_files/Geo"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Shapes'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shapes'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsPI_Shapes_Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'nsC_Size'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importc'
+        nkStrLit "nsPI_Shapes_Area_1"
+      nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'codegenDecl'
+        nkStrLit "N_CDECL($1, $2)$3 __asm__(NS_ASMNAME(\"size_area\"))"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Size'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Interop.Shapes.Area(Size s)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsPI_Shapes_Grow'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 's'
+        nkVarTy
+          nkIdent 'nsC_Size'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'by'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importc'
+        nkStrLit "nsPI_Shapes_Grow_2"
+      nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'codegenDecl'
+        nkStrLit "N_CDECL($1, $2)$3 __asm__(NS_ASMNAME(\"size_grow\"))"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Grow'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 's'
+        nkVarTy
+          nkIdent 'Size'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'by'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Interop.Shapes.Grow(Size& s, Int32 by)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsPI_Shapes_Next'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkCall
+        nkIdent 'nsEnumBase'
+        nkIdent 'Unit'
+      nkIdentDefs
+        nkIdent 'u'
+        nkCall
+          nkIdent 'nsEnumBase'
+          nkIdent 'Unit'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importc'
+        nkStrLit "nsPI_Shapes_Next_3"
+      nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'codegenDecl'
+        nkStrLit "N_CDECL($1, $2)$3 __asm__(NS_ASMNAME(\"unit_next\"))"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Next'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Unit'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'u'
+        nkIdent 'Unit'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Interop.Shapes.Next(Unit u)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsPI_Shapes_AreaAgain'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'nsC_Size'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importc'
+        nkStrLit "nsPI_Shapes_AreaAgain_4"
+      nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'codegenDecl'
+        nkStrLit "N_CDECL($1, $2)$3 __asm__(NS_ASMNAME(\"size_area\"))"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'AreaAgain'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Size'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Interop.Shapes.AreaAgain(Size s)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Shapes'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initShapes'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shapes'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Interop.Shapes..ctor()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newShapes'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Shapes'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Interop.Shapes"
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shapes'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkStrLit "Interop.Shapes"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Area'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Size'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Interop.Shapes.Area(Size s)"
+    nkEmpty
+    nkStmtList
+      nkLetSection
+        nkIdentDefs
+          nkIdent 'nsPR'
+          nkEmpty
+          nkCall
+            nkIdent 'nsPI_Shapes_Area'
+            nkCall
+              nkIdent 'nsToC'
+              nkIdent 's'
+      nkAsgn
+        nkIdent 'result'
+        nkIdent 'nsPR'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Grow'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 's'
+        nkVarTy
+          nkIdent 'Size'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'by'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Interop.Shapes.Grow(Size& s, Int32 by)"
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'nsPA_s'
+          nkEmpty
+          nkCall
+            nkIdent 'nsToC'
+            nkIdent 's'
+      nkCall
+        nkIdent 'nsPI_Shapes_Grow'
+        nkIdent 'nsPA_s'
+        nkIdent 'by'
+      nkAsgn
+        nkIdent 's'
+        nkCall
+          nkIdent 'nsFromC'
+          nkIdent 'nsPA_s'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Next'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Unit'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'u'
+        nkIdent 'Unit'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Interop.Shapes.Next(Unit u)"
+    nkEmpty
+    nkStmtList
+      nkLetSection
+        nkIdentDefs
+          nkIdent 'nsPR'
+          nkEmpty
+          nkCall
+            nkIdent 'nsPI_Shapes_Next'
+            nkCall
+              nkCall
+                nkIdent 'nsEnumBase'
+                nkIdent 'Unit'
+              nkIdent 'u'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'Unit'
+          nkIdent 'nsPR'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'AreaAgain'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Size'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Interop.Shapes.AreaAgain(Size s)"
+    nkEmpty
+    nkStmtList
+      nkLetSection
+        nkIdentDefs
+          nkIdent 'nsPR'
+          nkEmpty
+          nkCall
+            nkIdent 'nsPI_Shapes_AreaAgain'
+            nkCall
+              nkIdent 'nsToC'
+              nkIdent 's'
+      nkAsgn
+        nkIdent 'result'
+        nkIdent 'nsPR'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Shapes'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Shapes'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newShapes'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initShapes'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Shapes'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Interop.Shapes..ctor()"
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newShapes'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Shapes'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initShapes'
+        nkIdent 'result'
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#ifndef NS_ASMNAME\n#define NS_ASMNAME3(p, n) #p n\n#define NS_ASMNAME2(p, n) NS_ASMNAME3(p, n)\n#define NS_ASMNAME(n) NS_ASMNAME2(__USER_LABEL_PREFIX__, n)\n#endif\n"

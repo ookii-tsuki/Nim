@@ -505,7 +505,14 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
   ## depend on generation order.
   var toGenerate: seq[string] = @[]
   for ns in namespaceModules.keys:
-    if namespaceModules[ns].len > 0: toGenerate.add ns
+    ## A sibling `<N>.ns` is the module `import "N"` finds beside the main one, so
+    ## none is generated, nor kept from an earlier build: every module imports
+    ## that file (`siblingNamespaces`).
+    let sibling = root / namespaceFilePath(ns)
+    if namespaceModules[ns].len > 0 and not fileExists(sibling & ".ns"): toGenerate.add ns
+    else:
+      removeFile(genDir / (namespaceFilePath(ns) & ".nim"))
+      if fileExists(sibling & ".ns"): siblingNamespaces[ns] = sibling
   toGenerate.sort()
   for ns in toGenerate:
     generateNamespace(config, cache, namespaceModulePath(ns), genDir,

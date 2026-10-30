@@ -29,6 +29,24 @@ nkStmtList
             nkIdent 'int32'
             nkEmpty
     nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'nsC_Small'
+        nkPragma
+          nkIdent 'bycopy'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'V'
+            nkIdent 'int32'
+            nkEmpty
+    nkTypeDef
       nkPostfix
         nkIdent '*'
         nkIdent 'Program'
@@ -99,7 +117,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -112,6 +131,38 @@ nkStmtList
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Small'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Small'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Small'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Small'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
     nkEmpty
     nkEmpty
   nkProcDef
@@ -163,7 +214,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '+'
+      nkAccQuoted
+        nkIdent '+'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -207,7 +259,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '-'
+      nkAccQuoted
+        nkIdent '-'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -459,7 +512,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '$'
+      nkAccQuoted
+        nkIdent '$'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -477,6 +531,52 @@ nkStmtList
       nkCall
         nkIdent 'ToString'
         nkIdent 'self'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'nsC_Small'
+      nkIdentDefs
+        nkIdent 's'
+        nkIdent 'Small'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkObjConstr
+        nkIdent 'nsC_Small'
+        nkExprColonExpr
+          nkIdent 'V'
+          nkDotExpr
+            nkIdent 's'
+            nkIdent 'V'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFromC'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Small'
+      nkIdentDefs
+        nkIdent 'c'
+        nkIdent 'nsC_Small'
+        nkEmpty
+    nkPragma
+      nkIdent 'inline'
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkDotExpr
+          nkIdent 'result'
+          nkIdent 'V'
+        nkDotExpr
+          nkIdent 'c'
+          nkIdent 'V'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -535,7 +635,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '+'
+      nkAccQuoted
+        nkIdent '+'
     nkEmpty
     nkEmpty
     nkFormalParams
@@ -621,7 +722,8 @@ nkStmtList
   nkProcDef
     nkPostfix
       nkIdent '*'
-      nkIdent '-'
+      nkAccQuoted
+        nkIdent '-'
     nkEmpty
     nkEmpty
     nkFormalParams

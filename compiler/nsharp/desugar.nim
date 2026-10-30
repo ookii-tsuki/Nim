@@ -64,6 +64,11 @@ type
     nativeProcs: seq[PNode]
     helpersIncluded: bool
       ## `nsobj.hpp` is included: once per module, by its first native type.
+    pinvokeLinked: int
+      ## `[DllImport("__Internal")]` methods so far, which number their C names (one
+      ## C function per overload); with any, the module defines `NS_ASMNAME`...
+    pinvokeLoaded: bool
+      ## ... and one from a library: it imports `nsharp/pinvoke`.
       ## Each native type's members, emitted after every family's helpers, so any
       ## routine may name a native type, or call its members, declared after it.
     staticInits: seq[PNode]
@@ -116,8 +121,15 @@ proc identDefs(l: Lowerer; name: string; typ: PNode; info: TLineInfo): PNode =
   result = newTree(nkIdentDefs, info, l.id(name, info), typ, empty(info))
 
 
+proc nameNode(l: Lowerer; name: string; info: TLineInfo): PNode =
+  ## A declared name: an operator (`$`, `[]=`) quoted, so a module rendered as text
+  ## reads back (`proc \`$\`*`).
+  result = l.id(name, info)
+  if name.len > 0 and name[0] notin {'a'..'z', 'A'..'Z', '_'}:
+    result = newTree(nkAccQuoted, info, result)
+
 proc exportId(l: Lowerer; name: string; info: TLineInfo): PNode =
-  newTree(nkPostfix, info, l.id("*", info), l.id(name, info))
+  newTree(nkPostfix, info, l.id("*", info), l.nameNode(name, info))
 
 
 proc clsType(l: Lowerer; name: string; info: TLineInfo): PNode =
@@ -490,9 +502,9 @@ proc paramDef(l: Lowerer; p: NsNode; sink = false): PNode =
 proc exportedName(l: Lowerer; attrs: NsAttrs; name: string; info: TLineInfo): PNode =
   ## A C# member is exported to Nim unless it is private.
   if attrs.isExported:
-    result = newTree(nkPostfix, info, l.id("*", info), l.id(name, info))
+    result = newTree(nkPostfix, info, l.id("*", info), l.nameNode(name, info))
   else:
-    result = l.id(name, info)
+    result = l.nameNode(name, info)
 
 
 proc procPragmas(l: Lowerer; params: PNode; info: TLineInfo): PNode =
@@ -693,6 +705,9 @@ proc clrTypeName(l: Lowerer; t: NsNode): string =
     if t.sons.len > 0: result.add "`" & $t.sons.len
   else: result = "Object"
 
+const NsResultLocal = "nsResult"
+  ## A local or parameter C# names `result`, which Nim's implicit `result` takes.
+
 proc clrParams(l: Lowerer; params: seq[NsNode]): string =
   ## `Int32 a, String& b`: a `ref`, `out` or `in` parameter's type is a reference.
   result = ""
@@ -700,7 +715,36 @@ proc clrParams(l: Lowerer; params: seq[NsNode]): string =
     if i > 0: result.add ", "
     result.add l.clrTypeName(p.typ)
     if p.paramMod in ["ref", "out", "in"]: result.add '&'
-    result.add ' ' & p.name
+    result.add ' ' & (if p.name == NsResultLocal: "result" else: p.name)
+
+proc renameResultLocals(n: NsNode) =
+  ## `int result`, `out int result`, `(result) => ...`: Nim's `result` is the
+  ## routine's own, so a local, parameter or pattern variable of that name, and every
+  ## bare name that reads one, is `nsResult` instead. A member named `result` is
+  ## reached as one (`this.result`), and keeps its name.
+  if n == nil: return
+  if n.name == "result" and n.kind in {nsnIdent, nsnParam, nsnLocalDecl, nsnForeach,
+                                       nsnCatch, nsnOutDecl, nsnPatVar, nsnPatType,
+                                       nsnLocalFunc}:
+    n.name = NsResultLocal
+  for x in n.sons: renameResultLocals(x)
+  for x in n.params: renameResultLocals(x)
+  for x in n.inits: renameResultLocals(x)
+  for x in n.initArgs: renameResultLocals(x)
+  for x in n.primary: renameResultLocals(x)
+  renameResultLocals(n.body)
+
+proc renameResultArgs(n: NsNode) =
+  ## ... and `F(result: 3)`, a named argument for a parameter renamed so.
+  if n == nil: return
+  if n.kind == nsnNamedArg and n.name == "result" and n.argParam != nil and
+     n.argParam.name == NsResultLocal:
+    n.name = NsResultLocal
+  for x in n.sons: renameResultArgs(x)
+  for x in n.params: renameResultArgs(x)
+  for x in n.inits: renameResultArgs(x)
+  for x in n.initArgs: renameResultArgs(x)
+  renameResultArgs(n.body)
 
 proc frameOwner(l: Lowerer; cls: NsNode): string =
   ## `Demo.Outer.Box`1`: the type a member's frame names (a stack trace joins a
@@ -3662,7 +3706,7 @@ proc localFuncToNim(l: Lowerer; n: NsNode): PNode =
   for t in n.typeParams: inner.procTypeParams.add t.name
   result = inner.mkProc(l.id(n.name, n.info), fp, inner.memberBody(n.typ, n.body, n.params),
                         n.info, withPragmas = true)
-  let frame = l.nestedFrame("g__", n.name, n.params)
+  let frame = l.nestedFrame("g__", (if n.name == NsResultLocal: "result" else: n.name), n.params)
   if frame.len > 0: l.framed(result, frame)
 
 proc enumeratorLoop(l: Lowerer; n: NsNode): PNode =
@@ -4905,7 +4949,7 @@ proc ifaceTypeOp(l: Lowerer; n: NsNode): PNode =
 proc alwaysExported(l: Lowerer; name: string; info: TLineInfo): PNode =
   ## The implicit constructor pair is always exported, as in the previous
   ## emitter, regardless of the class's own accessibility.
-  result = newTree(nkPostfix, info, l.id("*", info), l.id(name, info))
+  result = newTree(nkPostfix, info, l.id("*", info), l.nameNode(name, info))
 
 proc recordState(l: Lowerer; n: NsNode): tuple[shown, compared: seq[string]] =
   ## A record's members as C# sees them: `ToString` shows its public instance
@@ -5162,6 +5206,203 @@ proc exceptionTypeName(l: Lowerer; n: NsNode): seq[PNode] =
         newTree(nkRefTy, info, l.clsType(n.name, info))), empty(info))),
     newTree(nkStmtList, info, newTree(nkCall, info, l.id("nsTypeNamed", info),
                                       newAtom(nkStrLit, full, info))), info)
+
+# --- P/Invoke -------------------------------------------------------------------
+#
+# A `[DllImport]` method is two procs: the C function, `importc` over C's own types
+# with the C calling convention -- loaded from its library at start-up, or linked in
+# for `"__Internal"` -- and the C# method, which marshals its arguments as .NET does
+# by default (`NsMarshal`) and calls it. A struct crosses as `nsC_<S>`, a C struct of
+# its fields in order, which `nsToC`/`nsFromC` copy to and from: an N# struct is a
+# Nim `object of RootObj`, whose type header C does not expect.
+
+type NsDllImport = tuple[lib, entry: string; stdcall: bool]
+
+proc dllImportOf(m: NsNode): NsDllImport =
+  ## `[DllImport("lib", EntryPoint = "name", CallingConvention = ...)]`.
+  result = (lib: "", entry: m.name, stdcall: false)
+  let a = m.attributeNamed("DllImport")
+  if a == nil: return
+  for x in a.sons:
+    if x.kind == nsnStrLit: result.lib = x.strVal
+    elif x.kind == nsnNamedArg and x.body != nil:
+      if x.name == "EntryPoint" and x.body.kind == nsnStrLit: result.entry = x.body.strVal
+      elif x.name == "CallingConvention" and x.body.kind == nsnMember:
+        result.stdcall = x.body.name in ["StdCall", "Winapi"]
+
+proc cMirrorName(name: string): string =
+  ## The C struct a struct crosses to C as.
+  "nsC_" & canonicalTypeName(name)
+
+proc marshalAsByte(attrs: seq[NsNode]; onReturn: bool): bool
+
+proc cTypeOf(l: Lowerer; t: NsNode; byteBool: bool; info: TLineInfo): PNode =
+  ## The C side of a marshalled type.
+  case l.scope.marshalOf(t)
+  of mkVoid: empty(info)
+  of mkBool: l.id((if byteBool: "uint8" else: "int32"), info)
+  of mkString: l.id("cstring", info)
+  of mkStruct: l.id(cMirrorName(t.name), info)
+  of mkArray: newTree(nkPtrTy, info, l.typeToNim(t.typ, info))
+  of mkEnum: newTree(nkCall, info, l.id("nsEnumBase", info), l.typeToNim(t, info))
+  of mkBlittable, mkUnsupported: l.typeToNim(t, info)
+
+proc toC(l: Lowerer; t: NsNode; v: PNode; byteBool: bool; info: TLineInfo): PNode =
+  ## An N# value as its C side.
+  case l.scope.marshalOf(t)
+  of mkBool:
+    newTree(nkCall, info, l.id((if byteBool: "uint8" else: "int32"), info),
+            newTree(nkCall, info, l.id("ord", info), v))
+  of mkString: newTree(nkCall, info, l.id("cstring", info), v)
+  of mkStruct: newTree(nkCall, info, l.id("nsToC", info), v)
+  of mkArray: newTree(nkCall, info, l.id("nsArrayAddr", info), v)
+  of mkEnum: newTree(nkCall, info, l.cTypeOf(t, false, info), v)
+  else: v
+
+proc fromC(l: Lowerer; t: NsNode; v: PNode; info: TLineInfo): PNode =
+  ## A C value as its N# type.
+  case l.scope.marshalOf(t)
+  of mkBool: newTree(nkInfix, info, l.id("!=", info), v, newAtom(nkIntLit, 0, info))
+  of mkString: newTree(nkPrefix, info, l.id("$", info), v)
+  of mkStruct: newTree(nkCall, info, l.id("nsFromC", info), v)
+  of mkEnum: newTree(nkCall, info, l.typeToNim(t, info), v)
+  else: v
+
+proc cStructMirror(l: Lowerer; n: NsNode; into: var seq[PNode]) =
+  ## `nsC_<S>`, the C struct of a marshalable struct's fields, and the copies to
+  ## and from it.
+  let info = n.info
+  let packed = block:
+    var p = false
+    let a = n.attributeNamed("StructLayout")
+    if a != nil:
+      for x in a.sons:
+        if x.kind == nsnNamedArg and x.name == "Pack" and x.body != nil and
+           x.body.kind == nsnIntLit and x.body.intVal == 1: p = true
+    p
+  let rec = newNodeI(nkRecList, info)
+  let toBody = newNodeI(nkObjConstr, info)
+  toBody.add l.id(cMirrorName(n.name), info)
+  let fromBody = newNodeI(nkStmtList, info)
+  for f in l.scope.structFields(n.name):
+    let field = (if f.kind == nsnPropertyDecl: f.name & "Backing" else: f.name)
+    let byteBool = marshalAsByte(f.attributes, false)
+    rec.add l.identDefs(field, l.cTypeOf(f.typ, byteBool, f.info), f.info)
+    rec[^1][0] = l.exportId(field, f.info)
+    toBody.add newTree(nkExprColonExpr, info, l.id(field, info),
+      l.toC(f.typ, newTree(nkDotExpr, info, l.id("s", info), l.id(field, info)), byteBool, info))
+    fromBody.add newTree(nkAsgn, info,
+      newTree(nkDotExpr, info, l.id("result", info), l.id(field, info)),
+      l.fromC(f.typ, newTree(nkDotExpr, info, l.id("c", info), l.id(field, info)), info))
+  let prag = newTree(nkPragma, info, l.id("bycopy", info))
+  if packed: prag.add l.id("packed", info)
+  into.add newTree(nkTypeSection, info, newTree(nkTypeDef, info,
+    newTree(nkPragmaExpr, info, l.exportId(cMirrorName(n.name), info), prag),
+    empty(info), newTree(nkObjectTy, info, empty(info), empty(info), rec)))
+  let toFp = newTree(nkFormalParams, info, l.id(cMirrorName(n.name), info),
+                     l.identDefs("s", l.id(n.name, info), info))
+  let toProc = l.mkProc(l.exportId("nsToC", info), toFp,
+                        newTree(nkStmtList, info, toBody), info)
+  toProc[4] = newTree(nkPragma, info, l.id("inline", info))
+  into.add toProc
+  let fromFp = newTree(nkFormalParams, info, l.id(n.name, info),
+                       l.identDefs("c", l.id(cMirrorName(n.name), info), info))
+  let fromProc = l.mkProc(l.exportId("nsFromC", info), fromFp, fromBody, info)
+  fromProc[4] = newTree(nkPragma, info, l.id("inline", info))
+  into.add fromProc
+
+proc marshalAsByte(attrs: seq[NsNode]; onReturn: bool): bool =
+  ## `[MarshalAs(UnmanagedType.U1)]` (or `I1`): a `bool` as one byte, not a BOOL;
+  ## `onReturn` reads `[return: MarshalAs(...)]`.
+  for a in attrs:
+    if (a.strVal == "return") == onReturn and
+       a.name.split('.')[^1] in ["MarshalAs", "MarshalAsAttribute"]:
+      for x in a.sons:
+        if x.kind == nsnMember and x.name in ["U1", "I1"]: return true
+  false
+
+proc pinvokeMethod(l: var Lowerer; cls, m: NsNode; into: var seq[PNode]) =
+  ## `[DllImport] static extern R M(args)`: `nsPI_<C>_<M>`, the C function, and
+  ## `M(C, args)`, which marshals. A function linked in (`"__Internal"`) is declared
+  ## under a name of its own, which an assembler label binds to the C symbol, so no
+  ## other declaration of it (a header's, another method's) conflicts; one of a
+  ## library is looked up when first called and called through a pointer.
+  let info = m.info
+  let imp = dllImportOf(m)
+  let rawName = "nsPI_" & cls.name & "_" & m.name
+  let callConv = l.id((if imp.stdcall: "stdcall" else: "cdecl"), info)
+  let rfp = newNodeI(nkFormalParams, info)
+  rfp.add l.cTypeOf(m.typ, marshalAsByte(m.attributes, true), info)
+  for p in m.params:
+    var t = l.cTypeOf(p.typ, marshalAsByte(p.attributes, false), p.info)
+    if p.paramMod in ["ref", "out"]: t = newTree(nkVarTy, p.info, t)
+    rfp.add l.identDefs(p.name, t, p.info)
+  if imp.lib.len == 0 or imp.lib == "__Internal":
+    inc l.pinvokeLinked
+    let raw = l.mkProc(l.id(rawName, info), rfp, empty(info), info)
+    ## `N_CDECL(R, name)(params) __asm__("entry")`: the convention, then the label
+    ## (GCC and Clang; MSVC has none).
+    let decl = (if imp.stdcall: "N_STDCALL" else: "N_CDECL") & "($1, $2)$3 __asm__(NS_ASMNAME(\"" &
+               imp.entry & "\"))"
+    raw[4] = newTree(nkPragma, info,
+      newTree(nkExprColonExpr, info, l.id("importc", info),
+              newStrNode(nkStrLit, rawName & "_" & $l.pinvokeLinked)),
+      callConv,
+      newTree(nkExprColonExpr, info, l.id("codegenDecl", info), newStrNode(nkStrLit, decl)))
+    into.add raw
+  else:
+    l.pinvokeLoaded = true
+    ## `var f {.global.}: pointer; if f == nil: f = nsPInvokeEntry(lib, entry);
+    ## cast[proc (...) {.cdecl.}](f)(args)`
+    let fnTy = newTree(nkProcTy, info, copyTree(rfp), newTree(nkPragma, info, copyTree(callConv)))
+    let body = newNodeI(nkStmtList, info)
+    body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info,
+      newTree(nkPragmaExpr, info, l.id("nsEntry", info),
+              newTree(nkPragma, info, l.id("global", info))),
+      l.id("pointer", info), empty(info)))
+    body.add newTree(nkIfStmt, info, newTree(nkElifBranch, info,
+      newTree(nkInfix, info, l.id("==", info), l.id("nsEntry", info), newNodeI(nkNilLit, info)),
+      newTree(nkAsgn, info, l.id("nsEntry", info),
+              newTree(nkCall, info, l.id("nsPInvokeEntry", info),
+                      newStrNode(nkStrLit, imp.lib), newStrNode(nkStrLit, imp.entry)))))
+    let call = newTree(nkCall, info, newTree(nkCast, info, fnTy, l.id("nsEntry", info)))
+    for p in m.params: call.add l.id(p.name, p.info)
+    body.add call
+    into.add l.mkProc(l.id(rawName, info), copyTree(rfp), body, info)
+  ## The C# method: each argument as C takes it; a `ref`/`out` one that C sees
+  ## differently (a BOOL, a C struct, an enum) through a copy, copied back after.
+  let body = newNodeI(nkStmtList, info)
+  let call = newTree(nkCall, info, l.id(rawName, info))
+  var copyBack: seq[PNode] = @[]
+  for p in m.params:
+    let byteBool = marshalAsByte(p.attributes, false)
+    let mk = l.scope.marshalOf(p.typ)
+    if p.paramMod in ["ref", "out"] and mk in {mkBool, mkStruct, mkEnum}:
+      let tmp = "nsPA_" & p.name
+      let init = (if p.paramMod == "out": newTree(nkCall, info, l.id("default", info),
+                                                  l.cTypeOf(p.typ, byteBool, info))
+                  else: l.toC(p.typ, l.id(p.name, info), byteBool, info))
+      body.add newTree(nkVarSection, info, newTree(nkIdentDefs, info, l.id(tmp, info),
+                                                   empty(info), init))
+      call.add l.id(tmp, info)
+      copyBack.add newTree(nkAsgn, info, l.id(p.name, info),
+                           l.fromC(p.typ, l.id(tmp, info), info))
+    else:
+      call.add l.toC(p.typ, l.id(p.name, info), byteBool, info)
+  if l.scope.marshalOf(m.typ) == mkVoid:
+    body.add call
+    for c in copyBack: body.add c
+  else:
+    body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id("nsPR", info),
+                                                 empty(info), call))
+    for c in copyBack: body.add c
+    body.add newTree(nkAsgn, info, l.id("result", info), l.fromC(m.typ, l.id("nsPR", info), info))
+  var params = l.formalParams(m.typ, m.params, info)
+  let np = newNodeI(nkFormalParams, info)
+  np.add params[0]
+  np.add l.typedescDefs(cls.name, info)
+  for i in 1 ..< params.len: np.add params[i]
+  into.add l.mkProc(l.exportedName(m.attrs, m.name, info), np, body, info, withPragmas = true)
 
 # --- native C++ types ----------------------------------------------------------
 #
@@ -6322,6 +6563,9 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let sec = newNodeI(nkTypeSection, n.info)
   sec.add td
   into.add sec
+  if not isClass and l.scope.isMarshalableStruct(n.name):
+    ## A struct C can take: its C mirror, for P/Invoke from any module.
+    l.cStructMirror(n, into)
 
   # 2. static storage and the initialisers: instance ones run in every
   #    constructor, static ones and the static constructor in `nsStaticInit<C>`.
@@ -6361,6 +6605,9 @@ proc lowerClass(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     inner.frameLocals = new Table[string, int]
     let firstProc = into.len
     defer: l.nameFrames(n, m, into[firstProc .. ^1])
+    if m.kind == nsnMethodDecl and m.attrs.isExtern and m.hasAttribute("DllImport"):
+      l.pinvokeMethod(n, m, into)
+      continue
     case m.kind
     of nsnMethodDecl:
       inner.thisName = if m.attrs.isStatic: "" else: "self"
@@ -7174,8 +7421,20 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
     for m in cls.members:
       if (m.isMethod or m.isProperty or m.isEvent) and m.name in l.imports.userTypes:
         l.imports.memberRenames.incl m.name
+  renameResultLocals(module)
+  renameResultArgs(module)
   for d in module.sons:
     l.lowerDecl(d, stmts)
+  if l.pinvokeLinked > 0:
+    ## The assembler name of a C function, with the platform's prefix (`_` on
+    ## macOS): `__asm__(NS_ASMNAME("strlen"))`.
+    stmts.add newTree(nkPragma, module.info, newTree(nkExprColonExpr, module.info,
+      l.id("emit", module.info), newStrNode(nkStrLit, "/*TYPESECTION*/\n" &
+        "#ifndef NS_ASMNAME\n#define NS_ASMNAME3(p, n) #p n\n" &
+        "#define NS_ASMNAME2(p, n) NS_ASMNAME3(p, n)\n" &
+        "#define NS_ASMNAME(n) NS_ASMNAME2(__USER_LABEL_PREFIX__, n)\n#endif\n")))
+  if l.pinvokeLoaded:
+    stmts.add newTree(nkImportStmt, module.info, newStrNode(nkStrLit, "nsharp/pinvoke"))
   ## A namespace of the tree reached only qualified (`Tools.Widget.Make()`): its
   ## members are in scope, its types that would clash are not, and are named
   ## qualified (`Tools.Console`).
@@ -7301,16 +7560,21 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
           let force = l.instantiateBase(r, c, genericParamNames(r[genericParamsPos]),
                                         c.sons[1 .. ^1])
           if force != nil: instanceForces.add force
+  ## Identity, not structure: a routine defined early is skipped where it would be.
+  var early = initHashSet[int]()
   for r in routines:
     if r.kind == nkMethodDef and not r.hasPragma("base") and
        not r.isGenericMethod and genBases.hasKey(receiverName(r)):
       late.add r
       continue
+    if r[6].kind == nkEmpty:
+      ## No body (a P/Invoke `importc` proc): its own declaration, once.
+      result.add r
+      early.incl cast[int](r)
+      continue
     let fwd = copyTree(r)
     fwd[6] = newNodeI(nkEmpty, r.info)
     result.add fwd
-  ## Identity, not structure: a routine defined early is skipped where it would be.
-  var early = initHashSet[int]()
   if late.len > 0 or instanceForces.len > 0:
     ## A type's `nsTypeOf` first: a generic class's name names its arguments', so
     ## an instance made here reaches theirs, which name nothing of the module.

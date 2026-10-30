@@ -30,8 +30,9 @@ ns_nimcache() {
 
 ns_flags() {
   ## ns_flags FILE: the compiler options a test asks for in `<name>.flags` (a
-  ## target, say `--os:any`), added to its every build; none without one.
-  [ -f "${1%.ns}.flags" ] && cat "${1%.ns}.flags"
+  ## target, say `--os:any`, or `--compile:$DIR/x.c` with `$DIR` the test's
+  ## directory), added to its every build; none without one.
+  [ -f "${1%.ns}.flags" ] && sed "s#\$DIR#$(dirname "$1")#g" "${1%.ns}.flags"
   return 0
 }
 

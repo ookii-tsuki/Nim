@@ -1,0 +1,73 @@
+// P/Invoke into the C library, as .NET does on Linux: numbers, strings, `out`
+// parameters, a struct result, a struct filled through `out`, an array C writes,
+// and a library and an entry point that are not there.
+using System;
+using System.Runtime.InteropServices;
+
+namespace Demo
+{
+    struct DivResult
+    {
+        public int quot;
+        public int rem;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct Tm
+    {
+        public int sec, min, hour, mday, mon, year, wday, yday, isdst;
+        public long gmtoff;
+        public IntPtr zone;
+    }
+
+    static class LibC
+    {
+        [DllImport("libc.so.6", EntryPoint = "strlen")]
+        public static extern nuint StrLen(string s);
+        [DllImport("libc.so.6")]
+        public static extern int abs(int x);
+        [DllImport("libc.so.6", EntryPoint = "div")]
+        public static extern DivResult Div(int num, int den);
+        [DllImport("libc.so.6", EntryPoint = "memset")]
+        public static extern IntPtr MemSet(byte[] dest, int c, nuint n);
+        [DllImport("libc.so.6", EntryPoint = "gmtime_r")]
+        public static extern IntPtr GmTime(ref long time, out Tm result);
+        [DllImport("libm.so.6")]
+        public static extern double cos(double x);
+        [DllImport("libm.so.6")]
+        public static extern double frexp(double x, out int exp);
+        [DllImport("libm.so.6")]
+        public static extern double modf(double x, out double whole);
+        // Loaded when first called, as .NET does: missing ones throw there.
+        [DllImport("libns_no_such_library")]
+        public static extern int Missing();
+        [DllImport("libc.so.6", EntryPoint = "ns_no_such_function")]
+        public static extern int NoEntry();
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine(LibC.StrLen("hello"));
+            Console.WriteLine(LibC.abs(-7));
+            DivResult d = LibC.Div(17, 5);
+            Console.WriteLine(d.quot + " " + d.rem);
+            byte[] buf = new byte[4];
+            Console.WriteLine(LibC.MemSet(buf, 7, 3) != IntPtr.Zero);
+            Console.WriteLine(string.Join(",", buf));
+            long t = 86400L * 365 + 3600 * 5 + 61;
+            LibC.GmTime(ref t, out Tm tm);
+            Console.WriteLine($"{tm.year + 1900}-{tm.mon + 1}-{tm.mday} {tm.hour}:{tm.min}:{tm.sec} day {tm.yday}");
+            Console.WriteLine(LibC.cos(0) == 1.0);
+            double m = LibC.frexp(8, out int e);
+            Console.WriteLine(m + " " + e);
+            double frac = LibC.modf(3.25, out double whole);
+            Console.WriteLine(frac + " " + whole);
+            try { LibC.Missing(); }
+            catch (DllNotFoundException ex) { Console.WriteLine(ex.GetType().Name); }
+            try { LibC.NoEntry(); }
+            catch (EntryPointNotFoundException ex) { Console.WriteLine(ex.GetType().Name); }
+        }
+    }
+}

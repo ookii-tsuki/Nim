@@ -1,0 +1,39 @@
+// Locals and parameters named `result`, which Nim reserves for a routine's value:
+// a parameter, an `out` one, a local, a lambda's, a `foreach` variable, a pattern
+// variable, a named argument, and a field of that name beside them.
+using System;
+using System.Collections.Generic;
+
+namespace Demo
+{
+    class Holder
+    {
+        public int result = 7;
+        public int Plus(int result) => this.result + result;
+    }
+
+    class Program
+    {
+        static int Twice(int result) => result * 2;
+
+        static bool TryHalf(int x, out int result)
+        {
+            result = x / 2;
+            return x % 2 == 0;
+        }
+
+        static void Main()
+        {
+            Console.WriteLine(Twice(4));
+            Console.WriteLine(TryHalf(8, out int h) + " " + h);
+            Console.WriteLine(int.TryParse("12", out int result) + " " + result);
+            Func<int, int> f = result => result + 1;
+            Console.WriteLine(f(1));
+            foreach (var r in new List<int> { 1, 2 }) Console.WriteLine(r);
+            object o = 5;
+            if (o is int n) Console.WriteLine(n);
+            Console.WriteLine(Twice(result: 10));
+            Console.WriteLine(new Holder().Plus(1));
+        }
+    }
+}

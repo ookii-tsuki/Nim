@@ -1,0 +1,6 @@
+using Geo
+using Interop
+using System
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void

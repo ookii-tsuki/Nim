@@ -569,7 +569,8 @@ nkStmtList
     nkProcDef
       nkPostfix
         nkIdent '*'
-        nkIdent '+'
+        nkAccQuoted
+          nkIdent '+'
       nkEmpty
       nkEmpty
       nkFormalParams
@@ -594,7 +595,8 @@ nkStmtList
     nkProcDef
       nkPostfix
         nkIdent '*'
-        nkIdent '*'
+        nkAccQuoted
+          nkIdent '*'
       nkEmpty
       nkEmpty
       nkFormalParams
@@ -3134,7 +3136,8 @@ nkStmtList
     nkProcDef
       nkPostfix
         nkIdent '*'
-        nkIdent '[]'
+        nkAccQuoted
+          nkIdent '[]'
       nkEmpty
       nkEmpty
       nkFormalParams
@@ -3164,7 +3167,8 @@ nkStmtList
     nkProcDef
       nkPostfix
         nkIdent '*'
-        nkIdent '[]='
+        nkAccQuoted
+          nkIdent '[]='
       nkEmpty
       nkEmpty
       nkFormalParams
@@ -3198,7 +3202,8 @@ nkStmtList
     nkProcDef
       nkPostfix
         nkIdent '*'
-        nkIdent '[]'
+        nkAccQuoted
+          nkIdent '[]'
       nkEmpty
       nkEmpty
       nkFormalParams
@@ -3224,7 +3229,8 @@ nkStmtList
     nkProcDef
       nkPostfix
         nkIdent '*'
-        nkIdent '[]='
+        nkAccQuoted
+          nkIdent '[]='
       nkEmpty
       nkEmpty
       nkFormalParams

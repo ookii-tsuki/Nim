@@ -1,0 +1,17 @@
+using System
+using System.Runtime.InteropServices
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Console.WriteLine = System | void
+member Type.Name = System.Reflection | string
+member Type.Name = System.Reflection | string
+member nint.Zero = System | int
+member string.Join = System | string

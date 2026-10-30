@@ -10,7 +10,7 @@ nkStmtList
       nkIdent 'rangeChecks'
       nkIdent 'off'
   nkImportStmt
-    nkStrLit "Toybox"
+    nkStrLit "/home/user/Nim/nsharp/tests/native/Toybox"
   nkTypeSection
     nkTypeDef
       nkPragmaExpr
