@@ -1655,6 +1655,7 @@ proc noteMutation(ctx: NsCheckContext; target: NsNode) =
 
 proc checkTypeArgs(ctx: NsCheckContext; t: NsNode)
 proc firstUnknownType(ctx: NsCheckContext; t: NsNode): NsNode
+proc checkAssignable(ctx: NsCheckContext; target: NsNode)
 
 proc checkOperands(ctx: NsCheckContext; n: NsNode; lk, rk: NsTypeKind) =
   ## A built-in operator applied to operands it does not take (CS0019): only
@@ -2069,6 +2070,8 @@ proc warnEarlyNative(ctx: NsCheckContext; n: NsNode) =
   if m.name.len > 0 and ctx.scope.isNative(m.owner):
     nsWarn(ctx.config, n.info, ndNativeCtorEarly, m.owner & "." & n.name, ctx.clsName)
 
+proc accessAllowed(ctx: NsCheckContext; owner: string; access: NsAccess): bool
+
 proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
   ## `recv.name` on a value: the member must exist (CS1061), be an instance member
   ## (CS0176), and be accessible from here (CS0122). Only where the receiver's
@@ -2113,19 +2116,7 @@ proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
           if x.name == n.name and x.explicitIface.len == 0:
             access = (if d.classKind == ckInterface: aPublic else: x.attrs.access)
             break ordinary
-    case access
-    of aPrivate:
-      ## A nested type sees its enclosing types' private members.
-      ok = false
-      var c = ctx.clsName
-      var hops = 0
-      while c.len > 0 and hops < 32:
-        if c == m.owner: ok = true
-        c = (if ctx.scope.classes.hasKey(c): ctx.scope.classes[c].enclosing else: "")
-        inc hops
-    of aProtected:
-      ok = ctx.clsName.len > 0 and m.owner in ctx.scope.chain(ctx.clsName)
-    else: discard
+    ok = ctx.accessAllowed(m.owner, access)
     if not ok:
       nsError(ctx.config, n.info, ndNotAccessible, m.owner & "." & n.name)
       return
@@ -2180,6 +2171,70 @@ proc checkMemberUse(ctx: NsCheckContext; n: NsNode) =
        (ext.len > 0 and ext.replace('/', '.') notin ctx.scope.usings):
       nsError(ctx.config, n.info, ndNoMember,
               (if recv.rtype != nil: typeSpelling(recv.rtype) else: cn), n.name)
+
+proc accessAllowed(ctx: NsCheckContext; owner: string; access: NsAccess): bool =
+  ## Whether the class being checked may use a member of `owner` with `access`: a
+  ## private one in `owner` or a type nested in it, a protected one in a class
+  ## deriving it.
+  case access
+  of aPrivate:
+    var c = ctx.clsName
+    var hops = 0
+    while c.len > 0 and hops < 32:
+      if c == owner: return true
+      c = (if ctx.scope.classes.hasKey(c): ctx.scope.classes[c].enclosing else: "")
+      inc hops
+    false
+  of aProtected:
+    ## A nested type sees what its enclosing types see.
+    var c = ctx.clsName
+    var hops = 0
+    while c.len > 0 and hops < 32:
+      if owner in ctx.scope.chain(c): return true
+      c = (if ctx.scope.classes.hasKey(c): ctx.scope.classes[c].enclosing else: "")
+      inc hops
+    false
+  else: true
+
+proc qualifiedOnlyMember(ctx: NsCheckContext; recv: NsNode; name: string;
+                         info: TLineInfo): NsMemberSymbol =
+  ## `name` of a type reached qualified that the scope leaves out (`Tools.Console`):
+  ## only a static class may be one (its every use is a static member's), and the
+  ## member must exist (CS0117) and be accessible (CS0122).
+  let written = dottedName(recv)
+  let c = ctx.scope.qualifiedOnly[written]
+  if c.classKind != ckClass or not c.isStatic:
+    nsError(ctx.config, recv.info, ndUnsupported,
+            "'" & written & "', named like a type in scope and reached with no 'using'," &
+            " unless it is a static class,")
+    return
+  var found = 0
+  for m in c.members:
+    if m.name == name:
+      if not ctx.accessAllowed(m.owner, m.access):
+        nsError(ctx.config, info, ndNotAccessible, written & "." & name)
+        return
+      if found == 0: result = m
+      inc found
+  if found > 1:
+    ## Overloads: which one a call reaches is Nim's to resolve, so it is untyped.
+    result.typ = nil
+  if found > 0: return
+  if ctx.scope.qualifiedOnly.hasKey(written & "." & name):
+    ## A nested type (`Tools.Console.Inner`): its members are its own.
+    return NsMemberSymbol(name: name)
+  nsError(ctx.config, info, ndNoStaticMember, written, name)
+
+proc checkQualifiedOnlyUpdate(ctx: NsCheckContext; target: NsNode) =
+  ## `Tools.Console.Calls += 1` or `++`: a property of such a type is read and
+  ## written through its accessors, which lowering does not pair up yet.
+  if target == nil or target.kind != nsnMember or target.body == nil: return
+  let written = dottedName(target.body)
+  if not ctx.scope.qualifiedOnly.hasKey(written): return
+  for m in ctx.scope.qualifiedOnly[written].members:
+    if m.name == target.name and m.isProperty:
+      nsError(ctx.config, target.info, ndUnsupported,
+              "updating '" & written & "." & target.name & "' in place")
 
 proc checkStaticMember(ctx: NsCheckContext; cls, name: string; info: TLineInfo) =
   ## `C.name` on a class of this compilation that declares no such member (CS0117).
@@ -2247,6 +2302,9 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   if n.name == "$subject":
     ## The stand-in for a pattern's subject keeps the type it was given.
     return n.typeKind
+  if ctx.types.hasKey(n.name) or n.name in ctx.members:
+    for q in ctx.scope.qualifiedNs:
+      if q.split('.')[0] == n.name: ctx.scope.qualifiedShadowed.incl n.name
   if n.name notin ctx.members and not ctx.types.hasKey(n.name) and
      ctx.scope.staticUsings.len > 0:
     let owner = ctx.staticImport(n.name)
@@ -2295,10 +2353,17 @@ proc walkIdent(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   elif ctx.scope.delegates.hasKey(n.name):
     n.setType(tkDelegate, n.name)
     result = tkDelegate
+  elif n.name in ctx.scope.qualifiedTypes:
+    ## A type of a namespace reached only qualified, named bare (CS0103).
+    n.setType(tkUnknown)
+    nsError(ctx.config, n.info, ndNameNotFound, n.name)
+    result = tkUnknown
   elif ctx.isTypeName(n.name):
     ## A type or a namespace used as a receiver (`Console.WriteLine`), or a static
     ## call qualifier. Which of those it is needs no further resolution here: the
     ## member access that follows asks the library.
+    for q in ctx.scope.qualifiedNs:
+      if q.split('.')[0] == n.name: ctx.scope.qualifiedUsed.incl n.name
     n.setType(tkType, canonicalTypeName(n.name))
     result = tkType
   else:
@@ -2354,9 +2419,12 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
      not ctx.scope.classes.hasKey(qualifierRoot(n.body)) and
      not ctx.scope.enums.contains(qualifierRoot(n.body)) and
      not ctx.types.hasKey(qualifierRoot(n.body)) and
-     qualifierRoot(n.body) notin ctx.members:
+     qualifierRoot(n.body) notin ctx.members and
+     not ctx.scope.qualifiedOnly.hasKey(dottedName(n.body)):
     ## `Demo.Thing.Max`, `Demo.Color.Green`: the namespace says where the type is
-    ## and nothing more, so the member is a member of the type by its own name.
+    ## and nothing more, so the member is a member of the type by its own name --
+    ## unless another type of that name is in scope (`Tools.Widget` beside
+    ## `Demo.Widget`).
     let plain = nsnIdent(n.body.typeName, n.body.info)
     plain.setType(tkType, n.body.typeName)
     plain.typeArgs = n.body.typeArgs
@@ -2447,10 +2515,27 @@ proc walkMember(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       n.setType(tkUnknown, n.body.typeName)
       n.rtype = nsnTypeName(n.body.typeName, n.info)
       return tkUnknown
+    if n.body != nil and ctx.scope.qualifiedOnly.hasKey(dottedName(n.body)):
+      ## `Tools.Console.Calls`: a static of a type reached qualified that is named
+      ## like another in scope, which the scope leaves out: its own symbol answers.
+      if ctx.scope.qualifiedOnly.hasKey(dottedName(n.body) & "." & n.name):
+        ## A nested type (`Tools.Console.Inner`), a qualifier in turn: the outer
+        ## type need not be static.
+        n.setType(tkType, n.name)
+        return tkType
+      let m = ctx.qualifiedOnlyMember(n.body, n.name, n.info)
+      if m.name.len > 0:
+        if m.isMethod:
+          nsError(ctx.config, n.info, ndUnsupported,
+                  "a method group of '" & dottedName(n.body) & "'")
+        elif m.typ != nil:
+          n.setType(ctx.classifyType(m.typ), declTypeName(m.typ))
+          n.rtype = m.typ
+          return n.typeKind
+      return tkUnknown
     if n.body != nil:
       let recv = n.body.typeName
-      if dottedName(n.body) notin ctx.scope.qualifiedOnly:
-        ctx.checkStaticMember(recv, n.name, n.info)
+      ctx.checkStaticMember(recv, n.name, n.info)
       if ctx.scope.classes.hasKey(recv) and
          ctx.scope.findMemberInfo(recv, n.name).name.len > 0:
         ## A static member of a class this compilation declares.
@@ -2594,9 +2679,16 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       owner = unqualified(callee.body.name)
       ## `System.Console` beside a binding's own `Console`: the library's.
       ## ... or a type of a namespace reached qualified, named like the library's
-      ## (`Tools.Console`), which the scope leaves out.
+      ## (`Tools.Console`), which the scope leaves out: its own symbol answers.
       let written = dottedName(callee.body)
-      let foreign = ctx.scope.foreignQualified(written) or written in ctx.scope.qualifiedOnly
+      let qualifiedOnly = ctx.scope.qualifiedOnly.hasKey(written)
+      if qualifiedOnly:
+        let m = ctx.qualifiedOnlyMember(callee.body, callee.name, callee.info)
+        if m.name.len > 0 and m.typ != nil:
+          kind = ctx.classifyType(m.typ)
+          tn = declTypeName(m.typ)
+          n.rtype = m.typ
+      let foreign = ctx.scope.foreignQualified(written) or qualifiedOnly
       if not foreign:
         ctx.checkStaticMember(owner, callee.name, callee.info)
         kind = ctx.memberKind(owner, callee.name)
@@ -3488,6 +3580,8 @@ proc walkExpr(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
       if cop != nil: n.argParam = cop
   of nsnIncDec:
     result = ctx.walkExpr(n.body)
+    ctx.checkAssignable(n.body)
+    ctx.checkQualifiedOnlyUpdate(n.body)
     ctx.noteMutation(n.body)
     n.setType(result, n.body.typeName)
     n.rtype = n.body.rtype
@@ -3962,6 +4056,9 @@ proc firstUnknownType(ctx: NsCheckContext; t: NsNode): NsNode =
   if t == nil: return nil
   case t.kind
   of nsnTypeName:
+    if '.' notin t.name and canonicalTypeName(t.name) in ctx.scope.qualifiedTypes:
+      ## Reachable only qualified (`Tools.Widget`), with no `using` (CS0246).
+      return t
     if not ctx.typeKnown(nsnTypeName(t.name, t.info)): return t
     for a in t.sons:
       let u = ctx.firstUnknownType(a)
@@ -4376,15 +4473,38 @@ proc checkAssignable(ctx: NsCheckContext; target: NsNode) =
       nsError(ctx.config, target.info, ndConstFieldWrite, fm.owner & "." & fm.name, ctx.constBody)
       return
   ctx.noteMutation(target)
+  if target != nil and target.kind == nsnIndex and target.body != nil and
+     target.body.typeKind == tkClass and ctx.scope.classes.hasKey(target.body.typeName):
+    ## `r[i] = v` through an indexer whose setter is not accessible here (CS0272):
+    ## reported when every indexer taking that many indices has one, since which
+    ## overload the arguments pick is Nim's to resolve.
+    var anyOk = false
+    var blocked = ""
+    for c in ctx.scope.chain(target.body.typeName):
+      for ix in ctx.scope.classes[c].members:
+        if ix.name != NsIndexerName or ix.params.len != target.sons.len: continue
+        if ix.setAccess == ix.access or ctx.accessAllowed(ix.owner, ix.setAccess):
+          anyOk = true
+        elif blocked.len == 0: blocked = ix.owner & ".this[]"
+    if blocked.len > 0 and not anyOk:
+      nsError(ctx.config, target.info, ndSetterInaccessible, blocked)
+    return
   ## A `const` is never assigned (CS0131); a `readonly` field only by its own class's
   ## constructors -- the static one, for a static field (CS0191 / CS0198).
   if target == nil or target.kind != nsnMember or target.body == nil: return
-  var owner = ""
-  if target.body.kind == nsnThis: owner = ctx.clsName
-  elif target.body.typeKind == tkType: owner = target.body.typeName
-  elif target.body.typeKind == tkClass: owner = target.body.typeName
-  if owner.len == 0 or not ctx.scope.classes.hasKey(owner): return
-  let m = ctx.scope.findMemberInfo(owner, target.name)
+  var m: NsMemberSymbol
+  let written = dottedName(target.body)
+  if ctx.scope.qualifiedOnly.hasKey(written):
+    ## `Tools.Console.Calls = v`: the member of that type, not of a bare `Console`.
+    for x in ctx.scope.qualifiedOnly[written].members:
+      if x.name == target.name: m = x
+  else:
+    var owner = ""
+    if target.body.kind == nsnThis: owner = ctx.clsName
+    elif target.body.typeKind == tkType: owner = target.body.typeName
+    elif target.body.typeKind == tkClass: owner = target.body.typeName
+    if owner.len == 0 or not ctx.scope.classes.hasKey(owner): return
+    m = ctx.scope.findMemberInfo(owner, target.name)
   if m.name.len == 0: return
   let inOwnCtor = ctx.inCtor and m.owner == ctx.clsName and not ctx.ctorIsStatic
   let inInitializer = target.body.kind == nsnIdent and target.body.name.startsWith("nsInit")
@@ -4393,6 +4513,10 @@ proc checkAssignable(ctx: NsCheckContext; target: NsNode) =
     return
   if m.isProperty and m.initOnly and not (inOwnCtor or inInitializer):
     nsError(ctx.config, target.info, ndInitOnly, m.owner & "." & m.name)
+    return
+  if m.isProperty and not m.noSetter and m.setAccess != m.access and
+     not ctx.accessAllowed(m.owner, m.setAccess):
+    nsError(ctx.config, target.info, ndSetterInaccessible, m.owner & "." & m.name)
     return
   if m.isConst:
     nsError(ctx.config, target.info, ndNotAssignable)
@@ -4488,6 +4612,7 @@ proc walkStmt(ctx: var NsCheckContext; n: NsNode) =
       applySigDeep(ctx, n.sons[1], delegateSig(ctx.scope, ctx.surface, n.sons[0].rtype))
     for i in 1 ..< n.sons.len: discard ctx.walkExpr(n.sons[i])
     ctx.checkAssignable(n.sons[0])
+    if n.name.len > 0: ctx.checkQualifiedOnlyUpdate(n.sons[0])
     let ev = ctx.eventOf(n.sons[0])
     if ev.name.len > 0:
       ## `e += h` / `e -= h` on an event add and remove a handler; anything else

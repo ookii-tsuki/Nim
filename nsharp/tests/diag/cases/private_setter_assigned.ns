@@ -1,0 +1,9 @@
+// A property whose setter is private, assigned outside its class.
+namespace Demo
+{
+    class Counter { public int N { get; private set; } }
+    class Program
+    {
+        static void Main() { var c = new Counter(); c.N = 5; }
+    }
+}

@@ -312,6 +312,16 @@ proc isKnownTypeName*(s: NsBclSurface; name: string): bool =
   s.types.hasKey(canon) or s.kindOfSpelling(canon) != tkUnknown or
     isDeclaredType(canon) or isDeclaredNamespace(canon)
 
+proc isLibraryTypeName*(s: NsBclSurface; name: string): bool =
+  ## Whether the library, not the compilation, gives the name a meaning: a keyword
+  ## type, a type it declares, or a static qualifier (`Console`, `Math`).
+  if name.len == 0: return false
+  let canon = canonicalTypeName(name)
+  for r in NsPrimitiveTypes:
+    if r.cs == canon: return true
+  s.types.hasKey(canon) or s.members.hasKey(canon) or s.kindOfSpelling(canon) != tkUnknown or
+    s.types.hasKey(s.nimSpellingOf(canon))
+
 proc member*(s: NsBclSurface; recvName: string; recvKind: NsTypeKind;
              name: string; visibleOnly = false): NsBclMember =
   ## The member on a receiver, or a zeroed member when the library declares none.

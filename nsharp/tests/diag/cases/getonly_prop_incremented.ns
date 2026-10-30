@@ -1,0 +1,9 @@
+// A get-only property incremented.
+namespace Demo
+{
+    class Counter { public int N { get; } }
+    class Program
+    {
+        static void Main() { var c = new Counter(); c.N++; }
+    }
+}

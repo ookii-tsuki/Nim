@@ -4,6 +4,8 @@ namespace Tools
     public static class Console
     {
         public static int Calls { get; private set; }
+        public static int Limit;
+        public static string Label { get; set; } = "";
         public static void Print(string s) { Calls++; System.Console.WriteLine("Tools: " + s); }
     }
 

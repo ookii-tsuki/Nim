@@ -137,7 +137,9 @@ proc scanFile(source: string; path: string; fileIdx: FileIndex;
     of nsIdent:
       if i + 1 < toks.len and toks[i + 1].kind == nsDot and
          (i == 0 or (toks[i - 1].kind != nsDot and not (toks[i - 1].kind == nsIdent and
-          toks[i - 1].text in ["using", "namespace", "static"]) and
+          toks[i - 1].text in ["using", "namespace"]) and
+          not (i >= 2 and toks[i - 1].kind == nsIdent and toks[i - 1].text == "static" and
+               toks[i - 2].kind == nsIdent and toks[i - 2].text == "using") and
           not (i >= 2 and toks[i - 1].kind == nsAssign and toks[i - 2].kind == nsIdent and
                i >= 3 and toks[i - 3].kind == nsIdent and toks[i - 3].text == "using"))):
         ## A dotted name outside a directive (`using A.B;`, `namespace A.B`, `using
@@ -209,9 +211,11 @@ proc collectUsings(n: NsNode;
     elif d.kind == nsnNamespace:
       collectUsings(d, into)
 
-proc namespaceCycles(modules: Table[string, seq[NsNode]]): Table[string, HashSet[string]] =
+proc namespaceCycles(modules: Table[string, seq[NsNode]];
+                     qualified: Table[string, seq[string]]): Table[string, HashSet[string]] =
   ## For each namespace being generated, the others it shares an import cycle with:
-  ## those it reaches through `using`s and that reach it back.
+  ## those it reaches through `using`s, or `qualified` (`Tools.Widget`), and that
+  ## reach it back.
   var uses = initTable[string, seq[string]]()
   for ns in modules.keys:
     var u: seq[tuple[ns: string, info: TLineInfo]] = @[]
@@ -219,6 +223,8 @@ proc namespaceCycles(modules: Table[string, seq[NsNode]]): Table[string, HashSet
     var names: seq[string] = @[]
     for x in u:
       if modules.hasKey(x.ns) and x.ns != ns and x.ns notin names: names.add x.ns
+    for q in qualified.getOrDefault(ns):
+      if modules.hasKey(q) and q != ns and q notin names: names.add q
     uses[ns] = names
   proc reach(start: string): HashSet[string] =
     result = initHashSet[string]()
@@ -245,12 +251,33 @@ proc markCyclicImports(n: PNode; peers: HashSet[string]; cache: IdentCache) =
   var paths = initHashSet[string]()
   for p in peers: paths.incl namespaceModulePath(p)
   for s in n:
-    if s.kind != nkImportStmt: continue
-    for k in 0 ..< s.len:
+    if s.kind notin {nkImportStmt, nkImportExceptStmt}: continue
+    for k in 0 ..< (if s.kind == nkImportExceptStmt: 1 else: s.len):
       let x = s[k]
       if x.kind in {nkStrLit, nkRStrLit, nkTripleStrLit} and x.strVal in paths:
         s[k] = newTree(nkPragmaExpr, x.info, x,
                        newTree(nkPragma, x.info, newIdentNode(getIdent(cache, "cyclic"), x.info)))
+
+proc symbolsOf(m: NsNode; config: ConfigRef): NsModuleScope =
+  ## A file's own declarations, collected afresh: collecting merges a partial
+  ## class's parts into its first declaration, so what an earlier module saw may
+  ## lack the parts of another file.
+  collectSymbols(m, config)
+
+proc mergeNamespace(into, s: NsModuleScope; skip: HashSet[string] = initHashSet[string]()) =
+  ## Another file's declarations joining a module's scope; a name already there is
+  ## the module's own, and `skip` stays out.
+  for k, v in s.classes:
+    if k notin skip and not into.classes.hasKey(k): into.classes[k] = v
+  for k, v in s.delegates:
+    if k notin skip and not into.delegates.hasKey(k): into.delegates[k] = v
+  for e in s.enums:
+    if e notin skip: into.enums.incl e
+  for k, v in s.enumMembers:
+    if k notin skip and not into.enumMembers.hasKey(k): into.enumMembers[k] = v
+  for e in s.libIfaces: into.libIfaces.incl e
+  for e in s.libValueIfaces: into.libValueIfaces.incl e
+  for q in s.namespaces: into.namespaces.incl q
 
 proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
   ## Declaration collection for a module, extended with the declarations of the
@@ -265,21 +292,13 @@ proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
     if ns in seen: continue
     seen.incl ns
     for m in namespaceModules.getOrDefault(ns):
-      let s = collectSymbols(m, config)
-      for k, v in s.classes:
-        if not result.classes.hasKey(k): result.classes[k] = v
-      for k, v in s.delegates:
-        if not result.delegates.hasKey(k): result.delegates[k] = v
-      for e in s.enums: result.enums.incl e
-      for k, v in s.enumMembers:
-        if not result.enumMembers.hasKey(k): result.enumMembers[k] = v
-      for e in s.libIfaces: result.libIfaces.incl e
-      for e in s.libValueIfaces: result.libValueIfaces.incl e
-      for q in s.namespaces: result.namespaces.incl q
+      let s = symbolsOf(m, config)
+      result.mergeNamespace(s)
       for u in s.usings: pending.add u
-  ## Namespaces reached only qualified: their types join the scope, so they are
-  ## classified, unless one is named like a type already in scope or the
-  ## library's, which then stays qualified.
+  ## Namespaces reached only qualified (`Tools.Widget`): their types join the scope,
+  ## so they are classified, but are reachable only qualified (`qualifiedTypes`); one
+  ## named like a type already in scope or the library's stays out
+  ## (`qualifiedOnly`). The namespaces they `using` are not this module's.
   var own = initHashSet[string]()
   proc noteOwn(n: NsNode) =
     if n.kind == nsnNamespace:
@@ -301,29 +320,37 @@ proc collectWithNamespaces*(module: NsNode; config: ConfigRef): NsModuleScope =
   let surface = bclSurface(config)
   for ns in reached:
     result.qualifiedNs.add ns
-    var clashing: seq[string] = @[]
+    ## An enclosing namespace of the module's own (`Tools` of `Tools.App`) is in
+    ## scope bare, as C# has it.
+    var ownAncestor = false
+    for o in own:
+      if o.startsWith(ns & "."): ownAncestor = true
+    var prefix = ""
+    for part in ns.split('.'):
+      prefix = (if prefix.len == 0: part else: prefix & "." & part)
+      result.namespaces.incl prefix
+    var clashing = initHashSet[string]()
     for m in namespaceModules[ns]:
-      let s = collectSymbols(m, config)
+      let s = symbolsOf(m, config)
       var names: seq[string] = @[]
       for k in s.classes.keys: names.add k
       for k in s.delegates.keys: names.add k
       for e in s.enums: names.add e
       for k in names:
         if result.classes.hasKey(k) or result.delegates.hasKey(k) or
-           k in result.enums or surface.isKnownTypeName(k) or
-           surface.members.hasKey(k) or surface.types.hasKey(surface.nimSpellingOf(k)):
-          if k notin clashing: clashing.add k
-          result.qualifiedOnly.incl ns & "." & k
-      for k, v in s.classes:
-        if k notin clashing and not result.classes.hasKey(k): result.classes[k] = v
-      for k, v in s.delegates:
-        if k notin clashing and not result.delegates.hasKey(k): result.delegates[k] = v
-      for e in s.enums:
-        if e notin clashing: result.enums.incl e
-      for k, v in s.enumMembers:
-        if k notin clashing and not result.enumMembers.hasKey(k): result.enumMembers[k] = v
-    clashing.sort()
-    result.qualifiedExcept[ns] = clashing
+           k in result.enums or surface.isLibraryTypeName(k):
+          clashing.incl k
+          result.qualifiedOnly[ns & "." & k] = s.classes.getOrDefault(k, NsClassSymbol(name: k))
+          ## Its nested types (`Tools.Console.Inner`), reached through it.
+          for nk, nv in s.classes:
+            if nv.enclosing == k: result.qualifiedOnly[ns & "." & k & "." & nk] = nv
+        elif not ownAncestor:
+          result.qualifiedTypes.incl k
+      result.mergeNamespace(s, clashing)
+    var excluded: seq[string] = @[]
+    for k in clashing: excluded.add k
+    excluded.sort()
+    result.qualifiedExcept[ns] = excluded
   result.resolveBases()
 
 proc generateNamespace(config: ConfigRef; cache: IdentCache; nsPath, genDir: string;
@@ -468,7 +495,11 @@ proc ensureNamespaces*(config: ConfigRef; cache: IdentCache;
       nsError(config, s.info, ndNamespaceNotFound, s.ns)
 
   ## Namespaces that use each other are one import cycle.
-  let cycles = namespaceCycles(namespaceModules)
+  var qualified = initTable[string, seq[string]]()
+  for ns in namespaceModules.keys:
+    for path in declared[ns]:
+      for q in reachedFrom(path): qualified.mgetOrPut(ns, @[]).add q
+  let cycles = namespaceCycles(namespaceModules, qualified)
 
   ## Every namespace is parsed before any is generated, so classifying one does not
   ## depend on generation order.

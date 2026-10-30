@@ -267,8 +267,8 @@ proc mainCommand*(graph: ModuleGraph) =
       ## every command (`c`, `cpp`, `check`, `js`).
       defineSymbol(conf.symbols, "nsharp")
       if conf.target.targetOS == osStandalone:
-        ## `system` has no exception handling there, and C# cannot do without
-        ## it; `--os:any` is the target without an OS that N# supports.
+        ## Also checked before the configs run (`cmdlinehelper`); this one sees
+        ## an `--os` a config file gives.
         rawMessage(conf, errGenerated,
           "N# needs exception handling, which --os:standalone lacks; use --os:any")
 

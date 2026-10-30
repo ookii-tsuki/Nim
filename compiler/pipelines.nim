@@ -329,9 +329,10 @@ proc cyclicImportTargets(c: PContext; n: PNode): seq[FileIndex] =
   ## macro or nested in a `when` is checked in order like any other statement.
   result = @[]
   for it in n:
-    if it.kind != nkImportStmt: continue
-    for x in it:
-      var x = x
+    if it.kind notin {nkImportStmt, nkImportExceptStmt}: continue
+    ## `import m {.cyclic.} except a, b`: only the first child is a module.
+    for k in 0 ..< (if it.kind == nkImportExceptStmt: min(1, it.len) else: it.len):
+      var x = it[k]
       if x.kind == nkInfix and x.len == 3 and x[0].kind == nkIdent and
           x[0].ident.s == "as":
         x = x[1] # `m {.cyclic.} as alias`

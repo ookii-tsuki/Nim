@@ -1,0 +1,9 @@
+// A static property whose setter is private, incremented outside its class.
+namespace Demo
+{
+    class Counter { public static int Total { get; private set; } }
+    class Program
+    {
+        static void Main() { Counter.Total++; }
+    }
+}

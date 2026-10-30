@@ -133,6 +133,7 @@ type
     ndRequiredMember
     ndReadOnlyProperty
     ndInitOnly
+    ndSetterInaccessible
     ndEventOutside
     ndObsolete
     ndObsoleteNoMessage
@@ -354,6 +355,8 @@ const
     ndInitOnly: (code: "8852", msg: "Init-only property or indexer '$1' can only be assigned in an" &
                         " object initializer, or on 'this' or 'base' in an instance" &
                         " constructor or an 'init' accessor."),
+    ndSetterInaccessible: (code: "0272", msg: "The property or indexer '$1' cannot be used" &
+                        " in this context because the set accessor is inaccessible"),
     ndEventOutside: (code: "0070", msg: "The event '$1' can only appear on the left hand side of +=" &
                         " or -= (except when used from within the type '$2')"),
     ndObsolete: (code: "0618", msg: "'$1' is obsolete: '$2'"),

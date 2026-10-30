@@ -55,6 +55,7 @@ generic_arity CS0305 match
 generic_attribute_without_type_arguments CS0305 match
 generic_constraint CS0452 match
 generic_list_without_using CS0246 match
+getonly_prop_incremented CS0200 match
 h_abstract_body CS0500 match
 h_abstract_in_concrete CS0513 match
 h_and_on_ints_logical CS0019 match
@@ -156,7 +157,11 @@ override_nonvirtual CS0506 match
 partial_method_without_implementation CS8795 match
 private_access CS0122 match
 private_method CS0122 match
+private_setter_assigned CS0272 match
+private_setter_in_initializer CS0272 match
+private_setter_incremented CS0272 match
 prop_void CS0547 match
+protected_setter_compound CS0272 match
 ragged_multidimensional_initializer CS0847 match
 read_setonly_prop CS0154 match
 ref_missing CS1620 match

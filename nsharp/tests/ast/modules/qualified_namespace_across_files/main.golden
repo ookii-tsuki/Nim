@@ -20,11 +20,8 @@ nkStmtList
   nkImportExceptStmt
     nkStrLit "Tools"
     nkIdent 'Console'
-    nkIdent 'Shade'
-    nkIdent 'Widget'
-  nkImportExceptStmt
+  nkImportStmt
     nkStrLit "Tools/Deep"
-    nkIdent 'Probe'
   nkTypeSection
     nkTypeDef
       nkPostfix
@@ -110,6 +107,29 @@ nkStmtList
       nkExprColonExpr
         nkIdent 'stackTrace'
         nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'Shadow'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'Tools'
+        nkIdent 'string'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Shadow(String Tools)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -266,6 +286,33 @@ nkStmtList
     nkStmtList
       nkStrLit "Demo.Program"
   nkProcDef
+    nkIdent 'Shadow'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Program'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'Tools'
+        nkIdent 'string'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Program.Shadow(String Tools)"
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkDotExpr
+          nkIdent 'Tools'
+          nkIdent 'Length'
+  nkProcDef
     nkIdent 'Main'
     nkEmpty
     nkEmpty
@@ -314,7 +361,9 @@ nkStmtList
         nkIdent 'WriteLine'
         nkCall
           nkDotExpr
-            nkIdent 'w'
+            nkCall
+              nkIdent 'nsCheckNilVar'
+              nkIdent 'w'
             nkIdent 'Twice'
       nkCall
         nkIdent 'WriteLine'
@@ -324,28 +373,26 @@ nkStmtList
             nkIdent '+'
             nkDotExpr
               nkCall
-                nkIdent 'Make'
-                nkDotExpr
-                  nkIdent 'Tools'
-                  nkIdent 'Widget'
+                nkIdent 'nsCheckNil'
+                nkCall
+                  nkIdent 'Make'
+                  nkDotExpr
+                    nkIdent 'Tools'
+                    nkIdent 'Widget'
               nkIdent 'Size'
             nkStrLit " "
-          nkCall
+          nkDotExpr
+            nkIdent 'Widget'
             nkIdent 'Version'
-            nkDotExpr
-              nkIdent 'Tools'
-              nkIdent 'Widget'
       nkVarSection
         nkIdentDefs
           nkIdent 's'
           nkDotExpr
             nkIdent 'Tools'
             nkIdent 'Shade'
-          nkCall
+          nkDotExpr
+            nkIdent 'Shade'
             nkIdent 'Dark'
-            nkDotExpr
-              nkIdent 'Tools'
-              nkIdent 'Shade'
       nkCall
         nkIdent 'WriteLine'
         nkIdent 's'
@@ -356,6 +403,43 @@ nkStmtList
           nkDotExpr
             nkIdent 'Deep'
             nkIdent 'Probe'
+      nkAsgn
+        nkCall
+          nkIdent 'Limit'
+          nkDotExpr
+            nkIdent 'Tools'
+            nkIdent 'Console'
+        nkIntLit 5
+      nkCall
+        nkAccQuoted
+          nkIdent 'Label='
+        nkDotExpr
+          nkIdent 'Tools'
+          nkIdent 'Console'
+        nkStrLit "set"
+      nkCall
+        nkIdent 'WriteLine'
+        nkInfix
+          nkIdent '+'
+          nkInfix
+            nkIdent '+'
+            nkCall
+              nkIdent 'Limit'
+              nkDotExpr
+                nkIdent 'Tools'
+                nkIdent 'Console'
+            nkStrLit " "
+          nkCall
+            nkIdent 'Label'
+            nkDotExpr
+              nkIdent 'Tools'
+              nkIdent 'Console'
+      nkCall
+        nkIdent 'WriteLine'
+        nkCall
+          nkIdent 'Shadow'
+          nkIdent 'Program'
+          nkStrLit "abc"
   nkProcDef
     nkPostfix
       nkIdent '*'

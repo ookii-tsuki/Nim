@@ -11,7 +11,7 @@
 
 import
   options, idents, nimconf, extccomp, commands, msgs,
-  lineinfos, modulegraphs, condsyms, pathutils
+  lineinfos, modulegraphs, condsyms, pathutils, platform
 
 import std/[os, parseopt]
 
@@ -59,6 +59,13 @@ proc processCmdLineAndProjectPath*(self: NimProg, conf: ConfigRef) =
 
 proc loadConfigsAndProcessCmdLine*(self: NimProg, cache: IdentCache; conf: ConfigRef;
                                    graph: ModuleGraph): bool =
+  when defined(nsharp):
+    if conf.isNsharpProject and conf.target.targetOS == osStandalone:
+      ## Before the configs run, since compiling them needs a `panicoverride` that
+      ## would fail first: `system` has no exception handling there, and C# cannot
+      ## do without it.
+      rawMessage(conf, errGenerated,
+        "N# needs exception handling, which --os:standalone lacks; use --os:any")
   if self.suggestMode:
     conf.setCmd cmdCheck
     conf.ideActive = true

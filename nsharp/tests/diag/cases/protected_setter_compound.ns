@@ -1,0 +1,9 @@
+// A property whose setter is protected, updated from an unrelated class.
+namespace Demo
+{
+    class Counter { public int N { get; protected set; } }
+    class Program
+    {
+        static void Main() { var c = new Counter(); c.N += 2; }
+    }
+}

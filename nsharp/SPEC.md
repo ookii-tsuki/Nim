@@ -305,12 +305,15 @@ module (`from "System" import WriteLine`), since Nim resolves a proc where it is
 same lookup is what makes `(Demo.Gadget)g` parse as a cast. A namespace another
 file of the compilation declares is reached the same way, with no `using`:
 `Tools.Widget.Make()` generates and imports the `Tools` module, whose types join the
-scope -- except one named like a library type or one already in scope
-(`Tools.Console` beside `System.Console`), which the import leaves out
-(`import "Tools" except Console`) and which is only ever named qualified. A dotted
-name reaches the namespace that is its longest prefix naming one, so
-`Demo.App.Thing` in `namespace Demo.App` names the file's own namespace, not
-`Demo`.
+scope only qualified: a bare `Widget` is CS0103/CS0246, as in C#. One named like a
+library type or one already in scope (`Tools.Console` beside `System.Console`) stays
+out of the import (`import "Tools" except Console`) and is answered from its own
+symbol; it may only be a static class (its static methods, fields and properties,
+read and assigned), and anything else is NS9999 -- as are a method group of it and a
+property of it updated in place (`+=`, `++`). A dotted name reaches the namespace
+that is its longest prefix naming one, so `Demo.App.Thing` in `namespace Demo.App`
+names the file's own namespace, not `Demo`; and the namespace is imported only when
+the name's first part is not a local or member (`var Tools = ...; Tools.Length`).
 
 **The frontend keeps no namespace to module table.** The N# standard library is the
 root of the same tree, at `lib/pure/ns/`, which the frontend puts on the module
@@ -361,8 +364,10 @@ resolved relative to the enclosing namespace, so `using Company.Shared;` inside
 import of its target, so it also puts the target's names in unqualified scope,
 which C# does not: after `using P = Company.Products;`, `Gadget` resolves as well
 as `P.Gadget`. A sibling `<N>.ns` file takes precedence over the generated module.
-Only a `using` joins a cycle: namespaces that name each other's types only
-qualified (`Beta.B`, no `using Beta;`) do not.
+A namespace reached qualified (`Beta.B`, no `using Beta;`, below) joins a cycle as a
+`using` does. In a cycle, a namespace that calls another's static method may not
+yet see it (Nim's `{.cyclic.}` imports do not declare procs ahead), whichever way
+it is reached.
 
 ### 5.2 Type declarations
 

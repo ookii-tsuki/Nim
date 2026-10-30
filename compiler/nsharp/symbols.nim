@@ -24,6 +24,7 @@ type
     obsolete*: NsNode         ## its `[Obsolete]` attribute, if it has one
     isEvent*: bool            ## an `event`: its handlers are a list
     noSetter*: bool           ## a property with only a getter
+    setAccess*: NsAccess      ## ... its setter's access (`private set;`), else its own
     autoGetOnly*: bool        ## ... `{ get; }`, which its constructors may assign
     initOnly*: bool           ## a property whose setter is `init`
     isRequired*: bool         ## `required`: `new T { ... }` must set it
@@ -106,8 +107,19 @@ type
       ## For each of them, its types named like a library type or one already in
       ## scope (`Tools.Console` beside `System.Console`), which stay out of
       ## `classes` and are only ever named qualified...
-    qualifiedOnly*: HashSet[string]
-      ## ... written as they are (`Tools.Console`).
+    qualifiedOnly*: Table[string, NsClassSymbol]
+      ## ... by the name they are written with (`Tools.Console`), which only a
+      ## static class may be: its every use is a static member's, which lowering
+      ## keeps qualified.
+    qualifiedTypes*: HashSet[string]
+      ## The types `classes` gained from those namespaces: named bare, with no
+      ## `using`, they are not in scope (CS0103, CS0246).
+    qualifiedUsed*: HashSet[string]
+      ## The first names of those namespaces sema saw name them (`Tools` of
+      ## `Tools.Widget`)...
+    qualifiedShadowed*: HashSet[string]
+      ## ... and those it saw name a local or member instead (`var Tools = ...;
+      ## Tools.Length`): a namespace only ever shadowed is not imported.
 
 const NsIndexerName* = "this[]"
   ## The member name an indexer is recorded under; no C# identifier can collide.
@@ -137,6 +149,9 @@ proc addMember(c: var NsClassSymbol; m: NsNode) =
     isRequired: m.attrs.isRequired,
     hasBody: m.kind == nsnMethodDecl and m.body != nil,
     noSetter: m.kind == nsnPropertyDecl and (m.params.len < 2 or m.params[1] == nil),
+    setAccess: (if m.kind == nsnPropertyDecl and m.params.len > 1 and m.params[1] != nil and
+                   m.params[1].strVal == "access": m.params[1].attrs.access
+                else: m.attrs.access),
     autoGetOnly: m.kind == nsnPropertyDecl and m.params.len > 0 and m.params[0] != nil and
                  m.params[0].kind == nsnEmpty and (m.params.len < 2 or m.params[1] == nil),
     initOnly: m.kind == nsnPropertyDecl and m.params.len > 1 and m.params[1] != nil and
@@ -194,7 +209,11 @@ proc collectClass(scope: NsModuleScope; cls: NsNode) =
       ## An indexer is the member `this[]`: its element type and index parameters.
       sym.members.add NsMemberSymbol(name: NsIndexerName, access: m.attrs.access,
                                      isProperty: true, typ: m.typ, params: m.params,
-                                     owner: cls.name)
+                                     owner: cls.name,
+                                     setAccess: (if m.sons.len > 1 and m.sons[1] != nil and
+                                                    m.sons[1].strVal == "access":
+                                                   m.sons[1].attrs.access
+                                                 else: m.attrs.access))
     of nsnOperatorDecl:
       sym.operators.add m
     of nsnCtorDecl:

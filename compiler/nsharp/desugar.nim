@@ -62,6 +62,8 @@ type
       ## after the declarations, so a member may name a native class declared
       ## after it.
     nativeProcs: seq[PNode]
+    helpersIncluded: bool
+      ## `nsobj.hpp` is included: once per module, by its first native type.
       ## Each native type's members, emitted after every family's helpers, so any
       ## routine may name a native type, or call its members, declared after it.
     staticInits: seq[PNode]
@@ -300,6 +302,9 @@ proc qualifiedName(l: Lowerer; written: string; info: TLineInfo; arity = 0): PNo
       return l.id(tn, info)
   if not (isDeclaredNamespace(prefix) or l.surface.isLibraryNamespace(prefix)): return nil
   if nimTypeName(last) != last: return nil
+  if prefix in l.scope.qualifiedNs:
+    ## A namespace reached only qualified, which the module imports once named.
+    l.scope.qualifiedUsed.incl prefix.split('.')[0]
   let path = namespaceModulePath(prefix)
   if not l.imports.byModule.hasKey(path): l.imports.byModule[path] = @[]
   newTree(nkDotExpr, info, l.id(path.split('/')[^1], info), l.id(last, info))
@@ -1065,6 +1070,15 @@ proc typeRef(l: Lowerer; t: NsNode): PNode =
     result = newTree(nkBracketExpr, t.info, result)
     for a in t.typeArgs: result.add l.typeToNim(a, t.info)
 
+proc qualifiedOnlyRef(l: Lowerer; t: NsNode): PNode =
+  ## A type of a namespace reached qualified that the scope leaves out
+  ## (`Tools.Console`, `Tools.Console.Inner`): its namespace's module naming it.
+  let c = l.scope.qualifiedOnly[writtenName(t)]
+  if c.namespace.len == 0: return l.typeRef(t)
+  let path = namespaceModulePath(c.namespace)
+  if l.imports != nil and not l.imports.byModule.hasKey(path): l.imports.byModule[path] = @[]
+  newTree(nkDotExpr, t.info, l.id(path.split('/')[^1], t.info), l.id(c.name, t.info))
+
 proc checkNil(l: Lowerer; recvNs: NsNode; recv: PNode; info: TLineInfo): PNode
 proc recvOf(l: Lowerer; n: NsNode): PNode
 proc isHoisted(l: Lowerer; name: string): bool
@@ -1210,10 +1224,10 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
       for a in l.argsToNim(n): result.add a
       return
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
-     callee.body.typeKind == tkType and writtenName(callee.body) in l.scope.qualifiedOnly:
+     callee.body.typeKind == tkType and l.scope.qualifiedOnly.hasKey(writtenName(callee.body)):
     ## `Tools.Console.Print(s)`: a type of a namespace reached qualified, named like
     ## another in scope, stays qualified: `Print(Tools.Console, s)`.
-    result = newTree(nkCall, n.info, l.id(callee.name, n.info), l.typeRef(callee.body))
+    result = newTree(nkCall, n.info, l.id(callee.name, n.info), l.qualifiedOnlyRef(callee.body))
     for a in l.argsToNim(n): result.add a
     return
   if callee != nil and callee.kind == nsnMember and callee.body != nil and
@@ -1794,10 +1808,11 @@ proc expr(l: Lowerer; n: NsNode): PNode =
       ## so it is read once into the closure's environment.
       result = l.instanceMethodGroup(n)
     elif n.body != nil and n.body.typeKind == tkType and
-         writtenName(n.body) in l.scope.qualifiedOnly:
+         l.scope.qualifiedOnly.hasKey(writtenName(n.body)) and
+         not l.scope.qualifiedOnly.hasKey(writtenName(n.body) & "." & n.name):
       ## `Tools.Console.Calls`: a static of a type of a namespace reached qualified,
       ## named like another in scope, read through the qualified type.
-      result = newTree(nkCall, n.info, l.id(n.name, n.info), l.typeRef(n.body))
+      result = newTree(nkCall, n.info, l.id(n.name, n.info), l.qualifiedOnlyRef(n.body))
     else:
       l.noteMemberImport(n)
       if l.imports != nil and n.name in l.imports.userTypes and n.body != nil and
@@ -3122,6 +3137,16 @@ proc assignCore(l: Lowerer; n: NsNode): PNode =
     bare.nilChecks = false
     return newTree(nkAsgn, n.info, l.id(n.sons[0].name, n.info),
                    newTree(nkCall, n.info, l.id("addr", n.info), bare.expr(n.sons[1].body)))
+  let t0 = n.sons[0]
+  if n.name.len == 0 and t0.kind == nsnMember and t0.body != nil and
+     l.scope.qualifiedOnly.hasKey(writtenName(t0.body)):
+    for m in l.scope.qualifiedOnly[writtenName(t0.body)].members:
+      if m.name == t0.name and m.isProperty:
+        ## `Tools.Console.Calls = v`: its setter called by name, since Nim looks
+        ## `Calls=` up for `Calls(Tools.Console) = v` among the bare `Console`s.
+        return newTree(nkCall, n.info,
+                       newTree(nkAccQuoted, n.info, l.id(t0.name & "=", n.info)),
+                       l.qualifiedOnlyRef(t0.body), l.expr(n.sons[1]))
   let lhs = bare.expr(n.sons[0])
   var value: PNode
   if n.strVal == "eventAccessor":
@@ -5550,7 +5575,7 @@ proc nativeMethod(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
       call.add l.id("nsArgs", info)
       let how = (if returnAttr(m, "Owned"): "nsAdoptPtr" else: "nsBorrowPtr")
       let t = newNodeI(nkTemplateDef, info, 7)
-      t[0] = l.exportId(m.name, info)
+      t[0] = l.nativeMemberId(m.name, info)
       for i in 1 .. 6: t[i] = empty(info)
       t[3] = tp
       t[6] = newTree(nkStmtList, info,
@@ -5747,9 +5772,11 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let nat = l.scope.classes[n.name].native
   let header = l.nativeHeader(n.name)
   ## The helpers' header (`nsAddr`, boxes, `NsField`), which a member's pattern may
-  ## use while its `header:` names the binding's (`#pragma once` keeps one copy).
-  into.add newTree(nkPragma, info, newTree(nkExprColonExpr, info, l.id("emit", info),
-    strLit("/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n", info)))
+  ## use while its `header:` names the binding's.
+  if not l.helpersIncluded:
+    l.helpersIncluded = true
+    into.add newTree(nkPragma, info, newTree(nkExprColonExpr, info, l.id("emit", info),
+      strLit("/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n", info)))
   var ol = l
   ol.objTypes = true
   # the type: the C++ type, with the fields the binding names
@@ -7152,9 +7179,13 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   ## A namespace of the tree reached only qualified (`Tools.Widget.Make()`): its
   ## members are in scope, its types that would clash are not, and are named
   ## qualified (`Tools.Console`).
+  ## Not imported when every name it was found by is a local or member of that name
+  ## (`var Tools = ...; Tools.Length`).
   for ns in l.scope.qualifiedNs:
     let path = namespaceModulePath(ns)
-    if ns in l.ownNamespaces or l.usingPaths.contains(path): continue
+    let head = ns.split('.')[0]
+    if ns in l.ownNamespaces or l.usingPaths.contains(path) or
+       (head in l.scope.qualifiedShadowed and head notin l.scope.qualifiedUsed): continue
     let clashing = l.scope.qualifiedExcept.getOrDefault(ns)
     let imp = newNodeI((if clashing.len > 0: nkImportExceptStmt else: nkImportStmt), module.info)
     imp.add newAtom(nkStrLit, path, module.info)

@@ -1,6 +1,7 @@
 # What the N# library asks of the OS: the clocks and the processor count. A
-# target without one (`--os:any`, `--os:standalone`) has none of them, and the
-# library members that need them throw `PlatformNotSupportedException` there.
+# target without one (`--os:any`) has none of them, and the library members that
+# need them throw `PlatformNotSupportedException` there. (`--os:standalone`, which
+# has no exception handling either, is rejected for N# before this is compiled.)
 # Kept apart from `System` so that its imports need no `when` at the top of a
 # module in an import cycle.
 

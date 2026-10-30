@@ -69,6 +69,34 @@ nkStmtList
       nkIdent 'nsConsole_CallsBacking'
       nkIdent 'int32'
       nkEmpty
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsConsole_Limit'
+      nkIdent 'int32'
+      nkEmpty
+  nkTemplateDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Limit'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'untyped'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Console'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkIdent 'nsConsole_Limit'
+  nkVarSection
+    nkIdentDefs
+      nkIdent 'nsConsole_LabelBacking'
+      nkIdent 'string'
+      nkEmpty
   nkTemplateDef
     nkPostfix
       nkIdent '*'
@@ -116,6 +144,18 @@ nkStmtList
               nkIdent 'Shade'
               nkIdent 'Light'
           nkIntLit 1
+  nkProcDef
+    nkIdent 'nsStaticInitConsole'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Tools.Console..cctor()"
+    nkEmpty
+    nkEmpty
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -196,6 +236,50 @@ nkStmtList
       nkExprColonExpr
         nkIdent 'nsFrame'
         nkStrLit "Tools.Console.set_Calls(Int32 value)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Label'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Console'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Tools.Console.get_Label()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Label='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Console'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Tools.Console.set_Label(String value)"
     nkEmpty
     nkEmpty
   nkProcDef
@@ -678,6 +762,8 @@ nkStmtList
         nkStrLit "Tools.Widget.get_Version()"
     nkEmpty
     nkEmpty
+  nkCall
+    nkIdent 'nsStaticInitConsole'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -765,6 +851,52 @@ nkStmtList
     nkEmpty
     nkAsgn
       nkIdent 'nsConsole_CallsBacking'
+      nkIdent 'value'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Label'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Console'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Tools.Console.get_Label()"
+    nkEmpty
+    nkIdent 'nsConsole_LabelBacking'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Label='
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Console'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'value'
+        nkIdent 'string'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Tools.Console.set_Label(String value)"
+    nkEmpty
+    nkAsgn
+      nkIdent 'nsConsole_LabelBacking'
       nkIdent 'value'
   nkProcDef
     nkPostfix
@@ -1440,3 +1572,18 @@ nkStmtList
     nkStmtList
       nkReturnStmt
         nkStrLit "1.2"
+  nkProcDef
+    nkIdent 'nsStaticInitConsole'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Tools.Console..cctor()"
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'nsConsole_LabelBacking'
+        nkStrLit ""

@@ -648,18 +648,6 @@ nkStmtList
     nkExprColonExpr
       nkIdent 'emit'
       nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
-  nkPragma
-    nkExprColonExpr
-      nkIdent 'emit'
-      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
-  nkPragma
-    nkExprColonExpr
-      nkIdent 'emit'
-      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
-  nkPragma
-    nkExprColonExpr
-      nkIdent 'emit'
-      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"
   nkProcDef
     nkPostfix
       nkIdent '*'
