@@ -63,6 +63,7 @@ type
       ## after it.
     nativeProcs: seq[PNode]
     helpersIncluded: bool
+    assertHeaders: seq[string]   ## headers a `const`'s `static_assert` included
       ## `nsobj.hpp` is included: once per module, by its first native type.
     pinvokeLinked: int
       ## `[DllImport("__Internal")]` methods so far, which number their C names (one
@@ -6162,6 +6163,43 @@ proc nativeIndexer(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
     pd[4] = l.cppPragma(expand(pn.set), header, info)
     into.add pd
 
+proc cppLiteral(e: NsNode): string =
+  ## A constant's value as a C++ literal, or "" for one not checked against C++.
+  if e == nil: return ""
+  case e.kind
+  of nsnIntLit: $e.intVal
+  of nsnFloatLit:
+    ## 17 digits round-trip a double; the zeros after them say nothing.
+    var t = formatFloat(e.floatVal, ffDefault, 17)
+    if '.' in t and 'e' notin t:
+      t = t.strip(leading = false, chars = {'0'})
+      if t.endsWith('.'): t.add '0'
+    t
+  of nsnBoolLit: (if e.intVal != 0: "true" else: "false")
+  of nsnCharLit: $e.intVal
+  of nsnUnary:
+    if e.name == "-" and e.body != nil and e.body.kind in {nsnIntLit, nsnFloatLit}:
+      "-" & cppLiteral(e.body)
+    else: ""
+  else: ""
+
+proc cppScalar(t: string): string =
+  ## The C++ type of a C# built-in a constant may have.
+  case t
+  of "int": "int"
+  of "uint": "unsigned"
+  of "long": "long long"
+  of "ulong": "unsigned long long"
+  of "short": "short"
+  of "ushort": "unsigned short"
+  of "byte": "unsigned char"
+  of "sbyte": "signed char"
+  of "float": "float"
+  of "double": "double"
+  of "bool": "bool"
+  of "char": "char16_t"
+  else: ""
+
 proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let info = n.info
   let nat = l.scope.classes[n.name].native
@@ -6176,8 +6214,12 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   ol.objTypes = true
   # the type: the C++ type, with the fields the binding names
   let recList = newNodeI(nkRecList, info)
+  var objFields: seq[NsNode] = @[]
   for m in n.sons:
-    if m.kind == nsnFieldDecl and not m.attrs.isStatic:
+    if m.kind == nsnFieldDecl and not m.attrs.isStatic and not m.attrs.isConst:
+      if l.scope.isNativeObjectField(n.name, m.typ):
+        objFields.add m
+        continue
       recList.add l.identDefs(m.name, l.typeToNim(m.typ, m.info), m.info)
       recList[^1][0] = l.exportId(m.name, m.info)
   let objTy = newNodeI(nkObjectTy, info)
@@ -6245,6 +6287,61 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     pd[3] = fp
     pd[4] = l.cppPragma(pattern, header, info)
     procs.add pd
+  for m in objFields:
+    ## `public Dial dial;` over C++'s `Dial* dial` or `Dial dial`: a property lending
+    ## the object (null for `nullptr`), whose setter stores the pointer or copies the
+    ## object, as the C++ field is (`nsStoreField`).
+    let access = (if n.classKind == ckStruct: "#." else: "#->") & m.name
+    let prop = nsn(nsnPropertyDecl, m.info)
+    prop.name = m.name
+    prop.typ = m.typ
+    prop.attrs = m.attrs
+    let na = nsn(nsnAttribute, m.info)
+    na.name = "Native"
+    for (k, v) in [("Get", access), ("Set", "nsStoreField(" & access & ", #)")]:
+      let arg = nsn(nsnNamedArg, m.info)
+      arg.name = k
+      arg.body = nsnStrLit(v, m.info)
+      na.add arg
+    prop.attributes = @[na]
+    let getter = nsn(nsnEmpty, m.info)
+    let borrowed = nsn(nsnAttribute, m.info)
+    borrowed.name = "Borrowed"
+    borrowed.strVal = "return"
+    getter.attributes = @[borrowed]
+    prop.params = @[getter, nsn(nsnEmpty, m.info)]
+    l.nativeProperty(n, prop, nat, header, procs)
+  var constAsserts = ""
+  for m in n.sons:
+    if m.kind == nsnFieldDecl and m.attrs.isConst:
+      ## `public const int Max = 250;`: a C# constant, which C++ is checked to agree
+      ## with when it is a number, a bool or a char.
+      var inits: seq[PNode] = @[]
+      var decls: seq[PNode] = @[]
+      l.lowerStaticField(n, m, inits, decls)
+      for d in decls: procs.add d
+      ## The C++ it must equal: `T::Name`, or what its own `[Native("...")]` names
+      ## (a macro, an enumerator, another member).
+      let own = nativeOf(m).cpp
+      let cppName = (if own.len > 0: own else: nat.cpp & "::" & m.name)
+      let lit = cppLiteral(m.body)
+      if lit.len > 0:
+        ## Compared as the constant's own type: `0.1f` is no double `0.1`.
+        let ct = (if m.typ != nil and m.typ.kind == nsnTypeName:
+                    cppScalar(canonicalTypeName(m.typ.name)) else: "")
+        let typed = (if ct.len > 0: "static_cast<" & ct & ">(" & lit & ")" else: lit)
+        constAsserts.add "static_assert(" & cppName & " == " & typed &
+          ", \"N#: " & n.name & "." & m.name & " is not " & lit & " in C++\");\n"
+  if constAsserts.len > 0:
+    ## After the binding's header, which Nim includes only where the type is used;
+    ## each header once per module (it must have include guards, as Nim's own
+    ## include of it comes first).
+    var text = "/*TYPESECTION*/\n"
+    if header.len > 0 and header notin l.assertHeaders:
+      l.assertHeaders.add header
+      text.add "#include " & (if header.startsWith('<'): header else: "\"" & header & "\"") & "\n"
+    procs.add newTree(nkPragma, info, newTree(nkExprColonExpr, info, l.id("emit", info),
+      strLit(text & constAsserts, info)))
   var paramless = false
   for m in n.sons:
     case m.kind

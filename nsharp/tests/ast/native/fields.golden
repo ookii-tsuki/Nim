@@ -82,6 +82,13 @@ nkStmtList
               nkIdent 'tally'
             nkIdent 'int32'
             nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'counter'
+            nkPtrTy
+              nkIdent 'int32'
+            nkEmpty
     nkTypeDef
       nkPostfix
         nkIdent '*'
@@ -148,6 +155,316 @@ nkStmtList
     nkIdent 'NsH_Dial'
     nkIdent 'Dial'
   nkStmtList
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_dial'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkPtrTy
+            nkIdent 'Dial'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Gauge'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr(#->dial)"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'dial'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Dial'
+            nkIdent 'Dial'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Gauge'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsBorrow'
+              nkBracketExpr
+                nkIdent 'NsH_Dial'
+                nkIdent 'Dial'
+              nkCall
+                nkIdent 'nsRaw_dial'
+                nkIdent 'self'
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'dial='
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Gauge'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'value'
+          nkBracketExpr
+            nkIdent 'NsPass'
+            nkIdent 'Dial'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "nsStoreField(#->dial, #)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_spare'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkPtrTy
+            nkIdent 'Dial'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Gauge'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr(#->spare)"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'spare'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Dial'
+            nkIdent 'Dial'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Gauge'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsBorrow'
+              nkBracketExpr
+                nkIdent 'NsH_Dial'
+                nkIdent 'Dial'
+              nkCall
+                nkIdent 'nsRaw_spare'
+                nkIdent 'self'
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'spare='
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Gauge'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'value'
+          nkBracketExpr
+            nkIdent 'NsPass'
+            nkIdent 'Dial'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "nsStoreField(#->spare, #)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_home'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkPtrTy
+            nkIdent 'Dial'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Gauge'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr(#->home)"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'home'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Dial'
+            nkIdent 'Dial'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Gauge'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsBorrow'
+              nkBracketExpr
+                nkIdent 'NsH_Dial'
+                nkIdent 'Dial'
+              nkCall
+                nkIdent 'nsRaw_home'
+                nkIdent 'self'
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'home='
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Gauge'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'value'
+          nkBracketExpr
+            nkIdent 'NsPass'
+            nkIdent 'Dial'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "nsStoreField(#->home, #)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkConstSection
+      nkConstDef
+        nkIdent 'nsGauge_Min'
+        nkIdent 'int32'
+        nkIntLit 5
+    nkTemplateDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Min'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'untyped'
+        nkIdentDefs
+          nkIdent 'nsT'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Gauge'
+          nkEmpty
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkIdent 'nsGauge_Min'
+    nkConstSection
+      nkConstDef
+        nkIdent 'nsGauge_Scale'
+        nkIdent 'float64'
+        nkFloatLit 1.5
+    nkTemplateDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Scale'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'untyped'
+        nkIdentDefs
+          nkIdent 'nsT'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Gauge'
+          nkEmpty
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkIdent 'nsGauge_Scale'
+    nkConstSection
+      nkConstDef
+        nkIdent 'nsGauge_Units'
+        nkIdent 'int32'
+        nkIntLit 12
+    nkTemplateDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Units'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'untyped'
+        nkIdentDefs
+          nkIdent 'nsT'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Gauge'
+          nkEmpty
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkIdent 'nsGauge_Units'
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'emit'
+        nkStrLit "/*TYPESECTION*/\n#include \"toybox.hpp\"\nstatic_assert(Toybox::Gauge::Min == static_cast<int>(5), \"N#: Gauge.Min is not 5 in C++\");\nstatic_assert(Toybox::Gauge::Scale == static_cast<double>(1.5), \"N#: Gauge.Scale is not 1.5 in C++\");\nstatic_assert(TOYBOX_GAUGE_UNITS == static_cast<int>(12), \"N#: Gauge.Units is not 12 in C++\");\n"
     nkProcDef
       nkPostfix
         nkIdent '*'
@@ -817,6 +1134,242 @@ nkStmtList
             nkIdent 'd'
           nkIdent 'x'
         nkIntLit 8
+      nkCall
+        nkIdent 'Report'
+        nkIdent 'Gauge'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'bucket'
+          nkIdent 'int32'
+          nkIntLit 5
+      nkBlockStmt
+        nkIdent 'nsSwitch1'
+        nkStmtList
+          nkCaseStmt
+            nkIdent 'bucket'
+            nkOfBranch
+              nkDotExpr
+                nkIdent 'Gauge'
+                nkIdent 'Min'
+              nkStmtList
+                nkCall
+                  nkIdent 'Print'
+                  nkIdent 'Console'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkInfix
+                        nkIdent '&'
+                        nkInfix
+                          nkIdent '&'
+                          nkInfix
+                            nkIdent '&'
+                            nkStrLit "consts: min "
+                            nkCall
+                              nkIdent 'nsFmt'
+                              nkDotExpr
+                                nkIdent 'Gauge'
+                                nkIdent 'Min'
+                              nkStrLit ""
+                          nkStrLit ", scale "
+                        nkCall
+                          nkIdent 'nsFmt'
+                          nkDotExpr
+                            nkIdent 'Gauge'
+                            nkIdent 'Scale'
+                          nkStrLit ""
+                      nkStrLit ", units "
+                    nkCall
+                      nkIdent 'nsFmt'
+                      nkDotExpr
+                        nkIdent 'Gauge'
+                        nkIdent 'Units'
+                      nkStrLit ""
+                nkBreakStmt
+                  nkIdent 'nsSwitch1'
+            nkElse
+              nkStmtList
+                nkCall
+                  nkIdent 'Print'
+                  nkIdent 'Console'
+                  nkStrLit "consts: no"
+                nkBreakStmt
+                  nkIdent 'nsSwitch1'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'c'
+          nkPtrTy
+            nkIdent 'int32'
+          nkDotExpr
+            nkCall
+              nkIdent 'nsDeref'
+              nkIdent 'g'
+            nkIdent 'counter'
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'c'
+        nkInfix
+          nkIdent '+'
+          nkBracketExpr
+            nkIdent 'c'
+          nkIntLit 2
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkStrLit "fields: count "
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkBracketExpr
+                          nkDotExpr
+                            nkCall
+                              nkIdent 'nsDeref'
+                              nkIdent 'g'
+                            nkIdent 'counter'
+                        nkStrLit ""
+                    nkStrLit ", dial.y "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkDotExpr
+                      nkCall
+                        nkIdent 'nsDeref'
+                        nkDotExpr
+                          nkCall
+                            nkIdent 'nsDeref'
+                            nkIdent 'g'
+                          nkIdent 'dial'
+                      nkIdent 'y'
+                    nkStrLit ""
+                nkStrLit ", spare null "
+              nkCall
+                nkIdent 'nsFmt'
+                nkPrefix
+                  nkIdent 'not'
+                  nkCall
+                    nkIdent 'nsValid'
+                    nkDotExpr
+                      nkCall
+                        nkIdent 'nsDeref'
+                        nkIdent 'g'
+                      nkIdent 'spare'
+                nkStrLit ""
+            nkStrLit ", home.x "
+          nkCall
+            nkIdent 'nsFmt'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsDeref'
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'g'
+                  nkIdent 'home'
+              nkIdent 'x'
+            nkStrLit ""
+      nkAsgn
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsDeref'
+                nkIdent 'g'
+              nkIdent 'home'
+          nkIdent 'x'
+        nkIntLit 6
+      nkAsgn
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'g'
+          nkIdent 'spare'
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'g'
+          nkIdent 'dial'
+      nkAsgn
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsDeref'
+                nkIdent 'g'
+              nkIdent 'spare'
+          nkIdent 'y'
+        nkIntLit 11
+      nkAsgn
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'g'
+          nkIdent 'dial'
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'g'
+          nkIdent 'home'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkStrLit "after: dial.x "
+              nkCall
+                nkIdent 'nsFmt'
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkDotExpr
+                      nkCall
+                        nkIdent 'nsDeref'
+                        nkIdent 'g'
+                      nkIdent 'dial'
+                  nkIdent 'x'
+                nkStrLit ""
+            nkStrLit ", spare.y "
+          nkCall
+            nkIdent 'nsFmt'
+            nkDotExpr
+              nkCall
+                nkIdent 'nsDeref'
+                nkDotExpr
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkIdent 'g'
+                  nkIdent 'spare'
+              nkIdent 'y'
+            nkStrLit ""
+      nkAsgn
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'g'
+          nkIdent 'home'
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'g'
+          nkIdent 'spare'
       nkCall
         nkIdent 'Report'
         nkIdent 'Gauge'

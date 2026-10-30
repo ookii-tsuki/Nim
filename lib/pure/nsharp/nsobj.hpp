@@ -53,6 +53,13 @@ struct NsPass {
 template <typename T> T* nsAddr(T* p) { return p; }
 template <typename T> T* nsAddr(T& r) { return &r; }
 
+// An N# reference stored into a field C++ declares as `X*` (the pointer, null
+// allowed) or `X` (a copy of the object, null aborts).
+template <typename F, typename V> void nsStoreField(F& f, const V& v) {
+    if constexpr (std::is_pointer_v<F>) f = v;
+    else f = static_cast<F&>(v);
+}
+
 // A C string C++ returns, copied into the N# string at `dest` (a Nim proc, in
 // intrinsics.nim) within the expression that made it, so a temporary it points
 // into (`GetTitle().c_str()`) is still alive. `nsSetStrVia` reaches the

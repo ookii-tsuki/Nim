@@ -414,13 +414,18 @@ struct Painter {
 // Fields of every kind, for bindings that expose some of them: a value, a
 // pointer to one, a reference, a pointer to an object, a constant, one the binding
 // leaves out and a private one.
+#define TOYBOX_GAUGE_UNITS 12
 struct Dial { float x = 3, y = 4; };
 struct Gauge {
     int level = 100;
     int* counter = nullptr;
     int& tally;
     Dial* dial = nullptr;
+    Dial* spare = nullptr;
+    Dial home{1, 2};
     static constexpr int Max = 250;
+    static constexpr int Min = 5;
+    static constexpr double Scale = 1.5;
     int unbound = 42;
     explicit Gauge(int& t) : tally(t) {}
     int Hidden() const { return hidden; }
@@ -436,6 +441,8 @@ struct Gauge {
         Gauge* g = Instance();
         Console::Print("C++: level %d, unbound %d, count %d, tally %d, dial.x %g, hidden %d",
                        g->level, g->unbound, *g->counter, g->tally, g->dial->x, g->Hidden());
+        Console::Print("C++: home (%g, %g), spare %s", g->home.x, g->home.y,
+                       g->spare ? "set" : "null");
     }
 private:
     int hidden = 7;

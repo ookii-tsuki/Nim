@@ -1,3 +1,9 @@
 N#: level 100, tally 5, max 250
 pointers: count 5, dial (3.0, 4.0), set true
 C++: level 70, unbound 42, count 10, tally 10, dial.x 8, hidden 7
+C++: home (1, 2), spare null
+consts: min 5, scale 1.5, units 12
+fields: count 12, dial.y 4.0, spare null true, home.x 1.0
+after: dial.x 6.0, spare.y 11.0
+C++: level 70, unbound 42, count 12, tally 12, dial.x 8, hidden 7
+C++: home (8, 11), spare set

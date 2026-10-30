@@ -1187,6 +1187,14 @@ proc checkCallArgs(ctx: var NsCheckContext; cands: seq[seq[NsNode]];
   ## and lambda arguments take their types from.
   if cands.len == 0: return
   for a in args:
+    if a.kind == nsnRefArg and a.body != nil and a.body.kind == nsnMember and
+       a.body.body != nil and
+       ctx.scope.isNativeObjectField(a.body.body.typeName,
+         ctx.scope.findMemberInfo(a.body.body.typeName, a.body.name).typ):
+      ## Lowering reaches such a field through a property (CS0206 in C#'s terms).
+      nsError(ctx.config, a.info, ndUnsupported,
+              "'" & a.name & "' of '" & a.body.name & "', a native object field")
+  for a in args:
     if a.kind == nsnRefArg and a.name == "out" and a.body != nil and
        a.body.kind == nsnIdent and a.body.name == "_" and not ctx.types.hasKey("_"):
       ## `out _` discards: a temporary of the parameter's type takes the value.
@@ -5323,8 +5331,17 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
     for m in cls.sons:
       case m.kind
       of nsnFieldDecl:
-        if m.attrs.isStatic or m.body != nil:
+        ## A `const` is the binding's own, checked against C++'s (`static_assert`).
+        if (m.attrs.isStatic or m.body != nil) and not m.attrs.isConst:
           nsError(ctx.config, m.info, ndNativeFieldStatic, named(m))
+        elif cls.classKind == ckStruct and m.typ != nil and m.typ.kind == nsnTypeName and
+             m.typ.sons.len == 0 and ctx.scope.classes.hasKey(canonicalTypeName(m.typ.name)) and
+             ctx.scope.classes[canonicalTypeName(m.typ.name)].classKind == ckClass and
+             ctx.scope.isNative(canonicalTypeName(m.typ.name)) and
+             ctx.scope.ownedFamily(canonicalTypeName(m.typ.name)):
+          ## A struct is copied, so an object in it would be lent from a copy.
+          nsError(ctx.config, m.info, ndUnsupported,
+                  "'" & named(m) & "': a field of a native class in a [Native] struct")
       of nsnMethodDecl, nsnCtorDecl, nsnOperatorDecl:
         if not m.attrs.isExtern or m.body != nil:
           nsError(ctx.config, m.info, ndNativeMemberNotExtern, named(m))

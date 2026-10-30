@@ -20,6 +20,26 @@ namespace Demo
             g.Counter += 1;
             d.x = 8;
             Gauge.Report();
+
+            // Constants: C# ones, which C++ is checked to agree with.
+            int bucket = 5;
+            switch (bucket)
+            {
+                case Gauge.Min: Console.Print($"consts: min {Gauge.Min}, scale {Gauge.Scale}, units {Gauge.Units}"); break;
+                default: Console.Print("consts: no"); break;
+            }
+            // Pointer fields as fields: a raw `int*`, and objects lent through
+            // `Dial*` (null for nullptr) or held by value.
+            int* c = g.counter;
+            *c += 2;
+            Console.Print($"fields: count {*g.counter}, dial.y {g.dial.y}, spare null {g.spare == null}, home.x {g.home.x}");
+            g.home.x = 6;
+            g.spare = g.dial;
+            g.spare.y = 11;
+            g.dial = g.home;
+            Console.Print($"after: dial.x {g.dial.x}, spare.y {g.spare.y}");
+            g.home = g.spare;
+            Gauge.Report();
         }
     }
 
@@ -29,10 +49,18 @@ namespace Demo
         // A value field, and a reference one, which reads and writes what it refers to.
         public int level;
         public int tally;
-        // `static constexpr`: a static property naming it.
+        // `static constexpr`: a static property naming it, or a C# constant.
         public static extern int Max { get; }
-        // Pointer fields: properties over C++ patterns, a lent object or a value
-        // (one named like its type, as C# allows).
+        public const int Min = 5;
+        public const double Scale = 1.5;
+        [Native("TOYBOX_GAUGE_UNITS")] public const int Units = 12;
+        // Pointer fields: a raw pointer; an object lent by pointer or held by value.
+        public int* counter;
+        public Dial dial;
+        public Dial spare;
+        public Dial home;
+        // ... or properties over C++ patterns, a lent object or a value (one named
+        // like its type, as C# allows).
         [Native(Get = "#->dial")] public extern Dial Dial { [return: Borrowed] get; }
         [Native(Get = "*#->counter", Set = "*#->counter = #")] public extern int Counter { get; set; }
         [Native(Get = "#->counter != nullptr")] public extern bool HasCounter { get; }

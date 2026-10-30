@@ -854,6 +854,17 @@ proc ownedFamily*(scope: NsModuleScope; clsName: string): bool =
   ## and holds what C++ gives it as a borrowed pointer.
   let r = scope.handleRoot(clsName)
   r.len > 0 and scope.classes[r].native.handle.len == 0
+proc isNativeObjectField*(scope: NsModuleScope; owner: string; typ: NsNode): bool =
+  ## A field of a `[Native]` class holding an object of a class N# references
+  ## (no handle): C++ holds it by pointer or by value, N# reaches it through a
+  ## property (lowering's `nsStoreField`).
+  if typ == nil or typ.kind != nsnTypeName or typ.sons.len > 0: return false
+  let rt = canonicalTypeName(typ.name)
+  scope.classes.hasKey(owner) and scope.classes[owner].classKind == ckClass and
+    scope.classes[owner].native.cpp.len > 0 and
+    scope.classes.hasKey(rt) and scope.classes[rt].classKind == ckClass and
+    scope.isNative(rt) and scope.ownedFamily(rt)
+
 proc nativeStable*(scope: NsModuleScope; clsName: string): bool =
   ## A native class whose members (its constructors and destructor included)
   ## create, destroy and move no engine object: its binding, or a native base's,
