@@ -1,0 +1,14 @@
+using NSharp.Interop;
+
+namespace Demo
+{
+    // A C++ class template held through a handle: each instance would need one.
+    [Native("Toybox::Cell", Header = "toybox.hpp", Handle = "Toybox::Ref<{0}>")]
+    public class Cell<T> { public T value; }
+
+    static class Start
+    {
+        [Export("nsStart")]
+        public static void Run() { }
+    }
+}

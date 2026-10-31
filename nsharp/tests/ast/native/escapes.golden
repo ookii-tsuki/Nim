@@ -208,6 +208,36 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
+    nkIdent 'nsPlace_Heavy'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'Heavy'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) Heavy()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newHeavy'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Palette'
+        nkIdent 'Heavy'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'Weight'
@@ -241,6 +271,36 @@ nkStmtList
       nkExprColonExpr
         nkIdent 'virtual'
         nkStrLit "Weight() override"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsPlace_Range'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'Range'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) Range()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newRange'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Stage'
+        nkIdent 'Range'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -680,68 +740,50 @@ nkStmtList
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Fuse.Blow"
-  nkStmtList
-    nkProcDef
-      nkIdent 'nsPlace_Heavy'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newHeavy'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Palette'
+        nkIdent 'Heavy'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
         nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
-            nkIdent 'Heavy'
+          nkIdent 'nsB'
           nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Heavy()"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newHeavy'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Palette'
-          nkIdent 'Heavy'
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Heavy'
+          nkCall
+            nkIdent 'nsNewBox'
+            nkIdent 'Heavy'
+      nkCall
+        nkIdent 'nsPlace_Heavy'
         nkCall
-          nkIdent 'nsPlace_Heavy'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-        nkAsgn
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+      nkAsgn
+        nkDotExpr
           nkDotExpr
-            nkDotExpr
-              nkCall
-                nkIdent 'nsAt'
-                nkIdent 'nsB'
-              nkIdent 'nsOwner'
-            nkIdent 'box'
-          nkCast
-            nkIdent 'pointer'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Palette'
-              nkIdent 'Heavy'
-            nkIdent 'nsB'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Heavy'
+          nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -799,68 +841,50 @@ nkStmtList
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Heavy.Weight"
-  nkStmtList
-    nkProcDef
-      nkIdent 'nsPlace_Range'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newRange'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Stage'
+        nkIdent 'Range'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
         nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
-            nkIdent 'Range'
+          nkIdent 'nsB'
           nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Range()"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newRange'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Stage'
-          nkIdent 'Range'
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Range'
+          nkCall
+            nkIdent 'nsNewBox'
+            nkIdent 'Range'
+      nkCall
+        nkIdent 'nsPlace_Range'
         nkCall
-          nkIdent 'nsPlace_Range'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-        nkAsgn
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+      nkAsgn
+        nkDotExpr
           nkDotExpr
-            nkDotExpr
-              nkCall
-                nkIdent 'nsAt'
-                nkIdent 'nsB'
-              nkIdent 'nsOwner'
-            nkIdent 'box'
-          nkCast
-            nkIdent 'pointer'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Stage'
-              nkIdent 'Range'
-            nkIdent 'nsB'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Stage'
+            nkIdent 'Range'
+          nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'

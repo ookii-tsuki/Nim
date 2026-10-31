@@ -1,0 +1,18 @@
+using NSharp.Interop;
+
+namespace Demo
+{
+    // A string as a C++ class template's argument: C++ would copy Nim's string
+    // bitwise, so only numbers, bool, char, enums, pointers and native structs may be.
+    static class Start
+    {
+        [Export("nsStart")]
+        public static void Run()
+        {
+            var c = new Cell<string>();
+        }
+    }
+
+    [Native("Toybox::Cell", Header = "toybox.hpp", Stable = true)]
+    public class Cell<T> { public T value; }
+}

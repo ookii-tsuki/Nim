@@ -1,0 +1,10 @@
+using System;
+unsafe class Program
+{
+    static void Main()
+    {
+        int[] xs = { 1, 2 };
+        int* p = &xs[0];
+        Console.WriteLine(*p);
+    }
+}

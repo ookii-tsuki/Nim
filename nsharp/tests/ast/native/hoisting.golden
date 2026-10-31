@@ -129,6 +129,36 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
+    nkIdent 'nsPlace_Field'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'Field'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) Field()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newField'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Stage'
+        nkIdent 'Field'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'Grow'
@@ -526,68 +556,50 @@ nkStmtList
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Ball.Twice"
-  nkStmtList
-    nkProcDef
-      nkIdent 'nsPlace_Field'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newField'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Stage'
+        nkIdent 'Field'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
         nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
-            nkIdent 'Field'
+          nkIdent 'nsB'
           nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Field()"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newField'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Stage'
-          nkIdent 'Field'
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Field'
+          nkCall
+            nkIdent 'nsNewBox'
+            nkIdent 'Field'
+      nkCall
+        nkIdent 'nsPlace_Field'
         nkCall
-          nkIdent 'nsPlace_Field'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-        nkAsgn
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+      nkAsgn
+        nkDotExpr
           nkDotExpr
-            nkDotExpr
-              nkCall
-                nkIdent 'nsAt'
-                nkIdent 'nsB'
-              nkIdent 'nsOwner'
-            nkIdent 'box'
-          nkCast
-            nkIdent 'pointer'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Stage'
-              nkIdent 'Field'
-            nkIdent 'nsB'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Stage'
+            nkIdent 'Field'
+          nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'

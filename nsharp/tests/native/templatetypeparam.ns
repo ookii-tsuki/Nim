@@ -1,0 +1,17 @@
+using NSharp.Interop;
+
+namespace Demo
+{
+    // A type parameter reaching a C++ class template must be `unmanaged`: here it
+    // could be a string, which C++ would copy bitwise.
+    class Holder<T> { public Cell<T> cell; }
+
+    static class Start
+    {
+        [Export("nsStart")]
+        public static void Run() { }
+    }
+
+    [Native("Toybox::Cell", Header = "toybox.hpp", Stable = true)]
+    public class Cell<T> { public T value; }
+}

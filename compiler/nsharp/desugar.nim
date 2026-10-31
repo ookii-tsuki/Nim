@@ -451,8 +451,13 @@ proc typeToNim(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
     if not l.objTypes and l.scope.classes.hasKey(name):
       let root = l.scope.handleRoot(name)
       if root.len > 0:
-        ## A handle class is held through its handle: `NsH_Node[Ball]`.
-        return newTree(nkBracketExpr, info, l.id("NsH_" & root, info), l.id(name, info))
+        ## A handle class is held through its handle: `NsH_Node[Ball]`; an instance
+        ## of a C++ template, `NsH_Box[Box[int32]]`.
+        var cls = l.id(name, info)
+        if t.sons.len > 0:
+          cls = newTree(nkBracketExpr, info, cls)
+          for a in t.sons: cls.add l.typeToNim(a, info)
+        return newTree(nkBracketExpr, info, l.id("NsH_" & root, info), cls)
     result = l.id(name, info)
     if t.sons.len == 0 and not l.objTypes and
        l.surface.isExceptionType(name, l.scope.baseChain(name)):
@@ -1245,8 +1250,11 @@ proc callToNim(l: Lowerer; n: NsNode): PNode =
         var ol = l
         ol.objTypes = true
         let q = l.qualifiedName(writtenName(callee.body), n.info)
-        result.add (if q != nil: q
-                    else: ol.typeToNim(nsnTypeName(callee.body.typeName, n.info), n.info))
+        let tn = nsnTypeName(callee.body.typeName, n.info)
+        ## `Box<int>.Kind()`: the instance of a C++ class template.
+        for a in callee.body.typeArgs: tn.add a
+        result.add (if q != nil and callee.body.typeArgs.len == 0: q
+                    else: ol.typeToNim(tn, n.info))
       elif l.scope.onHandle(callee.body.typeName, callee.name):
         ## A member of the handle: the handle itself, unchecked (`this`'s own,
         ## through `SelfHandle`).
@@ -1910,9 +1918,11 @@ proc expr(l: Lowerer; n: NsNode): PNode =
   of nsnNull:
     if n.typeName.len > 0 and l.scope.classes.hasKey(n.typeName) and
        l.scope.handleRoot(n.typeName).len > 0:
-      ## `null` for a handle class: the invalid handle.
+      ## `null` for a handle class: the invalid handle (of the instance written,
+      ## for a C++ template).
       result = newTree(nkCall, n.info, l.id("nsNull", n.info),
-                       l.typeToNim(nsnTypeName(n.typeName, n.info), n.info))
+                       l.typeToNim((if n.rtype != nil and n.rtype.kind == nsnTypeName: n.rtype
+                                    else: nsnTypeName(n.typeName, n.info)), n.info))
     elif n.typeName.len > 0 and l.scope.isValueInterface(n.typeName):
       ## The empty interface value; a generic one's with its type arguments.
       result = newTree(nkCall, n.info, l.id("default", n.info),
@@ -5667,9 +5677,15 @@ proc nativeParamType(l: Lowerer; t: NsNode; info: TLineInfo): PNode =
     return l.id("cstring", info)
   if t != nil and t.kind == nsnTypeName and l.scope.classes.hasKey(canonicalTypeName(t.name)) and
      l.scope.ownedFamily(canonicalTypeName(t.name)):
-    ## An N# reference reaches C++ as whatever the parameter is: `X*` or `X&`.
-    return newTree(nkBracketExpr, info, l.id("NsPass", info),
-                   l.id(l.scope.handleRoot(canonicalTypeName(t.name)), info))
+    ## An N# reference reaches C++ as whatever the parameter is: `X*` or `X&`; of
+    ## a C++ template, as the instance written (`NsPass[Box[int32]]`).
+    let root = l.scope.handleRoot(canonicalTypeName(t.name))
+    var r = l.id(root, info)
+    if l.scope.classes.hasKey(root) and l.scope.classes[root].typeParams.len > 0:
+      var ol = l
+      ol.objTypes = true
+      r = ol.typeToNim(t, info)
+    return newTree(nkBracketExpr, info, l.id("NsPass", info), r)
   l.typeToNim(t, info)
 
 proc returnAttr(m: NsNode; name: string): bool =
@@ -5893,8 +5909,16 @@ proc ownedReturn(l: Lowerer; m: NsNode; raw: PNode; rt, pattern, header: string)
   ## `[return: Owned]` hands over one C++ made with `new`, which N# deletes.
   let info = m.info
   let root = l.scope.handleRoot(rt)
-  let href = newTree(nkBracketExpr, info, l.id("NsH_" & root, info), l.id(rt, info))
-  let cpp = (if l.scope.isNative(rt): l.scope.classes[rt].native.cpp else: rt)
+  ## The class made: `Box[int64]` for an instance of a C++ class template, as the
+  ## result is written (not the receiver's), constructed as the box's own type.
+  let tmpl = l.scope.classes.hasKey(rt) and l.scope.classes[rt].typeParams.len > 0
+  var cls = l.id(rt, info)
+  if tmpl and m.typ != nil and m.typ.kind == nsnTypeName and m.typ.sons.len > 0:
+    var ol = l
+    ol.objTypes = true
+    cls = ol.typeToNim(m.typ, info)
+  let href = newTree(nkBracketExpr, info, l.id("NsH_" & root, info), cls)
+  let cpp = (if tmpl: "'*1" elif l.scope.isNative(rt): l.scope.classes[rt].native.cpp else: rt)
   let byValue = not returnAttr(m, "Borrowed") and not returnAttr(m, "Owned")
   let fp = raw[3]
   var args: seq[PNode] = @[]
@@ -5913,17 +5937,17 @@ proc ownedReturn(l: Lowerer; m: NsNode; raw: PNode; rt, pattern, header: string)
   let body = newNodeI(nkStmtList, info)
   if byValue:
     fp[0] = empty(info)
-    fp.sons.insert(l.identDefs("nsDest", newTree(nkPtrTy, info, l.id(rt, info)), info), 1)
+    fp.sons.insert(l.identDefs("nsDest", newTree(nkPtrTy, info, copyTree(cls)), info), 1)
     raw[4] = l.cppPragma("new (#) " & cpp & "(" & shiftTypeRefs(pattern) & ")", header, info)
     body.add newTree(nkLetSection, info, newTree(nkIdentDefs, info, l.id("nsB", info),
-      empty(info), newTree(nkCall, info, l.id("nsNewBox", info), l.id(rt, info))))
+      empty(info), newTree(nkCall, info, l.id("nsNewBox", info), copyTree(cls))))
     call.add newTree(nkCall, info, l.id("nsAt", info), l.id("nsB", info))
     for a in args: call.add a
     body.add call
     body.add newTree(nkAsgn, info, l.id("result", info),
                      newTree(nkCall, info, l.id("nsMake", info), copyTree(href), l.id("nsB", info)))
   else:
-    fp[0] = newTree(nkPtrTy, info, l.id(rt, info))
+    fp[0] = newTree(nkPtrTy, info, copyTree(cls))
     raw[4] = l.cppPragma("nsAddr(" & pattern & ")", header, info)
     for a in args: call.add a
     body.add newTree(nkAsgn, info, l.id("result", info),
@@ -6150,6 +6174,7 @@ proc nativeProperty(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
     let acc = (if m.params.len > 0: m.params[0] else: nil)
     let gm = nsn(nsnMethodDecl, info)
     gm.name = m.name
+    gm.typ = m.typ
     if acc != nil: gm.attributes = acc.attributes
     let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
               else: "")
@@ -6208,6 +6233,7 @@ proc nativeIndexer(l: Lowerer; cls, m: NsNode; nat: NsNative; header: string;
     ## A string, or a class N# may own, is returned as a method returns one.
     let gm = nsn(nsnMethodDecl, info)
     gm.name = "nsIndex_" & cls.name
+    gm.typ = m.typ
     gm.attributes = getter.attributes
     let rt = (if m.typ != nil and m.typ.kind == nsnTypeName: canonicalTypeName(m.typ.name)
               else: "")
@@ -6263,9 +6289,103 @@ proc cppScalar(t: string): string =
   of "char": "char"
   else: ""
 
+proc genericizeNative(l: Lowerer; procs: PNode; cls: string; tps: seq[string]) =
+  ## A C++ class template's procs: each is generic over the class's parameters, and
+  ## the class they name is the instance, `Box[T]`. A method's own parameter named
+  ## like the class's (`U As<T>()` in `Box<T>`, which C# allows) shadows it, so the
+  ## class's is renamed in that proc.
+  proc genericize(pd: PNode) =
+    var own: seq[string] = @[]
+    if pd[genericParamsPos].kind == nkGenericParams:
+      for defs in pd[genericParamsPos]:
+        for k in 0 ..< defs.len - 2:
+          if defs[k].kind == nkIdent: own.add defs[k].ident.s
+    var names: seq[string] = @[]
+    for t in tps: names.add (if t in own: "nsCls_" & t else: t)
+    proc inst(info: TLineInfo): PNode =
+      result = newTree(nkBracketExpr, info, l.id(cls, info))
+      for t in names: result.add l.id(t, info)
+    proc walk(x: PNode) =
+      if x.kind == nkBracketExpr and x.len > 0 and x[0].kind == nkIdent and x[0].ident.s == cls:
+        return   # already an instance
+      for i in 0 ..< x.safeLen:
+        let c = x[i]
+        ## A name being declared (a parameter named like the class), or a field
+        ## after a dot, is no type.
+        if x.kind == nkIdentDefs and i < x.len - 2: continue
+        if x.kind == nkDotExpr and i > 0: continue
+        if c.kind == nkIdent and c.ident.s == cls: x[i] = inst(c.info)
+        else: walk(c)
+    for k in 1 ..< pd.len: walk(pd[k])
+    if pd[genericParamsPos].kind == nkEmpty:
+      pd[genericParamsPos] = l.genericParams(names, pd.info)
+    else:
+      let defs = newNodeI(nkIdentDefs, pd.info)
+      for t in names: defs.add l.id(t, pd.info)
+      defs.add empty(pd.info)
+      defs.add empty(pd.info)
+      pd[genericParamsPos].add defs
+  for pd in procs:
+    if pd.kind == nkStmtList:
+      l.genericizeNative(pd, cls, tps)
+    elif pd.kind in {nkProcDef, nkConverterDef, nkTemplateDef}:
+      genericize(pd)
+
+proc cppTypeSpelling(l: Lowerer; t: NsNode): string =
+  ## A type as C++ spells it, for a C++ class template's instance named in C++ text
+  ## (`P::Box<int32_t>`); "" for one it cannot spell.
+  if t == nil or t.kind != nsnTypeName: return ""
+  let n = canonicalTypeName(t.name)
+  case n
+  of "sbyte": return "int8_t"
+  of "byte": return "uint8_t"
+  of "short": return "int16_t"
+  of "ushort": return "uint16_t"
+  of "int": return "int32_t"
+  of "uint": return "uint32_t"
+  of "long": return "int64_t"
+  of "ulong": return "uint64_t"
+  of "nint": return "intptr_t"
+  of "nuint": return "uintptr_t"
+  of "float": return "float"
+  of "double": return "double"
+  of "bool": return "bool"
+  of "char": return "char"
+  else: discard
+  if l.scope.enums.contains(n):
+    let base = l.scope.enumBases.getOrDefault(n)
+    return (if base != nil: l.cppTypeSpelling(base) else: "int32_t")
+  if not l.scope.classes.hasKey(n) or not l.scope.isNative(n): return ""
+  let c = l.scope.classes[n]
+  if c.typeParams.len == 0: return c.native.cpp
+  if t.sons.len != c.typeParams.len: return ""
+  var args: seq[string] = @[]
+  for a in t.sons:
+    let x = l.cppTypeSpelling(a)
+    if x.len == 0: return ""
+    args.add x
+  result = c.native.cpp
+  if '{' in result:
+    for k, a in args: result = result.replace("{" & $k & "}", a)
+  else: result.add "<" & args.join(", ") & ">"
+
 proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
   let info = n.info
-  let nat = l.scope.classes[n.name].native
+  var nat = l.scope.classes[n.name].native
+  ## A C++ class template (`class Box<T>` over `P::Box`): the Nim type is generic,
+  ## `P::Box<'0>` (or the binding's own `{0}`s), and in its procs the instance is
+  ## the first argument's type, `'*1`.
+  var tps: seq[string] = @[]
+  for t in n.typeParams: tps.add t.name
+  var cppType = nat.cpp
+  if tps.len > 0:
+    if '{' in nat.cpp:
+      for k in 0 ..< tps.len: cppType = cppType.replace("{" & $k & "}", "'" & $k)
+    else:
+      var args: seq[string] = @[]
+      for k in 0 ..< tps.len: args.add "'" & $k
+      cppType = nat.cpp & "<" & args.join(", ") & ">"
+    nat.cpp = "'*1"
   let header = l.nativeHeader(n.name)
   ## The helpers' header (`nsAddr`, boxes, `NsField`), which a member's pattern may
   ## use while its `header:` names the binding's.
@@ -6317,13 +6437,17 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
                     newTree(nkObjectTy, info, empty(info), empty(info), rec))
   sec.add newTree(nkTypeDef, info,
                   newTree(nkPragmaExpr, info, l.exportId(n.name, info),
-                          l.cppPragma(nat.cpp, header, info, extra)),
-                  empty(info), objTy)
+                          l.cppPragma(cppType, header, info, extra)),
+                  l.genericParams(tps, info), objTy)
   into.add sec
   # the members: in a statement list, so the module's forward declarations, which
   # an `importcpp` proc has no body to follow, leave them alone
   let procs = newNodeI(nkStmtList, info)
-  if ownedRoot:
+  if ownedRoot and tps.len > 0:
+    ## Each instance of a template is a family of its own.
+    l.familyProcs.add newTree(nkCall, info, l.id("nsObjProcsOpen", info),
+                              l.id("NsH_" & n.name, info))
+  elif ownedRoot:
     l.familyProcs.add newTree(nkCall, info, l.id("nsObjProcs", info), l.id("NsH_" & n.name, info),
                       l.id(n.name, info))
   if nat.handle.len > 0:
@@ -6388,7 +6512,7 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       let own = nativeOf(m).cpp
       let cppName = (if own.len > 0: own else: nat.cpp & "::" & m.name)
       let lit = cppLiteral(m.body)
-      if lit.len > 0:
+      if lit.len > 0 and (own.len > 0 or tps.len == 0):
         ## Compared as the constant's own type: `0.1f` is no double `0.1`.
         let ct = (if m.typ != nil and m.typ.kind == nsnTypeName:
                     cppScalar(canonicalTypeName(m.typ.name)) else: "")
@@ -6472,6 +6596,7 @@ proc lowerNativeType(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
     pd[3] = fp
     pd[4] = l.cppPragma(nat.cpp & "()", header, info, ["constructor"])
     procs.add pd
+  if tps.len > 0: l.genericizeNative(procs, n.name, tps)
   l.nativeProcs.add procs
 
 proc cppParamSig(np: PNode): string =
@@ -6599,6 +6724,30 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       recList.add newTree(nkIdentDefs, m.info, l.exportId(m.name, m.info), t, empty(m.info))
       if m.body != nil: inits.add m
   let owned = l.scope.ownedFamily(n.name)
+  if owned:
+    ## Deriving an instance of a C++ class template (`IntBox : Box<int>`): a
+    ## reference converts to the instance's, as to a base class in C#.
+    var c = n.name
+    var hops = 0
+    while c.len > 0 and l.scope.classes.hasKey(c) and hops < 32:
+      let d = l.scope.classes[c].decl
+      if d == nil or d.typ == nil or d.typ.kind != nsnTypeName: break
+      let b = canonicalTypeName(d.typ.name)
+      if l.scope.classes.hasKey(b) and l.scope.isNative(b) and
+         l.scope.classes[b].typeParams.len > 0:
+        let root = l.scope.handleRoot(n.name)
+        let fromT = newTree(nkBracketExpr, info, l.id("NsH_" & root, info), l.id(n.name, info))
+        let toT = newTree(nkBracketExpr, info, l.id("NsH_" & root, info), ol.typeToNim(d.typ, info))
+        let cv = newNodeI(nkConverterDef, info, 7)
+        cv[0] = l.exportId("nsToInstance_" & n.name, info)
+        for i in 1 .. 6: cv[i] = empty(info)
+        cv[3] = newTree(nkFormalParams, info, toT, l.identDefs("h", fromT, info))
+        cv[6] = newTree(nkStmtList, info, newTree(nkCall, info, l.id("nsAs", info),
+                                                  l.id("h", info), copyTree(toT)))
+        into.add cv
+        break
+      c = b
+      inc hops
   if owned and n.typ != nil and l.scope.isNative(canonicalTypeName(n.typ.name)):
     ## (Once: the first N# class above the native one has it, and its own derive it.)
     ## The box N# made it in, if it did, which `this` as a value keeps alive.
@@ -6671,12 +6820,25 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
         sig.add "'" & $(i + 1) & " #" & $(i + 1)
         names.add p.name
       let baseName = canonicalTypeName(n.typ.name)
-      let baseCpp = (if l.scope.isNative(baseName): l.scope.classes[baseName].native.cpp
-                     else: baseName)
+      ## A C++ class template's instance is named by its injected class name,
+      ## which the derived class inherits (`: Box(v)` for `P::Box<int>`).
+      let baseTps = (if l.scope.classes.hasKey(baseName): l.scope.classes[baseName].typeParams
+                     else: @[])
+      let baseCpp =
+        if l.scope.isNative(baseName) and baseTps.len > 0:
+          ## The instance spelled out (`P::Box<int32_t>`), else its injected class
+          ## name, which the derived class inherits.
+          let full = l.cppTypeSpelling(n.typ)
+          if full.len > 0: full
+          else: l.scope.classes[baseName].native.cpp.split('<')[0].split("::")[^1]
+        elif l.scope.isNative(baseName): l.scope.classes[baseName].native.cpp
+        else: baseName
       var args: seq[string] = @[]
       for j, a in c.initArgs:
         let v = (if a.kind == nsnNamedArg: a.body else: a)
-        let pt = (if a.argParam != nil: a.argParam.typ else: nil)
+        ## A template's parameter is the instance's argument (`T` of `Box<int>`).
+        let pt = (if a.argParam != nil: substitute(a.argParam.typ, baseTps, n.typ.sons)
+                  else: nil)
         let isStr = pt != nil and pt.kind == nsnTypeName and
                     canonicalTypeName(pt.name) == "string"
         let k = (if v.kind == nsnIdent: names.find(v.name) else: -1)
@@ -6720,9 +6882,12 @@ proc lowerNativeDerived(l: var Lowerer; n: NsNode; into: var seq[PNode]) =
       if c != nil:
         for p in c.params: ps.add l.paramDef(p)
       l.ownedNew(n, ps, n.name & "(@)", "", (if c != nil: c.info else: info), made)
-    ## In a statement list, which the module's forward declarations leave alone:
-    ## `nsPlace_D` is an `importcpp` proc, with no body to follow.
-    into.add made
+    ## Each its own routine, so `new D()` before D's declaration finds it: the
+    ## module declares a body-less `importcpp` one (`nsPlace_D`) once, early.
+    for x in made:
+      if x.kind == nkStmtList:
+        for y in x: into.add y
+      else: into.add x
   var staticCtor: seq[PNode] = @[]
   var staticInits: seq[PNode] = @[]
   for m in n.sons:
@@ -7866,9 +8031,28 @@ proc lowerModule*(module: NsNode; scope: NsModuleScope;
   ## One type section: Nim resolves a type that names a later one only within a
   ## section, and C# types name each other in any order.
   let types = newNodeI(nkTypeSection, module.info)
-  for s in stmts:
-    if s.kind == nkTypeSection:
-      for t in s: types.add t
+  ## The native families' reference types first (`NsH_Box[T]`): a type naming an
+  ## instance of a generic one (`NsH_Box[Box[T]]`) declared later in the section
+  ## does not resolve.
+  proc rank(t: PNode): int =
+    ## 0 a family's reference type, 1 an `importcpp` C++ type, 2 the rest.
+    if t.kind != nkTypeDef: return 2
+    var x = t[0]
+    var imported = false
+    while x.kind in {nkPragmaExpr, nkPostfix}:
+      if x.kind == nkPragmaExpr:
+        for p in x[1]:
+          if p.kind == nkExprColonExpr and p[0].kind == nkIdent and p[0].ident.s == "importcpp":
+            imported = true
+      x = (if x.kind == nkPostfix: x[1] else: x[0])
+    if x.kind == nkIdent and x.ident.s.startsWith("NsH_"): 0
+    elif imported: 1
+    else: 2
+  for r in 0 .. 2:
+    for s in stmts:
+      if s.kind == nkTypeSection:
+        for t in s:
+          if rank(t) == r: types.add t
   if types.len > 0: result.add types
   var decls: seq[PNode] = @[]
   for s in stmts:

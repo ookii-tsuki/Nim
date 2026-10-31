@@ -1,0 +1,10 @@
+using System;
+unsafe class Program
+{
+    static int s_count;
+    static void Main()
+    {
+        int* p = &s_count;
+        Console.WriteLine(*p);
+    }
+}

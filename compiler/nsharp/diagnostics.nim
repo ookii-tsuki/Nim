@@ -77,6 +77,7 @@ type
     ndNoNamedParam
     ndLambdaArity
     ndMethodGroupMismatch
+    ndUnmanagedConstraint
     ndRefTypeConstraint
     ndValueTypeConstraint
     ndUnassignedLocal
@@ -154,6 +155,7 @@ type
     ndDllImportNotStaticExtern
     ndDllImportGeneric
     ndUnsafeNeeded
+    ndAddrUnfixed
     ndSizeofUnsafe
     ndNativeCtor
     ndExportMisplaced
@@ -266,6 +268,9 @@ const
                    " '$2'"),
     ndLambdaArity: (code: "1593", msg: "Delegate '$1' does not take $2 arguments"),
     ndMethodGroupMismatch: (code: "0123", msg: "No overload for '$1' matches delegate '$2'"),
+    ndUnmanagedConstraint: (code: "8377", msg: "The type '$1' must be a non-nullable value" &
+                        " type, along with all fields at any level of nesting, in order to use it" &
+                        " as parameter '$2' in the generic type or method '$3'"),
     ndRefTypeConstraint: (code: "0452", msg: "The type '$1' must be a reference type in order to use" &
                         " it as parameter '$2' in the generic type or method '$3'"),
     ndValueTypeConstraint: (code: "0453", msg: "The type '$1' must be a non-nullable value type in" &
@@ -396,6 +401,8 @@ const
                         " method that is generic or contained in a generic method or type."),
     ndUnsafeNeeded: (code: "0214", msg: "Pointers and fixed size buffers may only be used" &
                         " in an unsafe context"),
+    ndAddrUnfixed: (code: "0212", msg: "You can only take the address of an unfixed" &
+                        " expression inside of a fixed statement initializer"),
     ndSizeofUnsafe: (code: "0233", msg: "'$1' does not have a predefined size, therefore" &
                         " sizeof can only be used in an unsafe context"),
     ndNativeCtor: (code: "9905", msg: "'$1': a [Native] class with a handle cannot" &

@@ -37,7 +37,7 @@ type
     isRef*: bool               ## a `ref` local: a reference to another variable
     iterVar*: bool             ## a `foreach` variable, which is read-only
     isConst*: bool             ## a `const` local
-
+    byRef*: bool               ## a `ref`/`out`/`in` parameter: a moveable variable
   NsCheckContext = object
     scope: NsModuleScope
     config: ConfigRef
@@ -49,6 +49,7 @@ type
     typeParams: seq[string]                    ## the generic parameters in scope
     usingNamespaces: HashSet[string]           ## the namespaces the file imports or is in
     inUnsafe: bool                             ## in an unsafe context (pointers allowed)
+    inFixedInit: bool                          ## in a `fixed` statement's initialiser
     unsafeReported: ref HashSet[string]        ## CS0214 sites, reported once each
     curMember: NsNode                          ## the member whose body is walked
     tmpCounter: int                            ## numbers the temporaries sema introduces
@@ -177,6 +178,79 @@ proc classifyName(ctx: NsCheckContext; name: string): NsTypeKind =
             else: tkClass)
   result = tkUnknown
 
+proc hasUnmanagedConstraint(ctx: NsCheckContext; name: string): bool =
+  ## `where T : unmanaged` on the member or the class that declares `T`.
+  var lists: seq[seq[NsNode]] = @[]
+  if ctx.curMember != nil: lists.add ctx.curMember.constraints
+  if ctx.scope.classes.hasKey(ctx.clsName) and ctx.scope.classes[ctx.clsName].decl != nil:
+    lists.add ctx.scope.classes[ctx.clsName].decl.constraints
+  for l in lists:
+    for w in l:
+      if w.name == name:
+        for c in w.sons:
+          if c.kind == nsnIdent and c.name == "unmanaged": return true
+  false
+
+proc isUnmanagedArg(ctx: NsCheckContext; a: NsNode): bool =
+  ## C#'s unmanaged types: numbers, `bool`, `char`, enums, pointers, and structs of
+  ## them; a type parameter so constrained.
+  if a == nil: return false
+  if a.kind in {nsnPointerType, nsnFnPtrType}: return true
+  if a.kind != nsnTypeName: return false
+  let an = canonicalTypeName(a.name)
+  if an in NsBlittableTypes or an == "bool" or ctx.scope.enums.contains(an): return true
+  if ctx.scope.classes.hasKey(an) and ctx.scope.classes[an].classKind == ckStruct:
+    return ctx.scope.isNative(an) or ctx.scope.isMarshalableStruct(an)
+  an in ctx.typeParams and ctx.hasUnmanagedConstraint(an)
+
+proc typeSpelling(target: NsNode): string
+
+proc checkTemplateArgs(ctx: NsCheckContext; t: NsNode) =
+  ## A C++ class template's instance holds its arguments as C++ values, which C++
+  ## copies bitwise: a number, `bool`, `char`, an enum, a pointer or a native struct
+  ## may be one; a string, an array or a class Nim manages may not (NS9999).
+  let cn = canonicalTypeName(t.name)
+  if not ctx.scope.classes.hasKey(cn) or not ctx.scope.isNative(cn) or
+     ctx.scope.classes[cn].typeParams.len == 0: return
+  ## Outside a class (collecting signatures) the type parameters in scope are not
+  ## known: the member's own walk checks it (`checkTemplateTypes`).
+  if ctx.clsName.len == 0: return
+  for a in t.sons:
+    var ok = a.kind in {nsnPointerType, nsnFnPtrType}
+    if a.kind == nsnTypeName:
+      let an = canonicalTypeName(a.name)
+      ok = an in NsBlittableTypes or an == "bool" or ctx.scope.enums.contains(an) or
+           ## The template's own parameter, as its binding declares a member (and a
+           ## call elsewhere sees that declaration), when no `T` of the code
+           ## being checked shadows it.
+           (an in ctx.scope.classes[cn].typeParams and
+            (ctx.clsName == cn or
+             (an notin ctx.typeParams and not (ctx.scope.classes.hasKey(ctx.clsName) and
+                                               an in ctx.scope.classes[ctx.clsName].typeParams)))) or
+           (ctx.scope.classes.hasKey(an) and ctx.scope.isNative(an) and
+            ctx.scope.classes[an].classKind == ckStruct)
+    if not ok and a.kind == nsnTypeName and
+       (canonicalTypeName(a.name) in ctx.typeParams or
+        (ctx.scope.classes.hasKey(ctx.clsName) and
+         canonicalTypeName(a.name) in ctx.scope.classes[ctx.clsName].typeParams)):
+      ## A type parameter reaches C++ only constrained to what it may copy.
+      ok = ctx.hasUnmanagedConstraint(canonicalTypeName(a.name))
+      if not ok:
+        let key = "tmpl:" & $a.info.fileIndex.int32 & ":" & $a.info.line & ":" & $a.info.col
+        if ctx.unsafeReported != nil and key in ctx.unsafeReported[]: continue
+        if ctx.unsafeReported != nil: ctx.unsafeReported[].incl key
+        nsError(ctx.config, a.info, ndUnsupported,
+                "type parameter '" & a.name & "' as an argument of C++ class template '" & cn &
+                "' without 'where " & a.name & " : unmanaged'")
+        continue
+    if not ok:
+      let key = "tmpl:" & $a.info.fileIndex.int32 & ":" & $a.info.line & ":" & $a.info.col
+      if ctx.unsafeReported != nil and key in ctx.unsafeReported[]: continue
+      if ctx.unsafeReported != nil: ctx.unsafeReported[].incl key
+      nsError(ctx.config, a.info, ndUnsupported,
+              "'" & typeSpelling(a) & "' as an argument of C++ class template '" & cn &
+              "' (numbers, bool, char, enums, pointers and native structs are supported)")
+
 proc classifyType(ctx: NsCheckContext; t: NsNode): NsTypeKind =
   ## Kind of a written type. `T[]` is a sequence and `T?` is a nullable value type;
   ## a name goes through `classifyName`; anything unrecognised stays unknown so
@@ -212,6 +286,7 @@ proc classifyType(ctx: NsCheckContext; t: NsNode): NsTypeKind =
   of nsnTypeName:
     ## The type arguments too (`Func<int?>`), which lowering spells as their kinds say.
     for a in t.sons: discard ctx.classifyType(a)
+    if t.sons.len > 0: ctx.checkTemplateArgs(t)
     result = ctx.classifyName(t.name)
     if result == tkUnknown and t.sons.len > 0 or result == tkUnknown and
        ctx.surface.types.hasKey(nimTypeName(t.name) & "0"):
@@ -465,7 +540,10 @@ proc coerce(ctx: NsCheckContext; value: NsNode; targetName: string; info: TLineI
       let root = ctx.scope.handleRoot(tn)
       if root.len > 0 and root == ctx.scope.handleRoot(vn):
         value.conv = "nsHandle"
-        value.convType = nsnTypeName(tn, info)
+        ## The instance written, for a C++ class template (`Box<int>`).
+        value.convType = (if targetType != nil and targetType.kind == nsnTypeName and
+                             targetType.sons.len > 0: targetType
+                          else: nsnTypeName(tn, info))
         return
   if value != nil and value.typeKind == tkClass and value.conv.len == 0:
     ## A class implementing `IEnumerable<T>`/`IEnumerator<T>` where one is expected:
@@ -693,6 +771,17 @@ proc targetOfExpr(ctx: NsCheckContext; e: NsNode): NsTarget =
   result.kind = e.typeKind
   result.name = e.typeName
   result.isNullOk = e.typeKind notin NsNullIntolerantKinds
+  ## The full type, for what names its type arguments (`null` into a `Box<int>`).
+  ## (`arr[0] = null`: the array's element type.)
+  let full =
+    if e.rtype != nil: e.rtype
+    elif e.kind == nsnIndex and e.body != nil and e.body.rtype != nil and
+         e.body.rtype.kind == nsnArrayType: e.body.rtype.typ
+    else: nil
+  if full != nil and full.kind == nsnTypeName and full.sons.len > 0 and
+     ctx.scope.classes.hasKey(canonicalTypeName(full.name)) and
+     ctx.scope.isNative(canonicalTypeName(full.name)):
+    result.typ = full
 
 proc spelledTypeArgs(name: string): seq[string] =
   ## The type arguments of a spelled type, at the top level: `int` for `int[]`,
@@ -1068,6 +1157,9 @@ proc markNull(ctx: NsCheckContext; value: NsNode; target: string;
   if value != nil and value.kind == nsnNull and ctx.scope.classes.hasKey(tn) and
      ctx.scope.handleRoot(tn).len > 0:
     value.setType(tkClass, tn)
+    ## A C++ class template's names its instance.
+    if targetType != nil and targetType.kind == nsnTypeName and targetType.sons.len > 0:
+      value.rtype = targetType
   elif value != nil and value.kind == nsnNull and ctx.scope.isValueInterface(target):
     value.setType(tkClass, target)
     ## A generic interface's empty value names its type arguments too.
@@ -2713,6 +2805,40 @@ proc isPointerValue(ctx: NsCheckContext; n: NsNode): bool =
        else: ctx.isPointerValue(n.sons[0]) and not ctx.isPointerValue(n.sons[1]))
   else: false
 
+proc isMoveable(ctx: NsCheckContext; n: NsNode): bool =
+  ## A variable a collector may move (C# 23.4): a field of a class or of a struct
+  ## reached through `this` or a `ref`, a static field, an array element, or a
+  ## `ref`/`out`/`in` parameter -- whose address only `fixed` may take. A local, a
+  ## value parameter, a field of one, and what a pointer reaches are fixed.
+  if n == nil: return false
+  case n.kind
+  of nsnIdent:
+    if ctx.types.hasKey(n.name):
+      let t = ctx.types[n.name]
+      t.byRef or t.isRef
+    else:
+      ## A field named bare: of `this`, which is a reference in a class and a
+      ## `ref` in a struct, or a static one.
+      let m = ctx.scope.findMemberInfo(ctx.clsName, n.name)
+      m.name.len > 0 and not m.isMethod
+  of nsnMember:
+    let b = n.body
+    if b == nil: false
+    elif b.kind == nsnThis or b.typeKind == tkType: true
+    elif b.kind == nsnIdent and not ctx.types.hasKey(b.name) and
+         ctx.scope.classes.hasKey(canonicalTypeName(b.name)): true
+    elif ctx.scope.classes.hasKey(b.typeName) and
+         ctx.scope.classes[b.typeName].classKind == ckStruct:
+      ## A field of a struct is where the struct is.
+      ctx.isMoveable(b)
+    else: b.typeKind in {tkClass, tkString, tkSequence, tkException}
+  of nsnIndex:
+    ## An element through a pointer (`p[i]`, `ps[0][0]`) is where the pointer says.
+    not (n.body != nil and ((n.body.rtype != nil and n.body.rtype.kind == nsnPointerType) or
+                            ctx.isPointerValue(n.body)))
+  of nsnThis: true   # a struct's `this` is a `ref`; a class's is no variable at all
+  else: false
+
 proc walkPointerOp(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   ## `*p`, `&x`, `&M` and `fixed (T* p = e)`'s initialiser (unsafe code).
   ctx.requireUnsafe(n.info)
@@ -2761,7 +2887,15 @@ proc walkPointerOp(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         nsError(ctx.config, n.info, ndUnsupported,
                 "'&" & m.owner & "." & m.name & "' of a method without [UnmanagedCallersOnly]")
       return
+    ## Only the address the `fixed` declares is fixed, not one inside it
+    ## (`&a[F(&b[1])]`).
+    let fixedHere = ctx.inFixedInit
+    ctx.inFixedInit = false
     discard ctx.walkExpr(b)
+    ctx.inFixedInit = fixedHere
+    if not fixedHere and ctx.isMoveable(b):
+      ## `&arr[0]`, `&obj.f`: only a `fixed` initialiser may (CS0212).
+      nsError(ctx.config, n.info, ndAddrUnfixed)
     let pointee = (if b.rtype != nil: b.rtype else: nsnTypeName(b.typeName, b.info))
     let pn = canonicalTypeName(pointee.name)
     if pointee.kind == nsnTypeName and ctx.scope.classes.hasKey(pn) and
@@ -2774,7 +2908,10 @@ proc walkPointerOp(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     n.typeName = declTypeName(n.rtype)
   else:
     ## `fixed (T* p = arr)`: the first element of an array, or an address taken.
+    let savedFixed = ctx.inFixedInit
+    ctx.inFixedInit = true
     discard ctx.walkExpr(n.body)
+    ctx.inFixedInit = savedFixed
     let b = n.body
     if b.kind == nsnUnary and b.name == "addr":
       n.rtype = b.rtype
@@ -2791,6 +2928,60 @@ proc fnPtrTypeOf(ctx: NsCheckContext; n: NsNode): NsNode =
   if n == nil or n.kind notin {nsnIdent, nsnMember}: return nil
   let t = ctx.declaredTypeOf(n, methods = false)
   if t != nil and t.kind == nsnFnPtrType: t else: nil
+
+proc substituted(cands: seq[seq[NsNode]]; params: seq[string];
+                 args: seq[NsNode]): seq[seq[NsNode]] =
+  ## Parameter lists with a class's type parameters replaced by an instance's
+  ## arguments, each parameter copied.
+  result = cands
+  if params.len == 0 or params.len != args.len: return
+  for c in result.mitems:
+    for p in c.mitems:
+      if p != nil and p.typ != nil:
+        var q: NsNode
+        new(q)
+        q[] = p[]
+        q.typ = substitute(p.typ, params, args)
+        p = q
+
+proc templateCtors(ctx: NsCheckContext; cls: string; t: NsNode): seq[seq[NsNode]] =
+  ## The constructors of a class, those of a C++ class template's instance with its
+  ## arguments in place (`new Box<double>(4)` takes a `double`).
+  result = ctx.scope.ctorOverloads(cls)
+  if t != nil and t.kind == nsnTypeName and t.sons.len > 0 and ctx.scope.classes.hasKey(cls) and
+     ctx.scope.isNative(cls):
+    result = substituted(result, ctx.scope.classes[cls].typeParams, t.sons)
+
+proc templateArgs(ctx: NsCheckContext; recv: NsNode; owner, member: string):
+    tuple[params: seq[string]; args: seq[NsNode]] =
+  ## The type arguments of the C++ class template instance a member is reached on:
+  ## the receiver's own (`Box<int>`), or the instance a class derives (`IntBox :
+  ## Box<int>`) when the member is the template's. Empty otherwise.
+  let m = ctx.scope.findMemberInfo(owner, member)
+  if m.name.len == 0 or not ctx.scope.classes.hasKey(m.owner): return
+  let tc = ctx.scope.classes[m.owner]
+  if tc.typeParams.len == 0 or not ctx.scope.isNative(m.owner): return
+  var t: NsNode = nil
+  if recv != nil and recv.rtype != nil and recv.rtype.kind == nsnTypeName and
+     canonicalTypeName(recv.rtype.name) == m.owner:
+    t = recv.rtype
+  elif recv != nil and recv.typeKind == tkType and canonicalTypeName(recv.name) == m.owner and
+       recv.typeArgs.len > 0:
+    result = (tc.typeParams, recv.typeArgs)
+    return
+  else:
+    ## Up the chain to the class deriving the instance.
+    var c = owner
+    var hops = 0
+    while c.len > 0 and ctx.scope.classes.hasKey(c) and hops < 32:
+      let d = ctx.scope.classes[c].decl
+      if d != nil and d.typ != nil and d.typ.kind == nsnTypeName and
+         canonicalTypeName(d.typ.name) == m.owner:
+        t = d.typ
+        break
+      c = ctx.scope.classes[c].base
+      inc hops
+  if t != nil and t.sons.len == tc.typeParams.len: result = (tc.typeParams, t.sons)
 
 proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
   var kind = tkUnknown
@@ -2932,6 +3123,20 @@ proc walkCall(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     ## A receiver the scope does not know (`Console`, a name from a module it does
     ## not cover) has none, and the call is left to Nim.
     cands = ctx.scope.memberOverloads(owner, callee.name)
+    let inst = ctx.templateArgs(callee.body, owner, callee.name)
+    if inst.args.len > 0:
+      ## A member of a C++ class template's instance: its `T` is the instance's
+      ## argument, in the parameters the arguments convert to and in the result.
+      cands = substituted(cands, inst.params, inst.args)
+      let mi = ctx.scope.findMemberInfo(owner, callee.name)
+      if mi.isMethod and mi.typ != nil:
+        let st = substitute(mi.typ, inst.params, inst.args)
+        if st != mi.typ:
+          n.rtype = st
+          let k = ctx.classifyType(st)
+          if k != tkUnknown:
+            kind = k
+            tn = declTypeName(st)
     if ctx.scope.classes.hasKey(owner):
       let mi = ctx.scope.findMemberInfo(owner, callee.name)
       if mi.isEvent and mi.isProperty:
@@ -3478,7 +3683,7 @@ proc walkExprIn(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
         elif ctx.scope.classes[cn].isAbstract or
            ctx.scope.classes[cn].classKind == ckInterface:
           nsError(ctx.config, n.info, ndAbstractInstance, cn)
-        ctx.checkCallArgs(ctx.scope.ctorOverloads(cn), n.sons, cn, cn, true, n.info, n)
+        ctx.checkCallArgs(ctx.templateCtors(cn, n.typ), n.sons, cn, cn, true, n.info, n)
         ctx.checkCtorAccess(cn, n)
       elif ctx.scope.isValueInterface(cn):
         ## A library interface (`IList<T>`) is no more constructible than a user's.
@@ -3669,6 +3874,13 @@ proc walkExprIn(ctx: var NsCheckContext; n: NsNode): NsTypeKind =
     if n.body != nil and n.body.typeKind in {tkInt, tkFloat, tkBool, tkChar}:
       ## Only arrays, strings and types with an indexer take `[]` (CS0021).
       nsError(ctx.config, n.info, ndNotIndexable, kindSpelling(n.body))
+    elif n.body != nil and n.body.rtype != nil and n.body.rtype.kind == nsnArrayType and
+         n.body.rtype.intVal < 2 and isPointerType(n.body.rtype.typ):
+      ## `ps[i]` of an `int*[]`: a pointer, which `ps[i][j]` then indexes.
+      for x in n.sons: discard ctx.walkExpr(x)
+      n.rtype = n.body.rtype.typ
+      n.setType(tkUnknown, declTypeName(n.rtype))
+      return tkUnknown
     elif n.body != nil and (n.body.typeKind == tkString or
          (n.body.rtype != nil and n.body.rtype.kind == nsnArrayType and
           n.body.rtype.intVal < 2)):
@@ -4390,6 +4602,9 @@ proc checkTypeArgs(ctx: NsCheckContext; t: NsNode) =
                k in {tkString, tkClass, tkSequence}:
             nsError(ctx.config, arg.info, ndValueTypeConstraint, typeSpelling(arg), w.name,
                     cn & "<" & tps.join(", ") & ">")
+          elif c.kind == nsnIdent and c.name == "unmanaged" and not ctx.isUnmanagedArg(arg):
+            nsError(ctx.config, arg.info, ndUnmanagedConstraint, typeSpelling(arg), w.name,
+                    cn & "<" & tps.join(", ") & ">")
   else: discard
 
 proc checkMethodGroup(ctx: NsCheckContext; v, target: NsNode) =
@@ -4485,6 +4700,13 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
   if n.paramMod == "ref" and n.kind == nsnLocalDecl:
     ctx.walkRefDecl(n)
     return
+  if n.body != nil and n.body.kind == nsnUnary and n.body.name == "fixed" and
+     not ctx.inFixedInit:
+    ## `fixed (T* p = &obj.f)`: the whole declaration is the fixed initialiser.
+    ctx.inFixedInit = true
+    ctx.walkDecl(n)
+    ctx.inFixedInit = false
+    return
   ctx.requireUnsafe(n.typ, n.info)
   ctx.checkLibraryInterfaceValue(n.typ)
   if n.kind == nsnLocalDecl:
@@ -4538,6 +4760,7 @@ proc walkDecl(ctx: var NsCheckContext; n: NsNode) =
               (if n.typ != nil: declTypeName(n.typ) else: canonicalTypeName(n.body.typeName)),
               (if n.typ != nil: n.typ elif n.body != nil: n.body.rtype else: nil))
   if n.kind == nsnLocalDecl and n.declKind == dkConst: ctx.types[n.name].isConst = true
+  if n.kind == nsnParam and n.paramMod in ["ref", "out", "in"]: ctx.types[n.name].byRef = true
 
 proc enumeratedElement(ctx: NsCheckContext; n: NsNode): NsNode =
   ## The element type `foreach` sees in a collection: an `IEnumerable<T>`'s `T`, or
@@ -5085,8 +5308,20 @@ proc checkCheckedOperator(ctx: NsCheckContext; m: NsNode) =
 
 proc walkMemberDeclIn(ctx: var NsCheckContext; m: NsNode)
 
+proc checkTemplateTypes(ctx: NsCheckContext; t: NsNode) =
+  ## Each C++ class template instance a written type names (`List<Cell<T>>`).
+  if t == nil: return
+  if t.kind == nsnTypeName and t.sons.len > 0: ctx.checkTemplateArgs(t)
+  if t.typ != nil and t.typ != t: ctx.checkTemplateTypes(t.typ)
+  for x in t.sons: ctx.checkTemplateTypes(x)
+
 proc walkMemberDecl(ctx: var NsCheckContext; m: NsNode) =
   ## An `unsafe` member is an unsafe context; a pointer in a signature needs one.
+  ctx.curMember = m
+  ctx.checkTemplateTypes(m.typ)
+  if m.kind != nsnPropertyDecl:
+    for p in m.params:
+      if p != nil and p.kind == nsnParam: ctx.checkTemplateTypes(p.typ)
   let saved = ctx.inUnsafe
   if m.attrs.isUnsafe: ctx.inUnsafe = true
   if m.kind in {nsnFieldDecl, nsnPropertyDecl, nsnMethodDecl, nsnIndexerDecl,
@@ -5194,7 +5429,7 @@ proc walkMemberDeclIn(ctx: var NsCheckContext; m: NsNode) =
         ## `: base(args)` in a class deriving a native one: the base's constructors
         ## take them, in the C++ constructor's initializer list.
         let b = canonicalTypeName(cls.decl.typ.name)
-        ctx.checkCallArgs(ctx.scope.ctorOverloads(b), m.initArgs, b, b, true, m.info)
+        ctx.checkCallArgs(ctx.templateCtors(b, cls.decl.typ), m.initArgs, b, b, true, m.info)
         for a in m.initArgs:
           let v = (if a.kind == nsnNamedArg: a.body else: a)
           let pt = (if a.argParam != nil and a.argParam.typ != nil and
@@ -5413,6 +5648,10 @@ proc checkNative(ctx: NsCheckContext; cls: NsNode) =
            canonicalTypeName(declTypeName(p.typ.typ)) != "object":
           nsError(ctx.config, p.info, ndForwardMisplaced, named(m))
   if native:
+    if cls.typeParams.len > 0 and ctx.scope.classes.hasKey(cls.name) and
+       ctx.scope.classes[cls.name].native.handle.len > 0:
+      ## A template's instances would each need a handle of their own.
+      nsError(ctx.config, cls.info, ndUnsupported, "a C++ class template with a Handle")
     if cls.typ != nil and not ctx.scope.isNative(canonicalTypeName(cls.typ.name)):
       nsError(ctx.config, cls.info, ndNativeBaseNotNative, cls.name,
               canonicalTypeName(cls.typ.name))

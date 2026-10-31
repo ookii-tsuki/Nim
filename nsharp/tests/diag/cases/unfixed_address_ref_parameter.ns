@@ -1,0 +1,6 @@
+using System;
+unsafe class Program
+{
+    static void Bump(ref int r) { int* p = &r; *p += 1; }
+    static void Main() { int x = 1; Bump(ref x); Console.WriteLine(x); }
+}

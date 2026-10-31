@@ -88,6 +88,36 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
+    nkIdent 'nsPlace_Tinted'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'Tinted'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) Tinted(@)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newTinted'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Palette'
+        nkIdent 'Tinted'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'Shade'
@@ -229,6 +259,36 @@ nkStmtList
       nkExprColonExpr
         nkIdent 'virtual'
         nkStrLit "Weight() override"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsPlace_Deep'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'Deep'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) Deep()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newDeep'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Palette'
+        nkIdent 'Deep'
+    nkEmpty
     nkEmpty
     nkEmpty
   nkProcDef
@@ -426,68 +486,50 @@ nkStmtList
         nkCall
           nkIdent 'int32'
           nkIntLit 3
-  nkStmtList
-    nkProcDef
-      nkIdent 'nsPlace_Tinted'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newTinted'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Palette'
+        nkIdent 'Tinted'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
         nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
-            nkIdent 'Tinted'
+          nkIdent 'nsB'
           nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Tinted(@)"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newTinted'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Palette'
-          nkIdent 'Tinted'
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Tinted'
+          nkCall
+            nkIdent 'nsNewBox'
+            nkIdent 'Tinted'
+      nkCall
+        nkIdent 'nsPlace_Tinted'
         nkCall
-          nkIdent 'nsPlace_Tinted'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-        nkAsgn
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+      nkAsgn
+        nkDotExpr
           nkDotExpr
-            nkDotExpr
-              nkCall
-                nkIdent 'nsAt'
-                nkIdent 'nsB'
-              nkIdent 'nsOwner'
-            nkIdent 'box'
-          nkCast
-            nkIdent 'pointer'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Palette'
-              nkIdent 'Tinted'
-            nkIdent 'nsB'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Tinted'
+          nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'
@@ -751,68 +793,50 @@ nkStmtList
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Tinted.Weight"
-  nkStmtList
-    nkProcDef
-      nkIdent 'nsPlace_Deep'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newDeep'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Palette'
+        nkIdent 'Deep'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
         nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
-            nkIdent 'Deep'
+          nkIdent 'nsB'
           nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Deep()"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newDeep'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Palette'
-          nkIdent 'Deep'
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Deep'
+          nkCall
+            nkIdent 'nsNewBox'
+            nkIdent 'Deep'
+      nkCall
+        nkIdent 'nsPlace_Deep'
         nkCall
-          nkIdent 'nsPlace_Deep'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-        nkAsgn
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+      nkAsgn
+        nkDotExpr
           nkDotExpr
-            nkDotExpr
-              nkCall
-                nkIdent 'nsAt'
-                nkIdent 'nsB'
-              nkIdent 'nsOwner'
-            nkIdent 'box'
-          nkCast
-            nkIdent 'pointer'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Palette'
-              nkIdent 'Deep'
-            nkIdent 'nsB'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Deep'
+          nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'

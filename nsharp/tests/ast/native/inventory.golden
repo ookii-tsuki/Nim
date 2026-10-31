@@ -426,6 +426,36 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
+    nkIdent 'nsPlace_Bag'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'Bag'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) Bag()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newBag'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Stage'
+        nkIdent 'Bag'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'Begin'
@@ -1172,68 +1202,50 @@ nkStmtList
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Pack.Describe"
-  nkStmtList
-    nkProcDef
-      nkIdent 'nsPlace_Bag'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newBag'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Stage'
+        nkIdent 'Bag'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
         nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
-            nkIdent 'Bag'
+          nkIdent 'nsB'
           nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Bag()"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newBag'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Stage'
-          nkIdent 'Bag'
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Bag'
+          nkCall
+            nkIdent 'nsNewBox'
+            nkIdent 'Bag'
+      nkCall
+        nkIdent 'nsPlace_Bag'
         nkCall
-          nkIdent 'nsPlace_Bag'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-        nkAsgn
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+      nkAsgn
+        nkDotExpr
           nkDotExpr
-            nkDotExpr
-              nkCall
-                nkIdent 'nsAt'
-                nkIdent 'nsB'
-              nkIdent 'nsOwner'
-            nkIdent 'box'
-          nkCast
-            nkIdent 'pointer'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Stage'
-              nkIdent 'Bag'
-            nkIdent 'nsB'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Stage'
+            nkIdent 'Bag'
+          nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'

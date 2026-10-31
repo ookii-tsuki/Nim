@@ -1,0 +1,18 @@
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // A generic class deriving a C++ class template: each instance would need a
+    // C++ struct of its own.
+    class Wrap<T> : Cell<T> { }
+
+    static class Start
+    {
+        [Export("nsStart")]
+        public static void Run() { }
+    }
+
+    [Native("Toybox::Cell", Header = "toybox.hpp", Stable = true)]
+    public class Cell<T> { public T value; }
+}

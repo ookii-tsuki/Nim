@@ -1,0 +1,10 @@
+using System;
+class Holder<T> where T : unmanaged { public T Value; }
+class Program
+{
+    static void Main()
+    {
+        var h = new Holder<string>();
+        Console.WriteLine(h.Value);
+    }
+}

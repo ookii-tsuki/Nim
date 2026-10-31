@@ -1635,6 +1635,36 @@ when defined(cpp):
     converter nsToRoot*[U](h: H[U]): H[R] {.inject.} = nsAs(h, H[R])
     converter nsToPass*[U](h: H[U]): NsPass[R] {.inject.} = nsPassOf(nsPtrAs(h.p, R))
 
+  template nsObjProcsOpen*(H: untyped) =
+    ## `nsObjProcs` of a C++ class template's references, `H[Box[int32]]`: each
+    ## instance is a family of its own, so the root is the class referred to (a
+    ## class deriving an instance converts to it by its own `nsToInstance_<D>`).
+    proc nsValid*[T](h: H[T]): bool {.inline, inject.} = h.p != nil
+    proc nsDeref*[T](h: H[T]): ptr T {.inline, inject.} =
+      when not defined(danger):
+        if h.p == nil: nsNilFail()
+      h.p
+    proc nsAs*[T, U](h: H[U]; t: typedesc[H[T]]): H[T] {.inline, inject.} =
+      H[T](p: nsPtrAs(h.p, T), keep: h.keep)
+    proc nsNull*[T](t: typedesc[H[T]]): H[T] {.inline, inject.} = H[T]()
+    proc `==`*[T, U](a: H[T]; b: H[U]): bool {.inline, inject.} =
+      cast[pointer](a.p) == cast[pointer](b.p)
+    proc nsMake*[T](t: typedesc[H[T]]; b: ref NsObjBox[T]): H[T] {.inline, inject.} =
+      H[T](p: nsAt(b), keep: b)
+    proc nsSelfObj*[T](t: typedesc[H[T]]; p: ptr T; box: pointer): H[T] {.inline, inject.} =
+      H[T](p: p, keep: nsKeepOf(box))
+    proc nsBorrow*[T](t: typedesc[H[T]]; p: ptr T): H[T] {.inline, inject.} =
+      H[T](p: p)
+    proc nsAdopt*[T](t: typedesc[H[T]]; p: ptr T): H[T] {.inline, inject.} =
+      if p != nil:
+        let b = (ref NsHeapBox[T])(p: p)
+        result = H[T](p: p, keep: b)
+    proc nsAdoptPtr*[T](t: typedesc[H[T]]; p: pointer): H[T] {.inline, inject.} =
+      nsAdopt(H[T], cast[ptr T](p))
+    proc nsBorrowPtr*[T](t: typedesc[H[T]]; p: pointer): H[T] {.inline, inject.} =
+      nsBorrow(H[T], cast[ptr T](p))
+    converter nsToPass*[U](h: H[U]): NsPass[U] {.inject.} = nsPassOf(h.p)
+
   proc nsCopyCStr(dest: pointer; p: cstring; len: int64) {.exportc: "nsCopyCStr", cdecl,
       codegenDecl: "extern \"C\" $1 $2$3".} =
     ## A C string C++ returns, copied into the N# string at `dest` (nsobj.hpp).

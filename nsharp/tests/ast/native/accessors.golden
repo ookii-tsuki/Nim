@@ -96,6 +96,36 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
+    nkIdent 'nsPlace_Rig'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'Rig'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) Rig()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newRig'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Stage'
+        nkIdent 'Rig'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'Begin'
@@ -345,68 +375,50 @@ nkStmtList
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Marker.OnBegin"
-  nkStmtList
-    nkProcDef
-      nkIdent 'nsPlace_Rig'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newRig'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Stage'
+        nkIdent 'Rig'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
         nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
-            nkIdent 'Rig'
+          nkIdent 'nsB'
           nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Rig()"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newRig'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Stage'
-          nkIdent 'Rig'
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Rig'
+          nkCall
+            nkIdent 'nsNewBox'
+            nkIdent 'Rig'
+      nkCall
+        nkIdent 'nsPlace_Rig'
         nkCall
-          nkIdent 'nsPlace_Rig'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-        nkAsgn
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+      nkAsgn
+        nkDotExpr
           nkDotExpr
-            nkDotExpr
-              nkCall
-                nkIdent 'nsAt'
-                nkIdent 'nsB'
-              nkIdent 'nsOwner'
-            nkIdent 'box'
-          nkCast
-            nkIdent 'pointer'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Stage'
-              nkIdent 'Rig'
-            nkIdent 'nsB'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Stage'
+            nkIdent 'Rig'
+          nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'

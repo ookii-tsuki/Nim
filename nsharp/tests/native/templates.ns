@@ -1,0 +1,106 @@
+using NSharp.Interop;
+using Toybox;
+
+namespace Demo
+{
+    // C++ class templates bound once and used at several instances, and an N#
+    // class deriving one instance, overriding its virtual.
+    static class Start
+    {
+        [Export("nsStart")]
+        public static void Run()
+        {
+            var a = new Cell<int>(4);
+            var d = new Cell<double>();
+            d.Put(1.5);
+            a.value += 1;
+            Cell<int> none = null;
+            Cell<int> same = a;
+            Console.Print($"cells {a.Get()} {d.Get()} {a.Scaled()} {d.Scaled()} {none == null} {same == a}");
+            Cell<int> twice = a.Doubled();
+            Cell<int> shared = Cell<int>.Shared();
+            shared.Level = 7;
+            Console.Print($"more {twice.Get()} {Cell<int>.Shared().Get()} {Cell<int>.Width()} {Cell<double>.Width()} {d.As<int>()}");
+
+            var e = new KeyVal<int, double>();
+            e.key = 3;
+            var v = new Duo<float>();
+            v.x = 1;
+            v.y = 2;
+            Duo<float> w = v;
+            w.x = 3;
+            Console.Print($"values {e.key} {v.x} {w.x} {v.Dot(w)} {Native.ScaledPlus(a, 100)}");
+
+            var t = new TenCell(5);
+            Cell<int> asCell = t;
+            Console.Print($"derived {t.Scaled()} {asCell.Scaled()} {t.Triple()} {Native.ScaledPlus(t, 1000)} {t.label}");
+
+            // Another instance as a result, instances as fields of a C++ class, a
+            // null stored, numbers converted to `T`, and derived objects in a list.
+            Cell<long> wide = a.Widened();
+            Shelf shelf = Shelf.Main();
+            shelf.spare = shelf.slot;
+            shelf.spare.Put(8);
+            var dd = new Cell<double>(4);
+            dd.Put(2);
+            same = null;
+            var arr = new Cell<int>[2];
+            arr[0] = a;
+            arr[0] = null;
+            var list = new System.Collections.Generic.List<Cell<int>>();
+            list.Add(t);
+            list.Add(new TenCell(1));
+            var holder = new Holder<int>();
+            holder.cell = new Cell<int>(6);
+            Console.Print($"later {wide.Get()} {shelf.slot.Get()} {dd.Get()} {same == null} {list[0].Scaled() + list[1].Scaled()} {new Twice(7).Get()} {holder.cell.Get()}");
+        }
+    }
+
+    // A generic N# class holding an instance of its own argument.
+    class Holder<T> where T : unmanaged { public Cell<T> cell; }
+
+    // A base-constructor argument computed from the parameter.
+    class Twice : Cell<int> { public Twice(int v) : base(v * 2) { } }
+
+    class TenCell : Cell<int>
+    {
+        public string label = "ten";
+        public TenCell(int v) : base(v) { }
+        public override int Scaled() => Get() * 10;
+        public int Triple() => value * 3;
+    }
+
+    [Native("Toybox::Cell", Header = "toybox.hpp", Stable = true)]
+    public class Cell<T>
+    {
+        public T value;
+        public extern Cell(T v);
+        public extern Cell();
+        [Native(Qualifiers = "const")] public extern T Get();
+        public extern void Put(T v);
+        public extern Cell<T> Doubled();
+        [Native(Qualifiers = "const")] public virtual extern T Scaled();
+        public static extern int Width();
+        [return: Borrowed] public static extern Cell<T> Shared();
+        public extern U As<U>();
+        [Native(Get = "Get", Set = "Put")] public extern T Level { get; set; }
+        public extern Cell<long> Widened();
+    }
+
+    [Native("Toybox::Shelf", Header = "toybox.hpp", Stable = true)]
+    public class Shelf
+    {
+        public Cell<int> slot;
+        public Cell<int> spare;
+        [return: Borrowed] public static extern Shelf Main();
+    }
+
+    [Native("Toybox::KeyVal<{0}, {1}>", Header = "toybox.hpp", Stable = true)]
+    public class KeyVal<K, V> { public K key; public extern V Value(); }
+
+    [Native("Toybox::Duo", Header = "toybox.hpp", Stable = true)]
+    public struct Duo<T> { public T x; public T y; public extern T Dot(Duo<T> o); }
+
+    [Native("Toybox", Header = "toybox.hpp", Stable = true)]
+    public static class Native { [Native("Toybox::ScaledPlus(@)")] public static extern int ScaledPlus(Cell<int> c, int k); }
+}

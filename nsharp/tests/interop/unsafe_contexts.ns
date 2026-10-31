@@ -19,8 +19,14 @@ namespace Demo
         }
     }
 
+    class Counter { public int Hits; }
+
+    struct Pair { public int A; public int B; }
+
     class Program
     {
+        static int s_total = 40;
+
         static unsafe int Sum(int* p, int n)
         {
             int s = 0;
@@ -48,6 +54,18 @@ namespace Demo
                 c.Value = 7;
                 c.Next = &y;
                 Console.WriteLine(c.Value + *c.Next + " " + (sizeof(Cell) >= 12));
+
+                // A moveable variable's address is taken in a `fixed` initialiser; a
+                // local's, a field of a local struct's, and a pointer's target's anywhere.
+                var counter = new Counter();
+                fixed (int* h = &counter.Hits) *h = 3;
+                fixed (int* t = &s_total) *t += 2;
+                fixed (int* e = &xs[1]) *e = 20;
+                Pair pair = new Pair();
+                int* pb = &pair.B;
+                *pb = 9;
+                int* back = &*pb;
+                Console.WriteLine(counter.Hits + " " + s_total + " " + xs[1] + " " + pair.B + " " + *back);
             }
         }
     }

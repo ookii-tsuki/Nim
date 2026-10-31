@@ -16,6 +16,150 @@ nkStmtList
       nkPragmaExpr
         nkPostfix
           nkIdent '*'
+          nkIdent 'NsH_Trait'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::TraitRef<'0>"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'NsH_Node'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::NodeRef<'0>"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'NsH_Stage'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'p'
+            nkPtrTy
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'keep'
+            nkRefTy
+              nkIdent 'NsBoxBase'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'NsH_Timer'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::TimerId<'0>"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'NsH_Palette'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'p'
+            nkPtrTy
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'keep'
+            nkRefTy
+              nkIdent 'NsBoxBase'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'NsH_Grid'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'p'
+            nkPtrTy
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'keep'
+            nkRefTy
+              nkIdent 'NsBoxBase'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
           nkIdent 'Vec2'
         nkPragma
           nkExprColonExpr
@@ -58,27 +202,6 @@ nkStmtList
         nkEmpty
         nkEmpty
         nkRecList
-    nkTypeDef
-      nkPragmaExpr
-        nkPostfix
-          nkIdent '*'
-          nkIdent 'NsH_Trait'
-        nkPragma
-          nkExprColonExpr
-            nkIdent 'importcpp'
-            nkStrLit "Toybox::TraitRef<'0>"
-          nkExprColonExpr
-            nkIdent 'header'
-            nkStrLit "toybox.hpp"
-      nkGenericParams
-        nkIdentDefs
-          nkIdent 'T'
-          nkEmpty
-          nkEmpty
-      nkObjectTy
-        nkEmpty
-        nkEmpty
-        nkEmpty
     nkTypeDef
       nkPragmaExpr
         nkPostfix
@@ -155,27 +278,6 @@ nkStmtList
       nkPragmaExpr
         nkPostfix
           nkIdent '*'
-          nkIdent 'NsH_Node'
-        nkPragma
-          nkExprColonExpr
-            nkIdent 'importcpp'
-            nkStrLit "Toybox::NodeRef<'0>"
-          nkExprColonExpr
-            nkIdent 'header'
-            nkStrLit "toybox.hpp"
-      nkGenericParams
-        nkIdentDefs
-          nkIdent 'T'
-          nkEmpty
-          nkEmpty
-      nkObjectTy
-        nkEmpty
-        nkEmpty
-        nkEmpty
-    nkTypeDef
-      nkPragmaExpr
-        nkPostfix
-          nkIdent '*'
           nkIdent 'Node'
         nkPragma
           nkExprColonExpr
@@ -215,33 +317,6 @@ nkStmtList
             nkIdent 'int32'
             nkEmpty
     nkTypeDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'NsH_Stage'
-      nkGenericParams
-        nkIdentDefs
-          nkIdent 'T'
-          nkEmpty
-          nkEmpty
-      nkObjectTy
-        nkEmpty
-        nkEmpty
-        nkRecList
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'p'
-            nkPtrTy
-              nkIdent 'T'
-            nkEmpty
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'keep'
-            nkRefTy
-              nkIdent 'NsBoxBase'
-            nkEmpty
-    nkTypeDef
       nkPragmaExpr
         nkPostfix
           nkIdent '*'
@@ -276,27 +351,6 @@ nkStmtList
         nkEmpty
         nkEmpty
         nkRecList
-    nkTypeDef
-      nkPragmaExpr
-        nkPostfix
-          nkIdent '*'
-          nkIdent 'NsH_Timer'
-        nkPragma
-          nkExprColonExpr
-            nkIdent 'importcpp'
-            nkStrLit "Toybox::TimerId<'0>"
-          nkExprColonExpr
-            nkIdent 'header'
-            nkStrLit "toybox.hpp"
-      nkGenericParams
-        nkIdentDefs
-          nkIdent 'T'
-          nkEmpty
-          nkEmpty
-      nkObjectTy
-        nkEmpty
-        nkEmpty
-        nkEmpty
     nkTypeDef
       nkPragmaExpr
         nkPostfix
@@ -344,33 +398,6 @@ nkStmtList
         nkEmpty
         nkEmpty
         nkRecList
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'NsH_Palette'
-      nkGenericParams
-        nkIdentDefs
-          nkIdent 'T'
-          nkEmpty
-          nkEmpty
-      nkObjectTy
-        nkEmpty
-        nkEmpty
-        nkRecList
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'p'
-            nkPtrTy
-              nkIdent 'T'
-            nkEmpty
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'keep'
-            nkRefTy
-              nkIdent 'NsBoxBase'
-            nkEmpty
     nkTypeDef
       nkPragmaExpr
         nkPostfix
@@ -435,33 +462,6 @@ nkStmtList
         nkEmpty
         nkEmpty
         nkRecList
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'NsH_Grid'
-      nkGenericParams
-        nkIdentDefs
-          nkIdent 'T'
-          nkEmpty
-          nkEmpty
-      nkObjectTy
-        nkEmpty
-        nkEmpty
-        nkRecList
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'p'
-            nkPtrTy
-              nkIdent 'T'
-            nkEmpty
-          nkIdentDefs
-            nkPostfix
-              nkIdent '*'
-              nkIdent 'keep'
-            nkRefTy
-              nkIdent 'NsBoxBase'
-            nkEmpty
     nkTypeDef
       nkPragmaExpr
         nkPostfix

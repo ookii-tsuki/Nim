@@ -193,7 +193,12 @@ unassigned_local CS0165 match
 undeclared_method CS0103 match
 undeclared_type CS0246 match
 undeclared_var CS0103 match
+unfixed_address_array_element CS0212 match
+unfixed_address_class_field CS0212 match
+unfixed_address_ref_parameter CS0212 match
+unfixed_address_static_field CS0212 match
 unknown_attribute CS0246 match
+unmanaged_constraint_string CS8377 match
 unreachable_named_arg CS1739 match
 unsafe_address_of_local CS0214 match
 unsafe_block_ends CS0214 match

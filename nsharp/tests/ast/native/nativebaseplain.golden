@@ -15,17 +15,6 @@ nkStmtList
     nkTypeDef
       nkPostfix
         nkIdent '*'
-        nkIdent 'Plain'
-      nkEmpty
-      nkRefTy
-        nkObjectTy
-          nkEmpty
-          nkOfInherit
-            nkIdent 'RootObj'
-          nkRecList
-    nkTypeDef
-      nkPostfix
-        nkIdent '*'
         nkIdent 'NsH_Thing'
       nkGenericParams
         nkIdentDefs
@@ -68,6 +57,17 @@ nkStmtList
         nkOfInherit
           nkIdent 'Plain'
         nkRecList
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Plain'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
   nkCall
     nkIdent 'nsObjProcs'
     nkIdent 'NsH_Thing'

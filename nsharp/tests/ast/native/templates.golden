@@ -1,0 +1,3533 @@
+nkStmtList
+  nkImportStmt
+    nkStrLit "nsharp/intrinsics"
+  nkFromStmt
+    nkStrLit "System/Collections/Generic"
+    nkAccQuoted
+      nkIdent '$'
+    nkIdent 'Add'
+    nkIdent 'List'
+    nkAccQuoted
+      nkIdent '[]'
+    nkAccQuoted
+      nkIdent '[]='
+    nkIdent 'items'
+    nkIdent 'newList'
+  nkPragma
+    nkIdent 'push'
+    nkExprColonExpr
+      nkIdent 'overflowChecks'
+      nkIdent 'off'
+    nkExprColonExpr
+      nkIdent 'rangeChecks'
+      nkIdent 'off'
+  nkImportStmt
+    nkStrLit "NSharp/Interop"
+  nkImportStmt
+    nkStrLit "/home/user/Nim/nsharp/tests/native/Toybox"
+  nkTypeSection
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'NsH_Cell'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'p'
+            nkPtrTy
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'keep'
+            nkRefTy
+              nkIdent 'NsBoxBase'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'NsH_Shelf'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'p'
+            nkPtrTy
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'keep'
+            nkRefTy
+              nkIdent 'NsBoxBase'
+            nkEmpty
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'NsH_KeyVal'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'p'
+            nkPtrTy
+              nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'keep'
+            nkRefTy
+              nkIdent 'NsBoxBase'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Cell'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::Cell<'0>"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+          nkIdent 'inheritable'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'value'
+            nkIdent 'T'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Shelf'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::Shelf"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+          nkIdent 'inheritable'
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'KeyVal'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::KeyVal<'0, '1>"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+          nkIdent 'inheritable'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'K'
+          nkIdent 'V'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'key'
+            nkIdent 'K'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Duo'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox::Duo<'0>"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'x'
+            nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'y'
+            nkIdent 'T'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Native'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "Toybox"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkEmpty
+        nkRecList
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Start'
+      nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+    nkTypeDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Holder'
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkRefTy
+        nkObjectTy
+          nkEmpty
+          nkOfInherit
+            nkIdent 'RootObj'
+          nkRecList
+            nkIdentDefs
+              nkPostfix
+                nkIdent '*'
+                nkIdent 'cell'
+              nkBracketExpr
+                nkIdent 'NsH_Cell'
+                nkBracketExpr
+                  nkIdent 'Cell'
+                  nkIdent 'T'
+              nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Twice'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'exportc'
+            nkStrLit "Twice"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkBracketExpr
+            nkIdent 'Cell'
+            nkIdent 'int32'
+        nkRecList
+          nkIdentDefs
+            nkIdent 'nsOwner'
+            nkIdent 'NsOwner'
+            nkEmpty
+    nkTypeDef
+      nkPragmaExpr
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'TenCell'
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'exportc'
+            nkStrLit "TenCell"
+      nkEmpty
+      nkObjectTy
+        nkEmpty
+        nkOfInherit
+          nkBracketExpr
+            nkIdent 'Cell'
+            nkIdent 'int32'
+        nkRecList
+          nkIdentDefs
+            nkPostfix
+              nkIdent '*'
+              nkIdent 'label'
+            nkBracketExpr
+              nkIdent 'NsField'
+              nkIdent 'string'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'nsOwner'
+            nkIdent 'NsOwner'
+            nkEmpty
+  nkCall
+    nkIdent 'nsObjProcsOpen'
+    nkIdent 'NsH_Cell'
+  nkCall
+    nkIdent 'nsObjProcs'
+    nkIdent 'NsH_Shelf'
+    nkIdent 'Shelf'
+  nkCall
+    nkIdent 'nsObjProcsOpen'
+    nkIdent 'NsH_KeyVal'
+  nkStmtList
+    nkProcDef
+      nkIdent 'nsPlace_Cell'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'v'
+          nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) '*1(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newCell'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Cell'
+          nkBracketExpr
+            nkIdent 'Cell'
+            nkIdent 'T'
+        nkIdentDefs
+          nkIdent 'v'
+          nkIdent 'T'
+          nkEmpty
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+        nkCall
+          nkIdent 'nsPlace_Cell'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+          nkIdent 'v'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Cell'
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+            nkIdent 'nsB'
+    nkProcDef
+      nkIdent 'nsPlace_Cell'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) '*1(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newCell'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Cell'
+          nkBracketExpr
+            nkIdent 'Cell'
+            nkIdent 'T'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+        nkCall
+          nkIdent 'nsPlace_Cell'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Cell'
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+            nkIdent 'nsB'
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Get'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'T'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Get(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Put'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'v'
+          nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Put(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Doubled'
+        nkEmpty
+        nkGenericParams
+          nkIdentDefs
+            nkIdent 'T'
+            nkEmpty
+            nkEmpty
+        nkFormalParams
+          nkEmpty
+          nkIdentDefs
+            nkIdent 'nsDest'
+            nkPtrTy
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "new (#) '*1(#->Doubled(@))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Doubled'
+        nkEmpty
+        nkGenericParams
+          nkIdentDefs
+            nkIdent 'T'
+            nkEmpty
+            nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkLetSection
+            nkIdentDefs
+              nkIdent 'nsB'
+              nkEmpty
+              nkCall
+                nkIdent 'nsNewBox'
+                nkBracketExpr
+                  nkIdent 'Cell'
+                  nkIdent 'T'
+          nkCall
+            nkIdent 'nsRaw_Doubled'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'self'
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsMake'
+              nkBracketExpr
+                nkIdent 'NsH_Cell'
+                nkBracketExpr
+                  nkIdent 'Cell'
+                  nkIdent 'T'
+              nkIdent 'nsB'
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Scaled'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'T'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Scaled(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'nsBaseCall_Cell_Scaled'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'T'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->'*1::Scaled(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Width'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'int32'
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "'*1::Width(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Shared'
+        nkEmpty
+        nkGenericParams
+          nkIdentDefs
+            nkIdent 'T'
+            nkEmpty
+            nkEmpty
+        nkFormalParams
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr('*1::Shared(@))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Shared'
+        nkEmpty
+        nkGenericParams
+          nkIdentDefs
+            nkIdent 'T'
+            nkEmpty
+            nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsBorrow'
+              nkBracketExpr
+                nkIdent 'NsH_Cell'
+                nkBracketExpr
+                  nkIdent 'Cell'
+                  nkIdent 'T'
+              nkCall
+                nkIdent 'nsRaw_Shared'
+                nkIdent 't'
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'As'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'U'
+          nkEmpty
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'U'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'ns_U'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'U'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->template As<'2>(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Level'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'T'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Get()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Level='
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'T'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'value'
+          nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Put(#)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Widened'
+        nkEmpty
+        nkGenericParams
+          nkIdentDefs
+            nkIdent 'T'
+            nkEmpty
+            nkEmpty
+        nkFormalParams
+          nkEmpty
+          nkIdentDefs
+            nkIdent 'nsDest'
+            nkPtrTy
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'int64'
+            nkEmpty
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "new (#) '*1(#->Widened(@))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Widened'
+        nkEmpty
+        nkGenericParams
+          nkIdentDefs
+            nkIdent 'T'
+            nkEmpty
+            nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int64'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'T'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkLetSection
+            nkIdentDefs
+              nkIdent 'nsB'
+              nkEmpty
+              nkCall
+                nkIdent 'nsNewBox'
+                nkBracketExpr
+                  nkIdent 'Cell'
+                  nkIdent 'int64'
+          nkCall
+            nkIdent 'nsRaw_Widened'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'self'
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsMake'
+              nkBracketExpr
+                nkIdent 'NsH_Cell'
+                nkBracketExpr
+                  nkIdent 'Cell'
+                  nkIdent 'int64'
+              nkIdent 'nsB'
+  nkStmtList
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_slot'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Shelf'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr(#->slot)"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'slot'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Shelf'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsBorrow'
+              nkBracketExpr
+                nkIdent 'NsH_Cell'
+                nkBracketExpr
+                  nkIdent 'Cell'
+                  nkIdent 'int32'
+              nkCall
+                nkIdent 'nsRaw_slot'
+                nkIdent 'self'
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'slot='
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Shelf'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'value'
+          nkBracketExpr
+            nkIdent 'NsPass'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "nsStoreField(#->slot, #)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_spare'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Shelf'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr(#->spare)"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'spare'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkIdentDefs
+            nkIdent 'self'
+            nkPtrTy
+              nkIdent 'Shelf'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsBorrow'
+              nkBracketExpr
+                nkIdent 'NsH_Cell'
+                nkBracketExpr
+                  nkIdent 'Cell'
+                  nkIdent 'int32'
+              nkCall
+                nkIdent 'nsRaw_spare'
+                nkIdent 'self'
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'spare='
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkIdent 'Shelf'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'value'
+          nkBracketExpr
+            nkIdent 'NsPass'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "nsStoreField(#->spare, #)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkStmtList
+      nkProcDef
+        nkIdent 'nsRaw_Main'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkPtrTy
+            nkIdent 'Shelf'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Shelf'
+            nkEmpty
+        nkPragma
+          nkExprColonExpr
+            nkIdent 'importcpp'
+            nkStrLit "nsAddr(Toybox::Shelf::Main(@))"
+          nkExprColonExpr
+            nkIdent 'header'
+            nkStrLit "toybox.hpp"
+        nkEmpty
+        nkEmpty
+      nkProcDef
+        nkPostfix
+          nkIdent '*'
+          nkIdent 'Main'
+        nkEmpty
+        nkEmpty
+        nkFormalParams
+          nkBracketExpr
+            nkIdent 'NsH_Shelf'
+            nkIdent 'Shelf'
+          nkIdentDefs
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'typedesc'
+              nkIdent 'Shelf'
+            nkEmpty
+        nkPragma
+          nkIdent 'discardable'
+        nkEmpty
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'nsBorrow'
+              nkBracketExpr
+                nkIdent 'NsH_Shelf'
+                nkIdent 'Shelf'
+              nkCall
+                nkIdent 'nsRaw_Main'
+                nkIdent 't'
+    nkProcDef
+      nkIdent 'nsPlace_Shelf'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkIdent 'Shelf'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) Toybox::Shelf()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newShelf'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_Shelf'
+          nkIdent 'Shelf'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkIdent 'Shelf'
+        nkCall
+          nkIdent 'nsPlace_Shelf'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_Shelf'
+              nkIdent 'Shelf'
+            nkIdent 'nsB'
+  nkStmtList
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Value'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'K'
+          nkIdent 'V'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'V'
+        nkIdentDefs
+          nkIdent 'self'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'KeyVal'
+              nkIdent 'K'
+              nkIdent 'V'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#->Value(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkIdent 'nsPlace_KeyVal'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'K'
+          nkIdent 'V'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkEmpty
+        nkIdentDefs
+          nkIdent 'nsP'
+          nkPtrTy
+            nkBracketExpr
+              nkIdent 'KeyVal'
+              nkIdent 'K'
+              nkIdent 'V'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "new (#) '*1()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newKeyVal'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'K'
+          nkIdent 'V'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'NsH_KeyVal'
+          nkBracketExpr
+            nkIdent 'KeyVal'
+            nkIdent 'K'
+            nkIdent 'V'
+      nkEmpty
+      nkEmpty
+      nkStmtList
+        nkLetSection
+          nkIdentDefs
+            nkIdent 'nsB'
+            nkEmpty
+            nkCall
+              nkIdent 'nsNewBox'
+              nkBracketExpr
+                nkIdent 'KeyVal'
+                nkIdent 'K'
+                nkIdent 'V'
+        nkCall
+          nkIdent 'nsPlace_KeyVal'
+          nkCall
+            nkIdent 'nsAt'
+            nkIdent 'nsB'
+        nkAsgn
+          nkIdent 'result'
+          nkCall
+            nkIdent 'nsMake'
+            nkBracketExpr
+              nkIdent 'NsH_KeyVal'
+              nkBracketExpr
+                nkIdent 'KeyVal'
+                nkIdent 'K'
+                nkIdent 'V'
+            nkIdent 'nsB'
+  nkStmtList
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'Dot'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkIdent 'T'
+        nkIdentDefs
+          nkIdent 'self'
+          nkBracketExpr
+            nkIdent 'Duo'
+            nkIdent 'T'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'o'
+          nkBracketExpr
+            nkIdent 'Duo'
+            nkIdent 'T'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "#.Dot(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'newDuo'
+      nkEmpty
+      nkGenericParams
+        nkIdentDefs
+          nkIdent 'T'
+          nkEmpty
+          nkEmpty
+      nkFormalParams
+        nkBracketExpr
+          nkIdent 'Duo'
+          nkIdent 'T'
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "'*1()"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'constructor'
+      nkEmpty
+      nkEmpty
+  nkStmtList
+    nkProcDef
+      nkPostfix
+        nkIdent '*'
+        nkIdent 'ScaledPlus'
+      nkEmpty
+      nkEmpty
+      nkFormalParams
+        nkIdent 'int32'
+        nkIdentDefs
+          nkIdent 't'
+          nkBracketExpr
+            nkIdent 'typedesc'
+            nkIdent 'Native'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'c'
+          nkBracketExpr
+            nkIdent 'NsPass'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkEmpty
+        nkIdentDefs
+          nkIdent 'k'
+          nkIdent 'int32'
+          nkEmpty
+      nkPragma
+        nkExprColonExpr
+          nkIdent 'importcpp'
+          nkStrLit "Toybox::ScaledPlus(@)"
+        nkExprColonExpr
+          nkIdent 'header'
+          nkStrLit "toybox.hpp"
+        nkIdent 'discardable'
+      nkEmpty
+      nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Start'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Start'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Run'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Start'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Start.Run()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsStart'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'exportc'
+        nkStrLit "nsStart"
+      nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Start'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Start'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initStart'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Start'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Start..ctor()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newStart'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Start'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Holder'
+            nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsDynType'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'Holder'
+        nkIdent 'T'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Holder'
+            nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initHolder'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Holder`1..ctor()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newHolder'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'Holder'
+        nkIdent 'T'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkEmpty
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToInstance_Twice'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Cell'
+        nkBracketExpr
+          nkIdent 'Cell'
+          nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'h'
+        nkBracketExpr
+          nkIdent 'NsH_Cell'
+          nkIdent 'Twice'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsBase_Twice_0_0'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'exportc'
+        nkStrLit "nsBase_Twice_0_0"
+      nkIdent 'cdecl'
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsInit_Twice'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Twice'
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'constructor'
+        nkStrLit "Twice('1 #1) : Toybox::Cell<int32_t>(nsBase_Twice_0_0(#1))"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsPlace_Twice'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'Twice'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) Twice(@)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newTwice'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Cell'
+        nkIdent 'Twice'
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToInstance_TenCell'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Cell'
+        nkBracketExpr
+          nkIdent 'Cell'
+          nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'h'
+        nkBracketExpr
+          nkIdent 'NsH_Cell'
+          nkIdent 'TenCell'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsInit_TenCell'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'TenCell'
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'constructor'
+        nkStrLit "TenCell('1 #1) : Toybox::Cell<int32_t>(#1)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsPlace_TenCell'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'TenCell'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) TenCell(@)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newTenCell'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Cell'
+        nkIdent 'TenCell'
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Scaled'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'TenCell'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Scaled()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Scaled'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'TenCell'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Scaled() const override"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Triple'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'TenCell'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Triple()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsCpp_Triple'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'TenCell'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Triple()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Start'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeNamed'
+        nkStrLit "Demo.Start"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeOf'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 't'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Holder'
+            nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsGenericType'
+        nkStrLit "Demo.Holder"
+        nkStrLit ""
+        nkCall
+          nkIdent 'nsTypeOf'
+          nkIdent 'T'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsFieldText'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkAsgn
+        nkIdent 'result'
+        nkStrLit ""
+      nkCall
+        nkIdent 'nsFieldAdd'
+        nkIdent 'result'
+        nkStrLit "cell"
+        nkDotExpr
+          nkIdent 'self'
+          nkIdent 'cell'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'ToString'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsObjectText'
+        nkIdent 'self'
+        nkCall
+          nkIdent 'nsFieldText'
+          nkIdent 'self'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsDynType'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'Type'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsTypeOf'
+        nkCall
+          nkIdent 'typeof'
+          nkIdent 'self'
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsGenericName'
+        nkStrLit "Demo.Holder"
+        nkCall
+          nkIdent 'nsDisplay'
+          nkCall
+            nkIdent 'nsTypeOf'
+            nkIdent 'T'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'Holder'
+        nkIdent 'T'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkBracketExpr
+            nkIdent 'Holder'
+            nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkBracketExpr
+          nkIdent 'newHolder'
+          nkIdent 'T'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initHolder'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkBracketExpr
+          nkIdent 'Holder'
+          nkIdent 'T'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Holder`1..ctor()"
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newHolder'
+    nkEmpty
+    nkGenericParams
+      nkIdentDefs
+        nkIdent 'T'
+        nkEmpty
+        nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'Holder'
+        nkIdent 'T'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initHolder'
+        nkIdent 'result'
+  nkStaticStmt
+    nkStmtList
+      nkDiscardStmt
+        nkCall
+          nkIdent 'compiles'
+          nkCall
+            nkIdent 'ToString'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Holder'
+                nkIdent 'int32'
+              nkNilLit
+  nkStaticStmt
+    nkStmtList
+      nkDiscardStmt
+        nkCall
+          nkIdent 'compiles'
+          nkCall
+            nkIdent 'nsDynType'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Holder'
+                nkIdent 'int32'
+              nkNilLit
+  nkStaticStmt
+    nkStmtList
+      nkDiscardStmt
+        nkCall
+          nkIdent 'compiles'
+          nkCall
+            nkIdent 'nsTypeName'
+            nkCall
+              nkBracketExpr
+                nkIdent 'Holder'
+                nkIdent 'int32'
+              nkNilLit
+  nkMethodDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsTypeName'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'string'
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Start'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkStrLit "Demo.Start"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Run'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Start'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Start.Run()"
+    nkEmpty
+    nkStmtList
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'a'
+          nkEmpty
+          nkCall
+            nkBracketExpr
+              nkIdent 'newCell'
+              nkIdent 'int32'
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 4
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'd'
+          nkEmpty
+          nkCall
+            nkBracketExpr
+              nkIdent 'newCell'
+              nkIdent 'float64'
+      nkCall
+        nkIdent 'Put'
+        nkCall
+          nkIdent 'nsDeref'
+          nkIdent 'd'
+        nkFloatLit 1.5
+      nkAsgn
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'a'
+          nkIdent 'value'
+        nkInfix
+          nkIdent '+'
+          nkDotExpr
+            nkCall
+              nkIdent 'nsDeref'
+              nkIdent 'a'
+            nkIdent 'value'
+          nkIntLit 1
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'none'
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkCall
+            nkIdent 'nsNull'
+            nkBracketExpr
+              nkIdent 'NsH_Cell'
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'int32'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'same'
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkIdent 'a'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkInfix
+                        nkIdent '&'
+                        nkInfix
+                          nkIdent '&'
+                          nkInfix
+                            nkIdent '&'
+                            nkInfix
+                              nkIdent '&'
+                              nkStrLit "cells "
+                              nkCall
+                                nkIdent 'nsFmt'
+                                nkCall
+                                  nkIdent 'Get'
+                                  nkCall
+                                    nkIdent 'nsDeref'
+                                    nkIdent 'a'
+                                nkStrLit ""
+                            nkStrLit " "
+                          nkCall
+                            nkIdent 'nsFmt'
+                            nkCall
+                              nkIdent 'Get'
+                              nkCall
+                                nkIdent 'nsDeref'
+                                nkIdent 'd'
+                            nkStrLit ""
+                        nkStrLit " "
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkCall
+                          nkIdent 'Scaled'
+                          nkCall
+                            nkIdent 'nsDeref'
+                            nkIdent 'a'
+                        nkStrLit ""
+                    nkStrLit " "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkCall
+                      nkIdent 'Scaled'
+                      nkCall
+                        nkIdent 'nsDeref'
+                        nkIdent 'd'
+                    nkStrLit ""
+                nkStrLit " "
+              nkCall
+                nkIdent 'nsFmt'
+                nkPrefix
+                  nkIdent 'not'
+                  nkCall
+                    nkIdent 'nsValid'
+                    nkIdent 'none'
+                nkStrLit ""
+            nkStrLit " "
+          nkCall
+            nkIdent 'nsFmt'
+            nkInfix
+              nkIdent '=='
+              nkIdent 'same'
+              nkIdent 'a'
+            nkStrLit ""
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'twice'
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkCall
+            nkIdent 'Doubled'
+            nkCall
+              nkIdent 'nsDeref'
+              nkIdent 'a'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'shared'
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkCall
+            nkIdent 'Shared'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+      nkAsgn
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'shared'
+          nkIdent 'Level'
+        nkIntLit 7
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkInfix
+                        nkIdent '&'
+                        nkInfix
+                          nkIdent '&'
+                          nkStrLit "more "
+                          nkCall
+                            nkIdent 'nsFmt'
+                            nkCall
+                              nkIdent 'Get'
+                              nkCall
+                                nkIdent 'nsDeref'
+                                nkIdent 'twice'
+                            nkStrLit ""
+                        nkStrLit " "
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkCall
+                          nkIdent 'Get'
+                          nkCall
+                            nkIdent 'nsDeref'
+                            nkCall
+                              nkIdent 'Shared'
+                              nkBracketExpr
+                                nkIdent 'Cell'
+                                nkIdent 'int32'
+                        nkStrLit ""
+                    nkStrLit " "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkCall
+                      nkIdent 'Width'
+                      nkBracketExpr
+                        nkIdent 'Cell'
+                        nkIdent 'int32'
+                    nkStrLit ""
+                nkStrLit " "
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkIdent 'Width'
+                  nkBracketExpr
+                    nkIdent 'Cell'
+                    nkIdent 'float64'
+                nkStrLit ""
+            nkStrLit " "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'As'
+              nkCall
+                nkIdent 'nsDeref'
+                nkIdent 'd'
+              nkIdent 'int32'
+            nkStrLit ""
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'e'
+          nkEmpty
+          nkCall
+            nkBracketExpr
+              nkIdent 'newKeyVal'
+              nkIdent 'int32'
+              nkIdent 'float64'
+      nkAsgn
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'e'
+          nkIdent 'key'
+        nkIntLit 3
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'v'
+          nkEmpty
+          nkCall
+            nkBracketExpr
+              nkIdent 'newDuo'
+              nkIdent 'float32'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'v'
+          nkIdent 'x'
+        nkIntLit 1
+      nkAsgn
+        nkDotExpr
+          nkIdent 'v'
+          nkIdent 'y'
+        nkIntLit 2
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'w'
+          nkBracketExpr
+            nkIdent 'Duo'
+            nkIdent 'float32'
+          nkIdent 'v'
+      nkAsgn
+        nkDotExpr
+          nkIdent 'w'
+          nkIdent 'x'
+        nkIntLit 3
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkInfix
+                        nkIdent '&'
+                        nkInfix
+                          nkIdent '&'
+                          nkStrLit "values "
+                          nkCall
+                            nkIdent 'nsFmt'
+                            nkDotExpr
+                              nkCall
+                                nkIdent 'nsDeref'
+                                nkIdent 'e'
+                              nkIdent 'key'
+                            nkStrLit ""
+                        nkStrLit " "
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkDotExpr
+                          nkIdent 'v'
+                          nkIdent 'x'
+                        nkStrLit ""
+                    nkStrLit " "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkDotExpr
+                      nkIdent 'w'
+                      nkIdent 'x'
+                    nkStrLit ""
+                nkStrLit " "
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkIdent 'Dot'
+                  nkIdent 'v'
+                  nkIdent 'w'
+                nkStrLit ""
+            nkStrLit " "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'ScaledPlus'
+              nkIdent 'Native'
+              nkIdent 'a'
+              nkIntLit 100
+            nkStrLit ""
+      nkVarSection
+        nkIdentDefs
+          nkIdent 't'
+          nkEmpty
+          nkCall
+            nkIdent 'newTenCell'
+            nkIntLit 5
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'asCell'
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+          nkCall
+            nkIdent 'nsAs'
+            nkIdent 't'
+            nkBracketExpr
+              nkIdent 'NsH_Cell'
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'int32'
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkInfix
+                        nkIdent '&'
+                        nkInfix
+                          nkIdent '&'
+                          nkStrLit "derived "
+                          nkCall
+                            nkIdent 'nsFmt'
+                            nkCall
+                              nkDotExpr
+                                nkCall
+                                  nkIdent 'nsDeref'
+                                  nkIdent 't'
+                                nkIdent 'Scaled'
+                            nkStrLit ""
+                        nkStrLit " "
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkCall
+                          nkIdent 'Scaled'
+                          nkCall
+                            nkIdent 'nsDeref'
+                            nkIdent 'asCell'
+                        nkStrLit ""
+                    nkStrLit " "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkCall
+                      nkDotExpr
+                        nkCall
+                          nkIdent 'nsDeref'
+                          nkIdent 't'
+                        nkIdent 'Triple'
+                    nkStrLit ""
+                nkStrLit " "
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkIdent 'ScaledPlus'
+                  nkIdent 'Native'
+                  nkCall
+                    nkIdent 'nsAs'
+                    nkIdent 't'
+                    nkBracketExpr
+                      nkIdent 'NsH_Cell'
+                      nkBracketExpr
+                        nkIdent 'Cell'
+                        nkIdent 'int32'
+                  nkIntLit 1000
+                nkStrLit ""
+            nkStrLit " "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'nsVal'
+              nkDotExpr
+                nkCall
+                  nkIdent 'nsDeref'
+                  nkIdent 't'
+                nkIdent 'label'
+            nkStrLit ""
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'wide'
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int64'
+          nkCall
+            nkIdent 'Widened'
+            nkCall
+              nkIdent 'nsDeref'
+              nkIdent 'a'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'shelf'
+          nkBracketExpr
+            nkIdent 'NsH_Shelf'
+            nkIdent 'Shelf'
+          nkCall
+            nkIdent 'Main'
+            nkIdent 'Shelf'
+      nkAsgn
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'shelf'
+          nkIdent 'spare'
+        nkDotExpr
+          nkCall
+            nkIdent 'nsDeref'
+            nkIdent 'shelf'
+          nkIdent 'slot'
+      nkCall
+        nkIdent 'Put'
+        nkCall
+          nkIdent 'nsDeref'
+          nkDotExpr
+            nkCall
+              nkIdent 'nsDeref'
+              nkIdent 'shelf'
+            nkIdent 'spare'
+        nkIntLit 8
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'dd'
+          nkEmpty
+          nkCall
+            nkBracketExpr
+              nkIdent 'newCell'
+              nkIdent 'float64'
+            nkCall
+              nkIdent 'float64'
+              nkIntLit 4
+      nkCall
+        nkIdent 'Put'
+        nkCall
+          nkIdent 'nsDeref'
+          nkIdent 'dd'
+        nkIntLit 2
+      nkAsgn
+        nkIdent 'same'
+        nkCall
+          nkIdent 'nsNull'
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'arr'
+          nkEmpty
+          nkCall
+            nkIdent 'nsNewArray'
+            nkBracketExpr
+              nkIdent 'NsH_Cell'
+              nkBracketExpr
+                nkIdent 'Cell'
+                nkIdent 'int32'
+            nkIntLit 2
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'arr'
+          nkIntLit 0
+        nkIdent 'a'
+      nkAsgn
+        nkBracketExpr
+          nkIdent 'arr'
+          nkIntLit 0
+        nkCall
+          nkIdent 'nsNull'
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkBracketExpr
+              nkIdent 'Cell'
+              nkIdent 'int32'
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'list'
+          nkEmpty
+          nkCall
+            nkBracketExpr
+              nkIdent 'newList'
+              nkBracketExpr
+                nkIdent 'NsH_Cell'
+                nkBracketExpr
+                  nkIdent 'Cell'
+                  nkIdent 'int32'
+      nkCall
+        nkDotExpr
+          nkIdent 'list'
+          nkIdent 'Add'
+        nkIdent 't'
+      nkCall
+        nkDotExpr
+          nkIdent 'list'
+          nkIdent 'Add'
+        nkCall
+          nkIdent 'newTenCell'
+          nkIntLit 1
+      nkVarSection
+        nkIdentDefs
+          nkIdent 'holder'
+          nkEmpty
+          nkCall
+            nkBracketExpr
+              nkIdent 'newHolder'
+              nkIdent 'int32'
+      nkStmtList
+        nkDiscardStmt
+          nkCall
+            nkIdent 'nsCheckNilVar'
+            nkIdent 'holder'
+        nkAsgn
+          nkDotExpr
+            nkIdent 'holder'
+            nkIdent 'cell'
+          nkCall
+            nkBracketExpr
+              nkIdent 'newCell'
+              nkIdent 'int32'
+            nkCall
+              nkIdent 'int32'
+              nkIntLit 6
+      nkCall
+        nkIdent 'Print'
+        nkIdent 'Console'
+        nkInfix
+          nkIdent '&'
+          nkInfix
+            nkIdent '&'
+            nkInfix
+              nkIdent '&'
+              nkInfix
+                nkIdent '&'
+                nkInfix
+                  nkIdent '&'
+                  nkInfix
+                    nkIdent '&'
+                    nkInfix
+                      nkIdent '&'
+                      nkInfix
+                        nkIdent '&'
+                        nkInfix
+                          nkIdent '&'
+                          nkInfix
+                            nkIdent '&'
+                            nkInfix
+                              nkIdent '&'
+                              nkInfix
+                                nkIdent '&'
+                                nkInfix
+                                  nkIdent '&'
+                                  nkStrLit "later "
+                                  nkCall
+                                    nkIdent 'nsFmt'
+                                    nkCall
+                                      nkIdent 'Get'
+                                      nkCall
+                                        nkIdent 'nsDeref'
+                                        nkIdent 'wide'
+                                    nkStrLit ""
+                                nkStrLit " "
+                              nkCall
+                                nkIdent 'nsFmt'
+                                nkCall
+                                  nkIdent 'Get'
+                                  nkCall
+                                    nkIdent 'nsDeref'
+                                    nkDotExpr
+                                      nkCall
+                                        nkIdent 'nsDeref'
+                                        nkIdent 'shelf'
+                                      nkIdent 'slot'
+                                nkStrLit ""
+                            nkStrLit " "
+                          nkCall
+                            nkIdent 'nsFmt'
+                            nkCall
+                              nkIdent 'Get'
+                              nkCall
+                                nkIdent 'nsDeref'
+                                nkIdent 'dd'
+                            nkStrLit ""
+                        nkStrLit " "
+                      nkCall
+                        nkIdent 'nsFmt'
+                        nkPrefix
+                          nkIdent 'not'
+                          nkCall
+                            nkIdent 'nsValid'
+                            nkIdent 'same'
+                        nkStrLit ""
+                    nkStrLit " "
+                  nkCall
+                    nkIdent 'nsFmt'
+                    nkInfix
+                      nkIdent '+'
+                      nkCall
+                        nkIdent 'Scaled'
+                        nkCall
+                          nkIdent 'nsDeref'
+                          nkBracketExpr
+                            nkIdent 'list'
+                            nkIntLit 0
+                      nkCall
+                        nkIdent 'Scaled'
+                        nkCall
+                          nkIdent 'nsDeref'
+                          nkBracketExpr
+                            nkIdent 'list'
+                            nkIntLit 1
+                    nkStrLit ""
+                nkStrLit " "
+              nkCall
+                nkIdent 'nsFmt'
+                nkCall
+                  nkIdent 'Get'
+                  nkCall
+                    nkIdent 'nsDeref'
+                    nkCall
+                      nkIdent 'newTwice'
+                      nkIntLit 7
+                nkStrLit ""
+            nkStrLit " "
+          nkCall
+            nkIdent 'nsFmt'
+            nkCall
+              nkIdent 'Get'
+              nkCall
+                nkIdent 'nsDeref'
+                nkDotExpr
+                  nkIdent 'holder'
+                  nkIdent 'cell'
+            nkStrLit ""
+  nkProcDef
+    nkIdent 'nsStart'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'exportc'
+        nkStrLit "nsStart"
+      nkIdent 'cdecl'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkCall
+            nkIdent 'Run'
+            nkIdent 'Start'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Start.Run"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsCreate'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Start'
+      nkIdentDefs
+        nkIdent 'nsT'
+        nkBracketExpr
+          nkIdent 'typedesc'
+          nkIdent 'Start'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'newStart'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'initStart'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'self'
+        nkIdent 'Start'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'nsFrame'
+        nkStrLit "Demo.Start..ctor()"
+    nkEmpty
+    nkStmtList
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newStart'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Start'
+    nkPragma
+      nkIdent 'discardable'
+      nkExprColonExpr
+        nkIdent 'stackTrace'
+        nkIdent 'off'
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'new'
+        nkIdent 'result'
+      nkCall
+        nkIdent 'initStart'
+        nkIdent 'result'
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToInstance_Twice'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Cell'
+        nkBracketExpr
+          nkIdent 'Cell'
+          nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'h'
+        nkBracketExpr
+          nkIdent 'NsH_Cell'
+          nkIdent 'Twice'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsAs'
+        nkIdent 'h'
+        nkBracketExpr
+          nkIdent 'NsH_Cell'
+          nkBracketExpr
+            nkIdent 'Cell'
+            nkIdent 'int32'
+  nkProcDef
+    nkIdent 'nsBase_Twice_0_0'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'exportc'
+        nkStrLit "nsBase_Twice_0_0"
+      nkIdent 'cdecl'
+    nkEmpty
+    nkStmtList
+      nkInfix
+        nkIdent '*'
+        nkIdent 'v'
+        nkIntLit 2
+  nkProcDef
+    nkIdent 'nsInit_Twice'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'Twice'
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'constructor'
+        nkStrLit "Twice('1 #1) : Toybox::Cell<int32_t>(nsBase_Twice_0_0(#1))"
+    nkEmpty
+    nkStmtList
+      nkLetSection
+        nkIdentDefs
+          nkIdent 'self'
+          nkEmpty
+          nkAddr
+            nkIdent 'result'
+      nkTryStmt
+        nkStmtList
+          nkStmtList
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "Twice.Twice"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newTwice'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Cell'
+        nkIdent 'Twice'
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
+        nkIdentDefs
+          nkIdent 'nsB'
+          nkEmpty
+          nkCall
+            nkIdent 'nsNewBox'
+            nkIdent 'Twice'
+      nkCall
+        nkIdent 'nsPlace_Twice'
+        nkCall
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+        nkIdent 'v'
+      nkAsgn
+        nkDotExpr
+          nkDotExpr
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkIdent 'Twice'
+          nkIdent 'nsB'
+  nkCall
+    nkIdent 'nsUseField'
+    nkIdent 'string'
+  nkConverterDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'nsToInstance_TenCell'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Cell'
+        nkBracketExpr
+          nkIdent 'Cell'
+          nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'h'
+        nkBracketExpr
+          nkIdent 'NsH_Cell'
+          nkIdent 'TenCell'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkCall
+        nkIdent 'nsAs'
+        nkIdent 'h'
+        nkBracketExpr
+          nkIdent 'NsH_Cell'
+          nkBracketExpr
+            nkIdent 'Cell'
+            nkIdent 'int32'
+  nkProcDef
+    nkIdent 'nsInit_TenCell'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'TenCell'
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'constructor'
+        nkStrLit "TenCell('1 #1) : Toybox::Cell<int32_t>(#1)"
+    nkEmpty
+    nkStmtList
+      nkLetSection
+        nkIdentDefs
+          nkIdent 'self'
+          nkEmpty
+          nkAddr
+            nkIdent 'result'
+      nkAsgn
+        nkCall
+          nkIdent 'nsVal'
+          nkDotExpr
+            nkIdent 'result'
+            nkIdent 'label'
+        nkStrLit "ten"
+      nkTryStmt
+        nkStmtList
+          nkStmtList
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "TenCell.TenCell"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newTenCell'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Cell'
+        nkIdent 'TenCell'
+      nkIdentDefs
+        nkIdent 'v'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
+        nkIdentDefs
+          nkIdent 'nsB'
+          nkEmpty
+          nkCall
+            nkIdent 'nsNewBox'
+            nkIdent 'TenCell'
+      nkCall
+        nkIdent 'nsPlace_TenCell'
+        nkCall
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+        nkIdent 'v'
+      nkAsgn
+        nkDotExpr
+          nkDotExpr
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Cell'
+            nkIdent 'TenCell'
+          nkIdent 'nsB'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Scaled'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'TenCell'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Scaled()"
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '*'
+          nkCall
+            nkIdent 'Get'
+            nkIdent 'self'
+          nkIntLit 10
+  nkProcDef
+    nkIdent 'nsCpp_Scaled'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'TenCell'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'virtual'
+        nkStrLit "Scaled() const override"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Scaled'
+              nkCall
+                nkIdent 'nsUnconst'
+                nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "TenCell.Scaled"
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'Triple'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'TenCell'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "nsM_Triple()"
+    nkEmpty
+    nkStmtList
+      nkReturnStmt
+        nkInfix
+          nkIdent '*'
+          nkDotExpr
+            nkIdent 'self'
+            nkIdent 'value'
+          nkIntLit 3
+  nkProcDef
+    nkIdent 'nsCpp_Triple'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkIdent 'int32'
+      nkIdentDefs
+        nkIdent 'self'
+        nkPtrTy
+          nkIdent 'TenCell'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'member'
+        nkStrLit "Triple()"
+    nkEmpty
+    nkStmtList
+      nkTryStmt
+        nkStmtList
+          nkAsgn
+            nkIdent 'result'
+            nkCall
+              nkIdent 'Triple'
+              nkIdent 'self'
+          nkDiscardStmt
+            nkEmpty
+        nkExceptBranch
+          nkDotExpr
+            nkIdent 'system'
+            nkIdent 'Exception'
+          nkCall
+            nkIdent 'nsEscaped'
+            nkStrLit "TenCell.Triple"
+  nkPragma
+    nkExprColonExpr
+      nkIdent 'emit'
+      nkStrLit "/*TYPESECTION*/\n#include \"pure/nsharp/nsobj.hpp\"\n"

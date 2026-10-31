@@ -448,4 +448,25 @@ private:
     int hidden = 7;
 };
 
+// Class templates: one with a virtual a binding's class may override, one of two
+// parameters, a value type, and functions over one instance.
+template <typename T> struct Cell {
+    T value{};
+    Cell() = default;
+    explicit Cell(T v) : value(v) {}
+    T Get() const { return value; }
+    void Put(T v) { value = v; }
+    Cell<T> Doubled() const { return Cell<T>(value * 2); }
+    virtual T Scaled() const { return value * 2; }
+    virtual ~Cell() = default;
+    static int Width() { return static_cast<int>(sizeof(T)); }
+    static Cell<T>& Shared() { static Cell<T> s(T(42)); return s; }
+    template <typename U> U As() const { return static_cast<U>(value); }
+    Cell<int64_t> Widened() const { return Cell<int64_t>(static_cast<int64_t>(value) * 1000000000); }
+};
+struct Shelf { Cell<int> slot{3}; Cell<int>* spare = nullptr; static Shelf& Main() { static Shelf s; return s; } };
+template <typename K, typename V> struct KeyVal { K key{}; V val{}; V Value() const { return val; } };
+template <typename T> struct Duo { T x{}, y{}; T Dot(const Duo<T>& o) const { return x * o.x + y * o.y; } };
+inline int ScaledPlus(const Cell<int>& c, int k) { return c.Scaled() + k; }
+
 } // namespace Toybox

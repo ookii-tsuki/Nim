@@ -865,8 +865,12 @@ proc isNativeObjectField*(scope: NsModuleScope; owner: string; typ: NsNode): boo
   ## A field of a `[Native]` class holding an object of a class N# references
   ## (no handle): C++ holds it by pointer or by value, N# reaches it through a
   ## property (lowering's `nsStoreField`).
-  if typ == nil or typ.kind != nsnTypeName or typ.sons.len > 0: return false
+  if typ == nil or typ.kind != nsnTypeName: return false
   let rt = canonicalTypeName(typ.name)
+  ## An instance of a C++ class template (`Box<int>`) names all its arguments.
+  if typ.sons.len > 0 and (not scope.classes.hasKey(rt) or
+                           scope.classes[rt].typeParams.len != typ.sons.len):
+    return false
   scope.classes.hasKey(owner) and scope.classes[owner].classKind == ckClass and
     scope.classes[owner].native.cpp.len > 0 and
     scope.classes.hasKey(rt) and scope.classes[rt].classKind == ckClass and

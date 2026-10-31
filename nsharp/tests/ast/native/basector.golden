@@ -212,6 +212,82 @@ nkStmtList
     nkEmpty
     nkEmpty
   nkProcDef
+    nkIdent 'nsPlace_Named'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'Named'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'name'
+        nkIdent 'string'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'colors'
+        nkIdent 'int32'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) Named(@)"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newNamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Palette'
+        nkIdent 'Named'
+      nkIdentDefs
+        nkIdent 'name'
+        nkIdent 'string'
+        nkEmpty
+      nkIdentDefs
+        nkIdent 'colors'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkIdent 'nsPlace_Hall'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkEmpty
+      nkIdentDefs
+        nkIdent 'nsP'
+        nkPtrTy
+          nkIdent 'Hall'
+        nkEmpty
+    nkPragma
+      nkExprColonExpr
+        nkIdent 'importcpp'
+        nkStrLit "new (#) Hall()"
+    nkEmpty
+    nkEmpty
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newHall'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Stage'
+        nkIdent 'Hall'
+    nkEmpty
+    nkEmpty
+    nkEmpty
+  nkProcDef
     nkPostfix
       nkIdent '*'
       nkIdent 'Begin'
@@ -600,148 +676,104 @@ nkStmtList
           nkCall
             nkIdent 'nsEscaped'
             nkStrLit "Named.Named"
-  nkStmtList
-    nkProcDef
-      nkIdent 'nsPlace_Named'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newNamed'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Palette'
+        nkIdent 'Named'
+      nkIdentDefs
+        nkIdent 'name'
+        nkIdent 'string'
         nkEmpty
+      nkIdentDefs
+        nkIdent 'colors'
+        nkIdent 'int32'
+        nkEmpty
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
         nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
+          nkIdent 'nsB'
+          nkEmpty
+          nkCall
+            nkIdent 'nsNewBox'
             nkIdent 'Named'
-          nkEmpty
-        nkIdentDefs
-          nkIdent 'name'
-          nkIdent 'string'
-          nkEmpty
-        nkIdentDefs
-          nkIdent 'colors'
-          nkIdent 'int32'
-          nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Named(@)"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newNamed'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Palette'
-          nkIdent 'Named'
-        nkIdentDefs
-          nkIdent 'name'
-          nkIdent 'string'
-          nkEmpty
-        nkIdentDefs
-          nkIdent 'colors'
-          nkIdent 'int32'
-          nkEmpty
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Named'
+      nkCall
+        nkIdent 'nsPlace_Named'
         nkCall
-          nkIdent 'nsPlace_Named'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-          nkIdent 'name'
-          nkIdent 'colors'
-        nkAsgn
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+        nkIdent 'name'
+        nkIdent 'colors'
+      nkAsgn
+        nkDotExpr
           nkDotExpr
-            nkDotExpr
-              nkCall
-                nkIdent 'nsAt'
-                nkIdent 'nsB'
-              nkIdent 'nsOwner'
-            nkIdent 'box'
-          nkCast
-            nkIdent 'pointer'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Palette'
-              nkIdent 'Named'
-            nkIdent 'nsB'
-  nkStmtList
-    nkProcDef
-      nkIdent 'nsPlace_Hall'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkEmpty
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Palette'
+            nkIdent 'Named'
+          nkIdent 'nsB'
+  nkProcDef
+    nkPostfix
+      nkIdent '*'
+      nkIdent 'newHall'
+    nkEmpty
+    nkEmpty
+    nkFormalParams
+      nkBracketExpr
+        nkIdent 'NsH_Stage'
+        nkIdent 'Hall'
+    nkEmpty
+    nkEmpty
+    nkStmtList
+      nkLetSection
         nkIdentDefs
-          nkIdent 'nsP'
-          nkPtrTy
+          nkIdent 'nsB'
+          nkEmpty
+          nkCall
+            nkIdent 'nsNewBox'
             nkIdent 'Hall'
-          nkEmpty
-      nkPragma
-        nkExprColonExpr
-          nkIdent 'importcpp'
-          nkStrLit "new (#) Hall()"
-      nkEmpty
-      nkEmpty
-    nkProcDef
-      nkPostfix
-        nkIdent '*'
-        nkIdent 'newHall'
-      nkEmpty
-      nkEmpty
-      nkFormalParams
-        nkBracketExpr
-          nkIdent 'NsH_Stage'
-          nkIdent 'Hall'
-      nkEmpty
-      nkEmpty
-      nkStmtList
-        nkLetSection
-          nkIdentDefs
-            nkIdent 'nsB'
-            nkEmpty
-            nkCall
-              nkIdent 'nsNewBox'
-              nkIdent 'Hall'
+      nkCall
+        nkIdent 'nsPlace_Hall'
         nkCall
-          nkIdent 'nsPlace_Hall'
-          nkCall
-            nkIdent 'nsAt'
-            nkIdent 'nsB'
-        nkAsgn
+          nkIdent 'nsAt'
+          nkIdent 'nsB'
+      nkAsgn
+        nkDotExpr
           nkDotExpr
-            nkDotExpr
-              nkCall
-                nkIdent 'nsAt'
-                nkIdent 'nsB'
-              nkIdent 'nsOwner'
-            nkIdent 'box'
-          nkCast
-            nkIdent 'pointer'
-            nkIdent 'nsB'
-        nkAsgn
-          nkIdent 'result'
-          nkCall
-            nkIdent 'nsMake'
-            nkBracketExpr
-              nkIdent 'NsH_Stage'
-              nkIdent 'Hall'
-            nkIdent 'nsB'
+            nkCall
+              nkIdent 'nsAt'
+              nkIdent 'nsB'
+            nkIdent 'nsOwner'
+          nkIdent 'box'
+        nkCast
+          nkIdent 'pointer'
+          nkIdent 'nsB'
+      nkAsgn
+        nkIdent 'result'
+        nkCall
+          nkIdent 'nsMake'
+          nkBracketExpr
+            nkIdent 'NsH_Stage'
+            nkIdent 'Hall'
+          nkIdent 'nsB'
   nkProcDef
     nkPostfix
       nkIdent '*'
